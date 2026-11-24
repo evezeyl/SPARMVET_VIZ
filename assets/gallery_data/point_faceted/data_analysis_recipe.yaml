@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Point Faceted
+  ui_label: Point Faceted
   description: >-
     High-dimensional comparison using a grid. The 'Multi-Course' view.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 100 rows and 5 columns (id, date, growth_index, species, amr_class).
     source: {type: local_tsv, path: ./assets/gallery_data/point_faceted/example_data.tsv}

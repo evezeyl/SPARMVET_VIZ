@@ -76,21 +76,6 @@ class AppFeaturesValidator:
         errors: list[DeploymentError] = []
         warnings: list[str] = []
 
-        app_features_id = template.get("name", "")
-
-        # Rule 1 (removed 2026-05-02, ADR-054): name must match filename.
-
-        # Rule 2: name must use hyphens, never underscores
-        if "_" in app_features_id and app_features_id not in (""):
-            errors.append(DeploymentError(
-                component="AppFeaturesValidator",
-                problem=f"name '{app_features_id}' contains underscores",
-                location=f"name in {template_path}",
-                fix="Replace underscores with hyphens. e.g. 'pipeline_static' → 'pipeline-static'.",
-                who="operator",
-                reference=".claude/rules/rules_app_features_flags.md (app features naming)",
-            ))
-
         file_features = template.get("flags", {})
         overrides = dict(flag_overrides or {})
         features = {**file_features, **overrides}

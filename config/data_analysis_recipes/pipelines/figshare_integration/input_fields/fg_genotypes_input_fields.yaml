@@ -1,31 +1,31 @@
 host_animal_common:
   original_name: host_animal_common
   type: String
-  label: Host Animal Common
+  ui_label: Host Animal Common
 sample_id:
   original_name: sample_id
   type: String
-  label: Sample Id
+  ui_label: Sample Id
 gene:
   original_name: gene
   type: String
-  label: Gene
+  ui_label: Gene
 gene_type:
   original_name: gene_type
   type: String
-  label: Gene Type
+  ui_label: Gene Type
 gene_identifier:
   original_name: gene_identifier
   type: String
   null_values: ["NA"]
-  label: Gene Identifier
+  ui_label: Gene Identifier
 gene_name_family:
   original_name: gene_name_family
   type: String
   null_values: ["NA"]
-  label: Gene Name Family
+  ui_label: Gene Name Family
 resistance_class:
   original_name: resistance_class
   type: String
   null_values: ["NA"]
-  label: Resistance Class
+  ui_label: Resistance Class

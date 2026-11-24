@@ -57,7 +57,7 @@ A `data_schema` describes one input file: where to find it, what columns it has,
 ```yaml
 data_schemas:
   Summary:
-    label: Summary
+    ui_label: Summary
     source:
       type: local_tsv
       path: ./assets/test_data/my_data_analysis_recipe/Summary.tsv
@@ -66,13 +66,13 @@ data_schemas:
     input_fields:
       sample_id:
         type: String
-        label: "Sample ID"
+        ui_label: "Sample ID"
       year:
         type: Int64
-        label: "Year collected"
+        ui_label: "Year collected"
       predicted_phenotype:
         type: String
-        label: "Predicted resistance phenotype"
+        ui_label: "Predicted resistance phenotype"
     tier1:
       steps: []
 ```
@@ -299,7 +299,7 @@ analysis_groups:
         theme: theme_light
 ```
 
-The content of the plot is written in the plot entry itself: there is no `spec:` key. `ui_label` is the short name of the tab; the optional `ui_title` is a longer name that the report uses. A plot that is long can be put in its own file, which then holds the whole entry, and is included as `resistance_by_year: !include my_recipe/plots/resistance_by_year.yaml`.
+The content of the plot is written in the plot entry itself: there is no `spec:` key. `ui_label` is the name of the plot: the tab in HOME and the heading in the export report show the same text. A plot that is long can be put in its own file, which then holds the whole entry, and is included as `resistance_by_year: !include my_recipe/plots/resistance_by_year.yaml`.
 
 ### Key fields
 

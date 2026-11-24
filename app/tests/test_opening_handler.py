@@ -233,7 +233,7 @@ def gate(tmp_path, monkeypatch):
     for key in ("raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
-    (tmp_path / "dep.yaml").write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "dep", "default_app_features": "qa",
+    (tmp_path / "dep.yaml").write_text(yaml.safe_dump({"deployment_type": "filesystem", "default_app_features": "qa",
                                                        "locations": locations, "data_lookup": "by_dataset_id", "branding": {"contact": "lab@example.org"}}))
     from app.tests.tiny_recipe import tiny_recipe, write_tiny
     data = root / "raw_data" / "A.tsv"

@@ -19,7 +19,7 @@ The plot entry of the example holds a `taxonomy` mapping with five axes; the six
 
 ```yaml
 info:
-  label: Example Name
+  ui_label: Example Name
   submission_date: 'YYYY-MM-DD'
 analysis_groups:
   example:

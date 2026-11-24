@@ -1,8 +1,11 @@
+# SPARMVET demo (web-demo)
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default app features: web-demo
+# Default recipe: 1_test_data_ST22_dummy
 # SPARMVET demo deployment: the web-demo app features with the branding that used to sit in
 # the app features file (ADR-091: branding belongs to the deployment).
 # Start with: SPARMVET_DEPLOYMENT=config/deployment/demo/web-demo.yaml
 deployment_type: filesystem
-deployment_name: "SPARMVET demo (web-demo)"
 default_app_features: "web-demo"
 default_data_analysis_recipe: "1_test_data_ST22_dummy"
 
@@ -18,8 +21,8 @@ branding:
   theme_css: "assets/demo/web_demo.css"
   banner:
     logo_url: "assets/demo/logo-no.svg"
-    title: ""
-    subtitle: ""
+    ui_label: ""
+    description: ""
 
 runtime:
   python_interpreter: "./.venv/bin/python"

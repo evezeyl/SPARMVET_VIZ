@@ -2,17 +2,17 @@ sample_id:
   original_name: "sample_id"
   type: String
   null_values: ["", "-"]
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 source:
   original_name: "Source"
   type: String
-  label: "Biological Source"
+  ui_label: "Biological Source"
 year:
   original_name: "Year"
   type: Float64
-  label: "Collection Year"
+  ui_label: "Collection Year"
 country:
   original_name: "Country"
   type: String
-  label: "Origin Country"
+  ui_label: "Origin Country"

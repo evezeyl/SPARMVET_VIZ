@@ -1,20 +1,20 @@
 sample_id:
   type: String
   original_name: sample_id
-  label: Sample ID
+  ui_label: Sample ID
 plasmid_name:
   type: String
   original_name: Plasmid
-  label: Plasmid name
+  ui_label: Plasmid name
 identity:
   type: Float64
   original_name: '%Identity'
-  label: Sequence Identity
+  ui_label: Sequence Identity
 overlap:
   type: Float64
   original_name: '%Overlap'
-  label: Sequence Overlap
+  ui_label: Sequence Overlap
 accession:
   type: String
   original_name: Accession
-  label: NCBI Accession
+  ui_label: NCBI Accession

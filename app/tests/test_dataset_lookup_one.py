@@ -35,7 +35,7 @@ def _recipe(recipes_dir: Path, recipe_id: str = "tiny", source_path: Path | None
     source = f"    source: {{type: local_tsv, path: {source_path or recipes_dir.parent / 'nowhere' / 'T.tsv'}}}\n"
     entry = recipes_dir / f"{recipe_id}.yaml"
     entry.write_text(f"""id: {recipe_id}
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -43,7 +43,7 @@ data_schemas:
 {source}    null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}
 joins:

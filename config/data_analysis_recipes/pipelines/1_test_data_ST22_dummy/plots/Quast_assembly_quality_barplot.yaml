@@ -1,5 +1,4 @@
 ui_label: "Assembly Quality Dotplot"
-ui_title: Assembly Quality Metrics (Quast)
 description: "One boxplot per assembly measure (N50, total length, largest contig) showing how the values spread over the samples, to see outliers."
 taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
 target_dataset: Quast_with_metadata

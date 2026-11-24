@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Heatmap Correlation
+  ui_label: Heatmap Correlation
   description: >-
     Displays correlation intensity between variables. Essential for multi-dimensional data exploration.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 16 rows and 4 columns (id, var1, var2, correlation).
     source: {type: local_tsv, path: ./assets/gallery_data/heatmap_correlation/example_data.tsv}

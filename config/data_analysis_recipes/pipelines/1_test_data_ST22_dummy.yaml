@@ -3,9 +3,9 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: ST22 Dummy Dataset
+  ui_label: ST22 Dummy Dataset
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
-  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
+  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional free key: the Info panel shows it; the HOME banner does not (D-0482)
   category: AMR Research
   description: Hyper-modular data analysis recipe structure with dedicated subdirectories and
     annotated assembly steps.
@@ -15,7 +15,7 @@ info:
 # Fragment files: 1_test_data_ST22_dummy/{input_fields,wrangling,output_fields}/
 data_schemas:
   Summary:
-    label: "Summary"
+    ui_label: "Summary"
     description: "Pipeline Summary (Globally pipeline Summary)"
     source:
       type: local_tsv
@@ -26,7 +26,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
 
   Summary_quality:
-    label: "Summary quality"
+    ui_label: "Summary quality"
     description: "The same file as Summary, read as one row per sample with its quality columns (quality module, main taxon, genotype, phenotypes, plasmid, ST, genome length, N50, contigs), so the phenotype counts can be joined to the quality values."
     source:
       type: local_tsv
@@ -40,7 +40,7 @@ data_schemas:
       steps: []
 
   Quality_metrics:
-    label: "Quality metrics"
+    ui_label: "Quality metrics"
     description: "Summary Quality metrics Reads and Assembly (Quality Control)"
     source:
       type: local_tsv
@@ -51,7 +51,7 @@ data_schemas:
     tier1: {steps: []}
 
   Detailed_summary:
-    label: "Detailed summary"
+    ui_label: "Detailed summary"
     description: "AMR gene / predicted phenotype detection  - summary (Gene detection)"
     comment: "Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio > 0.8 assume true values"
     source:
@@ -63,7 +63,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
 
   FastP:
-    label: "FastP"
+    ui_label: "FastP"
     description: "Reads Quality (Quality Control)"
     source:
       type: local_tsv
@@ -74,7 +74,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
 
   Quast:
-    label: "Quast"
+    ui_label: "Quast"
     description: "Assembly Quality (Quality Control)"
     source:
       type: local_tsv
@@ -85,7 +85,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
 
   Bracken:
-    label: "Bracken"
+    ui_label: "Bracken"
     description: "Reads Taxonomic classification (Quality Control)"
     source:
       type: local_tsv
@@ -96,7 +96,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
 
   ResFinder:
-    label: "ResFinder"
+    ui_label: "ResFinder"
     description: "AMR gene detection (Gene detection)"
     source:
       type: local_tsv
@@ -108,7 +108,7 @@ data_schemas:
     tier2: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling_tier2.yaml'
 
   MLST:
-    label: "MLST"
+    ui_label: "MLST"
     description: "Multilocus Typing (Strain Classification)"
     source:
       type: local_tsv
@@ -121,7 +121,7 @@ data_schemas:
 # ── Additional Datasets ───────────────────────────────────────────────────────
 additional_datasets_schemas:
   VirulenceFinder:
-    label: "VirulenceFinder"
+    ui_label: "VirulenceFinder"
     description: "VirulenceFinder (Gene detection)"
     source:
       type: local_tsv
@@ -132,7 +132,7 @@ additional_datasets_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
 
   APEC_STEC_virulence_genes:
-    label: "APEC STEC virulence genes"
+    ui_label: "APEC STEC virulence genes"
     description: "VirulenceFinder Reference dataset (Gene detection)"
     comment: "Virulence types of interest for STEC"
     source:
@@ -147,7 +147,7 @@ additional_datasets_schemas:
 
 # ── Metadata Schema ───────────────────────────────────────────────────────────
 metadata_schema:
-  label: "metadata"
+  ui_label: "metadata"
   description: "Metadata (Metadata)"
   source:
     type: local_tsv
@@ -162,7 +162,7 @@ metadata_schema:
 # Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
 joins:
   FastP_with_metadata:
-    label: "FastP with metadata"
+    ui_label: "FastP with metadata"
     description: "One row per sample: the FastP read-quality values with the sample's source, year and country; a left join on the sample id, so every FastP sample stays."
     ingredients:
     - dataset_id: FastP
@@ -170,7 +170,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
 
   Quast_with_metadata:
-    label: "Quast with metadata"
+    ui_label: "Quast with metadata"
     description: "One row per sample and assembly measure (N50, total length, largest contig): a left join with the metadata, then the three measure columns turned into rows so the plots can facet by measure."
     ingredients:
     - dataset_id: Quast
@@ -178,7 +178,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
 
   Bracken_with_metadata:
-    label: "Bracken with metadata"
+    ui_label: "Bracken with metadata"
     description: "One row per sample: the main taxon found by Bracken and its proportion, with the sample's source, year and country (left join)."
     ingredients:
     - dataset_id: Bracken
@@ -186,7 +186,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
 
   ResFinder_with_metadata:
-    label: "ResFinder with metadata"
+    ui_label: "ResFinder with metadata"
     description: "One row per resistance gene hit in a sample, with the sample's source, year and country; a left join from the hits, so a sample with no hit has no row."
     ingredients:
     - dataset_id: ResFinder
@@ -194,7 +194,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
 
   MLST_with_metadata:
-    label: "MLST with metadata"
+    ui_label: "MLST with metadata"
     description: "One row per sample: sequence type with source, year and country (left join); the second stage keeps only the years 2023 to 2025 and adds an era (Early before 2024, Recent from 2024)."
     ingredients:
     - dataset_id: MLST
@@ -203,7 +203,7 @@ joins:
     tier2: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling_tier2.yaml'
 
   QC_Reads_Anchor:
-    label: "QC Reads Anchor"
+    ui_label: "QC Reads Anchor"
     description: "One row per sample with read quality (FastP), assembly quality (Quast), main taxon (Bracken) and source, year, country; three left joins on the sample id, so every FastP sample stays."
     ingredients:
     - dataset_id: FastP
@@ -213,7 +213,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
 
   Summary_phenotype_length_fragmentation:
-    label: "Summary phenotype length fragmentation"
+    ui_label: "Summary phenotype length fragmentation"
     description: "Demo: Assembly to prepare plot attempting to link some predicted phenotype categories to some quality metrics. in relation to genome length, and fragmentation (higher number of contigs and lower N50 value)"
     ingredients:
     - dataset_id: Summary
@@ -221,7 +221,7 @@ joins:
     tier1: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
 
   ST22_Anchor:
-    label: "ST22 Anchor"
+    ui_label: "ST22 Anchor"
     description: "One row per sample, selected virulence gene and AMR gene hit (a sample with no AMR hit counts as one hit): metadata, FastP, ResFinder, MLST and VirulenceFinder joined, then only the genes of the APEC/STEC list kept (inner join)."
     ingredients:
     - dataset_id: metadata_schema
@@ -235,7 +235,7 @@ joins:
     labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "Selected_Virulence_Genes": "Gene (VirulenceFinder)", "VF_protein": "Protein (VirulenceFinder)", "gene": "AMR Gene", "status": "Phenotype Status", "phenotype": "AMR Class / Phenotype"}
 
   AR1_MLST_Serotype_Virulence:
-    label: "AR1 MLST Serotype Virulence"
+    ui_label: "AR1 MLST Serotype Virulence"
     description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).
     ingredients:
     - dataset_id: MLST
@@ -247,7 +247,7 @@ joins:
 
   # QA canaries: one collection per failure mode, expected numbers are in `wrangling/QA_*.yaml` and `plots/qa_*.yaml`
   QA_AMR_per_sample:
-    label: "QA AMR per sample"
+    ui_label: "QA AMR per sample"
     description: QA canary - samples without an AMR gene must stay (long T1, one row per sample in T2).
     ingredients:
     - dataset_id: metadata_schema
@@ -256,28 +256,28 @@ joins:
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample_tier2.yaml'
 
   QA_ST_with_NA:
-    label: "QA ST with NA"
+    ui_label: "QA ST with NA"
     description: QA canary - a missing sequence type must stay visible as missing.
     ingredients:
     - dataset_id: Summary_quality
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_ST_with_NA.yaml'
 
   QA_year_types:
-    label: "QA year types"
+    ui_label: "QA year types"
     description: QA canary - year as a number and as a label without ".0".
     ingredients:
     - dataset_id: metadata_schema
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
 
   QA_L50_integer:
-    label: "QA L50 integer"
+    ui_label: "QA L50 integer"
     description: QA canary - an integer column for threshold filters.
     ingredients:
     - dataset_id: Quast
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_L50_integer.yaml'
 
   QA_fanout_exhibit:
-    label: "QA fanout exhibit"
+    ui_label: "QA fanout exhibit"
     description: "QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68)."
     ingredients:
     - dataset_id: metadata_schema
@@ -287,7 +287,7 @@ joins:
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit_tier2.yaml'
 
   QA_aggregated_no_key:
-    label: "QA aggregated no key"
+    ui_label: "QA aggregated no key"
     description: "QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60)."
     ingredients:
     - dataset_id: metadata_schema
@@ -295,7 +295,7 @@ joins:
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key_tier2.yaml'
 
   QA_population_zscore:
-    label: "QA population zscore"
+    ui_label: "QA population zscore"
     description: QA canary - a z-score across samples, so a sample removed before the step changes every other sample (audit placement rule).
     ingredients:
     - dataset_id: metadata_schema

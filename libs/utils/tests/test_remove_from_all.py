@@ -124,7 +124,7 @@ def test_a_recipe_that_declares_no_entity_key_is_not_offered_with_a_plain_reason
     option = describe(recipe, tables)
     assert not option.offered and option.not_offered.code == rfa.NO_ENTITY_KEY_DECLARED
     assert option.places == () and option.warning == rfa.WARNING, "the warning text exists, nothing is offered"
-    assert "entity key" in rfa.not_offered_sentence(option.not_offered), "the plain words name what is missing"
+    assert "entity id" in rfa.not_offered_sentence(option.not_offered), "the plain words name what is missing"
 
 
 def test_a_recipe_that_cannot_be_drawn_is_not_offered_with_the_sentence():
@@ -313,9 +313,9 @@ def test_a_table_the_app_could_not_follow_or_plan_is_in_not_reached_with_its_cod
 
 
 @pytest.mark.parametrize("reason, text", [
-    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_id)."),
+    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity id (the id of the thing each row describes), so removing from all the data is not offered. Declare the entity id in the recipe (is_entity_id: true on that column)."),
     (rfa.Reason(rfa.NOT_THE_ENTITY_KEY, (("column", "x"), ("declared", ("sample_id",)))),
-     "The column 'x' is not the entity key of this recipe (the entity key is: sample_id), so removing from all the data is not offered for it. Use a filter on this column instead."),
+     "The column 'x' is not the entity id of this recipe (the entity id is: sample_id), so removing from all the data is not offered for it. Use a filter on this column instead."),
     (rfa.Reason(rfa.RECIPE_CANNOT_BE_DRAWN, (("sentence", "a join has no table."),)), "The recipe cannot be read as a whole, so removing from all the data is not offered: a join has no table."),
     (rfa.Reason(rfa.UNKNOWN_PLACE, (("place", "T1:z"),)), "The recipe has no place 'T1:z'."),
     (rfa.Reason(rfa.COLUMN_NOT_AT_PLACE, (("column", "x"), ("place", "T1:A"))),

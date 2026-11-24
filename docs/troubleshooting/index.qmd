@@ -32,7 +32,6 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [boot-app-features-not-configured](#boot-app-features-not-configured) | Bootloader | operator | No app features from kwarg, env var, or deployment |
 | [boot-app-features-template-missing](#boot-app-features-template-missing) | Bootloader | operator | App features file file not found |
 | [boot-app-features-template-parse-error](#boot-app-features-template-parse-error) | Bootloader | operator | App features file YAML invalid |
-| [app-features-id-underscore](#app-features-id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
 | [app-features-t3-companions-missing](#app-features-t3-companions-missing) | AppFeaturesValidator | operator | `t3_sandbox_enabled` without required companion flags |
 | [app-features-cascade-d-fatal](#app-features-cascade-d-fatal) | AppFeaturesValidator | operator | Group D child flag enabled, parent flag disabled |
 | [app-features-template-not-found](#app-features-template-not-found) | AppFeaturesValidator | operator | Template file absent (via `validate_file`) |
@@ -233,27 +232,6 @@ Also verify that all `!include` paths under `workspaces:` exist in
 ---
 
 ## B — AppFeaturesValidator Errors
-
-### `app-features-id-underscore` {#app-features-id-underscore}
-
-**Problem:** `app_features_id '<id>'` contains underscores.
-
-SPARMVET app features IDs use **hyphens only** — never underscores. An underscore-based
-ID silently fails UI gating because the feature-flag lookup uses the hyphenated form.
-
-**Fix:** Open the template YAML and change `app_features_id`:
-
-```yaml
-# Wrong
-app_features_id: pipeline_static
-
-# Correct
-app_features_id: pipeline-static
-```
-
-**Source:** `app/modules/app_features_validator.py` Rule 2 — ADR-026.
-
----
 
 ### `app-features-t3-companions-missing` {#app-features-t3-companions-missing}
 
@@ -622,7 +600,7 @@ See `rules_data_analysis_recipe_structure.md §8` for the full specification.
 ```yaml
 data_schemas:
   my_amr_data:
-    label: "amr data"
+    ui_label: "amr data"
     source:
       type: local_tsv
       path: assets/test_data/amr_results.tsv

@@ -1,5 +1,4 @@
 ui_label: "Plot A Phenotype Bar"
-ui_title: Phenotypic Resistance per Antibiotic
 description: "Bars count the rows of the joined table for each antibiotic (mic_id), coloured by predicted phenotype; the joined table repeats every antibiotic test once per resistance gene row of its sample, so a sample with more genes weighs more."
 taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
 target_dataset: figshare_triple_join

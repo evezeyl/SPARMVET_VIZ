@@ -57,7 +57,7 @@ class World:
         (frag / "C_tier2.yaml").write_text(json.dumps({"steps": list(steps_tier2)}))
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -66,8 +66,8 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: {group_type}, label: Group}}
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: {group_type}, ui_label: Group}}
     tier1: !include 'tiny/wrangling/T_tier1.yaml'
 joins:
   C:

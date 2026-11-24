@@ -7,7 +7,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: "Left join lesson"
+  ui_label: "Left join lesson"
   description: "What a left join does when the sample ids of the two tables do not match. The sequenced table (the left table) has 10 samples, ACC0001 to ACC0010. The metadata table (the right table) has 10 samples, ACC0003 to ACC0012. 2 ids are only in the left table (ACC0001, ACC0002) and 2 ids are only in the right table (ACC0011, ACC0012). A left join keeps every row of the left table: the result has 10 rows before and 10 rows after the join. The 2 samples only in the left table stay and their country is left empty (2 rows with an empty country). The 2 samples only in the right table are not in the result. Each table names its sample id with another column (Accession and ID): the recipe declares which one it is with is_entity_id, it is never guessed from a name."
   contact: "DEMO CREATOR, Claude & Eve, in a dark room at 0004, in front of a computer, demo_bogus@email.com"
   version: "1.0"
@@ -19,7 +19,7 @@ entity:
 
 data_schemas:
   sequenced:
-    label: "sequenced samples (left table)"
+    ui_label: "sequenced samples (left table)"
     description: "One row per sequenced sample, with its main resistance gene."
     source:
       type: "local_tsv"
@@ -38,7 +38,7 @@ data_schemas:
       steps: []
 
 metadata_schema:
-  label: "metadata (right table)"
+  ui_label: "metadata (right table)"
   description: "One row per sample with its country."
   source:
     type: "local_tsv"
@@ -58,7 +58,7 @@ metadata_schema:
 
 joins:
   lesson_assembly:
-    label: "lesson assembly"
+    ui_label: "lesson assembly"
     description: "Left join of the sequenced samples with the metadata: every sequenced sample stays."
     ingredients:
       - dataset_id: "sequenced"

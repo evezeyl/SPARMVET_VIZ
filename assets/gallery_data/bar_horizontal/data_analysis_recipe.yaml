@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Horizontal Bar Chart
+  ui_label: Horizontal Bar Chart
   description: >-
     Rank categories by a numeric value when category labels are long or numerous. The horizontal layout prevents
     x-axis label overlap and makes left-to-right reading natural. Preferred over vertical bars for named rankings.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 5 rows and 2 columns (amr_class, mean_resistance).
     source: {type: local_tsv, path: ./assets/gallery_data/bar_horizontal/example_data.tsv}

@@ -1,5 +1,4 @@
 ui_label: "Virulence Variants"
-ui_title: Integrated Virulence & MLST Typing
 description: "Heatmap with one tile per sample and selected virulence gene, coloured by whether the gene was detected."
 taxonomy: {"family": "Correlation", "pattern": "2 Categorical", "difficulty": "Advanced"}
 target_dataset: ST22_Anchor

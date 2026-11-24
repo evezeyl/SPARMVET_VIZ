@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: 'Demo: Abromics Pipeline (High Integrity)'
+  ui_label: 'Demo: Abromics Pipeline (High Integrity)'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   description: "Synchronized test data for Phase 4/5 demonstration. The table `demo join` starts from the 27 samples of the metadata and adds the MLST results: 12 samples have no MLST result and show the sequence type \"Non Determined\"; the MLST table has one row per sample and scheme, so the table has one row per sample (27 rows for 27 samples). Removed by this recipe, on purpose: the 3 metadata lines that have no sample id."
   version: '1.2'
 data_schemas:
   MLST:
-    label: "MLST"
+    ui_label: "MLST"
     description: "One row per sample and MLST scheme: a sample has one sequence type per scheme. Every sample id of this file is one of the samples of the metadata."
     source:
       type: local_tsv
@@ -19,7 +19,7 @@ data_schemas:
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
-  label: "metadata"
+  ui_label: "metadata"
   description: "One row per metadata line (source, year, country). In this demo file no sample id is repeated, but three lines have no usable id (one empty, one written as a dash, one written as two quote marks); all three are read as missing."
   source:
     type: local_tsv
@@ -33,7 +33,7 @@ metadata_schema:
     steps: []
 joins:
   demo_join:
-    label: "demo join"
+    ui_label: "demo join"
     description: "One row per sample: the MLST table has one row per sample and scheme, and a sample that has no MLST result keeps one row. The table starts from the metadata (27 samples with an id) and adds the MLST results to it (a left join), so no sample of the metadata is lost: in this demo data 12 of the 27 samples have no MLST result and show the sequence type \"Non Determined\" (an unknown result, not a missing value). There are 27 rows for 27 samples. Removed by this recipe, on purpose: the 3 metadata lines that have no sample id (they cannot be linked to any result)."
     ingredients:
     # the metadata comes first: it is the list of the samples, and the left join keeps every one of them

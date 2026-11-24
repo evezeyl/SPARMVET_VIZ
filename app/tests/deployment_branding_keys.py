@@ -1,10 +1,10 @@
 """The ONE place where the tests of the deployment branding name the banner keys.
 
-D-0411 (owner decision, not built yet) renames the banner keys `title` -> `ui_label` and `subtitle` -> `description`.
-When that is built, only the two names below change; the VALUES the tests expect stay the same.
+D-0411 renamed the banner keys of the deployment: `title` -> `ui_label`, `subtitle` -> `description` (built in the names pass).
+The VALUES the tests expect did not change; only the two names below did.
 """
-BANNER_TITLE_KEY = "title"
-BANNER_LINE_KEY = "subtitle"
+BANNER_TITLE_KEY = "ui_label"
+BANNER_LINE_KEY = "description"
 BANNER_LOGO_KEY = "logo_url"
 
 

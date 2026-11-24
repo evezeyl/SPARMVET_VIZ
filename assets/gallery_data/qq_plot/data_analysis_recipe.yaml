@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Q-Q Plot (Quantile-Quantile)
+  ui_label: Q-Q Plot (Quantile-Quantile)
   description: >-
     Tests normality of a distribution. Points falling near the diagonal reference line indicate the data is approximately
     normally distributed. Essential for validating statistical assumptions before parametric tests.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 30 rows and 3 columns (species, mic_value, log_mic).
     source: {type: local_tsv, path: ./assets/gallery_data/qq_plot/example_data.tsv}

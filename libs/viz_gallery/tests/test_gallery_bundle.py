@@ -319,10 +319,10 @@ def test_a_check_that_did_not_cover_the_actions_and_the_components_is_refused(tm
 
 # ---- the name of an example is the ui_label of its plot entry (D-0387) -------------------------------------------------
 
-def test_the_name_is_the_ui_label_of_the_plot_entry_not_info_label(tmp_path):
+def test_the_name_is_the_ui_label_of_the_plot_entry_not_info_ui_label(tmp_path):
     folder = _write_example(tmp_path, "my_plot")
     recipe = _recipe("my_plot")
-    recipe["info"]["label"] = "Name for the recipe maker"
+    recipe["info"]["ui_label"] = "Name for the recipe maker"
     the_plot(recipe)[1]["ui_label"] = "Name for the user"
     (folder / RECIPE).write_text(dump_example(recipe))
     manager = GalleryManager(str(tmp_path))

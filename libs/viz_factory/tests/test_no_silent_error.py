@@ -153,13 +153,13 @@ def test_the_title_key_is_refused_and_the_message_says_where_the_title_goes_now(
 
 
 def test_the_app_side_keys_of_the_plot_entry_are_ignored_not_refused():
-    """The entry holds ui_label, ui_title, description, comment, taxonomy, plot_engine next to the plot content (D-0237, D-0253)."""
-    entry = dict(ui_label="L", ui_title="T", description="d", comment="c", taxonomy={"family": "Ranking"}, plot_engine="python-plotnine")
+    """The entry holds ui_label, description, comment, taxonomy, plot_engine next to the plot content (D-0237, D-0253)."""
+    entry = dict(ui_label="L", description="d", comment="c", taxonomy={"family": "Ranking"}, plot_engine="python-plotnine")
     VizFactory().render(DF, recipe([POINT], **entry), "p").draw()
 
 
 def test_the_figure_title_comes_from_the_labs_layer_only():
-    plot = VizFactory().render(DF, recipe([POINT, {"name": "labs", "params": {"title": "From labs"}}], ui_title="Not the figure title"), "p")
+    plot = VizFactory().render(DF, recipe([POINT, {"name": "labs", "params": {"title": "From labs"}}], ui_label="Not the figure title"), "p")
     plot.draw()
     assert plot.labels.title == "From labs"
 

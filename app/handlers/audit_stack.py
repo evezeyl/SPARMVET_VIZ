@@ -881,7 +881,7 @@ def define_server(input, output, session, *,
             ui.input_selectize(
                 "aesthetic_propagation_except",
                 label=ui.tags.small("(only with 'All plots except…')", class_="text-muted"),
-                choices={s: s.removeprefix("subtab_").replace("_", " ").title() for s in others},
+                choices={s: s.removeprefix("subtab_") for s in others},   # the plot id as written; no name is made from it (D-0409)
                 selected=[],
                 multiple=True,
                 options={"placeholder": "Plots to exclude…", "plugins": ["remove_button"]},

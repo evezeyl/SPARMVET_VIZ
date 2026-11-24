@@ -67,7 +67,7 @@ Variant of `create_data_analysis_recipe.py` tailored for Figshare and other exte
 
 **Script:** `assets/scripts/create_test_deployment.py`
 
-Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/deployment/local/` (singular `deployment`, not `connectors`). Flags use underscores except `--app-features`, and `--deployment_file` (the output filename) and `--description` are both required alongside `--data_analysis_recipe_id`.
+Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/deployment/local/` (singular `deployment`, not `connectors`). Flags use underscores except `--app-features`, and `--deployment_file` (the output filename) and `--description` (written as a comment at the top of the file: a deployment has no name key) are both required alongside `--data_analysis_recipe_id`.
 
 ```bash
 ./.venv/bin/python assets/scripts/create_test_deployment.py \

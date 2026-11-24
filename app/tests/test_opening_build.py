@@ -411,7 +411,7 @@ def _with_an_unused_source(world):
     path = world.data_analysis_recipes_dir / "tiny.yaml"
     text = path.read_text()
     unused = (f"  U:\n    source: {{type: local_tsv, path: {world.data_dir / 'U.tsv'}}}\n    null_values: []\n    strip: false\n"
-              "    input_fields:\n      k: {original_name: k, type: String, label: K}\n    tier1: {steps: []}\n")
+              "    input_fields:\n      k: {original_name: k, type: String, ui_label: K}\n    tier1: {steps: []}\n")
     assert "joins:\n" in text
     path.write_text(text.replace("joins:\n", unused + "joins:\n", 1))
     clear_data_analysis_recipe_cache()

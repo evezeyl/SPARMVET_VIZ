@@ -1,8 +1,8 @@
 {
-  "key": "bf57967fb648f004f8c3d8f826911b55d7c7f95dcd38f3b706c51c013179543b",
+  "key": "fa770eb98575d6d8e5e9bf582772d18e3a6ef9406592b59feda4b5f6a2fa7602",
   "parts": {
     "data": "6c35cbacdf2aad5d17f1aa294f7611934e20a6413fe5ff2dac69c1424dce899f",
     "plotnine": "0.15.4",
-    "recipe": "946109f36fab51b57d08972710b2d4234fa130818204535b0cae61dae57fabf2"
+    "recipe": "a63e2cdef47a98dba77e470f9859752da55caa54286cfeeaad9740fb14bc8724"
   }
 }

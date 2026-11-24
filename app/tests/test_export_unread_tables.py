@@ -50,8 +50,8 @@ def _source(name: str, field: str, ftype: str = "String", file: str | None = Non
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
-      {field}: {{original_name: {field}, type: {ftype}, label: {field}}}
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
+      {field}: {{original_name: {field}, type: {ftype}, ui_label: {field}}}
     tier1: {{steps: []}}
 """
 
@@ -67,7 +67,7 @@ class Wide(World):
             (self.data_dir / f"{name}.tsv").write_text(text)
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(("""id: tiny
-info: {label: Tiny}
+info: {ui_label: Tiny}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:

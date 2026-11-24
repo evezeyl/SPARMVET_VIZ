@@ -7,23 +7,23 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: RETEST Tier 2 and export
+  ui_label: RETEST Tier 2 and export
   description: Small data analysis recipe to check that Tier 2 is stored, reused and exported correctly.
   version: '1.0'
 
 data_schemas:
   Samples:
-    label: "Samples"
+    ui_label: "Samples"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/samples.tsv
     null_values: []
     strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_id: true}
-      group: {original_name: group, type: String, label: Group}
-      value: {original_name: value, type: Float64, label: Value}
-      year: {original_name: year, type: String, label: Year}
+      sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
+      group: {original_name: group, type: String, ui_label: Group}
+      value: {original_name: value, type: Float64, ui_label: Value}
+      year: {original_name: year, type: String, ui_label: Year}
     tier1:
       steps: []
     tier2:
@@ -31,7 +31,7 @@ data_schemas:
 
 joins:
   Result:
-    label: "Result"
+    ui_label: "Result"
     ingredients:
       - dataset_id: Samples
     tier1:
@@ -44,7 +44,7 @@ joins:
           value: 10
           na: remove
   All_samples:
-    label: "All samples"
+    ui_label: "All samples"
     ingredients:
       - dataset_id: Samples
     tier1:

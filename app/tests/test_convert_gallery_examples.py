@@ -83,7 +83,7 @@ def test_apply_writes_a_standard_recipe_that_passes_the_gallery_check(tmp_path):
     assert check_recipe_file(recipe_path, "gallery", file_stem="dumbbell").errors == []
     recipe = yaml.safe_load(recipe_path.read_text())
     assert recipe["id"] == "dumbbell" and recipe["spec_version"] == 1
-    assert recipe["info"] == {"label": "Dumbbell Chart", "submission_date": "2026-05-03",
+    assert recipe["info"] == {"ui_label": "Dumbbell Chart", "submission_date": "2026-05-03",
                               "description": "Shows change between two states. The second line of the paragraph."}
     schema = recipe["data_schemas"]["example"]
     assert schema["source"] == {"type": "local_tsv", "path": "./assets/gallery_data/dumbbell/example_data.tsv"}

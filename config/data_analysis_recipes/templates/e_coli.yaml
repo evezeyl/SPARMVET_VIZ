@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: E. coli Comprehensive Analysis
+  ui_label: E. coli Comprehensive Analysis
   category: AMR Analysis
   description: 'Template for E. coli data: AMR genes, MLST, serotype, and growth phenotype.'
   version: '1.0'
 data_schemas:
   amr_results:
-    label: "amr results"
+    ui_label: "amr results"
     source:
       type: local_tsv
       path: ./assets/pipeline_output/ecoli_amr_results.tsv
@@ -22,28 +22,28 @@ data_schemas:
         original_name: sample_id
         type: String
         is_entity_id: true
-        label: Sample ID
+        ui_label: Sample ID
       serotype:
         original_name: serotype
         type: String
-        label: Serotype
+        ui_label: Serotype
       sequence_type:
         original_name: ST
         type: String
-        label: Sequence Type
+        ui_label: Sequence Type
       ctx_m_gene:
         original_name: bla_CTX-M
         type: String
-        label: CTX-M Gene
+        ui_label: CTX-M Gene
       growth_rate:
         original_name: growth_rate
         type: Float64
-        label: Growth Rate (OD600)
+        ui_label: Growth Rate (OD600)
     tier1:
       steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 metadata_schema:
-  label: "metadata"
+  ui_label: "metadata"
   source:
     type: local_tsv
     path: ./assets/pipeline_output/ecoli_metadata.tsv
@@ -59,28 +59,28 @@ metadata_schema:
     collection_date:
       original_name: collection_date
       type: Categorical
-      label: Collection Date
+      ui_label: Collection Date
     country_of_origin:
       original_name: country_of_origin
       type: String
-      label: Country of Origin
+      ui_label: Country of Origin
     hospital_site:
       original_name: hospital_site
       type: String
-      label: Hospital Site
+      ui_label: Hospital Site
     patient_age:
       original_name: patient_age
       type: Float64
-      label: Patient Age
+      ui_label: Patient Age
     patient_outcome:
       original_name: patient_outcome
       type: String
-      label: Outcome
+      ui_label: Outcome
   tier1:
     steps: []
 joins:
   amr_with_metadata:
-    label: "amr with metadata"
+    ui_label: "amr with metadata"
     description: Join AMR results with metadata.
     ingredients:
     - dataset_id: amr_results
@@ -101,7 +101,6 @@ analysis_groups:
     plots:
       serotype_dist:
         ui_label: "Serotype Dist"
-        ui_title: Serotype Distribution by Country
         description: "Distribution of serotypes across samples."
         taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
         target_dataset: amr_with_metadata
@@ -116,7 +115,6 @@ analysis_groups:
             title: Serotype Distribution by Country
       growth_rate_by_st:
         ui_label: "Growth Rate By ST"
-        ui_title: Growth Rate by Sequence Type
         description: "Growth rate distribution by sequence type."
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
         target_dataset: amr_with_metadata

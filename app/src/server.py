@@ -170,8 +170,8 @@ def server(input, output, session):
     # eliminating the js_eval → DOM click → input race condition.
     _selected_lineage_rel: reactive.Value = reactive.Value(None)
 
-    print(f"DEBUG: Initializing Server with App features: {bootloader.app_features_display_name}")
-    current_app_features = reactive.Value(bootloader.app_features_display_name)
+    print(f"DEBUG: Initializing Server with App features: {bootloader.app_features_label_with_id}")
+    current_app_features = reactive.Value(bootloader.app_features_label_with_id)
 
     # Dependency Resolution: Data Tiers
     @reactive.Calc

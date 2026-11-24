@@ -16,12 +16,12 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: "E. coli ST22 AMR Analysis"
+  ui_label: "E. coli ST22 AMR Analysis"
   description: "AMR profiling for E. coli ST22, test dataset"
   contact: "who to ask when the data analysis recipe fails"
 ```
 
-`info.label` is the only required key of `info`; `info` is free-form otherwise (study, version, any key you want shown in HOME).
+`info.ui_label` is the name of the recipe (HOME banner and lists; optional: without it the file name is shown, and the checker gives an advice); `info` is free-form otherwise (study, version, any key you want shown in HOME).
 
 ---
 
@@ -46,7 +46,7 @@ Every data schema also states `null_values` (the texts that mean "missing", `[]`
 ```yaml
 data_schemas:
   resfinder_results:
-    label: "ResFinder results"
+    ui_label: "ResFinder results"
     description: "One row per gene hit."
     source:
       type: local_tsv
@@ -59,16 +59,16 @@ data_schemas:
       sample_id:
         original_name: "SampleName"   # exact header in TSV
         type: String
-        label: "Sample ID"
+        ui_label: "Sample ID"
         is_entity_id: true
       gene:
         original_name: "Gene_Name"
         type: String
-        label: "AMR Gene"
+        ui_label: "AMR Gene"
       identity:
         original_name: "%Identity"
         type: Float64
-        label: "Sequence Identity (%)"
+        ui_label: "Sequence Identity (%)"
 
     # Block 2: the process, a tier is its own key: optional data_engine, then steps
     tier1:
@@ -122,7 +122,7 @@ The declared type is handed to the reader, which reads the text, applies `null_v
 
 ---
 
-## Step 4: Entity Keys & Column Renaming
+## Step 4: Entity Ids & Column Renaming
 
 The ingestor uses `original_name` in `input_fields` to rename raw column headers to their internal slug. You do not need separate rename wrangling steps for this:
 
@@ -147,7 +147,7 @@ Once datasets are individually wrangled (Tier 1), they are joined in the `joins`
 ```yaml
 joins:
   AMR_Profile_Joint:
-    label: "AMR profile"
+    ui_label: "AMR profile"
     description: "ResFinder hits with the metadata of the sample."
     ingredients:
       - dataset_id: resfinder_results
@@ -208,7 +208,7 @@ A fragment file holds the content of the key it is included under and does not r
 sample_id:
   original_name: SampleName
   type: String
-  label: Sample ID
+  ui_label: Sample ID
 ```
 
 `!include` paths are always **relative to the master data analysis recipe file's directory**, and an include may not reach outside the project.

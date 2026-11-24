@@ -149,13 +149,9 @@ analysis_groups:
 
 ### Visible labels (icons & emoji are encouraged)
 
-The visible tab/group label in the UI comes from this resolution chain:
+The visible name of a group or a plot comes from ONE key, `ui_label` (D-0253, D-0409; required on a group and on a plot entry; the recipe check refuses a group or a plot without it). There is no fallback: the app invents no name (no `description`, no id in title case). The same `ui_label` is the tab in HOME, the list entry in the dialogs and the heading in the export report (a group is a `##` heading, a plot a `###`). The recipe's own name is `info.ui_label` (optional, with an advice when it is missing: the file name is shown then; D-0410, D-0470); the HOME banner shows it and reads nothing else of `info`.
 
-1. `ui_label:` field (D-0253; required on a group and on a plot entry)
-2. `description:` field if set (group only)
-3. The dict key (group_id; for a plot, the plot id in title case) as fallback
-
-All three preserve any unicode, including emoji and CJK. Data Analysis Recipe authors can use any icons in `ui_label:` to make the UI friendly. Example:
+All of them preserve any unicode, including emoji and CJK. Data Analysis Recipe authors can use any icons in `ui_label:` to make the UI friendly. Example:
 
 ```yaml
 analysis_groups:
@@ -166,7 +162,7 @@ analysis_groups:
       miaou: !include cat/miaou.yaml   # plot_id stays snake_case (unique-id contract); the file holds the whole entry, e.g. ui_label: "Miaou 🐱" (Tab shows "Miaou 🐱")
 ```
 
-Reserve `description:` for longer prose; use `ui_label:` for short emoji-rich tab text. A longer name used by the report goes in `ui_title` (D-0253). The figure text (axis names, legend names, figure title) is written only in the `labs` layer (D-0253).
+Reserve `description:` for longer prose; use `ui_label:` for short emoji-rich tab text. The report uses the same `ui_label` as the tab (D-0409; `ui_title` is removed). The figure text (axis names, legend names, figure title) is written only in the `labs` layer (D-0253).
 
 ### Plot spec file structure (`plots/<plot_id>.yaml`)
 
@@ -179,7 +175,6 @@ Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers 
 
 ```yaml
 ui_label: "Plot name"            # Required — the short name of the tab
-ui_title: "Plot Title"           # Optional — the longer name the report uses (else ui_label)
 target_dataset: <join_id>        # Must match a joins key
 mapping:
   x: <column>                    # Aesthetic mapping — column must exist in target_dataset

@@ -1,17 +1,17 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 total_reads:
   original_name: "total_reads"
   type: Float64
-  label: "Total Reads"
+  ui_label: "Total Reads"
 q30_rate:
   original_name: "q30_rate"
   type: Float64
-  label: "Q30 Rate"
+  ui_label: "Q30 Rate"
 gc_content:
   original_name: "gc_content"
   type: Float64
-  label: "GC Content"
+  ui_label: "GC Content"

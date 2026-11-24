@@ -342,7 +342,7 @@ def _format_fields(fields_dict: dict) -> list[dict]:
             out.append({
                 "slug": slug,
                 "type": props.get("type", ""),
-                "label": props.get("label", slug),
+                "label": props.get("ui_label", slug),
                 "required": props.get("required", False),
             })
         else:

@@ -11,8 +11,8 @@ from utils.recipe_check import check_recipe
 def _recipe(layer):
     return {
         "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
-        "info": {"label": "R", "description": "d", "contact": "c"},
-        "data_schemas": {"A": {"label": "A", "description": "d", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
+        "info": {"ui_label": "R", "description": "d", "contact": "c"},
+        "data_schemas": {"A": {"ui_label": "A", "description": "d", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                                "null_values": [], "strip": True,
                                "input_fields": {"v": {"type": "Float64"}}, "tier1": {"steps": []}}},
         "analysis_groups": {"g": {"ui_label": "G", "description": "d", "plots": {"p": {

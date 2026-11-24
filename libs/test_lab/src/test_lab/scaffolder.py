@@ -133,7 +133,7 @@ class DataAnalysisRecipeScaffolder:
             assembly_path = f"{fragments_prefix}/assembly/{join_id}.yaml"
             self._write_assembly_stub(zf, assembly_path, all_ingredient_ids[1:])
             joins_config[join_id] = {
-                "label": join_id.replace('_', ' ').capitalize(),
+                "ui_label": join_id.replace('_', ' ').capitalize(),
                 "ingredients": ingredients,
                 "tier1": IncludeRef(f"{data_analysis_recipe_id}/assembly/{join_id}.yaml"),
             }
@@ -153,7 +153,7 @@ class DataAnalysisRecipeScaffolder:
             safe_col = self.column_slug(col)
             fields[safe_col] = {
                 "type": self._bs._map_dtype(df[col]),
-                "label": col.replace('_', ' ').title(),
+                "ui_label": col.replace('_', ' ').title(),
                 "original_name": col,
             }
             if safe_col in ("id", "sample_id", "isolate_id"):
@@ -201,7 +201,7 @@ class DataAnalysisRecipeScaffolder:
             "data_engine": DATA_ENGINE,
             "plot_engine": PLOT_ENGINE,
             "info": {
-                "label": data_analysis_recipe_id.replace('_', ' ').title(),
+                "ui_label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
                 "description": f"Auto-scaffolded pipeline for {data_analysis_recipe_id}",
             },

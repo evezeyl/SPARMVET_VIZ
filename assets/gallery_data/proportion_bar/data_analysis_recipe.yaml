@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Proportion Bar Chart
+  ui_label: Proportion Bar Chart
   description: >-
     Compare the proportional composition across groups when total counts vary and the relative share matters more
     than absolute values. Ideal for showing AMR class distribution profiles across species regardless of collection
@@ -11,7 +11,7 @@ info:
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 25 rows and 3 columns (species, amr_class, count).
     source: {type: local_tsv, path: ./assets/gallery_data/proportion_bar/example_data.tsv}

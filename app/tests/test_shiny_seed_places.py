@@ -106,6 +106,31 @@ def settle(page: Page, *ids: str) -> None:
     page.wait_for_timeout(8_000)
 
 
+THEATER_QUIET_MS = 2_000
+
+
+def wait_theater_quiet(page: Page, quiet_ms: int = THEATER_QUIET_MS) -> None:
+    """Wait until the theater (`#dynamic_tabs`) has not changed for `quiet_ms`.
+
+    Why: HOME draws its tabs twice when a recipe opens at once (the second session of one app process: its tables are stored and its plots are
+    proven, so the opening takes no time). The first draw happens before the recipe selector's value has reached the server and uses the default
+    recipe; the selector's value arrives a moment later and draws the same tabs again. A click that lands between the two draws is wiped with the old
+    tabs (found 2026-11-24: the group tab "Curiosity" was clicked, then the first group was active again and the phenotype plot stayed hidden;
+    it happens with the code of `dev` too). In the first session the opening takes about 15 s and hides it. The app side is reported to the owner
+    (the double draw is a choice for HOME, not part of this test); the test waits until the draws are over before it navigates."""
+    page.evaluate(
+        """(quiet) => new Promise((resolve) => {
+            const root = document.querySelector('#dynamic_tabs');
+            let timer;
+            const finish = () => { observer.disconnect(); resolve(); };
+            const observer = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(finish, quiet); });
+            observer.observe(root, {childList: true, subtree: true});
+            timer = setTimeout(finish, quiet);
+        })""",
+        quiet_ms,
+    )
+
+
 def open_phenotype_plot(page: Page, url: str, choose_recipe: bool) -> None:
     page.goto(url)
     if choose_recipe:
@@ -115,6 +140,7 @@ def open_phenotype_plot(page: Page, url: str, choose_recipe: bool) -> None:
         _wait_shiny(page, 30_000)
     page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=90_000)
     _wait_shiny(page, 60_000)
+    wait_theater_quiet(page)
     _navigate_to_phenotype_plot(page)
     expect(page.locator(f"#plot_group_{PID}")).to_be_visible(timeout=30_000)
     settle(page, f"plot_group_{PID}")

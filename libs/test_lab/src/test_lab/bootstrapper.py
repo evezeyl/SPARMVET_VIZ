@@ -31,7 +31,7 @@ yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
 class DataAnalysisRecipeBootstrapper:
     """
     Logic for inferring data schemas from TSVs and bootstrapping data analysis recipe YAMLs.
-    Follows the structure of recipe format 1: a table has `label`, `source`, `null_values`, `strip`, `input_fields` and `tier1`
+    Follows the structure of recipe format 1: a table has `ui_label`, `source`, `null_values`, `strip`, `input_fields` and `tier1`
     (D-0250: the tier is its own key, here an `!include` of a file that holds `steps`); no `wrangling`, no `output_fields`.
     A tier 2 is not written: an absent tier 2 means that the table of tier 2 equals the table of tier 1.
     """
@@ -76,7 +76,7 @@ class DataAnalysisRecipeBootstrapper:
             safe_col = self._sanitize_name(col)
             fields[safe_col] = {
                 "type": self._map_dtype(df[col]),
-                "label": col.replace('_', ' ').title(),
+                "ui_label": col.replace('_', ' ').title(),
                 "original_name": col
             }
             if safe_col in ["id", "sample_id", "isolate_id"]:
@@ -107,7 +107,7 @@ class DataAnalysisRecipeBootstrapper:
     def table_block(recipe_id: str, table_id: str, source_path: str, label: str) -> Dict[str, Any]:
         """The table entry of the master recipe: the keys in the order of the specification, the two files included."""
         return {
-            "label": label,
+            "ui_label": label,
             "source": {"type": "local_tsv", "path": source_path},
             # No default for missing values (spec 7.3): the author states what means missing in this file
             "null_values": [],
@@ -175,7 +175,7 @@ class DataAnalysisRecipeBootstrapper:
             "data_engine": DATA_ENGINE,
             "plot_engine": PLOT_ENGINE,
             "info": {
-                "label": data_analysis_recipe_id.replace('_', ' ').title(),
+                "ui_label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
                 "description": f"Auto-bootstrapped pipeline for {data_analysis_recipe_id}"
             },

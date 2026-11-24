@@ -122,6 +122,16 @@ def expected_new(old: dict) -> dict:
     for join in (new.get("joins") or {}).values():
         join.update(tiers(join.pop("steps", None) or {}, ("tier1", "tier2")))
         join.setdefault("tier1", {"steps": []})
+    new["info"]["ui_label"] = new["info"].pop("label")
+    for section in ("data_schemas", "additional_datasets_schemas"):
+        for table in (new.get(section) or {}).values():
+            table["ui_label"] = table.pop("label")
+            fields = table.get("input_fields")
+            for field in (fields.values() if isinstance(fields, dict) else []):
+                if isinstance(field, dict) and "label" in field:
+                    field["ui_label"] = field.pop("label")
+    for join in (new.get("joins") or {}).values():
+        join["ui_label"] = join.pop("label")
     for group in (new.get("analysis_groups") or {}).values():
         group["ui_label"] = group.pop("label")
         for pid, entry in group["plots"].items():
@@ -140,7 +150,6 @@ def expected_new(old: dict) -> dict:
                     labs[-1].setdefault("params", {})["title"] = title
                 else:
                     layers.append({"name": "labs", "params": {"title": title}})
-                plot["ui_title"] = title
             for container, tier in (entry.get("steps") or {}).items():
                 plot[container] = {"steps": tier or []}
             group["plots"][pid] = plot
@@ -420,38 +429,26 @@ def test_a_plot_entry_written_on_one_line_is_refused(tmp_path):
 
 # -- c. names -------------------------------------------------------------------------------------------------------------------------
 
-def test_label_becomes_ui_label_at_groups_and_plot_entries_only(tmp_path):
+def test_label_becomes_ui_label_at_every_place_that_is_named(tmp_path):
     path = write(tmp_path / "r.yaml", OLD)
     run([path])
     new = read(path)
     assert "    ui_label: G\n" in new and "        ui_label: P\n" in new
-    assert "info:\n  label: R\n" in new and "  A:\n    label: A\n" in new and "      v: {type: Float64, label: A value}" in new   # pending: unchanged
+    assert "info:\n  ui_label: R\n" in new and "  A:\n    ui_label: A\n" in new and "      v: {type: Float64, ui_label: A value}" in new
+    assert "label: " not in new.replace("ui_label: ", "")
 
 
-def test_the_pending_places_follow_the_label_keys_table_so_her_answer_is_a_one_line_change(tmp_path):
+def test_the_fields_of_an_included_file_and_a_join_are_renamed_too(tmp_path):
     write(tmp_path / "r" / "fields.yaml", "id: {type: String, is_entity_id: true}\nv: {type: Float64, label: A value}\n")
     text = JOIN_OLD.replace("""    input_fields:
       id: {type: String, is_entity_id: true}
       v: {type: Float64, label: A value}
 """, "    input_fields: !include r/fields.yaml\n")
     path = write(tmp_path / "r.yaml", text)
-    run([path], label_keys={"info": "ui_label", "schema": "ui_label", "join": "ui_label", "field": "ui_label"})
+    run([path])
     new = read(path)
     assert "info:\n  ui_label: R\n" in new and "  A:\n    ui_label: A\n" in new and "  J:\n    ui_label: J\n" in new
     assert read(tmp_path / "r" / "fields.yaml") == "id: {type: String, is_entity_id: true}\nv: {type: Float64, ui_label: A value}\n"
-
-
-def test_only_the_places_the_table_names_are_renamed(tmp_path):
-    path = write(tmp_path / "r.yaml", OLD)
-    run([path], label_keys={"info": "ui_label", "schema": "label", "join": "label", "field": "label"})
-    new = read(path)
-    assert "info:\n  ui_label: R\n" in new and "  A:\n    label: A\n" in new
-
-
-def test_inline_fields_are_renamed_when_the_table_says_so(tmp_path):
-    path = write(tmp_path / "r.yaml", OLD)
-    run([path], label_keys={"info": "label", "schema": "label", "join": "label", "field": "ui_label"})
-    assert "      v: {type: Float64, ui_label: A value}" in read(path)
 
 
 # -- d. the old title -----------------------------------------------------------------------------------------------------------------
@@ -459,11 +456,11 @@ def test_inline_fields_are_renamed_when_the_table_says_so(tmp_path):
 TITLE_OLD = OLD.replace("          target_dataset: A\n", "          target_dataset: A\n          title: Reads per sample\n")
 
 
-def test_a_title_without_a_labs_layer_adds_one_and_writes_ui_title(tmp_path):
+def test_a_title_without_a_labs_layer_adds_one_and_writes_no_ui_title(tmp_path):
     path = write(tmp_path / "r.yaml", TITLE_OLD)
     result = run([path])
     new = read(path)
-    assert "        ui_title: Reads per sample\n" in new and "title: Reads per sample\n    " not in new.replace("ui_title: Reads per sample\n", "")
+    assert "ui_title" not in new                                 # the key is removed (D-0409)
     assert "        - name: labs\n          params:\n            title: Reads per sample\n" in new
     assert load(path) == expected_new(yaml.safe_load(TITLE_OLD))
     assert errors(path) == []
@@ -504,7 +501,8 @@ def test_a_quoted_title_keeps_its_quotes_and_a_title_with_a_colon_is_safe(tmp_pa
     text = TITLE_OLD.replace("title: Reads per sample", 'title: "QA: reads, per sample"')
     path = write(tmp_path / "r.yaml", text)
     run([path])
-    assert load(path)["analysis_groups"]["g"]["plots"]["p"]["ui_title"] == "QA: reads, per sample"
+    labs = [l for l in load(path)["analysis_groups"]["g"]["plots"]["p"]["layers"] if l.get("name") == "labs"]
+    assert labs[-1]["params"]["title"] == "QA: reads, per sample"
     assert errors(path) == []
 
 
@@ -514,7 +512,7 @@ def test_a_title_in_a_plot_file_is_moved_in_the_file(tmp_path):
     path = write(tmp_path / "r.yaml", text)
     run([path])
     content = read(tmp_path / "r" / "p.yaml")
-    assert content.startswith("ui_label: P\nui_title: Reads per sample\ndescription: d\n")
+    assert content.startswith("ui_label: P\ndescription: d\n")
     assert "title: Reads per sample\ntarget" not in content and "name: labs" in content
     assert errors(path) == []
 

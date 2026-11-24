@@ -38,7 +38,11 @@ Modes:
   (default)   DRY RUN: writes nothing except the report file you name with --report.
   --report F  also write the list as markdown to the NEW file F: F must not exist, and inside the project folder it must be under tmpAI/.
   --apply     writes the planned changes, but ONLY on a copy: --root must be given and must not be the repository itself, a folder
-              that contains it or a git working tree. On the repository it refuses (exit 3): the pass waits for the owner's answers.
+              that contains it or a git working tree. On the repository it refuses (exit 3).
+  --in-worktree  with --apply: write in the LINKED git worktree this script lives in (the build branch of the names pass), the one
+              case where the target is a git working tree. Refused unless: the `.git` of the folder is a FILE (a linked worktree, never
+              the main checkout), its branch is not `dev` or `main`, and it has no uncommitted change (so that the whole pass is one
+              reviewable commit and `git diff` shows only the planned keys). Every other check of --apply still holds.
               Every target is checked BEFORE the first write (inside the root, a plain file, no hard link: all or nothing), and each
               file is written through a temporary file and `os.replace`, so a file that shares its inode with another one is never truncated.
 
@@ -49,6 +53,7 @@ Examples:
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_display_names.py
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_display_names.py --report tmpAI/names_dry_run.md
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_display_names.py --root tmpAI/names_copy --apply
+  PYTHONPATH=. .venv/bin/python assets/scripts/migrate_display_names.py --apply --in-worktree
 """
 
 # @deps
@@ -62,6 +67,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from collections import Counter
@@ -1020,6 +1026,32 @@ def apply_refusal(root: Path, given: bool) -> Optional[str]:
     return None
 
 
+def _git(root: Path, *args: str) -> Optional[str]:
+    try:
+        done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def worktree_refusal(root: Path, given: bool) -> Optional[str]:
+    """Why --apply --in-worktree must not write on `root`, or None. The target is this script's own linked worktree, never the main checkout."""
+    base = "REFUSED: --in-worktree"
+    if given:
+        return f"{base} writes in the worktree this script lives in: do not give --root."
+    if not (root / ".git").is_file():
+        return f"{base} needs a LINKED git worktree (its .git is a file); {root} is the main checkout or not a git working tree."
+    branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
+    if branch is None:
+        return f"{base}: the branch of {root} cannot be read."
+    if branch in ("dev", "main", "HEAD"):
+        return f"{base}: the worktree is on the branch '{branch}'. Use a build branch."
+    changes = _git(root, "status", "--porcelain", "--untracked-files=no")
+    if changes is None or changes:
+        return f"{base}: the worktree has uncommitted changes (or its state cannot be read). Commit or discard them first."
+    return None
+
+
 def report_refusal(target: Path, root: Path) -> Optional[str]:
     """A dry run writes nothing except the report file: it must be a NEW file, and inside the project folder only under tmpAI/."""
     if target.exists() or target.is_symlink():
@@ -1069,10 +1101,14 @@ def main(argv=None) -> int:
     parser.add_argument("--root", default=None, help="the folder to read (default: the project root); the folder that holds config/ and assets/gallery_data/")
     parser.add_argument("--report", default=None, help="also write the list as markdown to this NEW file (it must not exist; inside the project folder only under tmpAI/)")
     parser.add_argument("--apply", action="store_true", help="write the changes; only on a copy (--root given, not the repository, not a git working tree)")
+    parser.add_argument("--in-worktree", action="store_true", help="with --apply: write in the linked git worktree of this script (a build branch, no uncommitted change)")
     args = parser.parse_args(argv)
     root = Path(os.path.abspath(args.root)) if args.root else PROJECT_ROOT
+    if args.in_worktree and not args.apply:
+        print("REFUSED: --in-worktree is only meaningful with --apply.", file=sys.stderr)
+        return 3
     if args.apply:
-        refusal = apply_refusal(root, args.root is not None)
+        refusal = worktree_refusal(root, args.root is not None) if args.in_worktree else apply_refusal(root, args.root is not None)
         if refusal:
             print(refusal, file=sys.stderr)
             return 3

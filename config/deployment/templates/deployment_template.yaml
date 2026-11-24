@@ -1,3 +1,8 @@
+# My Pipeline — Institution Name
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default app features: pipeline-static
+# Default recipe: pipeline_name
+# Contact: team@example.org
 # SPARMVET Deployment Template
 #
 # Authority: ADR-048 — Multi-System Deployment Architecture
@@ -19,8 +24,7 @@
 #   "galaxy"      → Galaxy GxIT (filesystem with Galaxy-specific env vars)
 deployment_type: filesystem
 
-# Human-readable label shown in app footer (optional).
-deployment_name: "My Pipeline — Institution Name"
+# A deployment has no name key (D-0479): write what it is as a comment at the top of the file.
 
 # ─── Default startup state (both optional) ────────────────────────────────────
 # default_data_analysis_recipe: the data analysis recipe that opens at startup, by file name
@@ -43,7 +47,10 @@ default_app_features: pipeline-static
 #   unreadable. Strongly recommended for any deployment that hides the recipe selector
 #   (pipeline-static, pipeline-exploration-simple) — in that case a broken default recipe
 #   is the ONLY thing a user sees, and this is their only way to know who to ask.
-# branding.banner: optional {logo_url, title, subtitle} shown in the Deployment info panel.
+# branding.banner: optional {logo_url, ui_label, description}: the logo, the name and a line of text shown at the top of the app
+#   and in the Deployment info panel.
+# branding.show_recipe_name: optional, true or false (true when absent). false hides the banner of the open recipe in HOME
+#   (the recipe's info.ui_label).
 # branding.theme_css: optional path to a CSS file loaded after the default stylesheet.
 branding:
   contact: "team@example.org"   # email, issue tracker URL, or any short contact string

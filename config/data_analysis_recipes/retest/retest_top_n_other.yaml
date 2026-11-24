@@ -7,21 +7,21 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: RETEST top_n_other
+  ui_label: RETEST top_n_other
   description: Keep the N most frequent variants, label the rest Other.
   version: '1.0'
 
 data_schemas:
   Variants:
-    label: "Variants"
+    ui_label: "Variants"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/variants.tsv
     null_values: []
     strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_id: true}
-      variant: {original_name: variant, type: String, label: Variant}
+      sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
+      variant: {original_name: variant, type: String, ui_label: Variant}
     tier1:
       steps:
         - action: step_top_n_other
@@ -35,7 +35,7 @@ data_schemas:
 
 joins:
   Variants_joined:
-    label: "Variants joined"
+    ui_label: "Variants joined"
     ingredients:
       - dataset_id: Variants
     tier1:

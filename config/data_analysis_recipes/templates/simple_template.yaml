@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Simple Demo
+  ui_label: Simple Demo
   description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,
     1 plot.'
   version: '1.0'
 data_schemas:
   primary_data:
-    label: "primary data"
+    ui_label: "primary data"
     source:
       type: local_tsv
       path: ./assets/test_data/simple_data.tsv
@@ -25,16 +25,16 @@ data_schemas:
       value:
         original_name: Measurement
         type: Float64
-        label: Measurement Value
+        ui_label: Measurement Value
       group:
         original_name: Group
         type: String
-        label: Sample Group
+        ui_label: Sample Group
     tier1:
       steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 metadata_schema:
-  label: "metadata"
+  ui_label: "metadata"
   source:
     type: local_tsv
     path: ./assets/test_data/simple_metadata.tsv
@@ -50,12 +50,12 @@ metadata_schema:
     category:
       original_name: Category
       type: String
-      label: Biological Category
+      ui_label: Biological Category
   tier1:
     steps: []
 joins:
   main_collection:
-    label: "main collection"
+    ui_label: "main collection"
     description: Joins primary data with metadata.
     ingredients:
     - dataset_id: primary_data
@@ -77,7 +77,6 @@ analysis_groups:
     plots:
       value_by_group:
         ui_label: "Value By Group"
-        ui_title: Measurement Values by Group
         description: "Distribution of measurement values per group."
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Beginner"}
         target_dataset: main_collection

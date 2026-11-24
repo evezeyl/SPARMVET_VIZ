@@ -35,7 +35,7 @@ PIPELINES = ROOT / "config" / "data_analysis_recipes" / "pipelines"
 
 # -- the pure reading of a plot entry
 
-ENTRY = {"ui_label": "P", "ui_title": "T", "target_dataset": "samples", "plot_engine": "python-plotnine",
+ENTRY = {"ui_label": "P", "target_dataset": "samples", "plot_engine": "python-plotnine",
          "mapping": {"x": "year", "fill": "country"},
          "layers": [{"name": "geom_bar", "params": {}}, {"name": "labs", "params": {"title": "T"}}]}
 
@@ -58,7 +58,7 @@ def test_an_entry_without_a_mapping_or_layers_gives_no_nodes_not_an_error():
 
 def test_the_keys_of_the_app_are_not_nodes():
     _, nodes = plot_view(ENTRY)
-    assert not [n for n in nodes if n["component"] in ("ui_label", "ui_title", "plot_engine")]
+    assert not [n for n in nodes if n["component"] in ("ui_label", "plot_engine")]
 
 
 def test_the_old_spec_key_is_not_read_as_the_content():

@@ -1,13 +1,13 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 serotype:
   original_name: "serotypefinder_serotype"
   type: String
-  label: "Serotype (Finder)"
+  ui_label: "Serotype (Finder)"
 virulence_raw:
   original_name: "virulence_finder_virulencegenes_proteinname"
   type: String
-  label: "Raw Virulence Hit"
+  ui_label: "Raw Virulence Hit"

@@ -95,7 +95,7 @@ def plot_defaults_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
 def plot_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
     """`(entry keys, content keys)` of a plot entry, read from the specification (`elements.plot`).
 
-    The entry keys (`ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, `plot_engine`, `tier3`) belong to the app;
+    The entry keys (`ui_label`, `description`, `comment`, `taxonomy`, `plot_engine`, `tier3`) belong to the app;
     the content keys (`target_dataset`, `mapping`, `layers`, `theme`, ...) are what the plot library draws from. The plot
     library reads the two lists from here, so the checker and the library cannot disagree on what an entry may hold.
     """
@@ -179,7 +179,7 @@ class _Check:
     def unknown_keys(self, element: str, mapping: dict, path: str, code: str, shape_codes: Optional[dict] = None,
                      skip: Iterable[str] = ()) -> None:
         wanted = self.spec["elements"][element]
-        known = set(wanted["required"]) | set(wanted["optional"]) | self.label_keys_of(element)
+        known = set(wanted["required"]) | set(wanted["optional"])
         renamed = self.spec["renamed"].get(element, {})
         old_shapes = self.spec["old_shapes"].get(element, {})
         for key in mapping:
@@ -199,14 +199,6 @@ class _Check:
         for key in self.spec["elements"][element]["required"]:
             if key not in mapping:
                 self.add(code, path, f"{key} is required", f"add {key}")
-
-    def label_keys_of(self, element: str) -> Set[str]:
-        """The key that names this element in the table `label_keys` of the specification (pending: Eve decides which become ui_label)."""
-        found = self.spec["label_keys"].get(element)
-        return {found} if found else set()
-
-    def label_key(self, element: str) -> str:
-        return self.spec["label_keys"][element]
 
     # -- the whole recipe
     def run(self) -> Result:
@@ -310,12 +302,16 @@ class _Check:
         if info is None:
             return
         if not isinstance(info, dict):
-            self.add("I01", "info", "info is not a mapping", "write info: {label: ...}")
+            self.add("I01", "info", "info is not a mapping", "write info: {ui_label: ...}")
             return
-        if "display_name" in info:
-            self.add("I03", "info.display_name", "display_name was renamed", self.spec["renamed"]["info"]["display_name"])
-        if not info.get(self.label_key("info")):
-            self.add("I01", "info", f"info.{self.label_key('info')} is required", f"add {self.label_key('info')}")
+        for old, fix in self.spec["renamed"]["info"].items():
+            if old in info:
+                self.add("I03", f"info.{old}", f"{old} is not the name of a recipe any more", f"write {fix}")
+        # PROVISIONAL (D-0470: the recipe name is optional, with an advice; the words are an agent's, not decided): the file name is shown
+        # where a name is needed, so a missing ui_label is an advice and never an error.
+        if not info.get("ui_label") and not any(old in info for old in self.spec["renamed"]["info"]):
+            self.add("I01", "info.ui_label", "info.ui_label is missing, so the file name is shown where the name of the recipe is needed",
+                     "Suggestion: write a short ui_label (the HOME banner and the lists show it); a longer text goes in description.", "A")
         if "comment" in info and not isinstance(info["comment"], str):
             self.add("CM01", "info.comment", "a comment is text", "write text")
         for key in ("description", "contact"):
@@ -345,7 +341,7 @@ class _Check:
         elif population in schemas and isinstance(schemas[population], dict):
             fields_ = schemas[population].get("input_fields")
             if isinstance(fields_, dict) and not any(isinstance(f, dict) and f.get("is_entity_id") for f in fields_.values()):
-                self.add("E02", "entity.population", f"{population!r} has no field with is_entity_id: true", "mark the key column")
+                self.add("E02", "entity.population", f"{population!r} has no field with is_entity_id: true", "write is_entity_id: true on the column that identifies the entity")
 
     # -- schemas and fields
     def all_schemas(self, raw: dict) -> Dict[str, Any]:
@@ -385,11 +381,11 @@ class _Check:
 
     def schema(self, schema: Any, path: str, tier2_unapplied: bool) -> None:
         if not isinstance(schema, dict):
-            self.add("S01", path, "a schema is a mapping", "write label, source, null_values, strip, input_fields, wrangling")
+            self.add("S01", path, "a schema is a mapping", "write ui_label, source, null_values, strip, input_fields, tier1")
             return
         self.unknown_keys("schema", schema, path, "S01", {"wrangling": "S06"})
-        if self.label_key("schema") not in schema:
-            self.add("S03", path, f"the schema has no {self.label_key('schema')}", f"add {self.label_key('schema')}")
+        if "ui_label" not in schema and "label" not in schema:   # an old `label` is told as renamed (above), not also as missing
+            self.add("S03", path, "the schema has no ui_label", "add ui_label")
         if not schema.get("description"):
             self.add("S04", f"{path}.description", "The schema has no description, so the grain (what one row is) is not stated.", "Suggestion: write the grain: what one row is (spec section 13).", "A")
         self.cut_description(f"{path}.description", schema.get("description"))
@@ -477,7 +473,7 @@ class _Check:
             self.add("FD01", path, "a field is a mapping", "write {type: String}")
             return
         wanted = self.spec["elements"]["field"]
-        known = set(wanted["required"]) | set(wanted["optional"]) | self.label_keys_of("field")
+        known = set(wanted["required"]) | set(wanted["optional"])
         renamed = self.spec["renamed"]["field"]
         for key in definition:
             if key in known:
@@ -829,11 +825,11 @@ class _Check:
             if jid in self.schema_ids:
                 self.add("X1", path, f"the id {jid!r} is also a schema", "a plot's target must name one thing: rename one")
             if not isinstance(join, dict):
-                self.add("J01", path, "a join is a mapping", f"write {self.label_key('join')}, ingredients, tier1")
+                self.add("J01", path, "a join is a mapping", "write ui_label, ingredients, tier1")
                 continue
             self.unknown_keys("join", join, path, "J01", {"steps": "J07"})
-            if self.label_key("join") not in join:
-                self.add("J02", path, f"the join has no {self.label_key('join')}", f"add {self.label_key('join')}")
+            if "ui_label" not in join and "label" not in join:   # an old `label` is told as renamed (above), not also as missing
+                self.add("J02", path, "the join has no ui_label", "add ui_label")
             if not join.get("description"):
                 self.add("J03", f"{path}.description", "The join has no description, so its grain and its join type are not stated.", "Suggestion: write the grain and the join type (spec section 13).", "A")
             self.cut_description(f"{path}.description", join.get("description"))
@@ -1091,14 +1087,14 @@ class _Check:
         if groups is None:
             return
         if not isinstance(groups, dict):
-            self.add("G01", "analysis_groups", "analysis_groups is a mapping of id to group", "write group id: {label, plots}")
+            self.add("G01", "analysis_groups", "analysis_groups is a mapping of id to group", "write group id: {ui_label, plots}")
             return
         plots_found = 0
         first_group: Dict[str, Any] = {}  # plot id -> the first group that wrote it (P07)
         for gid, group in groups.items():
             path = f"analysis_groups.{gid}"
             if not isinstance(group, dict):
-                self.add("G01", path, "a group is a mapping", "write label and plots")
+                self.add("G01", path, "a group is a mapping", "write ui_label and plots")
                 continue
             self.unknown_keys("group", group, path, "G01")
             if "ui_label" not in group and "label" not in group:  # an old `label` is told as renamed (above), not also as missing

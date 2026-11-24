@@ -236,7 +236,7 @@ def test_the_script_writes_a_recipe_that_passes_the_checker_loads_and_reads_its_
     assert list(raw)[:5] == ["id", "spec_version", "data_engine", "plot_engine", "info"]
     assert list(raw["analysis_groups"]["main"]) == ["ui_label", "plots"] and raw["analysis_groups"]["main"]["ui_label"] == "First look"
     assert raw["data_schemas"]["samples"]["tier1"] == {"steps": []} and "wrangling" not in raw["data_schemas"]["samples"]
-    assert raw["id"] == "scaffold" and raw["info"]["label"]
+    assert raw["id"] == "scaffold" and raw["info"]["ui_label"]
     samples = raw["data_schemas"]["samples"]
     assert samples["source"] == {"type": "local_tsv", "path": "data/samples.tsv"}
     assert samples["null_values"] == [] and samples["strip"] is False
@@ -289,7 +289,7 @@ def test_a_column_header_that_is_not_a_plain_name_keeps_its_original_name(projec
     path = project / "recipes" / "scaffold.yaml"
     assert judged(path, catalogs) == []
     fields = load_recipe(path)[0]["data_schemas"]["odd"]["input_fields"]
-    assert fields["sample_id"] == {"type": "String", "original_name": "Sample ID", "label": "Sample Id", "is_entity_id": True}
+    assert fields["sample_id"] == {"type": "String", "original_name": "Sample ID", "ui_label": "Sample Id", "is_entity_id": True}
     assert fields["read_count_n"]["original_name"] == "Read-Count (n)"
     assert validate_data_analysis_recipe_data(path, project / "data") == []
 

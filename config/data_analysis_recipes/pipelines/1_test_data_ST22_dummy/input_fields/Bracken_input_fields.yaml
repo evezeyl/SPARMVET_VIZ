@@ -1,13 +1,13 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 taxon_1:
   original_name: "taxon_1"
   type: String
-  label: "Primary Taxon"
+  ui_label: "Primary Taxon"
 proportion_1:
   original_name: "proportion_1"
   type: Float64
-  label: "Primary Proportion"
+  ui_label: "Primary Proportion"

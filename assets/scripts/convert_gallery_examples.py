@@ -6,7 +6,7 @@ values, `data_path`, one plot under a root-level `plots`, and `wrangling`. This 
 recipe, the same format as every other recipe:
 
   - `id` is the folder name; `spec_version`, `data_engine` and `plot_engine` are written;
-  - `info.label` is the old name; `info.description` is the "Suitability" paragraph of `example_meta.md`;
+  - `info.ui_label` is the old name; `info.description` is the "Suitability" paragraph of `example_meta.md`;
   - one data schema `example` reads the example's own `example_data.tsv`, with `null_values`, `strip` and a typed
     data contract (`input_fields`) GENERATED from the file and printed here so that a person reviews it;
   - one group, one plot; the five taxonomy values go to `taxonomy` on the plot entry. `geom` is not written any more:

@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: No-Joins Regression Test
+  ui_label: No-Joins Regression Test
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   subtitle: A single data schema with no joins at all — issue #24 regression
   category: Regression Test
@@ -17,7 +17,7 @@ info:
 # TSV, same input_fields/wrangling fragments — just with no joins: block anywhere.
 data_schemas:
   MLST:
-    label: "MLST"
+    ui_label: "MLST"
     description: "Multilocus Typing (Strain Classification)"
     source:
       type: local_tsv

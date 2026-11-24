@@ -40,7 +40,7 @@ class ViewWorld(Tier3World):
     def write_view_recipe(self, extra_source: str = ""):
         from app.modules.cache_keys import clear_data_analysis_recipe_cache
         (self.data_analysis_recipes_dir / "tiny.yaml").write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -49,17 +49,17 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: String, label: Group}}
-      score: {{original_name: score, type: Int64, label: Score}}
+      sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: String, ui_label: Group}}
+      score: {{original_name: score, type: Int64, ui_label: Score}}
     tier1: {{steps: [{json.dumps({"action": "modif_filter", "column": "score", "op": "le", "value": 4, "na": "remove"})}]}}
   M:
     source: {{type: local_tsv, path: {self.data_dir / "M.tsv"}}}
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
-      site: {{original_name: site, type: String, label: Site}}
+      sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
+      site: {{original_name: site, type: String, ui_label: Site}}
     tier1: {{steps: []}}
 joins:
   J:

@@ -35,8 +35,8 @@ The deployment is a YAML file that fully describes one deployment instance. It r
 
 ```yaml
 # /etc/sparmvet/deployment.yaml  ← placed here for a server deployment
+# AMR Surveillance - Institute Server (a comment: a deployment has no name key)
 deployment_type: filesystem
-deployment_name: "AMR Surveillance — Institute Server"
 
 default_data_analysis_recipe: amr          # file name without .yaml in the data analysis recipes location
 default_app_features: pipeline-static
@@ -59,8 +59,8 @@ All paths under `locations` are **relative to `project_root`**. The app never us
 ## 1.2 IRIDA example
 
 ```yaml
+# AMR Pipeline - IRIDA (a comment: a deployment has no name key)
 deployment_type: irida
-deployment_name: "AMR Pipeline — IRIDA"
 
 default_data_analysis_recipe: amr          # file name without .yaml in the data analysis recipes location
 default_app_features: pipeline-static
@@ -89,7 +89,11 @@ For IRIDA, the app downloads files from the IRIDA REST API into `local_cache` be
 |---|---|---|
 | `default_data_analysis_recipe` | None | The data analysis recipe selector is shown if the app features show it; if they hide it, the app stops with a message (a static page must name its data analysis recipe) |
 | `default_app_features` | From app features file selection | App features selector shown in UI |
-| `deployment_name` | — | Not shown; purely informational |
+| `branding.banner` | no banner | `{logo_url, ui_label, description}`: the logo, the name and a line of text shown at the top of the app and in the Deployment panel |
+| `branding.show_recipe_name` | `true` | `false` hides the banner of the open recipe in HOME (its `info.ui_label`) |
+| `branding.contact`, `branding.theme_css` | none, the default stylesheet | the contact shown when a recipe is refused; a stylesheet layered over the default one |
+
+There is no `deployment_name` key: a deployment has no name of its own (the banner's `ui_label` is what the user sees). The old key is refused at start with a message that says so. Describe the file in a comment at the top of it.
 | `irida` block | — | Required only when `deployment_type: irida` |
 
 ---

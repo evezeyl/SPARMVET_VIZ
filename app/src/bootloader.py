@@ -112,6 +112,17 @@ class Bootloader:
             self._deployment_cache[_cache_key] = self._load_deployment_config()
         self.deployment_config = self._deployment_cache[_cache_key]
         exit_if_errors(renamed_deployment_key_errors(self.deployment_config, str(self.deployment_path)))
+        _switch = (self.deployment_config.get("branding") or {}).get("show_recipe_name", True)
+        if not isinstance(_switch, bool):
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"branding.show_recipe_name must be true or false, not {_switch!r}.",
+                location=f"branding.show_recipe_name in {self.deployment_path}",
+                fix="Write show_recipe_name: true (the recipe's name is shown in the HOME banner) or show_recipe_name: false (no recipe banner), "
+                    "or delete the key (it is read as true).",
+                who="operator",
+                reference="D-0474",
+            )])
 
         # ADR-048 deployment fields (all optional in local dev deployment)
         project_root_str = self.deployment_config.get("project_root")
@@ -119,7 +130,6 @@ class Bootloader:
         self.default_data_analysis_recipe: str | None = self.deployment_config.get("default_data_analysis_recipe")
         self.default_app_features: str | None = self.deployment_config.get("default_app_features")
         self.data_lookup: str = self.deployment_config.get("data_lookup", "data_analysis_recipe_paths")
-        self.deployment_name: str = self.deployment_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
         self.deployment_type: str = self.deployment_config.get("deployment_type", "filesystem")
 
         # Connector lifecycle (ADR-048 §5, Option B):
@@ -395,17 +405,18 @@ class Bootloader:
         self.automation = self.config.get("automation", {})
 
     @property
-    def app_features_display_name(self) -> str:
-        """Human-readable app features name from the template's display_name field.
+    def app_features_id(self) -> str:
+        """The id of the app features file: its file name without the ending (the launch value may be a path)."""
+        return self.app_features_path.stem
 
-        Falls back to name, then to the raw app features value (path or shortname).
-        Used for UI display only — never for behavioral gating.
+    @property
+    def app_features_label_with_id(self) -> str:
+        """What the export writes for the app features file: the ui_label with the file name beside it, for example "Web Demo (web-demo)" (D-0497).
+
+        Without a ui_label it is the file name alone.
         """
-        return (
-            self.config.get("display_name")
-            or self.config.get("name")
-            or self.app_features
-        )
+        label = self.config.get("ui_label")
+        return f"{label} ({self.app_features_id})" if label else self.app_features_id
 
     def _discover_data_analysis_recipes(self) -> Dict[str, str]:
         """Scans the project directory for YAML data analysis recipes.
@@ -875,8 +886,12 @@ class Bootloader:
         return Path(css_rel)
 
     def get_ui_banner(self) -> dict | None:
-        """Returns the banner dict {logo_url, title, subtitle} of the deployment's branding, or None."""
+        """Returns the banner dict {logo_url, ui_label, description} of the deployment's branding, or None."""
         return (self.deployment_config.get("branding") or {}).get("banner") or None
+
+    def show_recipe_name(self) -> bool:
+        """The switch of the recipe banner in HOME: `branding.show_recipe_name` of the deployment file, read as true when absent (D-0474)."""
+        return (self.deployment_config.get("branding") or {}).get("show_recipe_name", True) is not False
 
     def get_data_analysis_recipe_selector(self) -> dict:
         """Returns the data_analysis_recipe_selector block: {visible: bool}."""

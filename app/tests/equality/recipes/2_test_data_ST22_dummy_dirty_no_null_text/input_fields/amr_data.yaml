@@ -1,24 +1,24 @@
 sample_id:
   type: String
   original_name: sample_id
-  label: Sample ID
+  ui_label: Sample ID
 gene:
   type: String
   original_name: Gene
-  label: Gene name
+  ui_label: Gene name
 predicted_phenotype:
   type: String
   original_name: Predicted Phenotype
-  label: Predicted Phenotype
+  ui_label: Predicted Phenotype
 identity:
   type: Float64
   original_name: '%Identity'
-  label: Sequence Identity
+  ui_label: Sequence Identity
 overlap:
   type: Float64
   original_name: '%Overlap'
-  label: Sequence Overlap
+  ui_label: Sequence Overlap
 accession:
   type: String
   original_name: Accession
-  label: NCBI Accession
+  ui_label: NCBI Accession

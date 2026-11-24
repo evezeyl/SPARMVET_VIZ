@@ -1,5 +1,4 @@
 ui_label: "QA Fanout Rows Per Sample"
-ui_title: "QA EXHIBIT: rows per sample after joining two long tables"
 description: "EXHIBIT of a known defect (issue 68) - rows are inflated on purpose. Exhibit of a known defect. Each sample has as many rows as its AMR gene hits times its virulence gene rows (a sample with no AMR gene hit counts as one hit), so a sample with more hits weighs more. The defect is shown on purpose."
 taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
 target_dataset: QA_fanout_exhibit

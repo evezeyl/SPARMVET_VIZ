@@ -52,10 +52,10 @@ strip: false
 input_fields:
   sample_id:
     type: String
-    label: sample_id
+    ui_label: sample_id
   value:
     type: Float64
-    label: value
+    ui_label: value
 tier1:
   steps:
   - action: polars_new_action

@@ -122,7 +122,7 @@ Every plot entry in the dashboard follows this exact skeleton (ADR-083 grammar-o
 canonical reference: `.claude/rules/rules_data_analysis_recipe_structure.md §8`). The content of the plot is
 written in the entry itself (there is no `spec:` key). Aesthetics live under `mapping:`; visual layers live in
 an ordered `layers:` list, each a `{name, params}` pair. The text of the figure (its title too) is written only in
-a `labs` layer; `ui_label` is the short name of the plot's tab and `ui_title` (optional) the longer name used by the report:
+a `labs` layer; `ui_label` is the name of the plot (the tab in HOME and the heading of the export report):
 
 ```yaml
 ui_label: Resistance by year

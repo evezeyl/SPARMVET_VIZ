@@ -2,7 +2,7 @@
 # engine: python-polars (a script that reads one data file with Polars to write a recipe)
 """Simpler variant of create_data_analysis_recipe.py: infer `input_fields` of ONE tab-separated or comma-separated file.
 
-Writes recipe format 1 (D-0250: a table has `label`, `source`, `null_values`, `strip`, `input_fields` and `tier1: {steps: []}`):
+Writes recipe format 1 (D-0250: a table has `ui_label`, `source`, `null_values`, `strip`, `input_fields` and `tier1: {steps: []}`):
   --mode full        a recipe `<output>` (its id is the file name without `.yaml`) with one table named like the file, and no plot yet
                      (a draft: it passes the recipe checker in profile `build`; write the steps and the plots, then it is complete);
   --mode input_only  only the `input_fields` mapping, as an included fields file holds it (no wrapper key).
@@ -36,7 +36,7 @@ def input_fields_of(schema) -> Dict[str, dict]:
         col_name: {
             "original_name": col_name,
             "type": dtype.base_type().__name__,
-            "label": col_name.replace('_', ' ').title(),
+            "ui_label": col_name.replace('_', ' ').title(),
         }
         for col_name, dtype in schema.items()
     }

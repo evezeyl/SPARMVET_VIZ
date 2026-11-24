@@ -26,9 +26,9 @@ RECIPE = """id: r
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
-info: {label: R}
+info: {ui_label: R}
 metadata_schema:
-  label: meta
+  ui_label: meta
   source: {type: local_tsv, path: data/meta.tsv}
   null_values: ["-"]
   input_fields:
@@ -37,7 +37,7 @@ metadata_schema:
   tier1: {steps: []}
 data_schemas:
   genes:
-    label: genes
+    ui_label: genes
     source: {type: local_tsv, path: data/genes.tsv}
     input_fields:
       sample_id: {type: String}
@@ -48,31 +48,31 @@ data_schemas:
           by: [sample_id]
           named_aggs: {n: "pl.len()"}
   ref:
-    label: ref
+    ui_label: ref
     source: {type: local_tsv, path: data/ref.tsv}
     input_fields:
       gene: {type: String}
     tier1: {steps: []}
 additional_datasets_schemas:
   extra:
-    label: extra
+    ui_label: extra
     input_fields:
       sample_id: {type: String, is_entity_id: true}
     tier1: {steps: []}
 joins:
   J:
-    label: J
+    ui_label: J
     ingredients:
       - dataset_id: metadata_schema
       - dataset_id: genes
     tier1: !include r/J.yaml
   Alone:
-    label: Alone
+    ui_label: Alone
     ingredients:
       - dataset_id: metadata_schema
     tier1: {steps: []}
   Fine:
-    label: Fine
+    ui_label: Fine
     ingredients:
       - dataset_id: genes
       - dataset_id: metadata_schema
@@ -98,7 +98,7 @@ GALLERY = """id: g1
 spec_version: 1
 data_schemas:
   example:
-    label: e
+    ui_label: e
     source: {type: local_tsv, path: x.tsv}
     input_fields:
       id: {type: String}

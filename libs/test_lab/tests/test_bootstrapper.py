@@ -202,7 +202,7 @@ class TestWhatTheBootstrapperWritesPassesTheChecker:
         from utils.recipe_loader import load_recipe
         raw, _ = load_recipe(master)
         for table in (raw["data_schemas"]["samples"], raw["metadata_schema"]):
-            assert table["label"] and "tier1" in table
+            assert table["ui_label"] and "tier1" in table
             assert not {"wrangling", "output_fields", "tier2"} & set(table)
 
     def test_the_tier_file_keeps_the_candidate_key_hint_as_a_comment(self, tmp_path, minimal_tsv):

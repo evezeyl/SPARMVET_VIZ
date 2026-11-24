@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: 2D Bin Density
+  ui_label: 2D Bin Density
   description: >-
     Visualises the joint distribution of two numeric variables using rectangular bins coloured by count. Handles
     overplotting better than raw scatter for large datasets. Reveals clustering, diagonal correlation patterns,
@@ -11,7 +11,7 @@ info:
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 60 rows and 2 columns (log_mic_drug_a, log_mic_drug_b).
     source: {type: local_tsv, path: ./assets/gallery_data/density_2d_bin/example_data.tsv}

@@ -984,16 +984,13 @@ def test_the_name_rule_and_the_display_name_rule_give_the_same_result_in_any_ord
     assert digest(root) == before
 
 
-def test_the_code_places_of_the_name_key_are_listed_from_the_real_tree_and_not_changed():
+def test_no_code_place_of_the_removed_name_key_is_left_in_the_real_tree():
+    """The names pass is built (2026-11-23): the reads of the app features key `name` (the validator rule, the display fallback, the
+    sidebar validator label) are gone; the dry run lists none of them. The refusal table `renamed_keys.py` names `persona_id` and `name`
+    as removed keys on purpose, and is not a read."""
     plan = tool.build_plan(ROOT)
-    places = {(c.file, c.kind) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
-    expected = {rel for rel, _p, _k in tool.APP_FEATURES_NAME_PLACES}
-    assert {f for f, _ in places} == expected          # every named file still has a line that matches (a moved line is found by text)
-    lines = {(c.file, c.text) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
-    assert any(f == "app/src/bootloader.py" and 'config.get("name")' in t for f, t in lines)
-    assert any(f == "app/modules/renamed_keys.py" and "persona_id" in t for f, t in lines)
-    assert any(f == "app/modules/app_features_validator.py" and "Rule 2" in t for f, t in lines)
-    assert any(f == "app/modules/sidebar_validator.py" for f, _ in lines)
+    reads = [c for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY and c.kind == "code"]
+    assert reads == [], [(c.file, c.line, c.text) for c in reads]
 
 
 def test_the_dry_run_prints_the_code_places_of_the_name_key(tmp_path, capsys):
@@ -1197,3 +1194,68 @@ def test_a_plot_without_a_ggtitle_layer_does_not_mention_it(tmp_path):
     write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "T"\nlayers:\n  - name: geom_bar\n'))
     found = cases_of(tool.build_plan(root), "OC19")
     assert "no figure title in a labs layer" in found[0].detail and "ggtitle" not in found[0].detail
+
+
+# -- --apply --in-worktree: the one way to write in a git working tree (the build branch of the names pass) ----------------
+
+def _git_in(path, *args):
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
+           "PATH": __import__("os").environ["PATH"], "HOME": str(path)}
+    subprocess.run(["git", "-C", str(path), *args], check=True, capture_output=True, env=env)
+
+
+@pytest.fixture
+def linked_worktree(tmp_path, monkeypatch):
+    """A throw-away repository on branch `dev` with a linked worktree on branch `build`; the script is told that the worktree is its own."""
+    main = tmp_path / "main"
+    write(main, "config/app_features/f.yaml", APP_FEATURES)
+    write(main, "config/deployment/demo/d.yaml", DEPLOYMENT)
+    _git_in(main, "init", "-q", "-b", "dev")
+    _git_in(main, "add", "-A")
+    _git_in(main, "commit", "-q", "-m", "init")
+    worktree = tmp_path / "wt"
+    _git_in(main, "worktree", "add", "-q", "-b", "build", str(worktree))
+    monkeypatch.setattr(tool, "PROJECT_ROOT", worktree)
+    return main, worktree
+
+
+def test_in_worktree_writes_in_a_clean_linked_worktree_on_a_build_branch(linked_worktree, capsys):
+    main, worktree = linked_worktree
+    before_main = digest(main)
+    assert tool.main(["--apply", "--in-worktree"]) in (0, 2)
+    assert "name:" not in read(worktree, "config/app_features/f.yaml")
+    assert digest(main) == before_main                      # the main checkout is untouched
+
+
+def test_in_worktree_refuses_the_main_checkout(linked_worktree, monkeypatch, capsys):
+    main, worktree = linked_worktree
+    monkeypatch.setattr(tool, "PROJECT_ROOT", main)
+    before = digest(main)
+    assert tool.main(["--apply", "--in-worktree"]) == 3
+    assert "LINKED git worktree" in capsys.readouterr().err
+    assert digest(main) == before
+
+
+def test_in_worktree_refuses_the_branch_main(linked_worktree, capsys):
+    main, worktree = linked_worktree
+    _git_in(worktree, "checkout", "-q", "-b", "main")
+    before = digest(worktree)
+    assert tool.main(["--apply", "--in-worktree"]) == 3
+    assert "branch 'main'" in capsys.readouterr().err
+    assert digest(worktree) == before
+
+
+def test_in_worktree_refuses_uncommitted_changes(linked_worktree, capsys):
+    main, worktree = linked_worktree
+    (worktree / "config/app_features/f.yaml").write_text(APP_FEATURES + "\nextra: 1\n", encoding="utf-8")
+    before = digest(worktree)
+    assert tool.main(["--apply", "--in-worktree"]) == 3
+    assert "uncommitted" in capsys.readouterr().err
+    assert digest(worktree) == before
+
+
+def test_in_worktree_refuses_a_given_root_and_a_dry_run(linked_worktree, capsys):
+    main, worktree = linked_worktree
+    assert tool.main(["--apply", "--in-worktree", "--root", str(worktree)]) == 3
+    assert tool.main(["--in-worktree"]) == 3
+    assert "only meaningful with --apply" in capsys.readouterr().err

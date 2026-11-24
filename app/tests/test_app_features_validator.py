@@ -19,9 +19,8 @@ _FULL_FEATURES = {
 }
 
 
-def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app_features_id=None, path="developer"):
+def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, path="developer"):
     t = {
-        "name": app_features_id or path,
         "flags": {**_FULL_FEATURES, **(overrides or {})},
         "data_analysis_recipe_selector": {"visible": ms_visible},
         "testing_mode": testing_mode,
@@ -29,33 +28,15 @@ def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app
     return t, path
 
 
-# --- Rule 1: name must match filename ---
+# --- The id of an app features file is its file name; both hyphens and underscores are free (D-0481, D-0483) ---
 
-def test_app_features_id_matches_filename_valid():
-    t, path = _tmpl(path="developer", app_features_id="developer")
+def test_an_underscore_in_the_file_name_is_not_an_error():
+    t, path = _tmpl(path="pipeline_exploration_advanced")
     assert V.validate(t, path) == []
 
 
-def test_app_features_id_mismatch_no_longer_raises_error():
-    # ADR-054 (2026-05-02) removed Rule 1: name/filename coupling dropped
-    # so app features configs can live anywhere and be referenced by absolute path.
-    t, path = _tmpl(path="developer", app_features_id="qa")
-    errors = V.validate(t, path)
-    assert not any("does not match filename" in e for e in errors)
-
-
-# --- Rule 2: name must use hyphens ---
-
-def test_app_features_id_underscore_raises_error():
-    t, path = _tmpl(path="pipeline_exploration_advanced",
-                    app_features_id="pipeline_exploration_advanced")
-    errors = V.validate(t, path)
-    assert any("underscores" in e.problem for e in errors)
-
-
-def test_app_features_id_hyphen_is_valid():
-    t, path = _tmpl(path="pipeline-exploration-advanced",
-                    app_features_id="pipeline-exploration-advanced")
+def test_the_hyphen_in_the_file_name_is_not_an_error():
+    t, path = _tmpl(path="pipeline-exploration-advanced")
     assert V.validate(t, path) == []
 
 
@@ -63,7 +44,6 @@ def test_app_features_id_hyphen_is_valid():
 
 def test_missing_flag_no_error(capsys):
     t = {
-        "name": "developer",
         "flags": {},  # all missing
         "data_analysis_recipe_selector": {"visible": True},
         "testing_mode": True,
@@ -77,7 +57,7 @@ def test_missing_flag_no_error(capsys):
 # --- Rule 4 (removed, ADR-091): a hidden selector needs no data analysis recipe name in the app features file ---
 
 def test_hidden_selector_is_fine_in_the_app_features_file():
-    t, path = _tmpl(path="pipeline-static", app_features_id="pipeline-static", ms_visible=False)
+    t, path = _tmpl(path="pipeline-static", ms_visible=False)
     errors = V.validate(t, path)
     assert errors == []
 

@@ -46,6 +46,23 @@ locations:
 
 All location paths are relative to `project_root` (if set), otherwise relative to CWD.
 
+## Branding and the name of a deployment
+
+A deployment has no name key (`deployment_name` was removed, D-0479, and is refused at start); describe the file in a comment at its top. What the user sees is in the `branding` block:
+
+```yaml
+branding:
+  theme_css: "assets/demo/web_demo.css"       # layered over the default stylesheet
+  banner:                                      # optional: shown at the top of the app and in the Deployment panel
+    logo_url: "assets/demo/logo-no.svg"
+    ui_label: "AMR Surveillance"               # the name (was `title`)
+    description: "Norwegian Veterinary Institute"   # one line of text (was `subtitle`)
+  contact: "team@example.org"                  # shown when a recipe is refused
+  show_recipe_name: true                       # false hides the banner of the open recipe in HOME; true when absent
+```
+
+The old banner keys `title` and `subtitle` are refused at start with the new names.
+
 ## Deployment Types
 
 | `deployment_type` | Adapter class | Notes |

@@ -101,12 +101,12 @@ def example_recipe(*, example_id: str, label: str, data_path: str, fields: Dict[
     go where the format puts them: `tier1` and `tier2` in the schema, `tier3` on the plot entry, each as a mapping with `steps`.
     """
     typed = spec()["gallery"]["axes"]
-    info: Dict[str, Any] = {"label": label}
+    info: Dict[str, Any] = {"ui_label": label}
     if description:
         info["description"] = description
     if submission_date:
         info["submission_date"] = str(submission_date)
-    schema: Dict[str, Any] = {"label": "Example data"}
+    schema: Dict[str, Any] = {"ui_label": "Example data"}
     if data_description:
         schema["description"] = data_description
     schema.update({

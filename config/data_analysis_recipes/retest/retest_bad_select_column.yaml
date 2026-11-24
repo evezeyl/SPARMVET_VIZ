@@ -7,22 +7,22 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: RETEST bad select column
+  ui_label: RETEST bad select column
   description: A polars_select step names a column that does not exist; the app must say so.
   version: '1.0'
 
 data_schemas:
   Genes:
-    label: "Genes"
+    ui_label: "Genes"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes.tsv
     null_values: []
     strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_id: true}
-      gene: {original_name: gene, type: String, label: Gene}
-      predicted_phenotype: {original_name: predicted_phenotype, type: String, label: Phenotype}
+      sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
+      gene: {original_name: gene, type: String, ui_label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: String, ui_label: Phenotype}
     tier1:
       steps:
         - action: polars_select
@@ -32,7 +32,7 @@ data_schemas:
 
 joins:
   Genes_joined:
-    label: "Genes joined"
+    ui_label: "Genes joined"
     ingredients:
       - dataset_id: Genes
     tier1:

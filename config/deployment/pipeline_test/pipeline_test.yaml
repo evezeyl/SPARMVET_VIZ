@@ -1,3 +1,6 @@
+# SPARMVET_VIZ (Pipeline Test)
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default recipe: 1_test_data_ST22_dummy
 # SPARMVET Pipeline Test Deployment
 # Simulates production connector behaviour: data is injected by the pipeline,
 # not read from data analysis recipe source.path entries.
@@ -12,7 +15,6 @@
 #     $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 deployment_type: filesystem
-deployment_name: "SPARMVET_VIZ (Pipeline Test)"
 
 # data_lookup: by_dataset_id — ignore data analysis recipe source.path, discover files by schema
 # ID name in raw_data. Mirrors production connector behaviour.

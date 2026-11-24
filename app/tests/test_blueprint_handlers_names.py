@@ -66,3 +66,13 @@ def test_every_app_caller_of_the_data_check_passes_imports_dir():
                     assert any(k.arg == "imports_dir" for k in node.keywords), (
                         f"{source.name}:{node.lineno} calls validate_data_analysis_recipe_data without imports_dir")
     assert found >= 2  # Blueprint's Validate and HOME's gate
+
+
+def test_the_new_recipe_dialog_asks_for_the_ui_label_and_reads_the_same_input():
+    """The name of a new recipe is its `ui_label` (D-0409): the dialog input is `bp_new_ui_label`, the old `bp_new_display_name` is gone,
+    and the input that is created is the input that is read (a renamed id on one side only would silently give the file name as the name)."""
+    source = SOURCE.read_text()
+    assert "bp_new_display_name" not in source
+    created = source.count('ui.input_text("bp_new_ui_label"')
+    read = source.count('safe_input(input, "bp_new_ui_label"')
+    assert (created, read) == (1, 1)

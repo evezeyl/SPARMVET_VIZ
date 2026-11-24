@@ -55,7 +55,7 @@ def the_plot(recipe: Any) -> Optional[Tuple[str, dict]]:
 def example_name(recipe: Any) -> str:
     """The name of an example: the `ui_label` of its plot entry (D-0387); nothing else is read, there is no fallback.
 
-    `info.label` is for the recipe maker and is not read here. A plot entry without `ui_label` never reaches this
+    `info.ui_label` is for the recipe maker and is not read here. A plot entry without `ui_label` never reaches this
     function: the checker refuses it (P01, "ui_label is required", `recipe_check.py`), and an example that does not
     hold exactly one plot is refused by GP01. A recipe that was not checked raises `ValueError`.
     """

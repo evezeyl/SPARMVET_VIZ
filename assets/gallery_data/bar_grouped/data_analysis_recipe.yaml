@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Grouped Bar Chart
+  ui_label: Grouped Bar Chart
   description: >-
     Compares a numeric value across combinations of two categorical variables. Best when you want to compare both
     between categories on the x-axis AND between sub-groups (fill) within each category.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 15 rows and 3 columns (species, drug_class, resistance_rate).
     source: {type: local_tsv, path: ./assets/gallery_data/bar_grouped/example_data.tsv}

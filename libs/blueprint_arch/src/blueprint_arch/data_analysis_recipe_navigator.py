@@ -917,7 +917,7 @@ _EMPTY_TIER = "steps: []\n"
 
 def _branch_label(source: dict, new_id: str) -> str:
     """The label of a branch: the label of what it branches from, else the new id in words, marked "(branch)"."""
-    return f"{source.get('label') or new_id.replace('_', ' ').title()} (branch)"
+    return f"{source.get('ui_label') or new_id.replace('_', ' ').title()} (branch)"
 
 
 def _plot_branch_label(entry: dict, new_id: str) -> str:
@@ -947,7 +947,7 @@ def generate_branch_plan(
     divergent wrangling).
 
     What is written is recipe format 1: no `output_fields` key (the published
-    columns are the last step of a join's tier 1), a `label` on the new schema
+    columns are the last step of a join's tier 1), a `ui_label` on the new schema
     or join, a `ui_label` on the new plot, and a tier as its own key, a mapping
     with `steps` (D-0250), never a flat list.
 
@@ -1016,7 +1016,7 @@ def generate_branch_plan(
 
         wrn_rel = f"{basename}/wrangling/{new_id}_wrangling.yaml"
 
-        lines = [f"  {new_id}:", _render_block_key("label", _branch_label(block, new_id), indent=4)]
+        lines = [f"  {new_id}:", _render_block_key("ui_label", _branch_label(block, new_id), indent=4)]
         source = block.get("source")
         if source not in (None, {}, []):
             lines.append(_render_block_key("source", source, indent=4))
@@ -1062,7 +1062,7 @@ def generate_branch_plan(
 
         rec_rel = f"{basename}/assembly/{new_id}_assembly.yaml"
 
-        lines = [f"  {new_id}:", _render_block_key("label", _branch_label(join_def, new_id), indent=4)]
+        lines = [f"  {new_id}:", _render_block_key("ui_label", _branch_label(join_def, new_id), indent=4)]
         ingredients = join_def.get("ingredients")
         if ingredients not in (None, {}, []):
             lines.append(_render_block_key("ingredients", ingredients, indent=4))

@@ -23,17 +23,18 @@ ROOT = Path(__file__).resolve().parents[2]
 DEMO = ROOT / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml"
 
 
-def test_a_group_tab_reads_ui_label_then_description_then_the_group_id():
+def test_a_group_tab_reads_ui_label_and_nothing_else():
     assert group_tab_label("qc", {"ui_label": "Quality Control", "description": "d"}) == "Quality Control"
-    assert group_tab_label("qc", {"description": "the description"}) == "the description"
-    assert group_tab_label("qc", {}) == "qc"
-    assert group_tab_label("qc", {"label": "old key"}) == "qc", "the old key `label` is not read any more"
+    for entry in ({"description": "the description"}, {}, {"label": "old key"}):    # no description as a tab, no group id, no old key (D-0409)
+        with pytest.raises(KeyError):
+            group_tab_label("qc", entry)
 
 
-def test_a_plot_tab_reads_ui_label_then_the_plot_id_in_title_case():
+def test_a_plot_tab_reads_ui_label_and_nothing_else():
     assert plot_tab_label("qc_reads_plot", {"ui_label": "QC Reads"}) == "QC Reads"
-    assert plot_tab_label("qc_reads_plot", {}) == "Qc Reads Plot"
-    assert plot_tab_label("qc_reads_plot", {"label": "old key"}) == "Qc Reads Plot"
+    for entry in ({}, {"label": "old key"}, {"name": "x"}):                     # no plot id in title case (D-0409)
+        with pytest.raises(KeyError):
+            plot_tab_label("qc_reads_plot", entry)
 
 
 def test_the_list_of_plots_in_the_audit_dialogs_reads_ui_label_then_the_plot_id():

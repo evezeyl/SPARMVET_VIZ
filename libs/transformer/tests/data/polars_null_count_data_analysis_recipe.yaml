@@ -5,7 +5,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Test pair of polars_null_count
+  ui_label: Test pair of polars_null_count
   description: One recipe and one data file for the action polars_null_count (1:1:1
     law, rules_data_engine.md section 2). Every key is written; nothing is a default.
 source:

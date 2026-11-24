@@ -115,7 +115,7 @@ def test_the_pieces_of_a_report_for_ordinary_texts_hold_no_backslash():
     assert lines[0] == "### Multi-resistance by country"
     assert lines[2] == "![Multi-resistance by country — dataset: `joined`](_render/amr_plot.png){#fig-amr-plot width=95%}"
     methods = _build_methods_section(
-        all_plots=[("amr_plot", {"ui_label": "Multi-res", "ui_title": "Multi-resistance by country"})],
+        all_plots=[("amr_plot", {"ui_label": "Multi-res"})],
         t3_by_plot={"amr_plot": [{"node_type": "exclusion_row", "params": {"column": "sample_id", "op": "in", "value": ["S2"], "na": "remove"},
                                   "reason": "Failed QC (coverage below 30x)."}]},
         ds_to_plots={}, tiers_exported=["T1"], t3_aesthetic_overrides=None)

@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Violin + Boxplot Overlay
+  ui_label: Violin + Boxplot Overlay
   description: >-
     Combines the density shape of a violin with the quartile summary of a boxplot. Best of both worlds: see the
     full distribution shape AND the median/IQR in one chart.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 40 rows and 2 columns (species, mic_value).
     source: {type: local_tsv, path: ./assets/gallery_data/violin_boxplot/example_data.tsv}

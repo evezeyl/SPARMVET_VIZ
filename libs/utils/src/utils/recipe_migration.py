@@ -2,7 +2,7 @@
 
 What it does to a recipe in format 0 (the unversioned recipes before 2026-11-13):
 - adds `spec_version`, `data_engine` and `plot_engine` after `id`;
-- renames `info.display_name` to `label`, `is_primary_key` and `is_entity_key` to `is_entity_id`, `source_name` to `original_name`;
+- renames `info.display_name` to `ui_label`, `is_primary_key` and `is_entity_key` to `is_entity_id`, `source_name` to `original_name`;
 - turns every field type into its Polars name (`categorical` was always a String);
 - writes into every schema the settings the hidden sanitiser applied (`null_values` with its 14 texts and `strip: true`),
   so no table changes (spec 7.3);
@@ -151,8 +151,8 @@ def _recipe_edits(text: str, root: yaml.Node, report: List[str]) -> List[_Edit]:
         name = _find(info[1], "display_name")
         if name:
             start, end = _span(text, name[0])
-            edits.append(_Edit(start, end, "label"))
-            report.append("info: display_name -> label")
+            edits.append(_Edit(start, end, "ui_label"))
+            report.append("info: display_name -> ui_label")
     for section in _SCHEMA_SECTIONS + ("metadata_schema",):
         pair = _find(root, section)
         if not pair:

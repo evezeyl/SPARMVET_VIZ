@@ -11,10 +11,10 @@ id: r
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
-info: {label: R, description: d, contact: c}
+info: {ui_label: R, description: d, contact: c}
 data_schemas:
   A:
-    label: A
+    ui_label: A
     description: One row per sample.
     source: {type: local_tsv, path: assets/test_data/a.tsv}
     null_values: []
@@ -59,7 +59,7 @@ def test_a_clean_recipe_with_a_bare_fragment_passes_the_whole_check(tmp_path):
 
 
 def test_invalid_yaml_is_t01_and_names_the_line(tmp_path):
-    path = write(tmp_path / "r.yaml", "id: r\ninfo: {label: [unclosed\n")
+    path = write(tmp_path / "r.yaml", "id: r\ninfo: {ui_label: [unclosed\n")
     raw, problems = load_recipe(path)
     assert raw is None and codes(problems) == ["T01"]
     assert "line" in problems[0].message

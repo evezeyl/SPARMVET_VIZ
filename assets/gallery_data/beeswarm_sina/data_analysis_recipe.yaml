@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Beeswarm / Sina Plot
+  ui_label: Beeswarm / Sina Plot
   description: >-
     Shows individual data points distributed within a category using a jittered-violin hybrid. Better than boxplot
     alone when sample size is small to medium and individual values matter.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 100 rows and 2 columns (species, mic_value).
     source: {type: local_tsv, path: ./assets/gallery_data/beeswarm_sina/example_data.tsv}

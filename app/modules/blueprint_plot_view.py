@@ -6,7 +6,7 @@
 # @end_deps
 """What Blueprint shows when a plot node is opened, as a pure function (Two-Category Law, no Shiny).
 
-A plot entry holds the whole plot (D-0252): the keys of the app (`ui_label`, `ui_title`, `description`, `taxonomy`,
+A plot entry holds the whole plot (D-0252): the keys of the app (`ui_label`, `description`, `taxonomy`,
 `plot_engine`), its target table, its `mapping` and its `layers`. It is written inline in the recipe or as the whole entry in
 an included file; the content is the same, so one function reads both.
 """

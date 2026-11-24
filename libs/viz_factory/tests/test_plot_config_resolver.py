@@ -271,7 +271,7 @@ class TestEntryKeysAreIgnoredNotRefused:
     and still refuses a key that is not on the list. The list is the one of the recipe specification (recipe_spec.yaml)."""
 
     def test_the_decided_entry_keys_are_not_unknown(self):
-        entry = {"plot_engine": "python-plotnine", "ui_label": "L", "ui_title": "T", "description": "d", "comment": "c",
+        entry = {"plot_engine": "python-plotnine", "ui_label": "L", "description": "d", "comment": "c",
                  "taxonomy": {"family": "Ranking"}, "tier3": {"steps": []}, "target_dataset": "d", "mapping": {}, "layers": []}
         assert unknown_spec_keys(entry) == []
 
@@ -285,7 +285,7 @@ class TestEntryKeysAreIgnoredNotRefused:
         plot = spec()["elements"]["plot"]
         assert set(entry_keys) | set(content_keys) == set(plot["required"]) | set(plot["optional"])
         assert not set(entry_keys) & set(content_keys)
-        assert {"ui_label", "ui_title", "description", "comment", "taxonomy", "plot_engine", "tier3"} == set(entry_keys)
+        assert {"ui_label", "description", "comment", "taxonomy", "plot_engine", "tier3"} == set(entry_keys)
         assert "title" not in entry_keys and "title" not in content_keys
 
     def test_the_entry_keys_survive_a_round_trip_through_the_normaliser(self):

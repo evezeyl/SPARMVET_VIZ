@@ -14,8 +14,7 @@
 #     reference app features
 #
 # Launch: `SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m shiny run app/src/main.py`
-name: "qa"
-display_name: "QA / Test Harness"
+ui_label: "QA / Test Harness"
 
 flags:
   # All feature flags ON — tests need access to every UI surface

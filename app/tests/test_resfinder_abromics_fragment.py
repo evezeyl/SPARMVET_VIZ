@@ -42,10 +42,10 @@ def _recipe(folder: Path, steps: dict, resfinder: str = RESFINDER) -> Path:
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
-info: {{label: "t", description: "t", version: "1.0"}}
+info: {{ui_label: "t", description: "t", version: "1.0"}}
 data_schemas:
   ResFinder:
-    label: ResFinder
+    ui_label: ResFinder
     description: "r"
     source: {{type: local_tsv, path: {resfinder}}}
     null_values: []
@@ -56,7 +56,7 @@ data_schemas:
       cge_predicted_phenotype: {{original_name: CGE Predicted Phenotype, type: String}}
     tier1: {{steps: []}}
   AMR_phenotype_reference:
-    label: reference
+    ui_label: reference
     description: "r"
     source: {{type: local_tsv, path: {REFERENCE}}}
     null_values: []
@@ -67,7 +67,7 @@ data_schemas:
     tier1: {{steps: []}}
 joins:
   classes:
-    label: classes
+    ui_label: classes
     description: "d"
     ingredients:
       - dataset_id: ResFinder

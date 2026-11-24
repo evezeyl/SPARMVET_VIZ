@@ -21,6 +21,18 @@ RENAMED_DEPLOYMENT_KEYS = {
     "data_ingestion_enabled": "app_features_override: {data_ingestion_enabled: ...}",
 }
 
+# keys removed from a deployment file: old -> what to know now (names pass, D-0479)
+REMOVED_DEPLOYMENT_KEYS = {
+    "deployment_name": "a deployment has no name key; the banner's ui_label is what the user sees. A description of the file may be written "
+                       "as a comment at the top of it",
+}
+
+# keys of the banner block (branding.banner) of a deployment file: old -> new (D-0411)
+RENAMED_BANNER_KEYS = {
+    "title": "ui_label",
+    "subtitle": "description",
+}
+
 # keys of the locations block of a deployment file: old -> new
 RENAMED_LOCATION_KEYS = {
     "curated_data": "cache",
@@ -30,11 +42,18 @@ RENAMED_LOCATION_KEYS = {
 
 # top-level keys of an app features file: old -> new
 RENAMED_APP_FEATURES_KEYS = {
-    "persona_id": "name",
+    "display_name": "ui_label",
     "features": "flags",
     "manifest_selector": "data_analysis_recipe_selector",
     "theme_css": "branding.theme_css in the deployment file",
     "ui_banner": "branding.banner in the deployment file",
+}
+
+# top-level keys removed from an app features file: old -> what to know now (names pass, D-0411, D-0481)
+REMOVED_APP_FEATURES_KEYS = {
+    "name": "the id of an app features file is its file name; write ui_label for the name shown to the user",
+    "persona_id": "the id of an app features file is its file name; write ui_label for the name shown to the user",
+    "ui_title": "the banner of a recipe is its info.ui_label; to hide it write show_recipe_name: false in the branding block of the deployment file",
 }
 
 # keys inside the flags block of an app features file: old -> new
@@ -108,6 +127,28 @@ def renamed_deployment_key_errors(config: dict, where: str) -> list[DeploymentEr
     ] + [
         DeploymentError(
             component="Bootloader",
+            problem=f"The deployment key '{old}' was removed: {why}.",
+            location=f"{old} in {where}",
+            fix=f"Delete the key '{old}' from {where}.",
+            who="operator",
+            reference=_REF,
+        )
+        for old, why in REMOVED_DEPLOYMENT_KEYS.items()
+        if old in config
+    ] + [
+        DeploymentError(
+            component="Bootloader",
+            problem=f"The banner key '{old}' was renamed to '{new}'.",
+            location=f"branding.banner.{old} in {where}",
+            fix=f"Rename the key '{old}' to '{new}' in the banner block of {where}.",
+            who="operator",
+            reference=_REF,
+        )
+        for old, new in RENAMED_BANNER_KEYS.items()
+        if old in ((config.get("branding") or {}).get("banner") or {})
+    ] + [
+        DeploymentError(
+            component="Bootloader",
             problem=f"The location '{old}' was renamed to '{new}'.",
             location=f"locations.{old} in {where}",
             fix=f"Rename the location '{old}' to '{new}' in {where}.",
@@ -128,6 +169,16 @@ def renamed_app_features_key_errors(config: dict, where: str) -> list[Deployment
                 problem=f"The app features key '{old}' was renamed to '{new}'.",
                 location=f"{old} in {where}",
                 fix=f"Rename the key '{old}' to '{new}' in {where}.",
+                who="operator",
+                reference=_REF,
+            ))
+    for old, why in REMOVED_APP_FEATURES_KEYS.items():
+        if old in config:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The app features key '{old}' was removed: {why}.",
+                location=f"{old} in {where}",
+                fix=f"Delete the key '{old}' from {where}.",
                 who="operator",
                 reference=_REF,
             ))

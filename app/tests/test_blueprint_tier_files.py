@@ -165,7 +165,7 @@ def test_the_file_of_a_join_and_unknown_roles_are_not_saved_from_here(fn):
 
 # -- saving a plot
 
-ENTRY_TEXT = ("plot_engine: python-plotnine\nui_label: Per year\nui_title: Samples per year\ndescription: d\n"
+ENTRY_TEXT = ("plot_engine: python-plotnine\nui_label: Per year\ndescription: d\n"
               "taxonomy: {family: Distribution}\ntarget_dataset: C\nmapping: {x: year}\nlayers:\n- name: geom_bar\n  params: {}\n")
 
 
@@ -173,10 +173,10 @@ def test_a_plot_is_saved_as_the_whole_entry_with_the_keys_of_the_app_first(fn):
     nodes = [{"component": "__mapping__", "params": {"x": "country"}, "comment": ""},
              {"component": "geom_bar", "params": {}, "comment": ""}, {"component": "geom_point", "params": {}, "comment": ""}]
     saved = fn["_serialise_component_for_save"]("plot_spec", nodes, ENTRY_TEXT, "tier1")
-    assert list(saved) == ["plot_engine", "ui_label", "ui_title", "description", "taxonomy", "target_dataset", "mapping", "layers"]
+    assert list(saved) == ["plot_engine", "ui_label", "description", "taxonomy", "target_dataset", "mapping", "layers"]
     assert saved["mapping"] == {"x": "country"} and [layer["name"] for layer in saved["layers"]] == ["geom_bar", "geom_point"]
-    assert saved["ui_title"] == "Samples per year" and saved["taxonomy"] == {"family": "Distribution"}
-    assert not {"spec", "label", "title"} & set(saved)
+    assert saved["taxonomy"] == {"family": "Distribution"}
+    assert not {"spec", "label", "title", "ui_title"} & set(saved)
 
 
 def test_a_plot_with_tier3_keeps_it_last(fn):

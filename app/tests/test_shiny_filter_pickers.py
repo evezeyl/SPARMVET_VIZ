@@ -77,7 +77,7 @@ def typed_app():
     for key in ("cache", "user_data"):
         Path(locations[key]).mkdir(exist_ok=True)
     deployment = WORK / "deployment.yaml"
-    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "typed pickers", "locations": locations,
+    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "locations": locations,
                                           "default_data_analysis_recipe": "typed", "default_app_features": "qa"}), encoding="utf-8")
     port = _free_port()
     env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(deployment))

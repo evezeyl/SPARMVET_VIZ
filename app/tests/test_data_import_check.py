@@ -25,7 +25,7 @@ RECIPES_ROOT = ROOT / "config" / "data_analysis_recipes"
 
 # T: headers in the file differ from the slugs (original_name); U: no original_name (the slug is the header); W: a recipe path whose file does not exist yet
 RECIPE = """id: tiny
-info: {{display_name: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -34,24 +34,24 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: Sample ID, type: String, label: Sample, is_entity_id: true}}
-      country: {{original_name: Country, type: String, label: Country}}
-      year: {{original_name: Year, type: Int64, label: Year}}
+      sample_id: {{original_name: Sample ID, type: String, ui_label: Sample, is_entity_id: true}}
+      country: {{original_name: Country, type: String, ui_label: Country}}
+      year: {{original_name: Year, type: Int64, ui_label: Year}}
     tier1: {{steps: []}}
   U:
     source: {{type: local_tsv, path: {u_path}}}
     null_values: []
     strip: false
     input_fields:
-      id: {{type: String, label: Id, is_entity_id: true}}
-      value: {{type: Float64, label: Value}}
+      id: {{type: String, ui_label: Id, is_entity_id: true}}
+      value: {{type: Float64, ui_label: Value}}
     tier1: {{steps: []}}
   W:
     source: {{type: {w_type}, path: {w_path}}}
     null_values: []
     strip: false
     input_fields:
-      id: {{type: String, label: Id, is_entity_id: true}}
+      id: {{type: String, ui_label: Id, is_entity_id: true}}
     tier1: {{steps: []}}
 {extra}analysis_groups:
   g:
@@ -77,8 +77,8 @@ SHARED = """  S:
     null_values: []
     strip: false
     input_fields:
-      id: {{type: String, label: Id}}
-      value: {{type: Int64, label: Value}}
+      id: {{type: String, ui_label: Id}}
+      value: {{type: Int64, ui_label: Value}}
     tier1: {{steps: []}}
 """
 

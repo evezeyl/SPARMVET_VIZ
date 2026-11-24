@@ -1,8 +1,10 @@
+# SPARMVET RETEST
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default app features: developer
 # SPARMVET RETEST Deployment: small data analysis recipes for retesting (see .claude/workflows/retest_procedure.md)
 # Launch with: SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml
 # Its cache and sessions live in tmp/RETEST/, apart from your normal tmp/UI_TEST/.
 deployment_type: filesystem
-deployment_name: "SPARMVET RETEST"
 default_app_features: "developer"
 
 locations:

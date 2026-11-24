@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Step Chart
+  ui_label: Step Chart
   description: >-
     Ideal for data that changes abruptly at discrete time points rather than continuously. Clinical breakpoints,
     regulatory threshold changes, and policy decisions all change in steps — the step chart makes these discontinuities
@@ -11,7 +11,7 @@ info:
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 15 rows and 3 columns (drug_class, year, breakpoint_change).
     source: {type: local_tsv, path: ./assets/gallery_data/step_chart/example_data.tsv}

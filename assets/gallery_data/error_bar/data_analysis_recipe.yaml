@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Error Bar / Point Range
+  ui_label: Error Bar / Point Range
   description: >-
     Shows estimated means with uncertainty bands (confidence intervals or SD). Ideal for summarised data where individual
     values are not available — communicates both the central estimate and its precision.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 8 rows and 4 columns (species, mean_mic, ci_low, ci_high).
     source: {type: local_tsv, path: ./assets/gallery_data/error_bar/example_data.tsv}

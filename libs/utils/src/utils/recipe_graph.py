@@ -534,7 +534,7 @@ def source_tables_of_table(graph: "RecipeGraph", table_id: str) -> List[str]:
 
 SOURCE_DECLARED = "declared in the recipe"
 SOURCE_GROUP_BY = "group-by columns of the last aggregation"
-SOURCE_ENTITY_KEY = "entity key declared on an ingredient"
+SOURCE_ENTITY_KEY = "entity id declared on an ingredient"
 
 
 def _declared_key(declared: Any, entry_id: str) -> Optional[Tuple[str, ...]]:

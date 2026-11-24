@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Boxplot Faceted
+  ui_label: Boxplot Faceted
   description: >-
     Breaking down distribution by species using facets. A 'Comparative' example.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 100 rows and 4 columns (id, amr_class, mic_value, species).
     source: {type: local_tsv, path: ./assets/gallery_data/boxplot_faceted/example_data.tsv}

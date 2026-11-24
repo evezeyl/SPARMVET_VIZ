@@ -1,8 +1,7 @@
 # UI App features: VetInst Demo
 # Minimal read-only exploration view for demonstrations.
 # No data import, no export panel, no app features badge — clean presentation layer.
-name: "demo-vetinst"
-display_name: "VetInst Demo"
+ui_label: "VetInst Demo"
 
 flags:
   interactivity_enabled: false

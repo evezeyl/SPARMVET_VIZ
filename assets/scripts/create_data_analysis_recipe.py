@@ -118,7 +118,7 @@ def fields_of(table: pl.DataFrame, key_columns: Sequence[str], path: Path) -> Tu
         field: Dict[str, object] = {"type": type_name}
         if slug != column:
             field["original_name"] = str(column)
-        field["label"] = str(column).replace('_', ' ').title()
+        field["ui_label"] = str(column).replace('_', ' ').title()
         if column == key:
             field["is_entity_id"] = True
         fields[slug] = field

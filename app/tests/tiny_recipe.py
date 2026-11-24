@@ -13,7 +13,7 @@ from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 
 
 def tiny_recipe(recipe_id: str = "m", data_path: str = "./assets/test_data/tiny/A.tsv") -> dict:
-    schema = minimal_schema(data_path, {"a": {"type": "String", "label": "A"}}, label="A")
+    schema = minimal_schema(data_path, {"a": {"type": "String", "ui_label": "A"}}, label="A")
     schema["description"] = "One row per a."
     plot = minimal_plot("A", {"x": "a"}, [{"name": "geom_bar", "params": {}}], label="P")
     plot["description"] = "Count of rows per a."

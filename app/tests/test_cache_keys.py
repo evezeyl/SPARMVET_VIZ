@@ -62,13 +62,13 @@ def make_data_analysis_recipe(root: Path, *, split=True, comment="", wrangling_t
     extra = f"{extra_section}\n" if extra_section else ""
     entry = root / "tiny.yaml"
     entry.write_text(f"""{comment}id: tiny
-info: {{display_name: Tiny}}
+info: {{ui_label: Tiny}}
 data_schemas:
   T:
     source: {{type: local_tsv, path: {DATA_PATH}}}
     input_fields:
-      sample_id: {{original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}}
-      group: {{original_name: group, type: categorical, label: Group}}
+      sample_id: {{original_name: sample_id, type: categorical, ui_label: Sample, is_primary_key: true}}
+      group: {{original_name: group, type: categorical, ui_label: Group}}
     tier1: {t_tier1_text}
 joins:
   C:
@@ -136,7 +136,7 @@ def test_change_in_an_included_tier1_file_moves_tier1_and_tier2(tmp_path):
 def test_change_in_the_entry_file_tier1_part_moves_tier1(tmp_path):
     entry = make_data_analysis_recipe(tmp_path)
     _, t1a, _ = keys_of(entry)
-    text = entry.read_text().replace("type: categorical, label: Group", "type: utf8, label: Group")
+    text = entry.read_text().replace("type: categorical, ui_label: Group", "type: utf8, ui_label: Group")
     entry.write_text(text)
     bump(entry)
     _, t1b, _ = keys_of(entry)
