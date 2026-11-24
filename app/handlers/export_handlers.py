@@ -13,7 +13,7 @@ from __future__ import annotations
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, function:tables_no_plot_reads, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
 # consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), libs/utils/src/utils/recipe_tiers.py (plot_targets, schema_bodies: the tables no plot reads, D-0457), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
-# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
+# consumes: app/modules/id_check_run.py (run_id_checks, export_log_text: id_log.yaml of the bundle, D-0575, D-0582), libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -36,6 +36,7 @@ from app.modules.export_fields_store import (
 from app.modules.plot_issue_reporter import plot_warning_text
 from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
+from app.modules.id_check_run import export_log_text, run_id_checks
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from utils.engines import plot_engine_slot
@@ -2177,6 +2178,22 @@ def define_export_server(input, output, session, *,
                     f"{_NO_FIGURES_REMEDY[0].upper()}{_NO_FIGURES_REMEDY[1:]}.\n",
                 )
 
+            # ── The log of the ids (D-0575, D-0576, D-0582, D-0592) ────────────────────────────────────────────────
+            # What the checks of the ids found for the recipe and the data of THIS export, with the log of the user folder (the entries that say a person
+            # read it too). Always in the bundle when a table takes part: "the person utilizing the results MUST read that log" (D-0582).
+            _user_data = bootloader.get_location("user_data")
+            _id_run = run_id_checks(orchestrator, data_analysis_recipe_id, cfg.raw_config, export_keys, _user_data, write=False)
+            _id_log = export_log_text(_user_data, data_analysis_recipe_id, _id_run, export_keys.data_analysis_recipe_sha256, export_keys.data_batch_hash)
+            if _id_log is not None:
+                zf.writestr(f"{bundle_dir}/id_log.yaml", _id_log)
+                id_log_line = ("  id_log.yaml       — the log of the ids: the ids that tables lack, the lines added for them and the lines with no usable id; "
+                               "read it before you rely on the results" + (" (the ids are equal in every table)" if not _id_run.lines else ""))
+            elif _id_run.error:
+                zf.writestr(f"{bundle_dir}/id_log_ERROR.txt", _id_run.error)
+                id_log_line = f"  id_log_ERROR.txt  — the log of the ids could not be made: {_id_run.error}"
+            else:
+                id_log_line = None   # no table of the recipe takes part in the completion of the ids: there is no log
+
             # ── README.txt ────────────────────────────────────────────────
             rendered_note = (
                 f"  report.{out_ext} — rendered report ({out_ext.upper()})"
@@ -2295,6 +2312,7 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T3_data_<plot>.tsv — the table of each plot with its audited steps (T3, when exported): T2 (T1 when there",
                 "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
+                *([id_log_line] if id_log_line else []),
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
                 "                     hashes, per-plot seeds, the engine of each tier and plot, the theme as",
                 "                     applied and the library versions (`engines`). Written the same way either way (ADR-097).",

@@ -87,6 +87,7 @@ data_schemas:
     source: {{type: local_tsv, path: {self.data_file}}}
     null_values: []
     strip: false
+    completion: {{marker: T_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: String, ui_label: Group}}
@@ -381,12 +382,12 @@ def test_the_export_draws_each_plot_from_its_table_writes_the_t3_data_and_record
     world, view, drawn, bundle, notes = _export(tmp_path, monkeypatch)
     names = bundle.namelist()
     assert "EXPORT_NOT_CREATED.txt" not in names and not [t for t, _ in notes if t == "error"], notes
-    assert drawn["p_steps"] == [["sample_id", "score"], ["s3", "s4", "s5"]], "the plot is drawn from its table (steps applied, group dropped)"
+    assert drawn["p_steps"] == [["sample_id", "score", "T_not_in_original_data"], ["s3", "s4", "s5"]], "the plot is drawn from its table (steps applied, group dropped; the marker column of the completion stays)"
     assert drawn["p_plain"][1] == ["s1", "s2", "s3", "s4", "s5"] and "group" in drawn["p_plain"][0]
     t3_files = [n for n in names if "/T3_data_" in n and not n.endswith("_ERROR.txt")]
     assert [Path(n).name for n in t3_files] == ["T3_data_p_steps.tsv"], "a T3 data file only for the plot whose table is not the Tier 2"
     table = pl.read_csv(io.BytesIO(bundle.read(t3_files[0])), separator="\t")
-    assert sorted(table["sample_id"].to_list()) == ["s3", "s4", "s5"] and table.columns == ["sample_id", "score"]
+    assert sorted(table["sample_id"].to_list()) == ["s3", "s4", "s5"] and table.columns == ["sample_id", "score", "T_not_in_original_data"]
     readme = bundle.read(next(n for n in names if n.endswith("/README.txt"))).decode()
     assert f"plot p_steps: tier3_key={view.plot_key_of('p_steps')}" in readme
     assert "p_plain: tier3_key" not in readme, "the plot's key is recorded only when its tier 3 is not empty"

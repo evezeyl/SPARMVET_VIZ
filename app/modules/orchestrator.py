@@ -1,17 +1,20 @@
 # engine: python-polars (runs the tiers through the engine entry, types tables as LazyFrame and catches Polars errors)
 # @deps
-# provides: function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads), method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
+# provides: method:id_report (the three checks of the ids, D-0581, D-0590), method:_completed (the completion of the ids at the read, D-0613), function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads), method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
+# consumes: libs/utils/src/utils/id_completion.py (participants, complete_table, read_ids, build_report), app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/modules/plan_composer.py (ingredient_parts, join_parts, tier2_parts, tier3_parts, tier3_frames: the plan of every place composed from the build's own functions, LBFB step 0b), app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
+import contextlib
 import copy
+import io
 import polars as pl
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError, SPARMVET_Error, TransformationError
+from utils.id_completion import IdReport, Participant, TableIds, build_report, complete_table, participant_of, participants, read_ids, union_of
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
@@ -243,10 +246,20 @@ class DataOrchestrator:
             files = {ds: files[ds] for ds in parts.datasets if ds in files}
         return data_analysis_recipe_keys(loaded, dataset_file_hashes(files)).plot_key_of(plot_id)
 
-    def _read_source(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> tuple[pl.LazyFrame, dict]:
-        """The ONE read of a source table: the file `locate_dataset_file` names, with the declared types, `strip` and `null_values`
-        the ingestion applies, before any recipe step. Returns the lazy table and the schema with the file it was read from, so that
-        `prepare_ingredient` (tier 1) and `read_source` (the Source view) read exactly the same."""
+    def _read_source(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> tuple[pl.LazyFrame, dict]:
+        """The ONE read of a source table: the file as `_read_plain` reads it and, when `recipe` is handed in and the table takes part in the completion of the
+        ids (`utils.id_completion`), the table with a line for every entity id it lacks and its marker column, before any recipe step. Returns the lazy table
+        and the schema with the file it was read from, so that `prepare_ingredient` (tier 1), the plan of every place and the data check read exactly the
+        same. Without `recipe` the table is as read from its file (the Source view of HOME)."""
+        lf, ds_schema = self._read_plain(ds_id, ds_schema, recipe_id)
+        mine = participant_of(recipe, ds_id) if recipe is not None else None
+        if mine is not None:
+            lf = self._completed(lf, mine, recipe_id, recipe)
+        return lf, ds_schema
+
+    def _read_plain(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> tuple[pl.LazyFrame, dict]:
+        """A source table as the ingestion reads it from its file: the file `locate_dataset_file` names, with the declared types, `strip` and `null_values` the
+        ingestion applies, and nothing else (no completion, no recipe step)."""
         located = self.locate_dataset_file(recipe_id, ds_id, ds_schema)
         if located is not None:
             kind = "local_parquet" if located.suffix == ".parquet" else "local_tsv"
@@ -265,6 +278,44 @@ class DataOrchestrator:
         # fit its declared type fails there and names the column and the values.
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
         return lf, ds_schema
+
+    def _read_ids(self, recipe_id: str | None, recipe: dict, parts: list[Participant], own: tuple[str, pl.LazyFrame] | None = None) -> list[TableIds]:
+        """The ids of every table that takes part, each table as read from its file (before any completion). `own` is a table already read, so that it is not
+        read twice. A table that cannot be read stops the completion of the others with the plain reason, which names it."""
+        schemas = self._schemas_of(recipe)
+        read = []
+        for p in parts:
+            try:
+                if own is not None and own[0] == p.table:
+                    lf = own[1]
+                else:
+                    # WHY: the ingestion prints a line for every file column the recipe does not declare. A table read here for its ids has already told it (or tells it
+                    # when it is built); printing it again for every table that is built would bury the console in repeats.
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        lf = self._read_plain(p.table, schemas[p.table], recipe_id)[0]
+                read.append(read_ids(lf, p))
+            except Exception as exc:
+                raise IngestionError(
+                    f"The ids of the table '{p.table}' could not be read, so the ids of the tables cannot be made equal: {exc}",
+                    tip=getattr(exc, "tip", None) or f"Check the file and the input_fields of '{p.table}' in the data analysis recipe.") from exc
+        return read
+
+    def _completed(self, lf: pl.LazyFrame, mine: Participant, recipe_id: str | None, recipe: dict) -> pl.LazyFrame:
+        """The table `mine` with the lines for the ids of the union that it lacks (`utils.id_completion.complete_table`): the union is that of the tables as read."""
+        read = self._read_ids(recipe_id, recipe, participants(recipe), own=(mine.table, lf))
+        own_ids = next(t.ids for t in read if t.table == mine.table)
+        return complete_table(lf, mine, union_of(read), own_ids)
+
+    def id_report(self, recipe_id: str | None, recipe: dict) -> IdReport | None:
+        """The three checks of the ids of a recipe (D-0581, D-0590): the tables as read, then the same tables as the build reads them (after the completion).
+        None when no table takes part. Warnings only: nothing here refuses a recipe. Reads every table that takes part, twice."""
+        parts = participants(recipe)
+        if not parts:
+            return None
+        schemas = self._schemas_of(recipe)
+        read = self._read_ids(recipe_id, recipe, parts)
+        completed = [read_ids(self._read_source(p.table, schemas[p.table], recipe_id, recipe)[0], p) for p in parts]
+        return build_report(parts, read, completed)
 
     def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None, audit: bool = False) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
@@ -289,7 +340,7 @@ class DataOrchestrator:
         The one place that reads a source table and chooses what runs on it. The build (`prepare_ingredient`) runs the steps on the table; the plan of every
         place (`app/modules/plan_composer.py`, LBFB step 0b, D-0325) reads the columns after each step of the same lists, so the plan and the build cannot
         differ in what they read or run. Nothing is run here."""
-        lf, ds_schema = self._read_source(ds_id, ds_schema, recipe_id)
+        lf, ds_schema = self._read_source(ds_id, ds_schema, recipe_id, recipe)
         engine = data_entry(recipe, ds_schema, "tier1", where=f"The tier1 of the table '{ds_id}'")
         rules = engine.wrangler.tier_steps(ds_schema, "tier1", audit=audit)
         return lf, engine, rules
@@ -297,7 +348,8 @@ class DataOrchestrator:
     # PROVISIONAL name (the coordinator's, owner's question P-B7): read_source
     def read_source(self, data_analysis_recipe_id: str, dataset_id: str, loaded: LoadedDataAnalysisRecipe | None = None) -> pl.LazyFrame:
         """One source table of a recipe as the ingestion reads it, with its declared types, before any tier-1 step (the Source view of HOME,
-        D-0310). The same read as the tier-1 build (`_read_source`).
+        D-0310). The same file read as the tier-1 build (`_read_plain`), WITHOUT the completion of the ids: the Source view shows the file as read, and the
+        lines the completion adds are seen from tier 1 on (PROVISIONAL: her words D-0602 and D-0603 do not say what the Source view shows).
 
         What is true: the CALL reads the file once to validate it, as the tier-1 build does (a missing file, an empty file, a missing declared
         column or a value that does not fit its type raise here, not at `.collect()`); the returned frame is a lazy scan of the file, so the
@@ -321,7 +373,7 @@ class DataOrchestrator:
             raise DataAnalysisRecipeError(
                 f"No source table '{dataset_id}' in data analysis recipe '{data_analysis_recipe_id}'. Known: {', '.join(sorted(schemas)) or 'none'}.")
         try:
-            lf, _ = self._read_source(dataset_id, schemas[dataset_id], data_analysis_recipe_id)
+            lf, _ = self._read_plain(dataset_id, schemas[dataset_id], data_analysis_recipe_id)
         except IngestionError as error:
             # The same kind of error as the tier-1 build ("Dataset 'X' could not be loaded ..."), naming the table and the reason.
             raise IngestionError(f"Source table '{dataset_id}' could not be read: {error}",
@@ -372,7 +424,7 @@ class DataOrchestrator:
         try:
             engine = data_entry(loaded.raw, schema, "tier1", where=where)
             steps = engine.wrangler.tier_steps(schema, "tier1", audit=loaded.is_audit_copy)
-            source, _ = self._read_source(table_id, schema, recipe_id)
+            source, _ = self._read_source(table_id, schema, recipe_id, loaded.raw)
             found = first_failing_step(lambda k: engine.wrangler().run(source, copy.deepcopy(steps[:k])), len(steps))
         except Exception:
             found = None

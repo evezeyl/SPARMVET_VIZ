@@ -40,6 +40,7 @@ def valid():
     def table(sid):
         return {"ui_label": sid, "description": "One row per sample.", "source": {"type": "local_tsv", "path": f"assets/test_data/{sid}.tsv"},
                 "null_values": [], "strip": True,
+                "completion": {"marker": f"{sid}_not_in_original_data", "meaning": "no result for this entity"},
                 "input_fields": {"id": {"type": "String", "is_entity_id": True, "ui_label": "Id"}, "v": {"type": "Float64", "ui_label": "Value"}},
                 "tier1": {"steps": []}}
     return {

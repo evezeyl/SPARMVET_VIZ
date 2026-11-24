@@ -48,6 +48,7 @@ data_schemas:
     source: {{type: local_tsv, path: {self.data_file}}}
     null_values: []
     strip: false
+    completion: {{marker: T_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: String, ui_label: Group}}
@@ -57,6 +58,7 @@ data_schemas:
     source: {{type: local_tsv, path: {self.data_dir / "M.tsv"}}}
     null_values: []
     strip: false
+    completion: {{marker: M_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
       site: {{original_name: site, type: String, ui_label: Site}}

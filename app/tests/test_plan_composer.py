@@ -352,8 +352,8 @@ def test_with_the_plan_the_gate_refuses_everything_the_blind_gate_refuses_and_wh
                 if b.uncertain:
                     assert {(r.code, r.get("action")) for r in b.unfollowed} == {("step_not_read", "polars_unpivot")}, (recipe_id, nid, name, b.unfollowed)
         seen[recipe_id] = counts
-    assert seen[DEMO] == dict(pairs=438, refused_blind=7, refused_plan=11, unsure_blind=122, unsure_plan=15)
-    assert seen[ABROMICS] == dict(pairs=29, refused_blind=1, refused_plan=2, unsure_blind=16, unsure_plan=0)
+    assert seen[DEMO] == dict(pairs=488, refused_blind=7, refused_plan=11, unsure_blind=125, unsure_plan=18)   # +50 pairs and +3 unsure on the demo and +2 pairs on demo_abromics: the marker columns of the completion of the ids (D-0613)
+    assert seen[ABROMICS] == dict(pairs=31, refused_blind=1, refused_plan=2, unsure_blind=16, unsure_plan=0)
     assert all(c["unsure_plan"] == 0 for k, c in seen.items() if k != DEMO)
 
 

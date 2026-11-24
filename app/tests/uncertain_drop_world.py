@@ -58,6 +58,7 @@ class World:
             fields = {c: {"original_name": c, "type": "Int64" if tables[name][c].dtype == pl.Int64 else "String", "ui_label": c, **({"is_entity_id": True} if c == "sample_id" else {})}
                       for c in tables[name].columns}
             raw["data_schemas"][name] = {"source": {"type": "local_tsv", "path": str(self.data / f"{name}.tsv")}, "null_values": [], "strip": False,
+                                         **({"completion": {"marker": f"{name}_not_in_original_data", "meaning": "no result for this entity"}} if "sample_id" in fields else {}),
                                          "input_fields": fields, "tier1": {"steps": list(body.get("tier1", []))},
                                          **({"tier2": {"steps": list(body["tier2"])}} if body.get("tier2") else {})}
         (self.recipes / f"{RID}.yaml").write_text(yaml.safe_dump(raw, sort_keys=False))

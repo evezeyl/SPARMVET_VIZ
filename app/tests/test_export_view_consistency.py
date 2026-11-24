@@ -101,7 +101,7 @@ def test_my_view_applies_column_drops_and_refuses_unknown_ones(world):
     """PLOT-TABLE-ORDER-1: a drop of a column that is not in the table is an error (the exported recipe's re-run stops on it too),
     never ignored; the columns that are there are dropped."""
     out = audited_frame(base(world), filter_nodes([], ["group"])).collect()
-    assert out.columns == ["sample_id"]
+    assert out.columns == ["sample_id", "not_in_original_data"]   # the marker column of the completion of the ids is a normal column of the table
     with pytest.raises(AuditStepError, match="no_such_column"):
         audited_frame(base(world), filter_nodes([], ["group", "no_such_column"]))
 

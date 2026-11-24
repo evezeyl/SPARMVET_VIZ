@@ -80,10 +80,13 @@ def test_every_plot_of_a_shipped_recipe_has_readable_source_tables_equal_to_the_
 
 # -- Source against T1 --------------------------------------------------------------------------
 
-def test_a_table_without_tier1_steps_has_a_source_equal_to_its_t1(tmp_path):
+def test_a_table_without_tier1_steps_has_a_source_equal_to_its_t1_apart_from_the_marker_of_the_completion(tmp_path):
+    """The Source view shows the file as read; T1 is the same table with the marker column of the completion of the ids (here no id is added: the table is complete)."""
     world = World(tmp_path)
     src = world.orch.read_source("tiny", "T").collect()
     t1 = world.orch.materialize_tier1("tiny", "T", world.anchor.with_name("T.parquet")).collect()
+    assert t1.columns == src.columns + ["not_in_original_data"] and t1["not_in_original_data"].to_list() == [False] * 3
+    t1 = t1.drop("not_in_original_data")
     assert src.equals(t1) and src.dtypes == t1.dtypes and src.columns == t1.columns
     assert src.rows() == [("s1", "A"), ("s2", "A"), ("s3", "B")]
 

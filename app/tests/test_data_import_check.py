@@ -33,6 +33,7 @@ data_schemas:
     source: {{type: local_tsv, path: {t_path}}}
     null_values: []
     strip: false
+    completion: {{marker: T_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: Sample ID, type: String, ui_label: Sample, is_entity_id: true}}
       country: {{original_name: Country, type: String, ui_label: Country}}
@@ -42,6 +43,7 @@ data_schemas:
     source: {{type: local_tsv, path: {u_path}}}
     null_values: []
     strip: false
+    completion: {{marker: U_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       id: {{type: String, ui_label: Id, is_entity_id: true}}
       value: {{type: Float64, ui_label: Value}}
@@ -50,6 +52,7 @@ data_schemas:
     source: {{type: {w_type}, path: {w_path}}}
     null_values: []
     strip: false
+    completion: {{marker: W_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       id: {{type: String, ui_label: Id, is_entity_id: true}}
     tier1: {{steps: []}}

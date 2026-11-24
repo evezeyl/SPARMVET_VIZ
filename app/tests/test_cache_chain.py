@@ -65,6 +65,7 @@ data_schemas:
     source: {{type: local_tsv, path: {source_path or self.data_file}}}
     null_values: []
     strip: false
+    completion: {{marker: not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: {group_type}, ui_label: Group}}
