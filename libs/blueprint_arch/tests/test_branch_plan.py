@@ -76,12 +76,6 @@ def test_the_starting_recipe_is_valid(master):
 
 # -- a schema
 
-# KNOWN, not fixed here (BLUEPRINT is untouched in this step, D-0613): the branch of a table that takes part in the completion of the ids copies its input fields, so the branch declares
-# the entity id too and has no `completion` block (E04). The branch writer must write the block with a marker of its own (E06). Strict: the day it does, these pass and the mark is removed.
-BRANCH_HAS_NO_COMPLETION_BLOCK = pytest.mark.xfail(strict=True, reason="the branch of a table that takes part in the completion of the ids has no `completion` block (E04): the branch writer is a later step")
-
-
-@BRANCH_HAS_NO_COMPLETION_BLOCK
 @pytest.mark.parametrize("role", ["wrangling", "input_fields"])
 def test_a_schema_branch_gives_a_valid_recipe_that_loads(master, role):
     """Either node of a table selects the table; `output_fields` is neither a key nor a node role of format 1."""
@@ -112,10 +106,9 @@ def test_a_schema_branch_reads_the_same_file_in_the_same_way(master):
         assert branch[key] == source[key]
     assert branch["null_values"] == ["", "NA"] and branch["strip"] is True
     assert branch["ui_label"] == "Samples (branch)"
-    assert list(branch) == ["ui_label", "source", "null_values", "strip", "input_fields", "tier1"]
+    assert list(branch) == ["ui_label", "source", "null_values", "strip", "completion", "input_fields", "tier1"]   # `samples` declares an entity id: the block is copied
 
 
-@BRANCH_HAS_NO_COMPLETION_BLOCK
 def test_a_schema_branch_reuses_an_included_fields_file(tmp_path):
     recipe = recipe_with_a_join()
     write_fragment(tmp_path / "tiny" / "samples_fields.yaml", recipe["data_schemas"]["samples"]["input_fields"])
@@ -267,3 +260,30 @@ def test_a_refused_branch_writes_nothing(master, schema_id, role, new_id, word):
 def test_a_missing_recipe_file_is_refused(tmp_path):
     plan = generate_branch_plan(str(tmp_path / "none.yaml"), "samples", "wrangling", "x")
     assert plan["ok"] is False and plan["fragments"] == []
+
+
+# -- the completion of the ids: the branch of a table that takes part carries the block, with a marker of its own (E06)
+
+def test_a_schema_branch_copies_the_completion_block_and_renames_the_marker_to_its_own_id(master):
+    plan = generate_branch_plan(str(master), "samples", "wrangling", "samples_b")
+    apply_plan(master, plan)
+    raw, _ = load_recipe(master)
+    assert raw["data_schemas"]["samples"]["completion"]["marker"] == "samples_not_in_original_data"
+    assert raw["data_schemas"]["samples_b"]["completion"] == {"marker": "samples_b_not_in_original_data",
+                                                              "meaning": raw["data_schemas"]["samples"]["completion"]["meaning"]}
+    assert check_recipe_file(master).errors == []
+
+
+def test_a_marker_that_does_not_start_with_the_table_id_keeps_its_whole_name_after_the_new_id(tmp_path):
+    recipe = recipe_with_a_join()
+    recipe["data_schemas"]["samples"]["completion"]["marker"] = "mine"
+    path = write_master(tmp_path, recipe)
+    apply_plan(path, generate_branch_plan(str(path), "samples", "wrangling", "samples_b"))
+    raw, _ = load_recipe(path)
+    assert raw["data_schemas"]["samples_b"]["completion"]["marker"] == "samples_b_mine" and check_recipe_file(path).errors == []
+
+
+def test_the_branch_of_a_table_that_declares_no_entity_id_gets_no_block(master):
+    apply_plan(master, generate_branch_plan(str(master), "reads", "wrangling", "reads_b"))
+    raw, _ = load_recipe(master)
+    assert "completion" not in raw["data_schemas"]["reads_b"] and check_recipe_file(master).errors == []

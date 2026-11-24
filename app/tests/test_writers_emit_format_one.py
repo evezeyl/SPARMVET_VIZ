@@ -188,10 +188,7 @@ def apply_plan(master: Path, plan: dict) -> None:
 
 
 @pytest.mark.parametrize("node, role, new_id", [
-    pytest.param("samples", "wrangling", "samples_b", marks=pytest.mark.xfail(strict=True, reason=(
-        "KNOWN, not fixed here (BLUEPRINT is untouched in this step): the branch of a table that takes part in the completion of the ids copies its input fields, so the branch "
-        "declares the entity id too and has no `completion` block (E04). The branch writer (libs/blueprint_arch, generate_branch_plan) must write the block with a marker of its own (E06)."))),
-    ("C", "join", "C_b"), ("tiny_plot", "plot_spec", "tiny_plot_b")])
+    ("samples", "wrangling", "samples_b"), ("C", "join", "C_b"), ("tiny_plot", "plot_spec", "tiny_plot_b")])
 def test_a_branch_of_blueprint_passes_the_checker_loads_and_reads_its_data(project, catalogs, node, role, new_id):
     path = write_recipe(project / "recipes" / "tiny.yaml", tiny_recipe())
     apply_plan(path, generate_branch_plan(str(path), node, role, new_id))
@@ -207,7 +204,7 @@ def test_a_join_branch_runs_and_gives_the_table_of_its_base(project, catalogs):
     orchestrator = DataOrchestrator(project / "recipes", project / "data")
     table = orchestrator.materialize_tier1("tiny", "C_b", project / "anchors" / "C_b.parquet")
     assert [row["sample_id"] for row in rows(table)] == ["s2", "s3"]
-    assert table.collect_schema().names() == ["sample_id", "country", "reads", "not_in_original_data"]   # the table of its base, with the marker column of the completion of the ids
+    assert table.collect_schema().names() == ["sample_id", "country", "reads", "samples_not_in_original_data"]   # the table of its base, with the marker column of the completion of the ids
 
 
 # -- 5. the script create_data_analysis_recipe.py
