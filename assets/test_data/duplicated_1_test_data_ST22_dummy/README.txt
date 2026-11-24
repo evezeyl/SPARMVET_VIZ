@@ -27,6 +27,8 @@ ingestor.find_file(schema_id) finds them by the exact name `<schema id>.tsv`:
   ResFinder.tsv            ← schema: ResFinder
   MLST.tsv                 ← schema: MLST  (the file is named after the dataset id: no fuzzy search)
   metadata_schema.tsv      ← schema: metadata_schema
+  QA_year_types.tsv        ← schema: QA_year_types (copy of metadata_schema.tsv: a table of the recipe made from the metadata file, D-0610)
+  QA_aggregated_no_key.tsv ← schema: QA_aggregated_no_key (copy of metadata_schema.tsv, same reason)
   PlasmidFinder.tsv        ← not in current ST22 data analysis recipe; kept for future use
 
 Schemas not represented (VirulenceFinder, APEC_STEC_virulence_genes) will fail

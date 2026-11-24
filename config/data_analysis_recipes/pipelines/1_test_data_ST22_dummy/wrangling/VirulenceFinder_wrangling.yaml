@@ -1,6 +1,8 @@
 steps:
+  # the select keeps the table's own marker column (added by the app to an entity with no line in the file), so that a table or a plot made
+  # from this one can tell an added line from a line of the file (PROVISIONAL: the agent's choice, D-0613)
   - action: polars_select
-    exprs: [sample_id, serotype, virulence_raw]
+    exprs: [sample_id, serotype, virulence_raw, VirulenceFinder_not_in_original_data]
   - action: polars_with_columns
     named_exprs:
       virulence_raw: pl.col('virulence_raw').cast(pl.String).str.split(',')

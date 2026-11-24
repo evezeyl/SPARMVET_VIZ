@@ -1,9 +1,11 @@
 # QA canary: every sample must stay in the result, also the ones without an AMR gene (left join).
 # T1 is long (one row per sample and gene, a sample without a gene keeps one row with an empty gene);
 # T2 is one row per sample with its gene count (0 for the samples without a gene).
+# The table starts from the ResFinder table (data first) and the metadata is left-joined to it. The entities with no ResFinder result are the
+# lines the app added to ResFinder (completion): they stay, with an empty gene.
 steps:
   - action: polars_join
-    right_ingredient: ResFinder
+    right_ingredient: metadata_schema
     'on': [sample_id]
     how: left
     maintain_order: left_right

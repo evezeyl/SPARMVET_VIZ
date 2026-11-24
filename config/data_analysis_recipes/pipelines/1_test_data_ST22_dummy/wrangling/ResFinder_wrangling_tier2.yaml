@@ -1,9 +1,10 @@
 
 steps:
-  # Calculate total gene count per sample for sorting purposes
+  # Calculate total gene count per sample for sorting purposes. A line the app added for an entity with no ResFinder result is not a gene:
+  # the count only counts the lines of the file (the marker is false), so such an entity has 0 genes, not 1.
   - action: polars_with_columns
     named_exprs:
-      total_gene_count: pl.len().over(['sample_id'])
+      total_gene_count: (~pl.col('ResFinder_not_in_original_data')).sum().over(['sample_id'])
 
   # Sort primarily by total count (to see most resistant isolates together)
   - action: polars_sort

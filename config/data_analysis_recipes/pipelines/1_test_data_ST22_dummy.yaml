@@ -145,8 +145,6 @@ data_schemas:
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 
-# ── Additional Datasets ───────────────────────────────────────────────────────
-additional_datasets_schemas:
   VirulenceFinder:
     ui_label: "VirulenceFinder"
     description: "VirulenceFinder (Gene detection)"
@@ -155,9 +153,46 @@ additional_datasets_schemas:
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
     null_values: []
     strip: true
+    completion:
+      marker: VirulenceFinder_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     tier1: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
 
+  # The two QA canaries below are made from the metadata file alone. A recipe does not start a joined table from the metadata, so they are tables of
+  # their own (data schemas on the same file as the metadata, D-0610): the file is read a second time under another name, and each table has
+  # its own marker. The plots that read them keep their `target_dataset`.
+  QA_year_types:
+    ui_label: "QA year types"
+    description: QA canary - year as a number and as a label without ".0". A table of its own on the metadata file (no join).
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+    null_values: []
+    strip: true
+    completion:
+      marker: QA_year_types_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
+
+  QA_aggregated_no_key:
+    ui_label: "QA aggregated no key"
+    description: "QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60). A table of its own on the metadata file (no join)."
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+    null_values: []
+    strip: true
+    completion:
+      marker: QA_aggregated_no_key_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key_tier1.yaml'
+    tier2: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key_tier2.yaml'
+
+# ── Additional Datasets ───────────────────────────────────────────────────────
+additional_datasets_schemas:
   APEC_STEC_virulence_genes:
     ui_label: "APEC STEC virulence genes"
     description: "VirulenceFinder Reference dataset (Gene detection)"
@@ -254,8 +289,8 @@ joins:
     ui_label: "ST22 Anchor"
     description: "One row per sample, selected virulence gene and AMR gene hit (a sample with no AMR hit counts as one hit): metadata, FastP, ResFinder, MLST and VirulenceFinder joined, then only the genes of the APEC/STEC list kept (inner join)."
     ingredients:
-    - dataset_id: metadata_schema
     - dataset_id: FastP
+    - dataset_id: metadata_schema
     - dataset_id: ResFinder
     - dataset_id: MLST
     - dataset_id: VirulenceFinder
@@ -280,8 +315,8 @@ joins:
     ui_label: "QA AMR per sample"
     description: QA canary - samples without an AMR gene must stay (long T1, one row per sample in T2).
     ingredients:
-    - dataset_id: metadata_schema
     - dataset_id: ResFinder
+    - dataset_id: metadata_schema
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample_tier1.yaml'
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample_tier2.yaml'
 
@@ -291,13 +326,6 @@ joins:
     ingredients:
     - dataset_id: Summary_quality
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_ST_with_NA.yaml'
-
-  QA_year_types:
-    ui_label: "QA year types"
-    description: QA canary - year as a number and as a label without ".0".
-    ingredients:
-    - dataset_id: metadata_schema
-    tier1: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
 
   QA_L50_integer:
     ui_label: "QA L50 integer"
@@ -310,26 +338,18 @@ joins:
     ui_label: "QA fanout exhibit"
     description: "QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68)."
     ingredients:
-    - dataset_id: metadata_schema
     - dataset_id: ResFinder
+    - dataset_id: metadata_schema
     - dataset_id: VirulenceFinder
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit_tier1.yaml'
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit_tier2.yaml'
-
-  QA_aggregated_no_key:
-    ui_label: "QA aggregated no key"
-    description: "QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60)."
-    ingredients:
-    - dataset_id: metadata_schema
-    tier1: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key_tier1.yaml'
-    tier2: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key_tier2.yaml'
 
   QA_population_zscore:
     ui_label: "QA population zscore"
     description: QA canary - a z-score across samples, so a sample removed before the step changes every other sample (audit placement rule).
     ingredients:
-    - dataset_id: metadata_schema
     - dataset_id: Quast
+    - dataset_id: metadata_schema
     tier1: !include '1_test_data_ST22_dummy/wrangling/QA_population_zscore_tier1.yaml'
     tier2: !include '1_test_data_ST22_dummy/wrangling/QA_population_zscore_tier2.yaml'
 
