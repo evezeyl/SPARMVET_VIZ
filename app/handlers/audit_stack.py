@@ -30,10 +30,12 @@ from collections import Counter
 from shiny import reactive, render, ui
 
 from utils.fix_text import fix_label
+from utils.recipe_graph import RecipeGraphError, build_graph
 from app.modules.error_notice import notice
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
+from app.modules.audit_places import PLACES_BUCKET, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -111,6 +113,12 @@ def _condition_summary(node: dict) -> str:
         keys = [k for k in ("fill", "colour", "alpha", "shape") if k in p]
         return ", ".join(keys) if keys else "overrides"
     return str(p)[:40]
+
+
+def place_words(place: str) -> str:
+    """A place in plain words for the audit card: `T1:ResFinder` is "Table ResFinder (tier 1)"."""
+    tier, _, table = (place or "").partition(":")
+    return f"Table {table} (tier {tier[1:]})" if tier in ("T1", "T2") and table else str(place)
 
 
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
@@ -326,6 +334,19 @@ def define_server(input, output, session, *,
             return ui.div("⏳ Pending", class_="audit-pending-badge text-center")
         return ui.div()
 
+    _graph_memo: dict = {}
+
+    def _graph_of_open_recipe():
+        """The recipe graph of the open recipe, kept while the recipe is the same object; None when it cannot be drawn (the card then says nothing of the place's reach)."""
+        raw = active_cfg().raw_config
+        if _graph_memo.get("raw") is not raw:
+            try:
+                _graph_memo.clear()
+                _graph_memo.update(raw=raw, graph=build_graph(raw))
+            except RecipeGraphError:
+                _graph_memo.update(raw=raw, graph=None)
+        return _graph_memo.get("graph")
+
     def _active_target_ds() -> str:
         """Return the target_dataset for the currently active plot.
 
@@ -428,6 +449,21 @@ def define_server(input, output, session, *,
         pending_all = list(state.get("_pending_t3_nodes", []))
         pending_here = [n for n in pending_all
                         if n.get("plot_scope") == active_subtab]
+        # The steps written at a table upstream (demo step 3): the plot is below their place, so they are part of its audit. One step is one card here.
+        reach_of: dict[str, list[str]] = {}
+        graph = _graph_of_open_recipe()
+        if graph is not None:
+            open_plot = active_subtab.removeprefix("subtab_")
+            for node in list(by_plot.get(PLACES_BUCKET, [])) + [n for n in pending_all if n.get("plot_scope") == PLACES_BUCKET]:
+                place = node.get("place") or ""
+                if place and place not in reach_of and graph.has_node(place):
+                    reach_of[place] = plots_below(graph, [place])
+            place_committed = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", [])]
+            place_pending = [n for n in pending_all if n.get("plot_scope") == PLACES_BUCKET and open_plot in reach_of.get(n.get("place") or "", [])]
+        else:
+            place_committed, place_pending = [], []
+        committed_here = committed_here + place_committed
+        pending_here = pending_here + place_pending
 
         # For "Applied to N plots" badge: count unique plot_scopes per id.
         scope_count_by_id: dict[str, int] = {}
@@ -441,7 +477,7 @@ def define_server(input, output, session, *,
             if nid:
                 scope_count_by_id[nid] = scope_count_by_id.get(nid, 0) + 1
 
-        all_nodes = committed_here + pending_here
+        all_nodes = sorted(committed_here + pending_here, key=lambda n: n.get("created_at", ""))
 
         # Orphan/legacy nodes for this session
         orphaned = list(by_plot.get("__legacy__", []))
@@ -503,6 +539,12 @@ def define_server(input, output, session, *,
                 class_="spv-badge-pk-warn",
             ) if pk_warn else ui.span()
 
+            place = node.get("place") or ""
+            place_banner = ui.div(
+                f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there.",
+                class_="spv-text-xxs text-muted",
+            ) if place else ui.span()
+
             id_suffix = _safe_input_suffix(nid)
 
             if needs_reason and is_active:
@@ -535,6 +577,7 @@ def define_server(input, output, session, *,
                         class_="spv-audit-header-row",
                     ),
                     pk_banner,
+                    place_banner,
                     ui.div(
                         summary,
                         class_="spv-text-sm mt-1",

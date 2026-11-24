@@ -413,13 +413,32 @@ def define_server(input, output, session, *,
         read or drawn): the caller shows it as the notice of the view, never as a traceback."""
         if not p_id:
             raise KeyError("No plot is open, so no source table can be listed.")
+        return source_tables_of_plot(_open_graph(), p_id)
+
+    def _open_graph():
+        """The recipe graph of the open recipe (`utils.recipe_graph`), kept while the recipe file and id are the same. Raises what the load or the graph raises."""
         data_analysis_recipe_id = _open_recipe_id()
         loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml")
         memo_key = (data_analysis_recipe_id, loaded.signature)
         if memo_key not in _graph_memo:
             _graph_memo.clear()
             _graph_memo[memo_key] = build_graph(loaded.raw)
-        return source_tables_of_plot(_graph_memo[memo_key], p_id)
+        return _graph_memo[memo_key]
+
+    def _place_nodes_above(subtab_id: str | None) -> list[dict]:
+        """The committed audit steps written at a place upstream of the plot `subtab_id` (the plot lies below their place), each decision once."""
+        if home_state is None or not subtab_id:
+            return []
+        nodes = place_nodes(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
+        if not nodes:
+            return []
+        try:
+            graph = _open_graph()
+        except Exception:
+            return []
+        plot_node = f"T3:{subtab_id.removeprefix('subtab_')}"
+        found = [n for n in nodes if graph.has_node(n["place"]) and plot_node in graph.below(n["place"])]
+        return list({n.get("id"): n for n in found}.values())
 
     def _effective_source_table(p_id: str | None) -> str | None:
         """The source table the Source choice shows for the plot `p_id`: the user's pick when it feeds this plot, else the first that does
@@ -495,14 +514,31 @@ def define_server(input, output, session, *,
 
     _place_audit: list = []      # [PlaceAudit] once made: it keeps the run of the audit copy between two reads
 
+    def _the_place_audit() -> PlaceAudit:
+        if not _place_audit:
+            _place_audit.append(PlaceAudit(orchestrator, bootloader.get_location("user_data") / "anchors", bootloader.get_location("user_data") / "audit_anchors"))
+        return _place_audit[0]
+
+    def _committed_place_nodes() -> list[dict]:
+        return place_nodes((home_state.get().get("t3_audit_steps_by_plot", {}) or {}) if home_state is not None else {})
+
     def _audited_t3_lf(plot_id: str):
         """The table `plot_id` reads in the audit copy made from the audit steps written at a place upstream (`audit_view.PlaceAudit`), lazy; None when no such step
         lies above the plot (it then reads its original table). Audit mode only: the caller asks `_in_audit()`. Raises what the run raises (an `AuditRunError` that names the
         step and its place, an `AuditCopyError`): the callers show it in the place of the plot, never skip a step."""
-        if not _place_audit:
-            _place_audit.append(PlaceAudit(orchestrator, bootloader.get_location("user_data") / "anchors", bootloader.get_location("user_data") / "audit_anchors"))
-        nodes = place_nodes((home_state.get().get("t3_audit_steps_by_plot", {}) or {}) if home_state is not None else {})
-        return _place_audit[0].plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, _tell_inputs_changed)
+        nodes = _committed_place_nodes()
+        return _the_place_audit().plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, _tell_inputs_changed)
+
+    def _plot_table_changed(plot_id: str) -> bool | None:
+        """Whether the audit steps written at a place upstream changed the CONTENT of the table of `plot_id` (a step that removes nothing moves a key and no row, ADR-101 point 6);
+        None when it cannot be told (the run fails: the plot itself shows why)."""
+        nodes = _committed_place_nodes()
+        if not nodes:
+            return None
+        try:
+            return plot_id in _the_place_audit().affected_plots(_open_recipe_id(), nodes, _recipe_plans())
+        except Exception:
+            return None
 
     def _resolve_active_lf(spec: dict | None, tier: str | None = None, original: bool = False):
         """Return a LazyFrame for the table the data choice names, for the plot of `spec` (or tier1_anchor).
@@ -857,7 +893,7 @@ def define_server(input, output, session, *,
 
     def _audited_step_count(subtab_id) -> int:
         """How many audited steps (filters and column drops) this plot has: what Audit mode puts on its T3 table and its plot (issue #17)."""
-        return len(_t3_filter_rows(subtab_id)) + len(_t3_drop_columns(subtab_id))
+        return len(_t3_filter_rows(subtab_id)) + len(_t3_drop_columns(subtab_id)) + len(_place_nodes_above(subtab_id))
 
     # Compare (Audit mode only, D-0147): a switch of the strip. Its value is kept here, so that a rebuild of the strip (a workspace switch)
     # or a stay in Exploration does not forget it. PROVISIONAL P-B7: the input is called `audit_compare`.
@@ -984,7 +1020,9 @@ def define_server(input, output, session, *,
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
             return _badge_ui(plot_badge("audit" if audit else "exploration", has_plot_steps(active_cfg().raw_config, p_id), has_t2,
-                                        preview_filters=len(_applied_for_view()), audited_steps=_audited_step_count(f"subtab_{p_id}")))
+                                        preview_filters=len(_applied_for_view()), audited_steps=_audited_step_count(f"subtab_{p_id}"),
+                                        upstream_steps=len(_place_nodes_above(f"subtab_{p_id}")),
+                                        table_changed=_plot_table_changed(p_id) if audit and _place_nodes_above(f"subtab_{p_id}") else None))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui

@@ -34,8 +34,9 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from app.modules.audit_places import PLACES_BUCKET
+from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, place_lines, reach_sentence
 from utils import key_drop
+from utils.recipe_graph import RecipeGraphError, build_graph
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
 from utils.na_choice import default_na, na_of
@@ -1014,6 +1015,23 @@ def define_filter_audit_server(input, output, session, *,
                 result[sub] = "absent"
         return result
 
+    def _places_offered(scratch_nodes: list[dict], active_subtab: str):
+        """(graph, plan book, the lines of `audit_places.place_lines`) for the step in `scratch_nodes` and the plot `active_subtab`, or None when no table upstream can be offered
+        (the recipe cannot be drawn, the engine's plan is not there, no plot is open). Never raises: a failure of this lookup only means the choice is not offered."""
+        if recipe_raw is None or recipe_plans is None or not active_subtab:
+            return None
+        columns = [n.get("params", {}).get("column", "") for n in scratch_nodes]
+        try:
+            plans = recipe_plans()
+            if plans is None:
+                return None
+            graph = build_graph(recipe_raw())
+            return graph, plans, place_lines(graph, plans, active_subtab.removeprefix("subtab_"), columns)
+        except PlanComposerBug:
+            return None            # the plain notice was shown by `recipe_plans`
+        except (RecipeGraphError, KeyError):
+            return None
+
     def _open_propagation_modal(scratch_nodes: list[dict],
                                 active_subtab: str,
                                 kind: str) -> None:
@@ -1096,6 +1114,29 @@ def define_filter_audit_server(input, output, session, *,
             class_="alert alert-info py-1 px-2 mb-2 spv-text-sm",
         )
 
+        # D-0535, D-0553: the user chooses where the step is written. "This plot only" and the two plot-level choices stay as they were; the
+        # choice "At a table upstream" writes ONE step at a table the plot is built from (every table and plot below it is built again from it).
+        offered = _places_offered(scratch_nodes, active_subtab)
+        place_lines_offered = offered[2].lines if offered else ()
+        radio_choices = {
+            "this": "This plot only",
+            "all": "All plots",
+            "except": "All plots except…",
+        }
+        if place_lines_offered:
+            radio_choices["place"] = "At a table this plot is built from"
+        places_block = ui.div(
+            ui.input_checkbox_group(
+                "propagation_places",
+                label=ui.tags.small("The step is written at the table you choose, and every table and plot built from it is built again. "
+                                    "Choose one table, or the first table of several original tables.", class_="text-muted"),
+                choices={line.place: f"{line_label(line)}: {reach_sentence(line)}" for line in place_lines_offered},
+                selected=[],
+            ),
+            id="propagation_places_wrapper",
+            style="display:none;",
+        ) if place_lines_offered else ui.span()
+
         m = ui.modal(
             warn,
             propagation_preview,
@@ -1103,14 +1144,11 @@ def define_filter_audit_server(input, output, session, *,
             ui.input_radio_buttons(
                 "propagation_choice",
                 label="Apply to:",
-                choices={
-                    "this": "This plot only",
-                    "all": "All plots",
-                    "except": "All plots except…",
-                },
+                choices=radio_choices,
                 selected="this",
                 inline=False,
             ),
+            places_block,
             ui.div(
                 ui.input_selectize(
                     "propagation_except",
@@ -1140,6 +1178,13 @@ def define_filter_audit_server(input, output, session, *,
                         if (wrapper) {
                             wrapper.style.display =
                                 (checked && checked.value === 'except') ? '' : 'none';
+                        }
+                        var places = document.getElementById(
+                            'propagation_places_wrapper'
+                        );
+                        if (places) {
+                            places.style.display =
+                                (checked && checked.value === 'place') ? '' : 'none';
                         }
                     }
                     document.addEventListener('change', function (e) {
@@ -1175,6 +1220,9 @@ def define_filter_audit_server(input, output, session, *,
             return
 
         choice = safe_input(input, "propagation_choice", "this")
+        if choice == "place":
+            _confirm_places(scratch, scratch_nodes)
+            return
         except_picks = safe_input(input, "propagation_except", []) or []
         if isinstance(except_picks, (list, tuple)):
             except_picks = list(except_picks)
@@ -1240,6 +1288,49 @@ def define_filter_audit_server(input, output, session, *,
             )
             msg += f" Skipped (column not in plot data): {skipped_summary}."
         _notify(msg, type="message", duration=7)
+
+    def _confirm_places(scratch: dict, scratch_nodes: list[dict]) -> None:
+        """The user chose "At a table this plot is built from": check the choice, then stage ONE step per ticked table, each written at its place (D-0535, D-0553).
+
+        Refused in one plain sentence, with the dialog left open and nothing staged: no table ticked, a table below another ticked one (at most one place on a path;
+        the first tables of several original tables are valid together), a place the step cannot be written at, and a column drop of a key that a later join reads
+        (`utils.key_drop`, by place, D-0358). The ticked tables share the id of the decision (one decision, linked removal). The step is staged without a reason, as
+        every audit step: Apply is locked until it has one."""
+        state = home_state.get()
+        active_subtab = state.get("active_plot_subtab") or active_home_subtab.get() or ""
+        found = _places_offered(scratch_nodes, active_subtab)
+        if found is None:
+            _notify("No table upstream of this plot can be offered now. Nothing was added.", type="error", duration=8)
+            return
+        graph, plans, lines = found
+        picks = safe_input(input, "propagation_places", []) or []
+        picks = list(picks) if isinstance(picks, (list, tuple)) else [picks]
+        problem = choice_problem(graph, lines.lines, picks)
+        if problem is None and scratch.get("kind") == "drop":
+            gate = key_drop.DropGate(recipe_raw(), plans)
+            for place in picks:
+                problem = gate.problem(place, [n.get("params", {}).get("column", "") for n in scratch_nodes])
+                if problem:
+                    break
+        if problem:
+            _notify(f"⛔ {problem}", type="error", duration=8)
+            return
+        from app.modules.session_manager import make_audit_step
+        pending_nodes = list(state.get("_pending_t3_nodes", []))
+        for scratch_node in scratch_nodes:
+            for place in picks:
+                pending_nodes.append(make_audit_step(
+                    scratch_node["node_type"], dict(scratch_node.get("params", {})),
+                    plot_scope=PLACES_BUCKET, reason="",
+                    primary_key_warning=bool(scratch_node.get("primary_key_warning")),
+                    node_id=scratch_node.get("id"), place=place, started_from=active_subtab,
+                ))
+        home_state.set({**state, "_pending_t3_nodes": pending_nodes})
+        _propagation_scratch.set({"nodes": [], "kind": ""})
+        ui.modal_remove()
+        reached = {p for line in lines.lines if line.place in picks for p in line.plots}
+        _notify(f"✅ {len(scratch_nodes)} audit step(s) added at {', '.join(picks)}: {len(reached)} plot(s) are built from there. Write the reason, then press Apply.",
+                type="message", duration=7)
 
     def _plot_has_column(subtab_id: str, column: str) -> bool:
         """Return True if the plot's resolved LazyFrame has the column.

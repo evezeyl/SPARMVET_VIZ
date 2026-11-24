@@ -134,12 +134,16 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
     return ViewBadge(view=view, label=label, notes=tuple(notes), tone="audited" if audited else "plain")
 
 
-def plot_badge(mode: str, plot_has_steps: bool, has_tier2: bool, preview_filters: int = 0, audited_steps: int = 0) -> ViewBadge:
+def plot_badge(mode: str, plot_has_steps: bool, has_tier2: bool, preview_filters: int = 0, audited_steps: int = 0, upstream_steps: int = 0, table_changed: Optional[bool] = None) -> ViewBadge:
     """The badge of a plot. In Exploration the plot is the Result (D-0019, D-0180): never changed by an exploration filter. In Audit mode it
-    is the audited plot: the Result plus the audited steps of this plot (Apply-gated)."""
+    is the audited plot: the Result plus the audited steps of this plot (Apply-gated). `upstream_steps` are the ones of `audited_steps` that were written at a table
+    the plot is built from (demo step 3; PROVISIONAL words); `table_changed` says whether they changed this plot's table (None: not told).""" 
     if mode == "audit":
         if audited_steps:
-            return ViewBadge("PLOT", "Plot: Audited", (f"{audited_steps} audited step(s) on this plot",), "audited")
+            notes = (f"{audited_steps} audited step(s) on this plot",) + ((f"{upstream_steps} of them written at a table this plot is built from",) if upstream_steps else ())
+            if upstream_steps and table_changed is not None:
+                notes += (("its table changed" if table_changed else "its table is the same as the original (those steps remove nothing here)"),)
+            return ViewBadge("PLOT", "Plot: Audited", notes, "audited")
         return ViewBadge("PLOT", "Plot: Audited", ("no audited step for this plot yet: identical to the Result",), "plain")
     notes: list[str] = []
     if plot_has_steps:
