@@ -109,7 +109,7 @@ def test_the_dialog_offers_the_tables_the_plot_is_built_from_and_refuses_a_neste
     assert page.locator("#propagation_places input[value='T1:ResFinder']").count() == 1
     # nothing ticked: refused
     page.locator("#propagation_confirm").click()
-    expect(page.locator(NOTICE)).to_contain_text("Choose at least one table", timeout=10_000)
+    expect(page.locator(NOTICE)).to_contain_text("Choose at least one place", timeout=10_000)
     expect(page.locator("#propagation_confirm")).to_be_visible()
     _close_notices(page)
     # the tier 1 and the tier 2 of one table: one below the other, refused in one line, the dialog stays

@@ -1146,8 +1146,11 @@ def define_export_server(input, output, session, *,
             with reactive.isolate():
                 _audit_now = bool(in_audit())
             if _audit_now:
-                with reactive.isolate():
-                    _run = audit_run(lambda change: _on_build_change(change))
+                try:
+                    with reactive.isolate():
+                        _run = audit_run(lambda change: _on_build_change(change))
+                except AUDIT_ERRORS:
+                    _run = None        # the audit steps cannot run: the check before anything is written (below) refuses the export with the reason; nothing is written here
                 if _run is not None:
                     for _table, _frames in _run.audited_frames().items():
                         _audited_table_files[_table] = {
@@ -2071,9 +2074,10 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"[Raw data (T1)]({_data_folder}/T1_data.tsv)")
                 if _data_key in exported_t2:
                     qmd_lines.append(f"[Result data (T2)]({_data_folder}/T2_data.tsv)")
-                for _tier, _tier_name in (("T1", "Raw data (T1)"), ("T2", "Result data (T2)")):
-                    if (_data_key, _tier) in _audited_written:
-                        qmd_lines.append(f"[Audited {_tier_name[0].lower() + _tier_name[1:]}]({_data_folder}/{_tier}_data_audited.tsv)")
+                if (_data_key, "T1") in _audited_written:
+                    qmd_lines.append(f"[Audited raw data (T1)]({_data_folder}/T1_data_audited.tsv)")
+                if (_data_key, "T2") in _audited_written:
+                    qmd_lines.append(f"[Audited result data (T2)]({_data_folder}/T2_data_audited.tsv)")
                 for _plot in plot_list:
                     if (_data_key, _plot) in _t3_written:
                         _t3_label = "Analyst-filtered data (T3)" if _plot in audited_plots else "Data of the plot (T3)"

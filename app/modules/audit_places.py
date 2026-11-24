@@ -28,8 +28,8 @@ Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules
 
 # @deps
 # provides: function:place_lines, function:own_place_line, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
-# consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node)
-# consumed_by: app/handlers/filter_and_audit_handlers.py, app/modules/audit_view.py, app/tests/test_audit_places.py
+# consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
+# consumed_by: app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
 # @end_deps
 """

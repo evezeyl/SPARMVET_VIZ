@@ -341,20 +341,21 @@ def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_
     _wait_shiny(page)
     _confirm_scope(page)                      # step 2, pending
     _reasons_and_apply(page, "recorded in this order", 2)
-    expect(page.locator("#home_data_preview")).to_contain_text("audit step 2", timeout=20_000)
+    expect(page.locator("#home_data_preview")).to_contain_text("cannot be applied", timeout=20_000)
     table = _table_text(page)
-    for needle in ("audit step 2 of the plot 'per_year'", "score", "audit step 1", "removed it", "Fix"):
+    # the audit copy names the second step (its id ends in _2) and its place; the engine's words name the column that the first step dropped
+    for needle in ("audit step audit_", "_2 at T3:per_year cannot be applied", "score", "not in the table"):
         assert needle in table, f"the table's place does not say {needle!r}: {table!r}"
     plot = _plot_until(page, lambda im: _red_pixels(im) > 100, "the error text (red) in the plot's place; the filter is not skipped")
     assert _red_pixels(plot) > 100
-    found = [a for a in _alerts(page) if "cannot run" in a]
-    assert len(found) == 1 and "'per_year'" in found[0], found
+    found = [a for a in _alerts(page) if "cannot be applied" in a]
+    assert len(found) == 1 and "T3:per_year" in found[0], found
     archive = _export_bundle(page)            # the export is checked before anything is written
     assert archive.namelist() == ["EXPORT_NOT_CREATED.txt"], archive.namelist()
     notice = archive.read("EXPORT_NOT_CREATED.txt").decode()
-    assert "audit step 2" in notice and "audit step 1" in notice and "'per_year'" in notice, notice
-    # two plots in scope, the second one sound: the export is refused as a whole, and the notice says so and names the failing plot only
-    assert "nothing was exported" in notice and "Plot 'per_year':" in notice and f"Plot '{OTHER_PLOT}':" not in notice, notice
+    assert "audit step audit_" in notice and "_2 at T3:per_year cannot be applied" in notice and "'per_year'" in notice, notice
+    # two plots in scope, the second one sound: the export is refused as a whole, and the notice says so and names the failing step and plot only
+    assert "nothing was exported" in notice and "T3:per_year" in notice and f"T3:{OTHER_PLOT}" not in notice, notice
 
 
 def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page: Page, staged_app):

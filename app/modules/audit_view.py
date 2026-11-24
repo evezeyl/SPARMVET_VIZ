@@ -6,7 +6,7 @@ T3 table, the filter dialog, the results bundle) asks this one object, so they c
 
 - No place node: nothing is built, the audit folder is removed when it exists (a stored table that cannot be served today is not left for a later bug,
   `rules_verification_testing.md` section 9) and every plot reads its original table (the answer is None).
-- Place nodes: the run is made once per (recipe, data, nodes); a plot that lies below no step reads its original table (None); a plot below a step reads the lazy table of the copy.
+- Place nodes (tier 1, tier 2 or tier 3): the run is made once per (recipe, data, nodes); a plot no step reaches reads its original table (None); a plot a step reaches (written at its own tier 3 or at a table it is built from) reads the lazy table of the copy.
 - A step that cannot be applied raises `AuditRunError`, naming the step and its place: never skipped (D-0102). The caller shows it in the place of the plot.
 
 Pure of Shiny. Consumed by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py.
@@ -68,7 +68,7 @@ class PlaceAudit:
 
     def plot_lazy(self, recipe_id: str, plot_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None,
                   told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[Any]:
-        """The table `plot_id` reads in the copy, a Polars lazy frame (typed `Any`: this file names no engine); None when there is no copy or the plot lies below no step (it then reads its original table)."""
+        """The table `plot_id` reads in the copy, a Polars lazy frame (typed `Any`: this file names no engine); None when there is no copy or no step reaches the plot (neither at its own tier 3 nor at a table it is built from): it then reads its original table."""
         run = self.run_of(recipe_id, nodes, plans)
         if run is None:
             return None
