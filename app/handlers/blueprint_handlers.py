@@ -2648,7 +2648,7 @@ def define_server(input, output, session, *,
             ui.modal(
                 ui.input_text("bp_new_slug", "Data analysis recipe ID (snake_case)",
                               placeholder="e.g. my_analysis_v2"),
-                ui.input_text("bp_new_display_name", "Display name",
+                ui.input_text("bp_new_ui_label", "Name shown in the app (ui_label)",
                               placeholder="e.g. My Analysis V2"),
                 ui.input_text_area("bp_new_desc", "Description (optional)",
                                    rows=2, placeholder="What this data analysis recipe analyses"),
@@ -2697,7 +2697,7 @@ def define_server(input, output, session, *,
             )
             return
 
-        display_name = (safe_input(input, "bp_new_display_name", "") or slug).strip()
+        ui_label = (safe_input(input, "bp_new_ui_label", "") or slug).strip()
         desc    = (safe_input(input, "bp_new_desc", "") or "").strip()
         author  = (safe_input(input, "bp_new_author", "") or "").strip()
         today   = datetime.now().strftime("%Y-%m-%d")
@@ -2705,7 +2705,7 @@ def define_server(input, output, session, *,
         # a draft in recipe format 1 (id, spec_version, engines, info.ui_label); the pure part is new_recipe_draft
         try:
             write_recipe(dest, new_recipe_draft(
-                slug, display_name, description=desc, author=author, created=today))
+                slug, ui_label, description=desc, author=author, created=today))
         except Exception as e:
             ui.notification_show(f"Create error: {e}", type="error")
             return
