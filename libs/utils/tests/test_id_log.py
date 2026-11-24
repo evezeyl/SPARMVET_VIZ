@@ -12,7 +12,7 @@ WHEN = "2026-11-24T10:00:00+01:00"
 
 
 def report(extra=()):
-    parts = [Participant("metadata_schema", "metadata", "sample_id", "not_in_metadata", "unknown"), Participant("A", "data", "sample_id", "not_in_original_data", "no result for this entity")]
+    parts = [Participant("metadata_schema", "metadata", "sample_id", "metadata_schema_not_in_original_data", "unknown"), Participant("A", "data", "sample_id", "A_not_in_original_data", "The tool did not run on this entity.")]
     meta = TableIds("metadata_schema", "metadata", "sample_id", 3, ("S1", "S2", "S3"), ())
     a = TableIds("A", "data", "sample_id", 2 + len(extra), ("S1", "S2"), tuple(extra))
     return build_report(parts, [meta, a], [meta, TableIds("A", "data", "sample_id", 3, ("S1", "S2", "S3"), ())])
@@ -30,10 +30,17 @@ def test_an_entry_has_the_date_the_fingerprints_the_report_and_says_it_is_automa
     assert e["ids"]["check_3"] == "passed"
 
 
-def test_the_entry_in_plain_words_names_the_added_lines_the_marker_and_the_meaning():
+def test_the_entry_in_plain_words_names_the_added_lines_the_marker_the_apps_words_and_the_recipe_makers_sentence():
     text = entry_text(entry())
-    assert "automatic, no user" in text and "A (data)" in text and "1 line(s) added, marked in not_in_original_data" in text
-    assert "no result for this entity" in text and "S3" in text and "Check of the equal sets after the completion: passed" in text
+    assert "automatic, no user" in text and "A (data)" in text and '1 line(s) added, marked "missing in original table" in A_not_in_original_data' in text
+    # the sentence of the recipe maker is shown beside the app's own words (the owner, 2026-11-24)
+    assert "in the words of the recipe maker: The tool did not run on this entity" in text and "S3" in text
+    assert "Check of the equal sets after the completion: passed" in text
+
+
+def test_the_data_of_the_entry_holds_the_apps_words_and_the_sentence_per_table():
+    table = entry()["ids"]["tables"][1]
+    assert table["added_line_words"] == "missing in original table" and table["meaning"] == "The tool did not run on this entity." and table["marker"] == "A_not_in_original_data"
 
 
 def test_the_first_write_creates_the_folder_and_the_file_with_a_format_number(tmp_path):

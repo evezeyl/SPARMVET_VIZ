@@ -16,8 +16,8 @@ from utils.id_completion import (Participant, TableIds, build_report, complete_t
                                  report_lines, union_of)
 from utils.recipe_check import check_recipe, spec
 
-DATA_BLOCK = {"marker": "not_in_original_data", "meaning": "no result for this entity"}
-META_BLOCK = {"marker": "not_in_metadata", "meaning": "no metadata for this entity"}
+DATA_BLOCK = {"marker": "not_in_original_data", "meaning": "A line added here means that the entity was not sent to this tool."}
+META_BLOCK = {"marker": "metadata_schema_not_in_original_data", "meaning": "A line added here means that nobody described this entity."}
 
 
 def schema(*, id_declared=True, block=None, extra_fields=None):
@@ -47,7 +47,7 @@ def codes(raw):
 def test_the_metadata_comes_first_then_the_data_tables_in_the_order_written():
     parts = participants(recipe(tables=("B", "A")))
     assert [(p.table, p.kind) for p in parts] == [("metadata_schema", "metadata"), ("B", "data"), ("A", "data")]
-    assert parts[0] == Participant("metadata_schema", "metadata", "sample_id", "not_in_metadata", "no metadata for this entity")
+    assert parts[0] == Participant("metadata_schema", "metadata", "sample_id", "metadata_schema_not_in_original_data", META_BLOCK["meaning"])
 
 
 def test_an_additional_table_never_takes_part_even_when_it_declares_an_entity_id():
@@ -81,20 +81,36 @@ def test_a_table_with_an_entity_id_and_no_block_is_refused_E04_and_the_engine_re
     assert codes(raw) == ["E04"]
     with pytest.raises(DataAnalysisRecipeError) as error:
         participants(raw)
-    assert "'A'" in str(error.value) and "completion" in str(error.value) and "no result for this entity" in error.value.tip
+    # the message names the table and says what to write, the table's own marker included
+    assert "'A'" in str(error.value) and "completion" in str(error.value) and "A_not_in_original_data" in error.value.tip and "sentence" in error.value.tip
 
 
-def test_an_unknown_meaning_is_refused_E05_and_the_message_lists_the_words():
+@pytest.mark.parametrize("sentence", ["", " ", "   \t ", None, 5, ["a sentence"]])
+def test_a_missing_empty_or_blank_meaning_is_refused_E05_with_a_plain_message(sentence):
     raw = recipe(tables=("A",), metadata=False)
-    raw["data_schemas"]["A"]["completion"]["meaning"] = "zero"
+    raw["data_schemas"]["A"]["completion"]["meaning"] = sentence
     found = [p for p in completion_problems(raw, spec()) if p[0] == "E05"]
-    assert len(found) == 1 and "no result for this entity" in found[0][3] and "'zero'" in found[0][2]
+    assert len(found) == 1 and "'A'" in found[0][2] and "sentence" in found[0][3] and "Not yet stated by the recipe maker" in found[0][3]
 
 
-def test_a_meaning_of_the_other_kind_is_refused():
+@pytest.mark.parametrize("sentence", ["unknown", "zero", "no result for this entity", "x", "An added line means the tool ran and found nothing."])
+def test_any_non_blank_sentence_is_accepted_the_check_does_not_judge_the_content_of_the_meaning(sentence):
+    raw = recipe(tables=("A",), metadata=False)
+    raw["data_schemas"]["A"]["completion"]["meaning"] = sentence
+    assert codes(raw) == [] and participants(raw)[-1].meaning == sentence
+
+
+def test_the_same_sentence_is_accepted_for_the_data_and_the_metadata_tables_there_is_no_list_of_words_any_more():
     raw = recipe()
-    raw["metadata_schema"]["completion"]["meaning"] = "no result for this entity"   # a word for a data table
-    assert codes(raw) == ["E05"]
+    raw["metadata_schema"]["completion"]["meaning"] = raw["data_schemas"]["A"]["completion"]["meaning"]
+    assert codes(raw) == []
+
+
+def test_the_specification_has_no_list_of_meanings_and_holds_the_apps_own_words_and_the_starting_sentence():
+    block = spec()["completion"]
+    assert "meanings" not in block and "default_markers" not in block
+    assert block["added_line_words"] == "missing in original table" and block["marker_suffix"] == "not_in_original_data"
+    assert block["starting_meaning"].startswith("Not yet stated by the recipe maker")
 
 
 @pytest.mark.parametrize("block", [{"marker": "not_in_original_data"}, {"meaning": "unknown"}, {"marker": "m", "meaning": "unknown", "count": 3}, "text"])
@@ -115,7 +131,7 @@ def test_two_tables_never_share_a_marker_E06_and_the_message_names_both():
     raw = recipe(tables=("A", "B"), metadata=False)
     raw["data_schemas"]["B"]["completion"]["marker"] = "A_not_in_original_data"
     found = [p for p in completion_problems(raw, spec()) if p[0] == "E06"]
-    assert len(found) == 1 and "'B'" in found[0][2] and "'A'" in found[0][2] and "B_A_not_in_original_data" in found[0][3]
+    assert len(found) == 1 and "'B'" in found[0][2] and "'A'" in found[0][2] and "B_not_in_original_data" in found[0][3]
 
 
 def test_a_marker_may_be_written_with_capitals_like_a_table_id():
@@ -146,7 +162,7 @@ def test_the_checker_reports_the_same_codes_as_the_function_the_engine_reads():
 # -- the ids as read -----------------------------------------------------------------------------
 
 def part(table="A", kind="data", column="sample_id"):
-    return Participant(table, kind, column, "not_in_original_data" if kind == "data" else "not_in_metadata", "unknown")
+    return Participant(table, kind, column, "not_in_original_data" if kind == "data" else "metadata_schema_not_in_original_data", "unknown")
 
 
 def test_a_line_with_no_usable_id_is_not_an_id_and_is_listed_by_its_line_number():
@@ -285,7 +301,9 @@ def test_equal_ids_say_nothing_and_a_difference_is_in_plain_words():
     other = [ids("metadata_schema", "metadata", ["S1", "S2"]), ids("A", "data", ["S1"], no_id=(3,))]
     text = " ".join(report_lines(build_report(parts, other)))
     assert "1 line(s) have no usable id (line numbers 3)" in text and "1 id(s) of the metadata are not in this table: S2" in text
-    assert "1 line(s) were added for ids it lacks (S2)" in text and "not_in_original_data" in text and "unknown" in text
+    assert "1 line(s) were added for ids it lacks (S2)" in text and "not_in_original_data" in text
+    # the app's own fixed words for an added line, and the recipe maker's sentence beside them, are both in the warning
+    assert '"missing in original table"' in text and "in the words of the recipe maker: unknown" in text
 
 
 def test_a_long_list_of_ids_is_cut_in_the_words_but_whole_in_the_data():

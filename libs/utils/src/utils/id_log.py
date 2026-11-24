@@ -32,7 +32,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from utils.id_completion import IdReport
+from utils.id_completion import IdReport, added_line_words
 
 FORMAT = 1
 AUTOMATIC = "automatic, no user"
@@ -80,7 +80,8 @@ def entry_text(entry: Dict[str, Any]) -> str:
         if t["lines_with_no_usable_id"]:
             parts.append(f"{t['lines_with_no_usable_id']} line(s) with no usable id (numbers: {', '.join(str(n) for n in t.get('lines_with_no_usable_id_numbers', []))})")
         if t["ids_added"]["count"]:
-            parts.append(f"{t['ids_added']['count']} line(s) added, marked in {t['marker']} (meaning: {t['meaning']}): {', '.join(t['ids_added']['ids'])}")
+            parts.append(f"{t['ids_added']['count']} line(s) added, marked \"{t.get('added_line_words', added_line_words())}\" in {t['marker']}: {', '.join(t['ids_added']['ids'])}. "
+                         f"What an added line means for {t['table']}, in the words of the recipe maker: {t['meaning'].strip().rstrip('.')}")
         c1, c2 = t.get("check_1_ids_not_in_the_metadata"), t.get("check_2_metadata_ids_not_in_this_table")
         if c1 and c1["count"]:
             parts.append(f"{c1['count']} id(s) not in the metadata")

@@ -137,7 +137,7 @@ CASES = [
     ("E02", "E", lambda r: (r.update(entity={"noun": "s", "plural": "ss", "population": "A"}),
                             r["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_id")), "run"),
     ("E04", "E", lambda r: r["data_schemas"]["A"].pop("completion"), "run"),
-    ("E05", "E", lambda r: r["data_schemas"]["A"]["completion"].update(meaning="zero"), "run"),
+    ("E05", "E", lambda r: r["data_schemas"]["A"]["completion"].update(meaning="   "), "run"),
     ("E05", "E", lambda r: r["data_schemas"]["A"]["completion"].pop("marker"), "run"),
     ("E06", "E", lambda r: r["data_schemas"]["A"]["completion"].update(marker="Not In"), "run"),
     ("E06", "E", lambda r: r["data_schemas"]["A"]["completion"].update(marker="v"), "run"),

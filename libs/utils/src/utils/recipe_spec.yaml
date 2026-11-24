@@ -70,20 +70,24 @@ elements:
 
 reserved_schema_ids: [metadata_schema]
 
-# The completion of the ids (D-0572 to D-0599, D-0613; PROVISIONAL form, an agent's choice, built 2026-11-24). A table of `data_schemas` or the metadata table that
-# declares an entity id (`is_entity_id`) states in its `completion` block what a line added for an entity id it lacks means; the app adds those lines when it
-# reads the files (`utils.id_completion`). `marker` is the name of the yes/no column the app adds (true on an added line); `meaning` is one word of the list
-# for the kind of table. Two tables never share a marker (a join of three of them would hold two columns of one name: E06). The block is required where an entity id is declared (E04) and refused where nothing is completed (E07). A table of
-# `additional_datasets_schemas` is never completed. The key is NOT a change of `format_version`: format 1 was amended before its first release (D-0469).
+# The completion of the ids (D-0572 to D-0599, D-0613, and the owner's words of 2026-11-24; PROVISIONAL form, an agent's choice, built 2026-11-24). A table of
+# `data_schemas` or the metadata table that declares an entity id (`is_entity_id`) states in its `completion` block what a line added for an entity id it lacks
+# means; the app adds those lines when it reads the files (`utils.id_completion`). `marker` is the name of the yes/no column the app adds (true on an added
+# line); by convention it is `<table>_not_in_original_data` (the table's id, then the suffix below; the metadata table is `metadata_schema`), and the check does not
+# enforce that pattern: it only needs a column name that no field of the table has and that no other table uses (E06: a join of two tables would hold two
+# columns of one name). `meaning` is a free sentence written by the recipe maker, specific to the table: what an added line means for THIS table; the check refuses
+# a missing or blank sentence (E05) and does not judge the content. The block is required where an entity id is declared (E04) and refused where nothing is
+# completed (E07). A table of `additional_datasets_schemas` is never completed. The key is NOT a change of `format_version`: format 1 was amended before its
+# first release (D-0469).
 completion:
   keys: [marker, meaning]
   marker_pattern: "[A-Za-z][A-Za-z0-9_]*"
-  default_markers:
-    data: not_in_original_data
-    metadata: not_in_metadata
-  meanings:
-    data: [no result for this entity, not analysed, unknown]
-    metadata: [no metadata for this entity, not described, unknown]
+  marker_suffix: not_in_original_data
+  # the app's own fixed words for an added line (in the log, the export and the warning), whatever the recipe maker writes in `meaning`
+  added_line_words: missing in original table
+  # the sentence that generators (the factory, the bootstrapper, the scaffolder) and the shipped recipes write where the recipe maker has not said what an added
+  # line means: it is true and it claims nothing; the recipe maker replaces it with what the line means for the table
+  starting_meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
 
 # old key -> what to write now (check messages and the migration tool read this; spec section 12)
 renamed:

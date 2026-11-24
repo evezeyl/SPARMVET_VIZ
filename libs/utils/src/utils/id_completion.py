@@ -11,8 +11,9 @@ join with the metadata - limiting lineages problems". What it does, and nothing 
   changed (D-0597: "changes or removes nothing from the user's data").
 - A line with no usable id (missing, empty, or only spaces) is not an id: it stays where it is, is not completed and is not part of the union. The report lists it.
 - A table under `additional_datasets_schemas` (a look-up, a database) is never completed.
-- The recipe says what an added line means (`completion: {marker, meaning}` on every table that takes part, D-0574, D-0586); the recipe never records how
-  many lines were added (D-0574).
+- The recipe says what an added line means (`completion: {marker, meaning}` on every table that takes part, D-0574, D-0586): `meaning` is a free sentence of the
+  recipe maker, specific to the table; the app's own fixed words for an added line are `missing in original table` (the owner, 2026-11-24). The recipe never
+  records how many lines were added (D-0574).
 - Nothing blocks. The three checks of the ids are warnings (D-0581): the ids of a table that the metadata lacks, the ids of the metadata that a table
   lacks, and, after the completion, the equality of all the sets (a difference there is a bug of the app, D-0590).
 
@@ -20,15 +21,15 @@ The marker is not a zero (D-0573): an added line carries no value, only the mark
 choice, which is why the recipe must say what the lines mean. The marker column is kept (D-0586); a step that lists a fixed set of columns after it is the
 recipe maker's to extend.
 
-PROVISIONAL (an agent's choices, D-0613: small open points are built with the agents' lean and listed): the name `completion` and its two keys; the list of
-meanings; the marker is a Boolean column appended as the last column; the added lines are appended after the table's own lines, in the order of the ids; the
+PROVISIONAL (an agent's choices, D-0613: small open points are built with the agents' lean and listed): the name `completion` and its two keys; the marker is
+a Boolean column appended as the last column, named by convention `<table>_not_in_original_data` (the owner's pattern, not enforced beyond a free name); the added lines are appended after the table's own lines, in the order of the ids; the
 id is compared as text; a table that declares several entity ids is completed on the first one written.
 
 Consumed by: `app/modules/orchestrator.py` (`_read_source`, `id_report`), `libs/utils/src/utils/recipe_check.py` (E04 to E07), `app/modules/cache_keys.py`.
 If deleted: the ids of the tables are never made equal.
 
 # @deps
-# provides: function:participants, function:completion_problems, function:read_ids, function:complete_table, function:union_of, function:build_report, class:Participant, class:TableIds, class:IdReport, class:TableReport
+# provides: function:default_marker, function:added_line_words, function:starting_meaning, function:participants, function:completion_problems, function:read_ids, function:complete_table, function:union_of, function:build_report, class:Participant, class:TableIds, class:IdReport, class:TableReport
 # consumes: libs/utils/src/utils/recipe_spec.yaml (completion), libs/utils/src/utils/errors.py
 # consumed_by: app/modules/orchestrator.py, libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/id_log.py, app/modules/cache_keys.py
 # doc: .claude/design/recipe_format_spec.md (7.3, E04 to E07), .claude/design/studies/whole_picture_2026-11/CAUSE_AND_SOLUTIONS_ZEROS.md
@@ -61,7 +62,7 @@ LISTED_NO_ID_LINES = 100
 @dataclass(frozen=True)
 class Participant:
     """A table that takes part in the completion: `kind` is `data` or `metadata`; `id_column` is the first field it declares `is_entity_id`;
-    `marker` is the name of the yes/no column the completion adds; `meaning` is what an added line means (a word of the list of the specification)."""
+    `marker` is the name of the yes/no column the completion adds; `meaning` is the sentence of the recipe maker: what an added line means for this table."""
     table: str
     kind: str
     id_column: str
@@ -92,25 +93,43 @@ def candidate_tables(raw: dict) -> List[Tuple[str, str, dict]]:
     return found
 
 
-def allowed_meanings(spec: dict) -> Dict[str, List[str]]:
-    """The words that say what an added line means, per kind (`data` or `metadata`), from the specification."""
-    return {kind: list(words) for kind, words in spec["completion"]["meanings"].items()}
+def default_marker(table: str, spec: Optional[dict] = None) -> str:
+    """The conventional name of the marker of a table: `<table>_not_in_original_data` (the table's id, then the suffix of the specification). For the metadata
+    table the id is `metadata_schema`."""
+    return f"{table}_{_completion_spec(spec)['marker_suffix']}"
+
+
+def added_line_words(spec: Optional[dict] = None) -> str:
+    """The app's own fixed words for a line the completion added ("missing in original table"), used in the log, the export and the warning."""
+    return _completion_spec(spec)["added_line_words"]
+
+
+def starting_meaning(spec: Optional[dict] = None) -> str:
+    """The sentence a generator writes where the recipe maker has not said what an added line means (true, and it claims nothing)."""
+    return _completion_spec(spec)["starting_meaning"]
+
+
+def _completion_spec(spec: Optional[dict]) -> dict:
+    if spec is None:
+        from utils.recipe_check import spec as load_spec
+        spec = load_spec()
+    return spec["completion"]
 
 
 def block_problems(table: str, kind: str, schema: dict, spec: dict, path: str) -> List[Tuple[str, str, str, str]]:
     """(code, path, message, fix) of what is wrong with the `completion` block of one table that declares an entity id.
 
-    E04: no block. E05: the block is not a mapping, has an unknown or a missing key, or a meaning that is not on the list. E06: the marker is not a column
-    name of the form the specification gives, or is already a column of the table (and, for the whole recipe, a marker that two tables share)."""
+    E04: no block. E05: the block is not a mapping, has an unknown or a missing key, or a meaning that is not a sentence (missing, empty or only spaces; its content
+    is not judged). E06: the marker is not a column name of the form the specification gives, or is already a column of the table (and, for the whole recipe,
+    a marker that two tables share)."""
     cspec = spec["completion"]
-    meanings = allowed_meanings(spec)[kind]
-    example = f"completion: {{{MARKER}: {cspec['default_markers'][kind]}, {MEANING}: {meanings[0]}}}"
+    example = f"completion: {{{MARKER}: {default_marker(table, spec)}, {MEANING}: <a sentence: what a line added for an entity this table lacks means for this table>}}"
     block = schema.get(COMPLETION)
     place = f"{path}.{COMPLETION}"
     if block is None:
         return [("E04", place, f"the table {table!r} declares an entity id and has no {COMPLETION} block, so the recipe does not say what a line added "
                  "for an entity that the table lacks means",
-                 f"write {example}; the meaning is one of: {', '.join(meanings)}")]
+                 f"write {example}")]
     if not isinstance(block, dict):
         return [("E05", place, f"{COMPLETION} of {table!r} is not a mapping", f"write {example}")]
     out: List[Tuple[str, str, str, str]] = []
@@ -125,14 +144,15 @@ def block_problems(table: str, kind: str, schema: dict, spec: dict, path: str) -
     if MARKER in block:
         if not isinstance(marker, str) or not re.fullmatch(cspec["marker_pattern"], marker):
             out.append(("E06", f"{place}.{MARKER}", f"the marker {marker!r} is not a column name",
-                        f"write a name of letters, digits and underscores that starts with a letter, for example {cspec['default_markers'][kind]}"))
+                        f"write a name of letters, digits and underscores that starts with a letter, for example {default_marker(table, spec)}"))
         elif marker in (schema.get("input_fields") or {}):
             out.append(("E06", f"{place}.{MARKER}", f"the marker {marker!r} is already a field of the table {table!r}",
                         "write another name: the marker is a new column that the completion adds"))
     meaning = block.get(MEANING)
-    if MEANING in block and meaning not in meanings:
-        out.append(("E05", f"{place}.{MEANING}", f"the meaning {meaning!r} is not one the check knows for {kind} tables",
-                    f"write one of: {', '.join(meanings)}"))
+    if MEANING in block and (not isinstance(meaning, str) or not meaning.strip()):
+        out.append(("E05", f"{place}.{MEANING}", f"the meaning of {table!r} is empty or is not a sentence: the recipe must say what a line added for an entity this table "
+                    "lacks means for this table",
+                    f"write one sentence about this table; if you cannot say yet, write: {starting_meaning(spec)}"))
     return out
 
 
@@ -163,7 +183,7 @@ def completion_problems(raw: dict, spec: dict) -> List[Tuple[str, str, str, str]
             if name in seen:
                 path = METADATA_ID if kind == METADATA else f"data_schemas.{table}"
                 problems.append(("E06", f"{path}.{COMPLETION}.{MARKER}", f"the marker {name!r} of {table!r} is also the marker of {seen[name]!r}",
-                                 f"write a different marker for each table, for example {table}_{name}: a join of the two tables would otherwise hold two columns of one name"))
+                                 f"write a different marker for each table, for example {default_marker(table, spec)}: a join of the two tables would otherwise hold two columns of one name"))
             seen.setdefault(name, table)
     meta = raw.get(METADATA_ID)
     if isinstance(meta, dict) and COMPLETION in meta and METADATA_ID not in taking_part:
@@ -281,7 +301,7 @@ def complete_table(lf: pl.LazyFrame, participant: Participant, union: Sequence[s
 @dataclass(frozen=True)
 class TableReport:
     """What the checks found for one table. `not_in_metadata` (check 1) and `missing_from_table` (check 2) are None when the recipe has no metadata.
-    `added` are the ids the completion adds to this table. `after_difference` (check 3) are the ids that the table does not hold, or holds beyond the
+    `meaning` is the recipe maker's sentence for the table. `added` are the ids the completion adds to this table. `after_difference` (check 3) are the ids that the table does not hold, or holds beyond the
     union, after the completion: empty when the completion did its work."""
     table: str
     kind: str
@@ -320,7 +340,8 @@ class IdReport:
     def as_dict(self) -> dict:
         """Plain data for the log (YAML) and the export."""
         def table(t: TableReport) -> dict:
-            out = {"table": t.table, "kind": t.kind, "id_column": t.id_column, "marker": t.marker, "meaning": t.meaning, "rows": t.rows,
+            out = {"table": t.table, "kind": t.kind, "id_column": t.id_column, "marker": t.marker, "added_line_words": added_line_words(), "meaning": t.meaning,
+                   "rows": t.rows,
                    "distinct_ids": t.distinct_ids, "lines_with_no_usable_id": t.no_id_lines,
                    "ids_added": {"count": len(t.added), "ids": list(t.added)}}
             if t.no_id_lines:
@@ -385,8 +406,8 @@ def report_lines(report: IdReport) -> List[str]:
         if t.missing_from_table:
             lines.append(f"In {t.table}: {len(t.missing_from_table)} id(s) of the metadata are not in this table: {_shown(t.missing_from_table)}.")
         if t.added:
-            lines.append(f"In {t.table}: {len(t.added)} line(s) were added for ids it lacks ({_shown(t.added)}), marked in the column {t.marker}; "
-                         f"the recipe says they mean: {t.meaning}.")
+            lines.append(f"In {t.table}: {len(t.added)} line(s) were added for ids it lacks ({_shown(t.added)}), marked \"{added_line_words()}\" in the column "
+                         f"{t.marker}. What an added line means for {t.table}, in the words of the recipe maker: {t.meaning.strip()}")
         if t.after_difference:
             lines.append(f"BUG OF THE APP: after the completion {t.table} does not hold the same ids as the other tables ({_shown(t.after_difference)}). Report it.")
     return lines

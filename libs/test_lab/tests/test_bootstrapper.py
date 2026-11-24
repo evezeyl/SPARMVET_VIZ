@@ -212,6 +212,9 @@ class TestWhatTheBootstrapperWritesPassesTheChecker:
         assert text.startswith("# Candidate PK: ") and yaml.safe_load(text) == {"steps": []}
 
 
+START = "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."   # the starting sentence of the specification
+
+
 class TestTheCompletionBlock:
     """A table that declares an entity id gets the `completion` block (D-0574, D-0613): the recipe the bootstrapper writes passes the checker (E04)."""
 
@@ -222,8 +225,8 @@ class TestTheCompletionBlock:
             pass
         Loader.add_constructor("!include", lambda loader, node: loader.construct_scalar(node))
         recipe = yaml.load(master.read_text(), Loader=Loader)
-        assert recipe["data_schemas"]["samples"]["completion"] == {"marker": "samples_not_in_original_data", "meaning": "no result for this entity"}
-        assert recipe["metadata_schema"]["completion"] == {"marker": "not_in_metadata", "meaning": "no metadata for this entity"}
+        assert recipe["data_schemas"]["samples"]["completion"] == {"marker": "samples_not_in_original_data", "meaning": START}
+        assert recipe["metadata_schema"]["completion"] == {"marker": "metadata_schema_not_in_original_data", "meaning": START}
 
     def test_a_table_with_no_entity_id_column_gets_no_block(self, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper

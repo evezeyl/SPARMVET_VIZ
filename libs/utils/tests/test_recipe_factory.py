@@ -245,20 +245,21 @@ def test_the_text_is_plain_yaml_for_any_reader():
     assert yaml.safe_load(recipe_text(minimal_recipe("tiny"))) == minimal_recipe("tiny")
 
 
-def test_a_schema_with_an_entity_id_states_the_completion_block_for_its_kind_and_one_without_has_none():
+def test_a_schema_with_an_entity_id_states_the_completion_block_and_one_without_has_none():
     from utils.recipe_factory import minimal_schema
+    start = spec()["completion"]["starting_meaning"]
     data = minimal_schema("data/a.tsv", {"sample_id": "String", "v": "Float64"}, entity_key="sample_id")
-    meta = minimal_schema("data/m.tsv", {"sample_id": "String"}, entity_key="sample_id", metadata=True)
+    meta = minimal_schema("data/m.tsv", {"sample_id": "String"}, entity_key="sample_id", table_id="metadata_schema")
     by_field = minimal_schema("data/b.tsv", {"sample_id": {"type": "String", "is_entity_id": True}})
     plain = minimal_schema("data/c.tsv", {"x": "Int64"})
-    assert data["completion"] == {"marker": "not_in_original_data", "meaning": "no result for this entity"}
-    assert meta["completion"] == {"marker": "not_in_metadata", "meaning": "no metadata for this entity"}
+    assert data["completion"] == {"marker": "not_in_original_data", "meaning": start}   # the bare suffix: minimal_recipe puts the schema's id in front
+    assert meta["completion"] == {"marker": "metadata_schema_not_in_original_data", "meaning": start}
     assert by_field["completion"] == data["completion"] and "completion" not in plain
     other = minimal_schema("data/a.tsv", {"sample_id": "String"}, entity_key="sample_id", completion={"marker": "m", "meaning": "unknown"})
     assert other["completion"] == {"marker": "m", "meaning": "unknown"}
 
 
-def test_two_schemas_with_the_default_marker_get_one_marker_each_and_a_marker_that_was_written_is_never_changed():
+def test_every_schema_with_the_default_marker_gets_its_own_id_in_front_of_it_and_a_marker_that_was_written_is_never_changed():
     schemas = {"A": minimal_schema("data/a.tsv", {"sample_id": "String"}, entity_key="sample_id"),
                "B": minimal_schema("data/b.tsv", {"sample_id": "String"}, entity_key="sample_id"),
                "C": minimal_schema("data/c.tsv", {"sample_id": "String"}, entity_key="sample_id", completion={"marker": "mine", "meaning": "unknown"})}
@@ -267,5 +268,5 @@ def test_two_schemas_with_the_default_marker_get_one_marker_each_and_a_marker_th
     assert schemas["A"]["completion"]["marker"] == "not_in_original_data", "the arguments are not changed"
     assert check_recipe(recipe, "run", file_stem="r").errors == []
     alone = minimal_recipe("r", schemas={"A": minimal_schema("data/a.tsv", {"sample_id": "String"}, entity_key="sample_id")})
-    assert alone["data_schemas"]["A"]["completion"]["marker"] == "not_in_original_data"
+    assert alone["data_schemas"]["A"]["completion"]["marker"] == "A_not_in_original_data"   # one table or many: the same pattern
 

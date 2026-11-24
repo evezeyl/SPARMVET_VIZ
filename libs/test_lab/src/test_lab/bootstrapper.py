@@ -16,7 +16,7 @@ from utils.recipe_check import spec as recipe_spec
 
 # The names of a column that the bootstrapper marks `is_entity_id` (PROVISIONAL, as before: by name, the author corrects it).
 ENTITY_ID_NAMES = ("id", "sample_id", "isolate_id")
-# The completion block of the specification (default marker and meanings per kind): a table that declares an entity id gets one (D-0574).
+# The completion block of the specification (marker suffix and starting sentence): a table that declares an entity id gets one (D-0574).
 COMPLETION_SPEC = recipe_spec()["completion"]
 
 
@@ -119,9 +119,10 @@ class DataAnalysisRecipeBootstrapper:
     def table_block(recipe_id: str, table_id: str, source_path: str, label: str, entity_id: bool = False, metadata: bool = False) -> Dict[str, Any]:
         """The table entry of the master recipe: the keys in the order of the specification, the two files included.
 
-        `entity_id`: the table declares an entity id, so it takes part in the completion of the ids and states what an added line means (the first meaning of
-        the list for its kind: the author changes it); `metadata`: it is the metadata table. The marker of a data table carries its table id
-        (`<table id>_not_in_original_data`): two tables never share a marker (E06), and the ids of the tables of one run are distinct."""
+        `entity_id`: the table declares an entity id, so it takes part in the completion of the ids and states what an added line means (the starting
+        sentence of the specification: the author replaces it with what an added line means for the table); `metadata`: it is the metadata table, whose id is
+        `metadata_schema`. The marker of every table carries its table id (`<table id>_not_in_original_data`, the owner's pattern): two tables never share a
+        marker (E06), and the ids of the tables of one run are distinct."""
         block: Dict[str, Any] = {
             "ui_label": label,
             "source": {"type": "local_tsv", "path": source_path},
@@ -130,9 +131,8 @@ class DataAnalysisRecipeBootstrapper:
             "strip": False,
         }
         if entity_id:
-            kind = "metadata" if metadata else "data"
-            marker = COMPLETION_SPEC["default_markers"][kind]
-            block["completion"] = {"marker": marker if metadata else f"{table_id}_{marker}", "meaning": COMPLETION_SPEC["meanings"][kind][0]}
+            owner = "metadata_schema" if metadata else table_id
+            block["completion"] = {"marker": f"{owner}_{COMPLETION_SPEC['marker_suffix']}", "meaning": COMPLETION_SPEC["starting_meaning"]}
         block["input_fields"] = IncludeRef(f"{recipe_id}/{table_id}_input_fields.yaml")
         block["tier1"] = IncludeRef(f"{recipe_id}/{table_id}_wrangling.yaml")
         return block
