@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:opening_cover_text, function:cover_ui, constant:COVER_ID (the cover of the screen while a recipe opens, HOME-WALK A), function:ProvenDrawings
-consumes: app/modules/id_check_run.py (run_id_checks: the checks of the ids and their log, at the opening), app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice); notify (the Alerts notifier) and shown_recipe (a reactive.Value of server.py, read by recipe_gate_handlers) are handed in
+consumes: app/modules/id_check_run.py (run_id_checks: the checks of the ids and their log, at the opening; id_log_folder), app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice); notify (the Alerts notifier) and shown_recipe (a reactive.Value of server.py, read by recipe_gate_handlers) are handed in
 consumed_by: app/handlers/home_theater.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/ui_implementation_contract.md#14, .claude/rules/rules_data_analysis_recipe_structure.md#11
 @end_deps
@@ -26,7 +26,7 @@ from shiny import reactive, ui
 
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice
-from app.modules.id_check_run import run_id_checks
+from app.modules.id_check_run import id_log_folder, run_id_checks
 from app.modules.opening_build import build_plan, draw_plot_proof, opening_signature, progress_text, run_opening
 
 
@@ -78,14 +78,16 @@ def opening_waits(state: dict, available, recipe_id, signature) -> bool:
 
 
 def define_server(input, output, session, *, bootloader, orchestrator, viz_factory, safe_input, view_keys, recipe_gate_version, opening_state,
-                  notify, proven: ProvenDrawings | None = None, shown_recipe=None):
+                  notify, proven: ProvenDrawings | None = None, shown_recipe=None, id_run_state=None):
     """Registers the effect that opens the recipe HOME shows.
 
     `view_keys`: HOME's calc of the keys of the open recipe (computed once per project state). `recipe_gate_version`: server.py's shared value, read by
     `active_cfg`; it is moved here when a recipe is refused so that HOME falls back at once, not at the next poll of the gate. `opening_state`: a
     `reactive.Value({})` made by the caller and read by the theater; `notify(text, type=, duration=)`: the Alerts notifier. `shown_recipe`: the
     `reactive.Value` of the recipe HOME shows in this session (server.py); the effect writes the recipe it opens before it builds, so that the gate follower
-    can name it when the opening refuses it on the first screen, when the selector value has not reached the server (the notice "no longer passes its checks")."""
+    can name it when the opening refuses it on the first screen, when the selector value has not reached the server (the notice "no longer passes its checks").
+    `id_run_state`: the `reactive.Value` that holds what the checks of the ids found for the recipe HOME shows (read by `id_warning_handlers`, the red warning);
+    this effect writes it, with an equality guard, once per opening."""
     memory = proven if proven is not None else PROVEN
 
     @reactive.Effect
@@ -153,7 +155,12 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                        + (f" (and {len(result.problems) - 1} more)" if len(result.problems) > 1 else ""), type="error", duration=30)
             else:
                 memory.add(signature)
-        # The three checks of the ids and their log (D-0581, D-0582): written automatically, warnings only, never a refusal and never a stop. No screen yet
-        # (the red warning and its button come in a later step); the log is in the user folder and in the export, and the console says when it cannot be written.
-        run_id_checks(orchestrator, recipe_id, loaded.raw, keys, bootloader.get_location("user_data"))
+        # The three checks of the ids and their log (D-0581, D-0582): written automatically, warnings only, never a refusal and never a stop. What they found is
+        # handed to the warning of HOME (`id_warning_handlers`, the red warning and its button "I have read this"); the log is in the user folder and in the export.
+        id_run = run_id_checks(orchestrator, recipe_id, loaded.raw, keys, bootloader.get_location("user_data"))
+        if id_run_state is not None:
+            with reactive.isolate():
+                if (id_run_state.get() or {}).get("signature") != signature:   # idempotent guard (section 14, R3)
+                    id_run_state.set({"signature": signature, "recipe_id": recipe_id, "recipe_sha256": keys.data_analysis_recipe_sha256,
+                                      "data_batch_hash": keys.data_batch_hash, "folder": id_log_folder(bootloader.get_location("user_data")), "run": id_run})
         opening_state.set({"signature": signature, "status": status})

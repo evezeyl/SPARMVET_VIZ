@@ -36,7 +36,8 @@ from app.modules.export_fields_store import (
 from app.modules.plot_issue_reporter import plot_warning_text
 from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
-from app.modules.id_check_run import export_log_text, run_id_checks
+from app.modules.id_check_run import export_log_text, id_log_folder, run_id_checks
+from app.modules.id_warning import export_sentences, read_status
 from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
@@ -791,6 +792,8 @@ def define_export_server(input, output, session, *,
                     class_="mb-1",
                 ),
                 audit_reminder,
+                # The one line about the log of the ids (D-0582): a slot of its own, so that a change of the warning never draws this panel's fields again (R4).
+                ui.output_ui("export_id_warning_ui"),
                 ui.download_button(
                     "export_bundle_download",
                     "💾 Export Bundle",
@@ -1815,6 +1818,27 @@ def define_export_server(input, output, session, *,
                     f"Lineage graph generation failed:\n{_le}",
                 )
 
+            # ── The log of the ids (D-0575, D-0576, D-0582, D-0592) ────────────────────────────────────────────────
+            # What the checks of the ids found for the recipe and the data of THIS export, with the log of the user folder (the entries that say a person
+            # read it too). Always in the bundle when a table takes part: "the person utilizing the results MUST read that log" (D-0582).
+            _user_data = bootloader.get_location("user_data")
+            _id_run = run_id_checks(orchestrator, data_analysis_recipe_id, cfg.raw_config, export_keys, _user_data, write=False)
+            _id_log = export_log_text(_user_data, data_analysis_recipe_id, _id_run, export_keys.data_analysis_recipe_sha256, export_keys.data_batch_hash)
+            if _id_log is not None:
+                zf.writestr(f"{bundle_dir}/id_log.yaml", _id_log)
+                id_log_line = ("  id_log.yaml       — the log of the ids: the ids that tables lack, the lines added for them (the app's words for such a line: "
+                               f"\"{added_line_words()}\"; what it means for each table is the sentence of the recipe maker, given beside) and the lines with no usable id; "
+                               "read it before you rely on the results" + (" (the ids are equal in every table)" if not _id_run.lines else ""))
+            elif _id_run.error:
+                zf.writestr(f"{bundle_dir}/id_log_ERROR.txt", _id_run.error)
+                id_log_line = f"  id_log_ERROR.txt  — the log of the ids could not be made: {_id_run.error}"
+            else:
+                id_log_line = None   # no table of the recipe takes part in the completion of the ids: there is no log
+            # What the README and the report say about the ids (D-0582): what was found, in the app's words with the sentence of the recipe maker, and whether
+            # the warning was read in the app or the log is "automatic, no user". Never a reason to refuse the export.
+            _id_sentences = export_sentences(_id_run, read_status(id_log_folder(_user_data), data_analysis_recipe_id,
+                                                                   export_keys.data_analysis_recipe_sha256, export_keys.data_batch_hash))
+
             # ── Generate Quarto .qmd report ───────────────────────────────
             # QMD image refs use qmd_plot_fmt (PNG when PDF+SVG mismatch)
             plot_ext = qmd_plot_fmt
@@ -1930,6 +1954,18 @@ def define_export_server(input, output, session, *,
                 "| **T3 — Audited data** | The Result with the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The audited data of a plot is saved as `T3_data_<plot>.tsv` and its steps are listed under *T3 Audit Trail*. |",
                 "",
             ]
+            if _id_sentences:
+                qmd_lines += ["## The ids of the tables", ""]
+                _after_bullet = False
+                for _sentence in _id_sentences:
+                    _bullet = _sentence.startswith("- ")
+                    if _after_bullet and not _bullet:
+                        qmd_lines.append("")
+                    qmd_lines.append(("- " if _bullet else "") + _qp(_sentence[2:] if _bullet else _sentence))
+                    if not _bullet:
+                        qmd_lines.append("")
+                    _after_bullet = _bullet
+                qmd_lines.append("")
             # ── Methods section (auto-generated from the audited T3 steps) ───
             _methods_lines = _build_methods_section(
                 all_plots=all_plots,
@@ -2179,23 +2215,6 @@ def define_export_server(input, output, session, *,
                     f"{_NO_FIGURES_REMEDY[0].upper()}{_NO_FIGURES_REMEDY[1:]}.\n",
                 )
 
-            # ── The log of the ids (D-0575, D-0576, D-0582, D-0592) ────────────────────────────────────────────────
-            # What the checks of the ids found for the recipe and the data of THIS export, with the log of the user folder (the entries that say a person
-            # read it too). Always in the bundle when a table takes part: "the person utilizing the results MUST read that log" (D-0582).
-            _user_data = bootloader.get_location("user_data")
-            _id_run = run_id_checks(orchestrator, data_analysis_recipe_id, cfg.raw_config, export_keys, _user_data, write=False)
-            _id_log = export_log_text(_user_data, data_analysis_recipe_id, _id_run, export_keys.data_analysis_recipe_sha256, export_keys.data_batch_hash)
-            if _id_log is not None:
-                zf.writestr(f"{bundle_dir}/id_log.yaml", _id_log)
-                id_log_line = ("  id_log.yaml       — the log of the ids: the ids that tables lack, the lines added for them (the app's words for such a line: "
-                               f"\"{added_line_words()}\"; what it means for each table is the sentence of the recipe maker, given beside) and the lines with no usable id; "
-                               "read it before you rely on the results" + (" (the ids are equal in every table)" if not _id_run.lines else ""))
-            elif _id_run.error:
-                zf.writestr(f"{bundle_dir}/id_log_ERROR.txt", _id_run.error)
-                id_log_line = f"  id_log_ERROR.txt  — the log of the ids could not be made: {_id_run.error}"
-            else:
-                id_log_line = None   # no table of the recipe takes part in the completion of the ids: there is no log
-
             # ── README.txt ────────────────────────────────────────────────
             rendered_note = (
                 f"  report.{out_ext} — rendered report ({out_ext.upper()})"
@@ -2315,6 +2334,7 @@ def define_export_server(input, output, session, *,
                 "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 *([id_log_line] if id_log_line else []),
+                *([f"      {_s}" for _s in _id_sentences]),
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
                 "                     hashes, per-plot seeds, the engine of each tier and plot, the theme as",
                 "                     applied and the library versions (`engines`). Written the same way either way (ADR-097).",

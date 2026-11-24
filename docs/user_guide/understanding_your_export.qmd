@@ -223,6 +223,16 @@ Inside `lineage_graph.json`, the `lineage_per_plot` key maps each plot ID to the
 
 ---
 
+## The warning of the ids
+
+When you open a data analysis recipe, the app checks that every table names the same entities (the ids). If a table lacks an entity that the others have, the app adds a line for it, marked **missing in original table**, and tells you. The same happens in the other direction: an id that a result table has and the metadata lacks is listed. A red warning appears at the top of HOME (in every app features file, also the read-only ones), for example:
+
+> ResFinder: 4 entities missing in original table. The recipe says: *the sentence the recipe maker wrote for that table*.
+
+The warning gives the place of the log of the ids (the file in your user folder) and lets you read it on the spot. The button **I have read this** blocks nothing: the app works before and after you click, and the lines are added either way. The click is written in the log with its date. The warning then becomes a quiet line ("Id warnings read on ...") that you can open again with "Show again". It comes back in red when the recipe or the data change.
+
+Every export holds the log (`id_log.yaml`). The README and the report say whether the warning was read in the app, or whether the log was only written automatically ("automatic, no user"). The export is never refused because a warning was not read. In a deployment that nobody opens (a static one) only a person who reads the logs can act on a mismatch of the ids.
+
 ## Practical tip: keep your export bundle intact
 
 ::: {.callout-important}

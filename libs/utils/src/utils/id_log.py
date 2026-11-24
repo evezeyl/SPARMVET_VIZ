@@ -6,8 +6,7 @@ logs can act on it (D-0585).
 
 One file per recipe in one folder, `<folder>/<recipe id>.id_log.yaml`: `format: 1` and a list `entries`. An entry of kind `checks` holds the report of the
 checks (the numbers per table and the unmatched ids, the lines with no usable id), the date, the fingerprints of the recipe and of the data, and who wrote it
-(`automatic, no user`). An entry of kind `read` records that a person said "I have read this" (the button comes in a later step: `record_read` is the function it
-will call). An entry of kind `checks` is added when the recipe or the data fingerprint differs from the last `checks` entry of the file: opening the same recipe
+(`automatic, no user`). An entry of kind `read` records that a person said "I have read this" (the button is in HOME, `app/modules/id_warning.py` calls `record_read`). An entry of kind `checks` is added when the recipe or the data fingerprint differs from the last `checks` entry of the file: opening the same recipe
 on the same data again adds nothing (the log is a record of states, not of visits). PROVISIONAL (an agent's choices, D-0613): the folder, the file name, the keys
 and the rule of one entry per state.
 
@@ -19,7 +18,7 @@ Pure Python (YAML only), no Shiny, no Polars.
 # @deps
 # provides: function:build_entry, function:write_entry, function:record_read, function:read_log, function:entry_text, function:log_path, class:LogOutcome
 # consumes: libs/utils/src/utils/id_completion.py (IdReport)
-# consumed_by: app/modules/id_check_run.py, app/handlers/export_handlers.py
+# consumed_by: app/modules/id_check_run.py, app/modules/id_warning.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/decision_ledger.md (D-0575, D-0576, D-0581, D-0582, D-0592), .claude/design/studies/whole_picture_2026-11/CAUSE_AND_SOLUTIONS_ZEROS.md
 # @end_deps
 """
@@ -146,7 +145,7 @@ def write_entry(folder: Path, entry: Dict[str, Any]) -> LogOutcome:
 
 
 def record_read(folder: Path, recipe_id: str, recipe_sha256: str, data_batch_hash: str, who: str, when: Optional[str] = None) -> LogOutcome:
-    """Record that a person has read the log of the ids of this recipe and data ("I have read this"). The button that calls it comes in a later step. `who`
+    """Record that a person has read the log of the ids of this recipe and data ("I have read this"). The button in HOME calls it. `who`
     is what the person gave (initials or a name); it must not be empty or be the word of the automatic entries."""
     if not who or not who.strip() or who.strip() == AUTOMATIC:
         raise ValueError("A record that the log was read needs the name or the initials of the person who read it.")
