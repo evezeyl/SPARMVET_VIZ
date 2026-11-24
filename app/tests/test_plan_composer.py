@@ -164,7 +164,7 @@ def test_a_tier3_with_steps_is_planned_as_it_is_built(tmp_path):
 
 def test_the_book_has_an_entry_for_every_node_and_k_and_the_order_of_the_places_is_the_openings():
     orch, loaded, graph, book = shipped(DEMO)
-    assert all(book.has(nid, k) for nid, k in entries_of(graph)) and len(entries_of(graph)) == 166
+    assert all(book.has(nid, k) for nid, k in entries_of(graph)) and len(entries_of(graph)) == 167   # +1: the tier-3 step of amr_heatmap (D-0623)
     order = plan_composer.composition_order(loaded.raw, graph)
     named = [f"{ {'tier1': 'T1', 'tier2': 'T2', 'tier3': 'T3'}[kind] }:{ident}" for kind, ident, _ in plan_places(loaded.raw) if kind in ("tier1", "tier2", "tier3")]
     assert order[:len(named)] == named, "the places the opening builds come first, in the opening's order: one ordering"
@@ -352,7 +352,7 @@ def test_with_the_plan_the_gate_refuses_everything_the_blind_gate_refuses_and_wh
                 if b.uncertain:
                     assert {(r.code, r.get("action")) for r in b.unfollowed} == {("step_not_read", "polars_unpivot")}, (recipe_id, nid, name, b.unfollowed)
         seen[recipe_id] = counts
-    assert seen[DEMO] == dict(pairs=496, refused_blind=7, refused_plan=11, unsure_blind=129, unsure_plan=18)   # +50 pairs and +3 unsure on the demo and +2 pairs on demo_abromics: the marker columns of the completion of the ids (D-0613); then +8 pairs and +4 unsure of the blind gate: the two QA tables made data schemas, the markers MLST and VirulenceFinder keep and the data-first joins (the one big move, D-0586, D-0610); refused and the unsure of the plan do not move
+    assert seen[DEMO] == dict(pairs=496, refused_blind=7, refused_plan=11, unsure_blind=136, unsure_plan=18)   # +7 unsure of the blind gate: the tier-3 step of amr_heatmap, NOT DETECTED (D-0623); +50 pairs and +3 unsure on the demo and +2 pairs on demo_abromics: the marker columns of the completion of the ids (D-0613); then +8 pairs and +4 unsure of the blind gate: the two QA tables made data schemas, the markers MLST and VirulenceFinder keep and the data-first joins (the one big move, D-0586, D-0610); refused and the unsure of the plan do not move
     assert seen[ABROMICS] == dict(pairs=33, refused_blind=1, refused_plan=2, unsure_blind=17, unsure_plan=0)   # +2 pairs and +1 unsure of the blind gate: VirulenceFinder is a data schema and MLST and VirulenceFinder keep their marker (D-0610, D-0613)
     assert all(c["unsure_plan"] == 0 for k, c in seen.items() if k != DEMO)
 

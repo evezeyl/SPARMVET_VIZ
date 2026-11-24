@@ -322,14 +322,21 @@ def test_a_plot_the_recipe_does_not_name_has_no_key_and_a_table_it_does_not_name
     assert keys.tier2_key_of("Ghost") == keys.coarse_tier1_key
 
 
+SHIPPED_TIER3_PLOTS = {("1_test_data_ST22_dummy", "amr_heatmap")}   # the plots of the shipped recipes that write tier-3 steps
+
+
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
-def test_every_plot_of_every_shipped_recipe_has_the_key_of_its_table_because_none_has_tier3_steps(path):
-    """No shipped recipe writes tier-3 steps (the checker refused them): nothing changes for them, key by key."""
+def test_every_plot_of_every_shipped_recipe_has_the_key_of_its_table_unless_it_has_tier3_steps(path):
+    """A plot without tier-3 steps reads its table as it is: its key is the key of the table. The one shipped plot with tier-3 steps (`amr_heatmap`, the category
+    NOT DETECTED, D-0623) has a key of its own."""
     if load_raw(path) is None:
         pytest.skip("an empty file holds no recipe")
     loaded = load_data_analysis_recipe(path)
     keys = data_analysis_recipe_keys(loaded, {})
     for plot_id, entry in plot_entries(loaded.raw).items():
+        if (Path(path).stem, plot_id) in SHIPPED_TIER3_PLOTS:
+            assert tier3_steps(loaded.raw, plot_id) != [] and keys.plot_key_of(plot_id) != keys.tier2_key_of(entry["target_dataset"]), (path, plot_id)
+            continue
         assert tier3_steps(loaded.raw, plot_id) == [], (path, plot_id)
         assert keys.plot_key_of(plot_id) == keys.tier2_key_of(entry["target_dataset"]), (path, plot_id)
 
