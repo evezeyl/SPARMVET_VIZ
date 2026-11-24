@@ -19,6 +19,7 @@ data_schemas:
     source: {type: local_tsv, path: assets/test_data/a.tsv}
     null_values: []
     strip: true
+    completion: {marker: not_in_original_data, meaning: no result for this entity}
     input_fields: %s
     tier1: {steps: []}
 analysis_groups:

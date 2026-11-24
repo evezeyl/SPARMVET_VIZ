@@ -41,10 +41,12 @@ def valid():
         "data_schemas": {
             "A": {"ui_label": "A", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"}, "null_values": [], "strip": True,
+                  "completion": {"marker": "not_in_original_data", "meaning": "no result for this entity"},
                   "input_fields": {"id": {"type": "String", "is_entity_id": True, "ui_label": "Id"}, "v": {"type": "Float64"}},
                   "tier1": {"steps": []}},
             "B": {"ui_label": "B", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"}, "null_values": [], "strip": False,
+                  "completion": {"marker": "b_not_in_original_data", "meaning": "no result for this entity"},
                   "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                   "tier1": {"steps": []}},
         },

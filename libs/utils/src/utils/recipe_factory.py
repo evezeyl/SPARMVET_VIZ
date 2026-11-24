@@ -65,11 +65,15 @@ _RecipeDumper.add_representer(Include, lambda dumper, data: dumper.represent_sca
 def minimal_schema(path: str, columns: Mapping[str, Union[str, Mapping[str, Any]]], *, label: Optional[str] = None,
                    entity_key: Optional[str] = None, null_values: Iterable[str] = (), strip: bool = False,
                    tier1: Iterable[dict] = (), tier2: Optional[Iterable[dict]] = None,
-                   source_type: str = "local_tsv") -> dict:
+                   source_type: str = "local_tsv", metadata: bool = False, completion: Optional[Mapping[str, str]] = None) -> dict:
     """One schema. `columns` maps a column to its Polars type name, or to its full field mapping.
 
     `label` is the file name without its ending unless given. `null_values` and `strip` are written as given: by
     default no text means "missing" and no whitespace is stripped (the file is read as it is).
+
+    A schema with an entity id (`entity_key`, or a field that is written with `is_entity_id: true`) takes part in the completion of the ids and states what an added line means (`completion`, D-0574): the default block is
+    the first meaning of the list of the specification for its kind (`metadata=True` for the table of the metadata); `completion` writes another. A schema
+    with no entity id gets none (a block there is refused, E07).
     """
     fields: Dict[str, dict] = {}
     for column, definition in columns.items():
@@ -88,6 +92,10 @@ def minimal_schema(path: str, columns: Mapping[str, Union[str, Mapping[str, Any]
     }
     if tier2 is not None:
         schema["tier2"] = {"steps": copy.deepcopy(list(tier2))}
+    if any(isinstance(f, dict) and f.get("is_entity_id") is True for f in fields.values()):
+        kind = "metadata" if metadata else "data"
+        cspec = spec()["completion"]
+        schema["completion"] = dict(completion) if completion is not None else {"marker": cspec["default_markers"][kind], "meaning": cspec["meanings"][kind][0]}
     return schema
 
 
@@ -166,8 +174,24 @@ def minimal_recipe(recipe_id: str = "minimal", *, label: Optional[str] = None,
     }
     if joins is not None:
         recipe["joins"] = joins
+    _distinct_markers(schemas)
     recipe["analysis_groups"] = {DEFAULT_GROUP_ID: {"ui_label": "Main", "plots": copy.deepcopy(dict(plots))}} if plots else {}
     return recipe
+
+
+def _distinct_markers(schemas: Dict[str, dict]) -> None:
+    """Two tables never share the marker of their `completion` block (E06). Where several schemas of a recipe carry the same default marker, it is written
+    `<schema id>_<marker>` for each of them (a marker that the caller wrote is never changed)."""
+    defaults = set(spec()["completion"]["default_markers"].values())
+    count: Dict[str, int] = {}
+    for schema in schemas.values():
+        marker = (schema.get("completion") or {}).get("marker")
+        if marker in defaults:
+            count[marker] = count.get(marker, 0) + 1
+    for schema_id, schema in schemas.items():
+        marker = (schema.get("completion") or {}).get("marker")
+        if marker in defaults and count[marker] > 1:
+            schema["completion"]["marker"] = f"{schema_id}_{marker}"
 
 
 def _default_plot(schemas: Mapping[str, dict], joins: Optional[Mapping[str, dict]]) -> dict:

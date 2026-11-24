@@ -57,6 +57,7 @@ def test_no_id_declared_gives_no_e03_and_the_checker_does_not_guess():
     def change(raw):
         raw["data_schemas"]["A"]["input_fields"]["id"].update(type="Int64")
         raw["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_id")
+        raw["data_schemas"]["A"].pop("completion")
     assert "E03" not in run(mutated(change)).codes()
 
 

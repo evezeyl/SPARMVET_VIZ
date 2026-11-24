@@ -22,7 +22,7 @@ elements:
     optional: []
   schema:
     required: [ui_label, source, null_values, strip, input_fields, tier1]
-    optional: [description, comment, tier2]
+    optional: [description, comment, tier2, completion]
   source:
     required: [type, path]
     optional: []
@@ -69,6 +69,21 @@ elements:
 # the checker in its catalogues (`action_engines`, `component_engines`); the names of the engines are in utils/engines.py
 
 reserved_schema_ids: [metadata_schema]
+
+# The completion of the ids (D-0572 to D-0599, D-0613; PROVISIONAL form, an agent's choice, built 2026-11-24). A table of `data_schemas` or the metadata table that
+# declares an entity id (`is_entity_id`) states in its `completion` block what a line added for an entity id it lacks means; the app adds those lines when it
+# reads the files (`utils.id_completion`). `marker` is the name of the yes/no column the app adds (true on an added line); `meaning` is one word of the list
+# for the kind of table. Two tables never share a marker (a join of three of them would hold two columns of one name: E06). The block is required where an entity id is declared (E04) and refused where nothing is completed (E07). A table of
+# `additional_datasets_schemas` is never completed. The key is NOT a change of `format_version`: format 1 was amended before its first release (D-0469).
+completion:
+  keys: [marker, meaning]
+  marker_pattern: "[A-Za-z][A-Za-z0-9_]*"
+  default_markers:
+    data: not_in_original_data
+    metadata: not_in_metadata
+  meanings:
+    data: [no result for this entity, not analysed, unknown]
+    metadata: [no metadata for this entity, not described, unknown]
 
 # old key -> what to write now (check messages and the migration tool read this; spec section 12)
 renamed:

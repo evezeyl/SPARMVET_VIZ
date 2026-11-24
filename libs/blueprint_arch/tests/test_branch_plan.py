@@ -76,6 +76,12 @@ def test_the_starting_recipe_is_valid(master):
 
 # -- a schema
 
+# KNOWN, not fixed here (BLUEPRINT is untouched in this step, D-0613): the branch of a table that takes part in the completion of the ids copies its input fields, so the branch declares
+# the entity id too and has no `completion` block (E04). The branch writer must write the block with a marker of its own (E06). Strict: the day it does, these pass and the mark is removed.
+BRANCH_HAS_NO_COMPLETION_BLOCK = pytest.mark.xfail(strict=True, reason="the branch of a table that takes part in the completion of the ids has no `completion` block (E04): the branch writer is a later step")
+
+
+@BRANCH_HAS_NO_COMPLETION_BLOCK
 @pytest.mark.parametrize("role", ["wrangling", "input_fields"])
 def test_a_schema_branch_gives_a_valid_recipe_that_loads(master, role):
     """Either node of a table selects the table; `output_fields` is neither a key nor a node role of format 1."""
@@ -109,6 +115,7 @@ def test_a_schema_branch_reads_the_same_file_in_the_same_way(master):
     assert list(branch) == ["ui_label", "source", "null_values", "strip", "input_fields", "tier1"]
 
 
+@BRANCH_HAS_NO_COMPLETION_BLOCK
 def test_a_schema_branch_reuses_an_included_fields_file(tmp_path):
     recipe = recipe_with_a_join()
     write_fragment(tmp_path / "tiny" / "samples_fields.yaml", recipe["data_schemas"]["samples"]["input_fields"])
