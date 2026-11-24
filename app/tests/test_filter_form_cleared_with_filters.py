@@ -36,7 +36,9 @@ def test_the_form_is_cleared_with_the_filters_by_a_mode_round_trip(page: Page, s
     _fresh(page, shiny_app.url)
     _open_filters_panel(page)
     columns = page.evaluate("() => Array.from(document.querySelectorAll('#fb_col option')).map(o => o.value)")
-    not_first = columns[-1]
+    # The last column of a table is now the marker column of the completion of the ids (an ordinary true/false column, the flag column is kept): it offers equal and not equal only
+    # (`ops_for_column`), never the list operator `in` that this test needs, and the wait for `in` timed out. The test takes the last column that is not such a marker.
+    not_first = [c for c in columns if not c.endswith("not_in_original_data")][-1]
     assert not_first != columns[0]
     _choose_column_firmly(page, not_first)
     _choose_operator(page, "in")
