@@ -15,10 +15,12 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.modules.t3_audit_engine import audited_frame
+from app.tests.audit_nodes import audited_lf as audited_frame
 from app.tests.audit_nodes import filter_nodes, home_plot_data
-from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
-from blueprint_arch.t3_translator import build_mode2_recipe, translate_plot_steps
+from app.modules.t3_audit_engine import _apply_filter_rows
+from app.tests.audit_nodes import filter_rows_of as filter_rows_from_nodes
+from app.modules.audit_places import bake_place_steps
+from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 
 GHOST = json.loads((Path(__file__).parent / "data" / "old_session_text_values.json").read_text(encoding="utf-8"))
@@ -32,10 +34,15 @@ FRAME = pl.DataFrame({
 })
 
 
+def steps_of(nodes):
+    """The registered actions of a list of audit steps, in the order of the list: the one translation (`translate_t3_node`) the audit copy and the export use."""
+    return [step for node in nodes for step in translate_t3_node(node)]
+
+
 def views(nodes):
     rows = filter_rows_from_nodes(nodes)
     lf = FRAME.lazy()
-    for step in translate_plot_steps(nodes):
+    for step in steps_of(nodes):
         lf = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"})
     return {
         "home table": _apply_filter_rows(FRAME.lazy(), rows).collect()["s"].to_list(),
@@ -60,16 +67,18 @@ def test_the_steps_that_never_went_wrong_keep_exactly_the_rows_they_always_kept(
 
 
 def test_the_export_writes_the_values_typed_not_as_the_text_of_the_session():
-    steps = translate_plot_steps(NODES)
+    steps = steps_of(NODES)
     assert [s["value"] for s in steps] == [2000, 90.5, [2003, 2004], ["NO", "SE"], [True]]
     assert all(s["na"] == "remove" for s in steps)  # an old step removed the rows with no value
 
 
 def test_the_exported_recipe_is_written_with_typed_values():
+    """The reproducibility recipe holds the steps written at the tier 3 of the plot (`bake_place_steps`), with the values typed from their dtype."""
     raw = {"analysis_groups": {"g": {"plots": {"p": {"ui_label": "P", "target_dataset": "j"}}}},
            "joins": {"j": {"ingredients": [{"dataset_id": "t"}], "tier1": {"steps": []}, "tier2": {"steps": []}}}}
-    forked, _skipped = build_mode2_recipe(raw, {"p": NODES})[:2]
-    written = [s["value"] for s in forked["joins"][next(k for k in forked["joins"] if k != "j")]["tier2"]["steps"]]
+    nodes = [{**n, "place": "T3:p"} for n in NODES]
+    baked = bake_place_steps(raw, nodes)
+    written = [s["value"] for s in baked["analysis_groups"]["g"]["plots"]["p"]["tier3"]["steps"]]
     assert written == [2000, 90.5, [2003, 2004], ["NO", "SE"], [True]]
 
 
@@ -77,7 +86,7 @@ def test_a_value_that_cannot_be_read_from_its_dtype_is_reported_never_guessed():
     from blueprint_arch.t3_translator import UntranslatableNode
     bad = [{"node_type": "filter_row", "params": {"column": "year", "op": "ge", "value": "last year", "dtype": "Int64"}}]
     with pytest.raises(UntranslatableNode) as exc:
-        translate_plot_steps(bad)
+        steps_of(bad)
     assert "'last year'" in str(exc.value) and "whole numbers" in str(exc.value)
     with pytest.raises(Exception) as home:
         _apply_filter_rows(FRAME.lazy(), filter_rows_from_nodes(bad))

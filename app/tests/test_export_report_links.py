@@ -22,6 +22,7 @@ import pytest
 
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.session_manager import make_audit_step
+from app.tests.audit_export_harness import FLAGS, audit_kwargs
 from app.tests.test_cache_chain import FILTER_A, World
 from app.tests.test_export_download_path import _download_function, _run
 
@@ -38,14 +39,11 @@ def _fresh_cache():
 def _audited_export(world, monkeypatch, steps_for_plot=True):
     """The real download generator with one audited step on plot `p` (a filter, with its reason)."""
     step = make_audit_step("filter_row", {"column": "group", "op": "ne", "value": "B", "dtype": "String", "na": "remove"},
-                           "subtab_p", "the group B samples failed quality control")
-    state = {"t3_audit_steps_by_plot": {"subtab_p": [step]} if steps_for_plot else {}}
-    rows = [{"column": "group", "op": "ne", "value": "B", "dtype": "String", "na": "remove"}] if steps_for_plot else []
+                           "__places__", "the group B samples failed quality control", place="T3:p")
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
     notes = []
     function = _download_function(
-        world, view, notes, monkeypatch, flags=("t3_sandbox_enabled",), home_state=SimpleNamespace(get=lambda: state),
-        t3_filter_rows=lambda subtab: rows if subtab == "subtab_p" else [], t3_drop_columns=lambda subtab: [])
+        world, view, notes, monkeypatch, flags=FLAGS, **audit_kwargs(world, [step] if steps_for_plot else []))
     archive = zipfile.ZipFile(io.BytesIO(_run(function)[0]))
     return archive, notes
 

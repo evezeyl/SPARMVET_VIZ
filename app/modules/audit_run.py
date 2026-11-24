@@ -121,6 +121,21 @@ class AuditRun:
             return None
         return self.context.plot_lazy(plot_id, told)
 
+    def audited_frames(self) -> Dict[str, Dict[str, pl.DataFrame]]:
+        """The tables the copy changes, at each tier where it changes them: `{table: {"T1": frame, "T2": frame}}`, a tier left out when the copy's table at that tier is
+        the original's (a table beside the place has no entry). The frames are read from the stored tables of this run (the audit's own folder), collected. The export
+        writes them beside the originals (PROVISIONAL form, owner 2026-11-24)."""
+        found: Dict[str, Dict[str, pl.DataFrame]] = {}
+        for table, run in self.tables.items():
+            frames: Dict[str, pl.DataFrame] = {}
+            if run.t1 != FROM_ORIGINAL:
+                frames["T1"] = pl.read_parquet(run.t1_path)
+            if run.t2 not in (FROM_ORIGINAL, NONE) and run.t2_path is not None:
+                frames["T2"] = pl.read_parquet(run.t2_path)
+            if frames:
+                found[table] = frames
+        return found
+
     @property
     def built_tables(self) -> List[str]:
         """The stages built now, as `<table> T1` or `<table> T2`, in the order of the recipe."""
@@ -274,6 +289,7 @@ class _Run:
             except Exception as error:
                 self.refuse(error, places, lambda loaded, keys, out, changed, table=table: self.copy_table(table, loaded, keys, out, changed))
         plots: Dict[str, PlotRun] = {}
+        failures: List[AuditRunError] = []     # every plot whose table cannot be built from the audit steps is named, not only the first (the export tells them all)
         for plot_id in self.graph.plots():
             key_original, key_audit = self.keys_original.plot_key_of(plot_id), self.keys_audit.plot_key_of(plot_id)
             if key_original == key_audit:
@@ -282,10 +298,18 @@ class _Run:
             try:
                 table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir, self.changed)
             except Exception as error:
-                self.refuse(error, self.plot_places(plot_id), lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+                try:
+                    self.refuse(error, self.plot_places(plot_id), lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+                except AuditRunError as refused:
+                    failures.append(refused)
+                    continue
             table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original,
                                                          on_inputs_changed=self.told(self.changed, f"the original's table of the plot '{plot_id}'")).collect()
             plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))
+        if failures:
+            first = failures[0]
+            texts = list(dict.fromkeys(str(f) for f in failures))      # the same step that breaks several plots is told once
+            raise first if len(texts) == 1 else AuditRunError(" ".join(texts), first.step_id, first.place)
         self.clean(tables)
         return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed), self)
 

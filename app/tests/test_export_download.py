@@ -73,7 +73,7 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert run["git_commit"]
     assert "contact" in run and "contact_source" in run
     assert len([ln for ln in readme.splitlines() if ln.startswith("Contact")]) == 1
-    assert "not attempted" in run["t3_translation_skipped"]   # Mode 2 not requested here
+    assert "t3_translation_skipped" not in run   # the fork of a join per plot, and its record of skipped plots, are gone: every audit step is written at its place
     # D-0248: the engine of each tier and plot, the theme as applied and the library versions are in the record
     record = run["engines"]
     assert record["tables"] and all(t["tier1"] == "python-polars" for t in record["tables"].values())
@@ -244,9 +244,8 @@ def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
     assert isinstance(run["containerized"], bool)
     assert isinstance(run["data_source_paths"], dict) and run["data_source_paths"]
     assert "seeds_per_plot" in run
-    # Mode 2 was requested in this download — the translator actually ran, so this is
-    # a dict (possibly empty), not the "not attempted" placeholder.
-    assert isinstance(run["t3_translation_skipped"], dict)
+    # Mode 2 was requested in this download: no step is left out of the recipe (a step that cannot be written stops the part with its ERROR.txt), so there is no record of skipped plots.
+    assert "t3_translation_skipped" not in run
 
     # effective_run.yaml is unconditional — the earlier, Mode-1-only download must
     # already have one, with the same recipe/data hashes, but no translation attempted.
@@ -254,7 +253,7 @@ def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
     before_run = _yaml.safe_load(before.read(before_run_entry).decode())
     assert before_run["data_analysis_recipe_sha256"] == run["data_analysis_recipe_sha256"]
     assert before_run["data_batch_hash"] == run["data_batch_hash"]
-    assert "not attempted" in before_run["t3_translation_skipped"]
+    assert "t3_translation_skipped" not in before_run
 
     # The frozen recipe copy must itself be valid, reloadable YAML with no leftover
     # ConfigManager-internal `plots:` mirror key (confirmed live earlier to break reload).

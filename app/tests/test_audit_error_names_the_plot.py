@@ -1,68 +1,60 @@
-"""An audit step error names the plot, and the export names EVERY failing plot (PLOT-TABLE-ORDER-1, review point 4).
+"""An audit step error names the step and its place (a plot's own tier 3 names the plot), and the audit names EVERY plot it cannot build, not only the first
+(PLOT-TABLE-ORDER-1, review point 4; since the third tier went through the audit copy, demo step 7).
 
-Two plots whose audit lists cannot run give two errors, each with its plot id (so two Alerts entries, never one for both),
-and `EXPORT_NOT_CREATED.txt` lists both.
+Two plots whose steps at their own tier 3 cannot run give ONE error that names both (the step id and `T3:<plot>` of each), `AuditRunError.step_id` and `.place` are those of
+the first, and `EXPORT_NOT_CREATED.txt` carries the whole text. The same step that breaks several plots is told once. Real engine, real recipe (the demo).
+
+Mutation index (seen failing): MUTATION E1 `_Run.run` raises at the first failing plot (the second plot is not named).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_error_names_the_plot.py -q
 """
-import polars as pl
 import pytest
 
 from app.handlers.export_handlers import blocked_audit_notice
-from app.modules.t3_audit_engine import AuditStepError, audit_failures, audited_frame
-
-FRAME = pl.LazyFrame({"x": [1, 2, 3, 4], "y": [1.0, 2.0, 3.0, 4.0]})
-
-
-def step(kind, column, node_id):
-    if kind == "drop":
-        return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "r"}
-    return {"id": node_id, "node_type": "filter_row", "params": {"column": column, "op": "ge", "value": 2}, "reason": "r"}
+from app.modules.audit_run import AuditRunError
+from app.tests.test_audit_view import RECIPE_ID, World
+from app.modules.audit_places import PLACES_BUCKET
+from app.modules.session_manager import make_audit_step
 
 
-BROKEN = [step("drop", "x", "a"), step("filter", "x", "b")]
-FINE = [step("filter", "x", "c"), step("drop", "x", "d")]
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    from app.modules.cache_keys import clear_data_analysis_recipe_cache
+    yield World(tmp_path_factory.mktemp("error_names_the_plot"))
+    clear_data_analysis_recipe_cache()
 
 
-def test_the_error_names_the_plot_in_its_text_and_its_pipeline_error():
-    with pytest.raises(AuditStepError) as caught:
-        audited_frame(FRAME, BROKEN, "plot_one")
-    assert "audit step 2 of the plot 'plot_one'" in str(caught.value)
-    assert "audit step 1 of the plot 'plot_one'" in str(caught.value), "the step that removed the column is named with its plot"
-    assert "plot_one" in caught.value.pipeline_error.location
-    assert caught.value.pipeline_error.evidence["plot"] == "plot_one"
+def broken(plot, column="year"):
+    """A step at the plot's own tier 3 that cannot run: the column is dropped by the step before it."""
+    drop = make_audit_step("drop_column", {"column": column}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot}")
+    use = make_audit_step("filter_row", {"column": column, "op": "ge", "value": 2000.0, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot}")
+    return [drop, use]
 
 
-def test_two_failing_plots_give_two_different_alert_records():
-    errors = []
-    for plot in ("plot_one", "plot_two"):
-        with pytest.raises(AuditStepError) as caught:
-            audited_frame(FRAME, BROKEN, plot)
-        errors.append(caught.value.pipeline_error)
-    keys = {(e.component, e.problem, e.location) for e in errors}
-    assert len(keys) == 2, "the Alerts panel keeps an entry per (component, problem, location): two plots, two entries"
+def test_the_error_names_the_step_and_the_plot_in_its_place(world):
+    with pytest.raises(AuditRunError) as caught:
+        world.audit().run_of(RECIPE_ID, broken("mlst_bar"), world.plans)
+    assert "at T3:mlst_bar" in str(caught.value) and caught.value.place == "T3:mlst_bar" and caught.value.step_id.endswith("_2")
 
 
-def test_every_failing_plot_is_found_not_only_the_first():
-    plots = [("plot_one", lambda: FRAME, BROKEN), ("plot_ok", lambda: FRAME, FINE), ("plot_two", lambda: FRAME, BROKEN),
-             ("plot_empty", lambda: FRAME, [])]
-    failing = audit_failures(plots)
-    assert [p for p, _ in failing] == ["plot_one", "plot_two"]
+def test_two_failing_plots_are_both_named_in_one_error_with_the_first_as_its_step_and_place(world):
+    nodes = broken("mlst_bar") + broken("assembly_quality_dotplot", "value")
+    with pytest.raises(AuditRunError) as caught:
+        world.audit().run_of(RECIPE_ID, nodes, world.plans)
+    text = str(caught.value)
+    assert "at T3:mlst_bar" in text and "at T3:assembly_quality_dotplot" in text, text
+    assert caught.value.place == "T3:assembly_quality_dotplot", "step_id and place are those of the first failure, in the order of the recipe"
 
 
-def test_no_failing_plot_and_no_audit_steps_give_nothing():
-    assert audit_failures([]) == []
-    assert audit_failures([("p", lambda: FRAME, FINE)]) == []
+def test_a_plot_that_reads_the_same_table_but_has_no_broken_step_is_not_named(world):
+    with pytest.raises(AuditRunError) as caught:
+        world.audit().run_of(RECIPE_ID, broken("mlst_bar"), world.plans)
+    assert "year_distribution" not in str(caught.value), "year_distribution reads the same table and has no step of its own"
 
 
-def test_the_refusal_text_names_every_failing_plot_with_its_reason():
-    failing = audit_failures([("plot_one", lambda: FRAME, BROKEN), ("plot_two", lambda: FRAME, BROKEN)])
-    text = blocked_audit_notice(failing)
-    assert text.startswith("EXPORT NOT CREATED") and "these 2 plots" in text
-    assert "Plot 'plot_one':" in text and "Plot 'plot_two':" in text
-    assert text.count("The audit step 2 of the plot") == 2 and "nothing was exported" in text
-
-
-def test_the_refusal_text_for_one_plot_says_this_plot():
-    text = blocked_audit_notice(audit_failures([("only", lambda: FRAME, BROKEN)]))
-    assert "this plot" in text and "Plot 'only':" in text
+def test_the_refusal_text_carries_the_whole_error_and_the_plot_whose_table_showed_it(world):
+    with pytest.raises(AuditRunError) as caught:
+        world.audit().run_of(RECIPE_ID, broken("mlst_bar") + broken("assembly_quality_dotplot", "value"), world.plans)
+    text = blocked_audit_notice([("mlst_bar", caught.value)])
+    assert text.startswith("EXPORT NOT CREATED") and "'mlst_bar'" in text
+    assert "T3:mlst_bar" in text and "T3:assembly_quality_dotplot" in text and "nothing was exported" in text

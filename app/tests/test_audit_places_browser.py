@@ -229,14 +229,18 @@ def test_the_export_holds_the_audited_table_the_step_with_its_place_and_a_recipe
         assert not any(n.endswith("/T3_data_mlst_bar.tsv") for n in names), "a plot beside the place has no T3 file"
         original = next(z.read(n).decode() for n in names if n.endswith("/ResFinder/T1_data.tsv"))
         assert len(original.strip().splitlines()) - 1 == expected["amr_before"], "the T1 file of the table is the table as the recipe builds it"
+        # owner, 2026-11-24 (PROVISIONAL form): an export made in Audit mode also writes the audited table beside the original, for the table the step changes
+        audited_t1 = next(z.read(n).decode() for n in names if n.endswith("/ResFinder/T1_data_audited.tsv"))
+        assert 0 < len(audited_t1.strip().splitlines()) - 1 < expected["amr_before"], "the audited T1 file of ResFinder holds fewer rows than the original"
+        assert [n.split("/")[-2] for n in names if n.endswith("_audited.tsv")] and all(n.split("/")[-2] not in ("MLST",) for n in names if n.endswith("_audited.tsv")), "a table beside the place has no audited file"
         steps = yaml.safe_load(next(z.read(n).decode() for n in names if n.endswith("/t3_steps.yaml")))
-        (record,) = steps["audit_steps_at_tables"]
+        (record,) = steps["steps_by_place"]
         assert record["written_at"] == "T1:ResFinder" and record["written_at_words"] == "Table ResFinder (tier 1)" and record["reason"] == REASON
         assert record["column"] == "identity" and "amr_heatmap" in record["plots_built_from_it"] and "mlst_bar" not in record["plots_built_from_it"]
         readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
-        assert "Audit steps written at a table" in readme and "Table ResFinder (tier 1)" in readme and REASON in readme
+        assert "Audit steps, each at the place it is written" in readme and "Table ResFinder (tier 1)" in readme and REASON in readme
         qmd = next(z.read(n).decode() for n in names if n.endswith("report.qmd"))
-        assert "## Audit steps written at a table" in qmd and "Table ResFinder (tier 1)" in qmd and "it applies to every plot built from there" in qmd
+        assert "## Audit steps" in qmd and "Table ResFinder (tier 1)" in qmd and "it applies to every plot built from there" in qmd
         recipe = yaml.safe_load(next(z.read(n).decode() for n in names if "data_analysis_recipes_reproducibility/" in n and n.endswith(".yaml")))
         last = recipe["data_schemas"]["ResFinder"]["tier1"]["steps"][-1]
         assert last["action"] == "modif_filter" and last["column"] == "identity" and last["op"] == "lt"

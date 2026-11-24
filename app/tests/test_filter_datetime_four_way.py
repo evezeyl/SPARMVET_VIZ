@@ -12,8 +12,7 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.modules.t3_audit_engine import audited_frame
-from app.tests.audit_nodes import filter_nodes, home_plot_data
+from app.tests.audit_nodes import audited_lf, filter_nodes, home_plot_data
 from app.modules.t3_audit_engine import _apply_filter_rows, dialog_value, ops_for_column, value_choices
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
@@ -42,7 +41,7 @@ def views(f, rows):
         return lf.collect()["s"].to_list()
     return {
         "table": _apply_filter_rows(f.lazy(), rows).collect()["s"].to_list(),
-        "bundle": audited_frame(f.lazy(), filter_nodes(rows)).collect()["s"].to_list(),
+        "bundle": audited_lf(f.lazy(), filter_nodes(rows)).collect()["s"].to_list(),
         "plot": home_plot_data(f.lazy(), rows, {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})["s"].to_list(),
         "re-run": rerun(),
     }

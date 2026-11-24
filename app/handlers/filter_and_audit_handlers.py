@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,10 +31,11 @@ from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
+    dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, place_lines, reach_sentence
+from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, place_lines, plots_below, reach_sentence
+from app.modules.audit_view import AUDIT_ERRORS
 from utils import key_drop
 from utils.recipe_graph import RecipeGraphError, build_graph
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
@@ -124,7 +125,7 @@ def define_filter_audit_server(input, output, session, *,
                                 in_audit, data_view, view_source_table, current_view_key, active_home_subtab,
                                 safe_input,
                                 _resolve_active_spec, _resolve_active_lf,
-                                _spec_discrete_axes, _t3_drop_columns,
+                                _spec_discrete_axes, audit_nodes_for,
                                 _all_plot_subtab_ids, _plot_label, _table_identity,
                                 notification_log=None, recipe_raw=None, recipe_plans=None):
     """Register filter UI + T3 audit propagation handlers.
@@ -145,7 +146,7 @@ def define_filter_audit_server(input, output, session, *,
       view_source_table()        → str | None   — the source table of the Source choice (None for another choice)
       _resolve_active_lf(spec, tier=None) → LazyFrame — the table of the data choice, or of `tier`
       _spec_discrete_axes(spec)  → (set, set)  — discrete x, discrete y columns
-      _t3_drop_columns()         → list[str]   — committed drop-column targets
+      audit_nodes_for(subtab)    → list[dict]  — the committed audit steps the plot is built from, at any tier (the audit copy's input)
       _all_plot_subtab_ids()     → list[str]   — every "subtab_<plot_id>" id
       _plot_label(subtab_id)     → str         — human-readable plot label
       _table_identity(spec, tier) → tuple | None — which stored table the dialog reads (`stored_table_identity`); None when no
@@ -348,7 +349,7 @@ def define_filter_audit_server(input, output, session, *,
                     # No identity, no way to tell two tables apart: the signature is never equal (one more render).
                     _log.exception("filter dialog: the stored table the form reads could not be identified")
             # The same condition as `_active_frame`: the audited steps apply on T3 in Audit mode only.
-            rows = dialog_rows_signature(identity, (_audit_nodes_of(subtab) + _place_nodes_now()) if audit_t3 else [])
+            rows = dialog_rows_signature(identity, _place_nodes_now() if audit_t3 else [])
         except Exception as exc:
             # The outputs read the table again and show the error themselves; this only makes them run again when it changes.
             _log.exception("filter dialog: the table of the form could not be read")
@@ -596,28 +597,22 @@ def define_filter_audit_server(input, output, session, *,
     # that only SIGNALS a change of these steps: the dialog depends on it, not on home_state, so a change of home_state that is not a
     # change of these steps (a ghost save, a seed) does not mount the form again and does not wipe what the user is typing (R4,
     # ui_implementation_contract.md section 14). The steps themselves are read fresh, for the plot open NOW, in the same step that
-    # reads the plot's table (`_audit_nodes_of`): a mirror holding the steps would be one flush late on a plot switch (outputs
+    # reads the plot's table (`_active_frame`): a mirror holding the steps would be one flush late on a plot switch (outputs
     # created before the mirror's effect run first, with the new plot's table and the old plot's steps; shown by
     # `app/tests/test_dialog_mirror_window.py`).
     _dialog_audit_steps_changed = reactive.Value([])
 
-    def _audit_nodes_of(subtab) -> list:
-        with reactive.isolate():
-            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
-        return list(by_plot.get(subtab, [])) if subtab else []
-
     def _place_nodes_now() -> list:
-        """The audit steps written at a place upstream of any plot (the bucket `__places__`): they change the table of the plot too, but the engine runs them, so they are
-        never part of the plot's own list that `audited_frame` applies. Only a SIGNAL of the form reads them (a change builds the dialog again)."""
+        """The committed audit steps, at every tier (the bucket `__places__`): the engine runs them in the audit copy. Only a SIGNAL of the form reads them (a change builds the dialog again)."""
         with reactive.isolate():
             by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
         return list(by_plot.get(PLACES_BUCKET, []))
 
     @reactive.Effect
     def _signal_dialog_audit_steps():
-        subtab = active_home_subtab.get()
+        active_home_subtab.get()   # the plot open now: the table the form reads is its own
         by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}   # the dependency
-        nodes = (list(by_plot.get(subtab, [])) if subtab else []) + list(by_plot.get(PLACES_BUCKET, []))   # a step upstream changes the table too
+        nodes = list(by_plot.get(PLACES_BUCKET, []))   # a step at any tier can change the table the form reads
         with reactive.isolate():
             if _dialog_audit_steps_changed.get() != nodes:
                 _dialog_audit_steps_changed.set(nodes)
@@ -628,18 +623,18 @@ def define_filter_audit_server(input, output, session, *,
         p_id = subtab.removeprefix("subtab_") if subtab else None
         try:
             lf = _resolve_active_lf(_resolve_active_spec(p_id))
+        except AUDIT_ERRORS:
+            # The audit steps cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
+            _log.warning("filter dialog: the audit steps cannot run; no table is offered")
+            return None
         except Exception:
             _log.exception("filter dialog: the table the filter acts on could not be built")
             return None
         # DECIDED 2026-11-15 (Eve, S2-1 (a)): in Audit mode on T3 the dialog acts on the table after the plot's audited steps, so a column
-        # that an earlier step dropped is not offered. One source: the same function as the table, the plot and the export.
-        try:
-            _dialog_audit_steps_changed.get()   # the dependency: a change of this plot's steps builds the dialog again
-            return dialog_frame(lf, _audit_nodes_of(subtab), _can_write_audit_step(), p_id)
-        except AuditStepError:
-            # The audit list of the plot cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
-            _log.warning("filter dialog: the audit steps of the plot cannot run; no table is offered")
-            return None
+        # that an earlier step dropped is not offered. One source: `_resolve_active_lf` is the table of the audit copy in Audit mode, the same
+        # as the table, the plot and the export; a step that cannot run raises there (below) and the dialog offers nothing until it is removed.
+        _dialog_audit_steps_changed.get()   # the dependency: a change of the steps builds the dialog again
+        return lf
 
     @output
     @render.ui
@@ -884,7 +879,7 @@ def define_filter_audit_server(input, output, session, *,
 
             scratch_nodes.append(make_audit_step(
                 node_type, params,
-                plot_scope=active_subtab,
+                plot_scope=PLACES_BUCKET,
                 reason="",
                 primary_key_warning=is_pk,
             ))
@@ -927,8 +922,7 @@ def define_filter_audit_server(input, output, session, *,
             return
 
         state = home_state.get()
-        committed = set(_t3_drop_columns())
-        choosable = [c for c in lf.collect_schema().names() if c not in committed]
+        choosable = list(lf.collect_schema().names())    # the audited table: a column an audit step dropped is not in it
         visible = safe_input(input, "preview_col_selector", choosable)
         vis_set = set(visible) if isinstance(visible, (list, tuple)) else set(choosable)
         to_drop = [c for c in choosable if c not in vis_set]
@@ -956,7 +950,7 @@ def define_filter_audit_server(input, output, session, *,
         scratch_nodes = [
             make_audit_step(
                 "drop_column", {"column": col},
-                plot_scope=active_subtab,
+                plot_scope=PLACES_BUCKET,
                 reason="",
             )
             for col in to_drop
@@ -1114,10 +1108,12 @@ def define_filter_audit_server(input, output, session, *,
             class_="alert alert-info py-1 px-2 mb-2 spv-text-sm",
         )
 
-        # D-0535, D-0553: the user chooses where the step is written. "This plot only" and the two plot-level choices stay as they were; the
-        # choice "At a table upstream" writes ONE step at a table the plot is built from (every table and plot below it is built again from it).
+        # D-0535, D-0553: the user chooses where the step is written, at any of the three tiers. "This plot only", "All plots" and "All plots except" write the step at the
+        # tier 3 of each plot (`T3:<plot>`); the choice "At a table this plot is built from" writes ONE step at each ticked place (every table and plot built from it is
+        # built again from it). The plot's own tier 3 is a line of the same list, so the rule (at most one place on a path) is asked of all three tiers together.
         offered = _places_offered(scratch_nodes, active_subtab)
         place_lines_offered = offered[2].lines if offered else ()
+        own_place = own_plot_place(active_subtab.removeprefix("subtab_"))
         radio_choices = {
             "this": "This plot only",
             "all": "All plots",
@@ -1130,7 +1126,8 @@ def define_filter_audit_server(input, output, session, *,
                 "propagation_places",
                 label=ui.tags.small("The step is written at the table you choose, and every table and plot built from it is built again. "
                                     "Choose one table, or the first table of several original tables.", class_="text-muted"),
-                choices={line.place: f"{line_label(line)}: {reach_sentence(line)}" for line in place_lines_offered},
+                choices={**{line.place: f"{line_label(line)}: {reach_sentence(line)}" for line in place_lines_offered},
+                         own_place: own_place_line(active_subtab.removeprefix("subtab_"))},
                 selected=[],
             ),
             id="propagation_places_wrapper",
@@ -1210,7 +1207,10 @@ def define_filter_audit_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.propagation_confirm)
     def _handle_propagation_confirm():
-        """Resolve the user's propagation choice and commit pending nodes."""
+        """Resolve the user's choice of where the step is written and stage it (pending, without a reason).
+
+        The three tiers are ONE mechanism: the step is written at a place (`T1:<table>`, `T2:<table>` or `T3:<plot>`), one node per place with the id of the decision,
+        and the audit copy runs them in order. "This plot only", "All plots" and "All plots except" are the places `T3:<plot>`."""
         if home_state is None:
             return
         scratch = _propagation_scratch.get() or {}
@@ -1250,37 +1250,22 @@ def define_filter_audit_server(input, output, session, *,
             ui.modal_remove()
             return
 
-        # §12g.7 — expand each scratch node into one copy per target plot,
-        # sharing id (linked deletion). Skip plots whose schema lacks the
-        # targeted column (§12g.9 / D9): collect skipped for a notification.
-        from app.modules.session_manager import make_audit_step
-        pending_nodes = list(state.get("_pending_t3_nodes", []))
+        # §12g.7 / §12g.9 / D9: one node per target plot, at the plot's own tier 3, sharing the id of the decision (linked removal). A plot whose table lacks
+        # the targeted column is skipped and named in a notification.
+        placed: list[tuple[dict, str]] = []
         skipped: dict[str, list[str]] = {}  # plot → [columns skipped]
-        applied_count = 0
-
         for scratch_node in scratch_nodes:
-            shared_id = scratch_node.get("id")
-            params = dict(scratch_node.get("params", {}))
-            col = params.get("column", "")
+            col = dict(scratch_node.get("params", {})).get("column", "")
             for plot_id in target_plots:
-                # Schema check: does this plot's data have the column?
                 if not _plot_has_column(plot_id, col):
                     skipped.setdefault(plot_id, []).append(col)
                     continue
-                pending_nodes.append(make_audit_step(
-                    scratch_node["node_type"], dict(params),
-                    plot_scope=plot_id,
-                    reason="",
-                    primary_key_warning=bool(scratch_node.get("primary_key_warning")),
-                    node_id=shared_id,  # SHARED id across copies
-                ))
-                applied_count += 1
+                placed.append((scratch_node, own_plot_place(plot_id.removeprefix("subtab_"))))
 
-        home_state.set({**state, "_pending_t3_nodes": pending_nodes})
-        _propagation_scratch.set({"nodes": [], "kind": ""})
+        _stage_nodes(state, placed, active_subtab)
         ui.modal_remove()
 
-        msg = f"✅ {applied_count} audit entry(ies) added across {len(target_plots)} plot(s)."
+        msg = f"✅ {len(placed)} audit entry(ies) added across {len(target_plots)} plot(s)."
         if skipped:
             skipped_summary = "; ".join(
                 f"{_plot_label(p)}: {', '.join(cs)}"
@@ -1289,13 +1274,27 @@ def define_filter_audit_server(input, output, session, *,
             msg += f" Skipped (column not in plot data): {skipped_summary}."
         _notify(msg, type="message", duration=7)
 
-    def _confirm_places(scratch: dict, scratch_nodes: list[dict]) -> None:
-        """The user chose "At a table this plot is built from": check the choice, then stage ONE step per ticked table, each written at its place (D-0535, D-0553).
+    def _stage_nodes(state: dict, placed: list[tuple[dict, str]], active_subtab: str) -> None:
+        """Stage one pending node for each (scratch node, place): written at that place, with the id of the decision, no reason yet (Apply is locked until it has one)."""
+        from app.modules.session_manager import make_audit_step
+        pending_nodes = list(state.get("_pending_t3_nodes", []))
+        for scratch_node, place in placed:
+            pending_nodes.append(make_audit_step(
+                scratch_node["node_type"], dict(scratch_node.get("params", {})),
+                plot_scope=PLACES_BUCKET, reason="",
+                primary_key_warning=bool(scratch_node.get("primary_key_warning")),
+                node_id=scratch_node.get("id"), place=place, started_from=active_subtab,
+            ))
+        home_state.set({**state, "_pending_t3_nodes": pending_nodes})
+        _propagation_scratch.set({"nodes": [], "kind": ""})
 
-        Refused in one plain sentence, with the dialog left open and nothing staged: no table ticked, a table below another ticked one (at most one place on a path;
-        the first tables of several original tables are valid together), a place the step cannot be written at, and a column drop of a key that a later join reads
-        (`utils.key_drop`, by place, D-0358). The ticked tables share the id of the decision (one decision, linked removal). The step is staged without a reason, as
-        every audit step: Apply is locked until it has one."""
+    def _confirm_places(scratch: dict, scratch_nodes: list[dict]) -> None:
+        """The user chose "At a table this plot is built from": check the choice, then stage ONE step per ticked place, each written at its place (D-0535, D-0553).
+
+        Refused in one plain sentence, with the dialog left open and nothing staged: no place ticked, a place below another ticked one (at most one place on a path, the plot's own
+        tier 3 counts as a place; the first tables of several original tables are valid together), a place the step cannot be written at, and a column drop of a key that a later join
+        reads (`utils.key_drop`, by place, D-0358). The ticked places share the id of the decision (one decision, linked removal). The step is staged without a reason, as every audit
+        step: Apply is locked until it has one."""
         state = home_state.get()
         active_subtab = state.get("active_plot_subtab") or active_home_subtab.get() or ""
         found = _places_offered(scratch_nodes, active_subtab)
@@ -1305,7 +1304,7 @@ def define_filter_audit_server(input, output, session, *,
         graph, plans, lines = found
         picks = safe_input(input, "propagation_places", []) or []
         picks = list(picks) if isinstance(picks, (list, tuple)) else [picks]
-        problem = choice_problem(graph, lines.lines, picks)
+        problem = choice_problem(graph, lines.lines, picks, extra_offered=[own_plot_place(active_subtab.removeprefix("subtab_"))])
         if problem is None and scratch.get("kind") == "drop":
             gate = key_drop.DropGate(recipe_raw(), plans)
             for place in picks:
@@ -1315,20 +1314,9 @@ def define_filter_audit_server(input, output, session, *,
         if problem:
             _notify(f"⛔ {problem}", type="error", duration=8)
             return
-        from app.modules.session_manager import make_audit_step
-        pending_nodes = list(state.get("_pending_t3_nodes", []))
-        for scratch_node in scratch_nodes:
-            for place in picks:
-                pending_nodes.append(make_audit_step(
-                    scratch_node["node_type"], dict(scratch_node.get("params", {})),
-                    plot_scope=PLACES_BUCKET, reason="",
-                    primary_key_warning=bool(scratch_node.get("primary_key_warning")),
-                    node_id=scratch_node.get("id"), place=place, started_from=active_subtab,
-                ))
-        home_state.set({**state, "_pending_t3_nodes": pending_nodes})
-        _propagation_scratch.set({"nodes": [], "kind": ""})
+        _stage_nodes(state, [(scratch_node, place) for scratch_node in scratch_nodes for place in picks], active_subtab)
         ui.modal_remove()
-        reached = {p for line in lines.lines if line.place in picks for p in line.plots}
+        reached = set(plots_below(graph, picks))
         _notify(f"✅ {len(scratch_nodes)} audit step(s) added at {', '.join(picks)}: {len(reached)} plot(s) are built from there. Write the reason, then press Apply.",
                 type="message", duration=7)
 
@@ -1359,9 +1347,9 @@ def define_filter_audit_server(input, output, session, *,
         """After T3 apply, clear left-panel filter staging.
 
         Both _pending_filters (staging UI) and applied_filters (active plot view)
-        are cleared because T3 AuditSteps now drive the plot via _t3_filter_rows
-        (the legacy applied_filters path is no longer the source of truth once a
-        node is committed to T3).
+        are cleared because the committed audit steps now drive the plot (the audit copy;
+        the legacy applied_filters path is no longer the source of truth once a
+        node is committed).
         """
         if home_state is None:
             return

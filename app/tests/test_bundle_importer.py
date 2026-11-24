@@ -1,7 +1,7 @@
 """Tests for app/modules/bundle_importer.py (ADR-097, #48/REPRO-IMPORT-1).
 
 Builds a tiny, real recipe on disk (same minimal shape test_cache_keys.py uses), runs it
-through the real build_mode2_recipe() translator, zips it exactly as export_handlers.py
+through the real bake_place_steps() recipe baking, zips it exactly as export_handlers.py
 does, then feeds that zip into import_bundle() against a fake bootloader pointed at a
 temp "deployment". No Shiny involved — bundle_importer.py is pure (Two-Category Law).
 
@@ -18,7 +18,7 @@ import yaml
 from app.modules.bundle_importer import BundleImportError, import_bundle, read_effective_run
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, engine_fingerprint, load_data_analysis_recipe
 from app.modules.session_manager import SessionManager
-from blueprint_arch.t3_translator import build_mode2_recipe
+from app.modules.audit_places import bake_place_steps
 
 
 @pytest.fixture(autouse=True)
@@ -93,7 +93,7 @@ def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
     original_recipe_path = _make_recipe(src_dir, recipe_id, data_path)
     loaded = load_data_analysis_recipe(original_recipe_path)
 
-    mode2_cfg, skipped = build_mode2_recipe(loaded.raw, {})
+    mode2_cfg, skipped = bake_place_steps(loaded.raw, []), {}     # `skipped` is the record of a bundle exported before the fork of a join went (the importer still reads it)
     if t3_translation_skipped is not None:
         skipped = t3_translation_skipped
 

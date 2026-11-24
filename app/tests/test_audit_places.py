@@ -10,6 +10,9 @@ What is proved (pure, no screen):
 - on the demo `1_test_data_ST22_dummy` with its real engine plan: for `amr_heatmap` and `sample_id` the lines are the tier 1 and tier 2 of ResFinder;
   `T1:ResFinder` reaches the 5 plots that the graph says (a plot beside it is not in the list); a column no table holds gives no line.
 
+- the third tier is the same mechanism (demo step 7): the place of a plot's own tier 3 is `T3:<plot>`; a plot is reached by a step at its own tier 3 and by a step at a table above it and
+  by no other; the rule of places covers a table and a plot below it together; a step at a plot is baked into the plot's own `tier3.steps`; the words and the records name it.
+
 Mutation index (each seen failing): MUTATION P1 the filter on `node.steps` for a tier 2 is removed (a tier 2 with no steps becomes a line); MUTATION P2 `_holds` always
 answers yes (a table without the column becomes a line); MUTATION P3 `choice_problem` skips `chosen_places_problem`.
 
@@ -19,7 +22,8 @@ from pathlib import Path
 
 import pytest
 
-from app.modules.audit_places import choice_problem, line_label, place_lines, plots_below, reach_sentence
+from app.modules.audit_places import (bake_place_steps, choice_problem, line_label, nodes_reaching_plot, own_place_line, own_plot_place, place_lines, place_step_records,
+                                       place_words, plots_below, reach_sentence)
 from utils.plan_book import PlanBook
 from utils.recipe_graph import build_graph
 
@@ -173,3 +177,72 @@ def test_demo_the_marker_column_of_resfinder_is_held_by_the_resfinder_tables_and
     found = place_lines(graph, plans, "amr_heatmap", ["ResFinder_not_in_original_data"])
     assert [line.place for line in found.lines] == ["T1:ResFinder", "T2:ResFinder"], found
     assert place_lines(graph, plans, "mlst_bar", ["ResFinder_not_in_original_data"]).lines == (), "MLST's plot does not read ResFinder"
+
+
+# -- the third tier: a step at a plot is a step at a place, like a step at a table (demo step 7) ----------------------------------
+
+def _node(place, node_type="filter_row", column="id", node_id=None):
+    params = {"column": column, "op": "ne", "value": "s1", "na": "keep"} if node_type == "filter_row" else {"column": column}
+    return {"id": node_id or f"n_{place}", "node_type": node_type, "place": place, "params": params, "reason": "r", "created_at": "t", "active": True}
+
+
+def test_a_plot_is_reached_by_a_step_at_its_own_tier3_and_by_a_step_at_a_table_above_it_and_by_no_other():
+    graph = build_graph(small())
+    nodes = [_node("T3:P"), _node("T1:A"), _node("T3:Q"), _node("T1:X"), _node("T2:J")]
+    assert [n["place"] for n in nodes_reaching_plot(graph, nodes, "P")] == ["T3:P", "T1:A", "T2:J"]
+    assert [n["place"] for n in nodes_reaching_plot(graph, nodes, "Q")] == ["T3:Q", "T1:X"]
+    assert nodes_reaching_plot(graph, [_node("T1:nope")], "P") == [], "a place the recipe does not have reaches no plot"
+    assert nodes_reaching_plot(graph, [], "P") == []
+
+
+def test_the_plot_of_a_tier3_place_is_built_from_it_and_no_other_plot_is():
+    graph = build_graph(small())
+    assert plots_below(graph, ["T3:P"]) == ["P"]
+    assert plots_below(graph, ["T3:Q", "T1:A"]) == ["P", "Q"]
+    assert plots_below(graph, ["T3:P", "T3:P"]) == ["P"]
+    assert own_plot_place("P") == "T3:P"
+
+
+def test_the_rule_of_places_covers_a_table_and_the_plot_below_it_together():
+    graph = build_graph(small())
+    offered = place_lines(graph, book(graph, all_have_id), "P", ["id"]).lines
+    own = [own_plot_place("P")]
+    assert choice_problem(graph, offered, ["T3:P"], extra_offered=own) is None, "the plot's own place alone is a valid choice"
+    for chosen in (["T1:A", "T3:P"], ["T3:P", "T2:J"], ["T1:J", "T3:P"]):
+        sentence = choice_problem(graph, offered, chosen, extra_offered=own)
+        assert sentence and all(f"'{n}'" in sentence for n in chosen), (chosen, sentence)
+    assert "not one of the places offered" in choice_problem(graph, offered, ["T3:P"]), "without the plot's own line a plot place is not offered"
+    assert "not one of the places offered" in choice_problem(graph, offered, ["T3:Q"], extra_offered=own), "the own place of ANOTHER plot is not offered"
+    assert "Choose at least one place" in choice_problem(graph, offered, [], extra_offered=own)
+    assert own_place_line("P").startswith("Plot P (tier 3)")
+
+
+def test_two_plots_on_one_table_are_two_separate_places_and_may_be_chosen_together():
+    raw = small()
+    raw["analysis_groups"]["g"]["plots"]["P2"] = {"target_dataset": "J", "mapping": {"x": "id"}, "layers": [{"name": "geom_col"}]}
+    graph = build_graph(raw)
+    assert graph.chosen_places_problem(["T3:P", "T3:P2"]) is None
+    assert graph.chosen_places_problem(["T3:P", "T1:X"]) is None, "a plot and a table that is not above it are separate decisions' places"
+    assert plots_below(graph, ["T3:P"]) == ["P"], "a step at P does not reach P2, which reads the same table"
+
+
+def test_the_words_and_the_records_name_the_plot_place():
+    graph = build_graph(small())
+    assert place_words("T3:P") == "Plot P (tier 3)" and place_words("T1:A") == "Table A (tier 1)"
+    nodes = [_node("T3:P", node_id="x1"), _node("T1:A", node_id="x2")]
+    records = place_step_records(graph, nodes)
+    assert [(r["id"], r["place_words"], r["plots"]) for r in records] == [("x1", "Plot P (tier 3)", ["P"]), ("x2", "Table A (tier 1)", ["P"])]
+
+
+def test_a_step_at_a_plot_is_baked_into_the_tier3_of_that_plot_and_nowhere_else_and_the_original_is_untouched():
+    raw = small()
+    before = repr(raw)
+    baked = bake_place_steps(raw, [_node("T3:P", column="id", node_id="a1"), _node("T1:A", column="id", node_id="a2"), _node("T3:P", "drop_column", "a", "a3")])
+    assert repr(raw) == before, "the argument is not changed"
+    plot = baked["analysis_groups"]["g"]["plots"]["P"]
+    assert [s["action"] for s in plot["tier3"]["steps"]] == ["modif_filter", "polars_drop"], "in the order the nodes were written"
+    assert "a1" in plot["comment"] and "a3" in plot["comment"] and "a2" not in plot["comment"]
+    assert "tier3" not in baked["analysis_groups"]["g"]["plots"]["Q"], "another plot is not touched"
+    assert baked["data_schemas"]["A"]["tier1"]["steps"][-1]["action"] == "modif_filter", "the step at the table is still baked at the table"
+    with pytest.raises(KeyError, match="no plot 'nope'"):
+        bake_place_steps(raw, [_node("T3:nope")])

@@ -268,9 +268,9 @@ def test_t3_ghost_hash_differs_for_different_content(sm):
     legacy flat list, is the authoritative, current representation (Phase 22-J)."""
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="a",
-                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
+                       t3_audit_steps_by_plot={"__places__": [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")]})
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="b",
-                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
+                       t3_audit_steps_by_plot={"__places__": [make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")]})
     ghosts = sm.list_t3_ghosts(key)
     assert ghosts[0]["t3_audit_steps_sha256"] != ghosts[1]["t3_audit_steps_sha256"]
 
@@ -285,7 +285,7 @@ def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_p
     legacy = {
         "session_key": key, "data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64,
         "saved_at": "2026-01-01T00:00:00", "label": "", "schema_version": SESSION_FORMAT_VERSION,
-        "t3_audit_steps": [], "t3_audit_steps_by_plot": {"subtab_p": []}, "t3_plot_overrides": {},
+        "t3_audit_steps": [], "t3_audit_steps_by_plot": {"__places__": []}, "t3_plot_overrides": {},
     }
     (d / "t3_20260101_000000.json").write_text(json.dumps(legacy))
     ghost = sm.list_t3_ghosts(key)[0]

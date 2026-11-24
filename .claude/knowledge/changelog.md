@@ -4,6 +4,20 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - HOME audit: the third tier through the audit copy, and the audited table files of an export made in Audit mode (branch `task/audit-places-demo`; D-0535, D-0553, D-0329, D-0613; owner's word of 2026-11-24 on the table files)
+
+The tiers work ONE way now: every audit step is a node written at a place (`T1:<table>`, `T2:<table>`, `T3:<plot>`), all in the one bucket `__places__`, and HOME, the filter dialog, the audit panel, the export and the session read the audit copy.
+
+- ⚠️ **Removed (one way to do one thing):** the plot-level lists of nodes (`t3_audit_steps_by_plot["subtab_<plot>"]`), `t3_audit_engine.audited_frame`, `audit_steps_in_order`, `dialog_frame`, `audit_failures`, `filter_rows_from_nodes`, `AuditStepError`; `t3_translator.build_mode2_recipe` (the fork of a join per plot) and `translate_plot_steps`; HOME's `_t3_filter_rows`, `_t3_drop_columns`, `_active_plot_t3_nodes`; the export's `t3_filter_rows`/`t3_drop_columns` arguments; the key `t3_translation_skipped` of `effective_run.yaml` (no plot can be skipped any more: a step that cannot be written stops the reproducibility part). The importer still reads that key from a bundle made before.
+- 🔑 ⚠️ **Session files are format number 5**: an older file (4, 3, ...) is refused, never converted, and a file whose step has no `place` is refused with a plain line. The stored key is still named `t3_audit_steps_by_plot` (it now holds the single bucket `__places__`; renaming it is a later format number, PROVISIONAL).
+- **The dialog** writes "This plot only", "All plots" and "All plots except" as nodes at `T3:<plot>` (one node per plot, one id; a plot whose table lacks the column is skipped and told). The place list also holds the plot's own line, so the rule of places covers a table and the plot below it in one decision (one plain refusal; two separate decisions at different places stay allowed). The steps run tier 1, tier 2, tier 3, and inside a tier in the order written.
+- **One error for the audit:** an audit step that cannot run is refused with its id and its place for every plot it breaks (`AuditRunError`), in the plot's place, in the table's place, in the export (nothing is exported) and in the dialog (no table is offered). The hint of the old message "removed by audit step N" is not in it any more (PROVISIONAL: the engine's own words name the column).
+- `bake_place_steps` bakes a step at a plot into the plot's own `tier3.steps` and leaves out the loader's root `plots` mirror (a root `plots:` does not load again; found when the fork was removed).
+- **Audited table files (owner, 2026-11-24; the form is PROVISIONAL):** an export made in Audit mode writes `<table>/T1_data_audited.tsv` and `T2_data_audited.tsv` beside the originals for every table an audit step changes (`AuditRun.audited_frames`); README.txt and report.qmd say which file is which and which steps made the difference; an export made in Exploration mode keeps the originals only and says so. `t3_steps.yaml` lists the steps under `steps_by_place` (was `audit_steps_at_tables`).
+- Tests: `test_audit_view.py` (tier 3, isolation between plots on one table, order across tiers), `test_audit_dialog_places.py`, `test_export_audited_tables.py`, `test_step_order.py` (table, plot, bundle file and re-run agree through the audit copy), the rewritten `audit_nodes.py` helpers (`audited_lf` runs the engine's own actions).
+
+---
+
 ## [2026-11-24] - HOME audit: an audit step written at a table upstream of the plot, in five functional steps (branch `task/audit-places-demo`; D-0535, D-0553, D-0346, D-0329, D-0613)
 
 Each step left the app working; the commits are marked `[DEMO STEP n/5 functional]`.

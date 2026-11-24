@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, function:tables_no_plot_reads, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), libs/utils/src/utils/recipe_tiers.py (plot_targets, schema_bodies: the tables no plot reads, D-0457), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, app/modules/audit_places.py (bake_place_steps: the audit steps baked into the reproducibility recipe, place_step_records, place_words, plots_below), libs/utils/src/utils/recipe_tiers.py (plot_targets, schema_bodies: the tables no plot reads, D-0457), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 # consumes: app/modules/id_check_run.py (run_id_checks, export_log_text: id_log.yaml of the bundle, D-0575, D-0582), libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
@@ -40,8 +40,9 @@ from app.modules.id_check_run import export_log_text, id_log_folder, run_id_chec
 from app.modules.id_warning import export_sentences, read_status
 from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
-from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
-from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, place_step_records, place_words, plots_below, place_nodes as _committed_place_nodes_of
+from app.modules.t3_audit_engine import _op_label, between_prose
+from app.modules.audit_view import AUDIT_ERRORS
+from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
@@ -337,12 +338,12 @@ def refusal_for_build_changes(changes: list[str], view_keys, current_keys, notif
 
 
 def blocked_audit_notice(failing: list) -> str:
-    """Text of `EXPORT_NOT_CREATED.txt` when the audited steps of plots cannot run in their recorded order: every failing plot, with its reason."""
+    """Text of `EXPORT_NOT_CREATED.txt` when the audit steps cannot run in their recorded order: the reason of the failure (the audit copy names the step and its place), and the
+    plot whose table showed it."""
     lines = ["EXPORT NOT CREATED", "",
-             "The audit steps of " + ("this plot" if len(failing) == 1 else f"these {len(failing)} plots")
-             + " cannot run in the order they were recorded:", ""]
+             "The audit steps cannot run in the order they were recorded:", ""]
     for plot_id, error in failing:
-        lines += [f"Plot '{plot_id}':", str(error), ""]
+        lines += [f"Found when the table of the plot '{plot_id}' was built:", str(error), ""]
     lines += ["What it means: the table, the plot and the recipe that the export writes would not agree, or the recipe would stop.",
               "In a scientific export that must never happen silently, so nothing was exported.",
               "",
@@ -523,8 +524,12 @@ def _build_methods_section(
             p_id,
         ))
         for n in nodes:
-            # a step written at a table upstream (bucket `__places__`) says where, and applies to every plot built from there
-            at_table = p_id == PLACES_BUCKET
+            # a step written at a table (bucket `__places__`) says where, and applies to every plot built from there; a step written at a plot's own tier 3 says the plot
+            place = n.get("place", "") if p_id == PLACES_BUCKET else ""
+            own_plot = place.removeprefix("T3:") if place.startswith("T3:") else None
+            at_table = bool(place) and own_plot is None
+            if own_plot is not None:
+                plot_label = _qp(next((plot_report_name(s, own_plot) for pid, s in all_plots if pid == own_plot), own_plot))
             where = f" (written at {_qp(place_words(n.get('place', '')))}; it applies to every plot built from there)"
             nt = n.get("node_type", "")
             params = n.get("params", {})
@@ -626,10 +631,10 @@ def define_export_server(input, output, session, *,
                          home_state, safe_input,
                          notification_log=None,
                          session_processing_issues=None,
-                         t3_filter_rows=None,
-                         t3_drop_columns=None,
                          view_keys=None,
-                         audited_plot_table=None):
+                         audited_plot_table=None,
+                         in_audit=None,
+                         audit_run=None):
     """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
@@ -643,10 +648,10 @@ def define_export_server(input, output, session, *,
                            the content of the bundle does not depend on it
       home_state         : reactive.Value[dict] | None
       safe_input         : helper (input, key, default) → value
-      t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
-      t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
-      audited_plot_table : callable(plot_id, told) -> LazyFrame | None  the table a plot reads in the audit copy made from the audit steps written at a table upstream
+      audited_plot_table : callable(plot_id, told) -> LazyFrame | None  the table a plot reads in the audit copy made from the audit steps (any tier)
+      in_audit           : callable() -> bool  True in Audit mode (HOME's `_in_audit`): only then the table files also come audited (`audited_table_files`)
+      audit_run          : callable(told) -> AuditRun | None  the run of the audit copy (the tables it built); None when no audit step is committed
                            (HOME's `_audited_t3_lf`); None for a plot that lies below no such step. Read whatever the mode on screen is: the export is the Result plus the audit.
     """
     from app.modules.notification_utils import make_notifier
@@ -1098,24 +1103,17 @@ def define_export_server(input, output, session, *,
             recipe_default=(cfg.raw_config.get("plot_defaults") or {}).get("random_state"),
         )
 
-        # ── Collect T3 audit data (per-plot active nodes) ─────────────────
-        _t3_by_plot: dict[str, list[dict]] = {}
+        # ── Collect the audit data: every audit step at every tier is one node written at a place (`T1:<table>`, `T2:<table>`, `T3:<plot>`) ──────────
+        # t3_plot_overrides: resolved aesthetic state per plot (separate from the audit steps: it is a plot's own style and seed pin, not a step on data)
         _t3_aesthetic_overrides: dict[str, dict] = {}
         if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
-            _state = home_state.get()
-            _rbp = _state.get("t3_audit_steps_by_plot", {}) or {}
-            for _pid, _ in all_plots:
-                _nodes = [n for n in _rbp.get(f"subtab_{_pid}", []) if n.get("active", True)]
-                if _nodes:
-                    _t3_by_plot[_pid] = _nodes
-            # t3_plot_overrides: resolved aesthetic state per plot (separate from audit step)
-            _overrides_all = _state.get("t3_plot_overrides", {}) or {}
+            _overrides_all = home_state.get().get("t3_plot_overrides", {}) or {}
             for _pid, _ in all_plots:
                 _subtab = f"subtab_{_pid}"
                 if _subtab in _overrides_all and _overrides_all[_subtab]:
                     _t3_aesthetic_overrides[_pid] = _overrides_all[_subtab]
 
-        # The audit steps written at a table upstream of plots (demo step 4): one step is one record, always applied to every plot built from its place.
+        # The audit steps (demo steps 4 and 7): one step is one record, always applied to every plot built from its place (its own tier 3 or a table above it).
         _place_nodes_all: list[dict] = []
         _place_records: list[dict] = []
         _place_plot_ids: set[str] = set()
@@ -1139,9 +1137,36 @@ def define_export_server(input, output, session, *,
                 anchors_dir=bootloader.get_location("user_data") / "anchors", keys=export_keys,
                 on_inputs_changed=_on_build_change)
 
+        # AUDITED TABLE FILES (owner, 2026-11-24; PROVISIONAL form): an export made in Audit mode also writes, for every table an audit step changes (the table of the place and
+        # every table built from it), the audited table at each tier beside the original: `T1_data_audited.tsv`, `T2_data_audited.tsv`. A table no step changes has only its
+        # original file. In Exploration mode the table files stay the originals, as before (the steps still change the plots and `T3_data_<plot>.tsv`, never these files).
+        _audited_table_files: dict[str, dict] = {}     # table -> {"T1": DataFrame, "T2": DataFrame (a tier the table is not changed at is absent), "changed_by": {"T1": [nodes], "T2": [nodes]}}
+        _audit_now = False
+        if _place_nodes_all and in_audit is not None and audit_run is not None:
+            with reactive.isolate():
+                _audit_now = bool(in_audit())
+            if _audit_now:
+                with reactive.isolate():
+                    _run = audit_run(lambda change: _on_build_change(change))
+                if _run is not None:
+                    for _table, _frames in _run.audited_frames().items():
+                        _audited_table_files[_table] = {
+                            **_frames, "changed_by": {_tier: steps_changing_table(_graph, _place_nodes_all, _table, _tier) for _tier in ("T1", "T2")}}
+
+        def _audited_file_sentences(written: dict, original_t2: set) -> list[str]:
+            """One sentence per audited table file that is in the bundle: which file is which and which steps made the difference (PROVISIONAL words). `original_t2`: the tables
+            whose original tier 2 is a file of its own (a table with no tier-2 steps has none: its tier 2 is its tier 1)."""
+            out: list[str] = []
+            for (table, tier), folder in written.items():
+                ids = ", ".join(f"{n.get('id')} (at {place_words(n.get('place', ''))})" for n in _audited_table_files[table]["changed_by"][tier]) or "none listed"
+                original = (f"{folder}/{tier}_data.tsv is the original, as the recipe builds it" if tier == "T1" or table in original_t2
+                            else f"the original tier 2 of this table is its tier 1 ({folder}/T1_data.tsv: the recipe has no tier-2 step for it)")
+                out.append(f"{folder}/{tier}_data_audited.tsv is the {tier} table of '{table}' with the audit steps applied; {original}. Steps that made the difference: {ids}.")
+            return out
+
         # The audit pin of a plot (Reshuffle, or an audit override) is a step of the audit trail too, whatever the
         # audit-trail flag: listed in t3_steps.yaml, the Methods text and the report's audit table, and hashed.
-        _t3_listed = with_seed_steps(_t3_by_plot, _plot_seeds)
+        _t3_listed = with_seed_steps({}, _plot_seeds)
 
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
@@ -1150,31 +1175,30 @@ def define_export_server(input, output, session, *,
         # and decides nothing in the bundle: the content below never reads it.
         screen_view_text = screen_view()
 
-        def _audited_nodes(p_id: str) -> list[dict]:
-            """The plot's audited steps, in the recorded order: the input of `audited_frame` (exploration is not part of it)."""
-            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
-            return list(by_plot.get(f"subtab_{p_id}", []))
+        # The plots an audit step reaches (at their own tier 3 or at a table above them). The plots whose table is not their target's Tier 2 as it is: the user
+        # audited them, or the recipe writes tier-3 steps for them. Each has its own T3 data file in the bundle (the plot is drawn from it).
+        audited_plots = {p for p, _ in all_plots if p in _place_plot_ids}
+        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)}
 
-        def _has_audited_steps(p_id: str) -> bool:
-            audited_rows = t3_filter_rows(f"subtab_{p_id}") if t3_filter_rows is not None else []
-            audited_drops = t3_drop_columns(f"subtab_{p_id}") if t3_drop_columns is not None else []
-            return bool(audited_rows or audited_drops)
-
-        audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
-        # The plots whose table is not their target's Tier 2 as it is: the recipe writes tier-3 steps for them, or the user audited them.
-        # Each has its own T3 data file in the bundle (the plot is drawn from it).
-        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)} | {p for p, _ in all_plots if p in _place_plot_ids}
-
-        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
-        # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
+        # PLOT-TABLE-ORDER-1: check before anything is written. If the audit steps cannot run (in their recorded order, tier 1, tier 2, tier 3), the table, the plot
+        # and the exported recipe would differ or fail: nothing is exported. The one read of the export builds the audit copy, which names the step and its place.
         def _base_frame(p_id: str, spec: dict):
-            """The base of a plot's audited data: the table the plot reads (`materialize_tier3`: the stored Tier 2, Tier 1 without tier2
-            steps, plus the plot's own tier-3 steps), as the data and plot sections read it."""
+            """The table a plot reads: `_read_plot_table` (the table of the audit copy when an audit step reaches it, else `materialize_tier3`), as the data and plot sections read it."""
             if not spec.get("target_dataset"):
                 return tier1_anchor()
             return _read_plot_table(p_id)
 
-        _failing = audit_failures([(_p, (lambda _p=_p, _s=_s: _base_frame(_p, _s)), _audited_nodes(_p)) for _p, _s in all_plots])
+        # The audit copy is built and run once for the whole recipe, so the first plot an audit step reaches shows the failure of the run (a step that cannot be applied
+        # names itself and its place): there is one error to tell, not one per plot.
+        _failing: list[tuple[str, Exception]] = []
+        for _p, _s in all_plots:
+            if _p not in audited_plots:
+                continue
+            try:
+                _base_frame(_p, _s).collect_schema()
+            except AUDIT_ERRORS as _error:
+                _failing.append((_p, _error))
+                break
         if _failing:
             with reactive.isolate():
                 _notify("Export blocked: the audit steps cannot run for " + ", ".join(f"'{_p}'" for _p, _ in _failing)
@@ -1312,6 +1336,22 @@ def define_export_server(input, output, session, *,
             drawn_records: dict[str, dict] = {}    # p_id → the engine and the theme of the plot as it was drawn (effective_run.yaml, D-0248)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
+                _audited_written: dict[tuple[str, str], str] = {}     # (table, "T1"/"T2") -> the folder of the audited file that is in the zip
+
+                def _write_audited(table: str, folder: str, tier: str) -> None:
+                    """The audited table of `table` at `tier` beside its original (only in an export made in Audit mode, only for a table an audit step changes)."""
+                    frame = (_audited_table_files.get(table) or {}).get(tier)
+                    if frame is None:
+                        return
+                    try:
+                        path = tmpdir_path / f"{folder}_{tier}_audited.tsv"
+                        frame.write_csv(str(path), separator="\t")
+                        with open(path, "rb") as f:
+                            zf.writestr(f"{bundle_dir}/{folder}/{tier}_data_audited.tsv", f.read())
+                        _audited_written[(table, tier)] = folder
+                    except Exception as e:
+                        _lost(f"the audited {tier} data of '{table}'", e)
+                        zf.writestr(f"{bundle_dir}/{folder}/{tier}_data_audited_ERROR.txt", f"Audited {tier} data export failed:\n{e}")
 
                 for p_id, spec in all_plots:
                     _ds_key = spec.get("target_dataset") or "__anchor__"
@@ -1337,8 +1377,7 @@ def define_export_server(input, output, session, *,
                         else:
                             lf = tier1_anchor()
 
-                        # the same call as HOME's table and plot: audited steps in the recorded order
-                        lf = audited_frame(lf, _audited_nodes(p_id), p_id)
+                        # lf is the table of the audit copy when an audit step reaches the plot: the same table as HOME's table and plot
 
                         # VIZFAC-T3-EXPORT-1: pass L5 aesthetic_override so
                         # exported plots reflect analyst T3 overrides.
@@ -1455,6 +1494,7 @@ def define_export_server(input, output, session, *,
                             f"{bundle_dir}/{safe_ds}/T1_data_ERROR.txt",
                             f"T1 data export failed:\n{e}"
                         )
+                    _write_audited(ds_key, safe_ds, "T1")
 
                     # ── T2 (exported when tier2 steps exist) ───────
                     try:
@@ -1478,6 +1518,7 @@ def define_export_server(input, output, session, *,
                             f"{bundle_dir}/{safe_ds}/T2_data_ERROR.txt",
                             f"T2 data export failed:\n{e}"
                         )
+                    _write_audited(ds_key, safe_ds, "T2")
 
                     # ── T3 data (the audited table), one file per plot (audit nodes are per plot) ──
                     # Build rule T3 > T2 > T1: the base is the table the plot reads (`materialize_tier3`: the stored Tier 2, which
@@ -1496,7 +1537,6 @@ def define_export_server(input, output, session, *,
                                     lf_t3 = _read_plot_table(_t3_pid)
                                 else:
                                     lf_t3 = tier1_anchor()
-                                lf_t3 = audited_frame(lf_t3, _audited_nodes(_t3_pid), _t3_pid)
                                 tsv_path = tmpdir_path / f"{safe_ds}_T3_{_t3_pid}.tsv"
                                 lf_t3.collect().write_csv(str(tsv_path), separator="\t")
                                 with open(tsv_path, "rb") as f:
@@ -1536,6 +1576,7 @@ def define_export_server(input, output, session, *,
                         with open(tsv_path, "rb") as f:
                             zf.writestr(f"{bundle_dir}/{safe_ds}/T1_data.tsv", f.read())
                         unread_rows[ds_key] = {"folder": safe_ds, "rows": df_t1.height, "columns": len(df_t1.columns), "error": None}
+                        _write_audited(ds_key, safe_ds, "T1")
                     except Exception as e:
                         _lost(f"the T1 data of '{ds_key}' (a table no plot reads)", e)
                         zf.writestr(
@@ -1564,9 +1605,9 @@ def define_export_server(input, output, session, *,
                                 for _pid, _nodes in _t3_listed.items()
                             },
                         }
-                        # the steps written at a table upstream: where each is written, its reason and the plots built from there (demo step 4)
+                        # the audit steps, at every tier: where each is written (a table's tier 1 or tier 2, a plot's tier 3), its reason and the plots built from there
                         if _place_records:
-                            t3_steps_data["audit_steps_at_tables"] = [
+                            t3_steps_data["steps_by_place"] = [
                                 {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
                                  "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
                                  "plots_built_from_it": r["plots"]}
@@ -1595,18 +1636,17 @@ def define_export_server(input, output, session, *,
             # effective_run.yaml itself is NOT here — it is written unconditionally
             # below, since both modes need the exact same file to be comparable
             # (Eve, 2026-11-09): "if they differ means mode 1 and mode 2 not equal".
-            mode2_skipped: dict[str, str] | None = None
             # What the README says about the reproducibility part (D-0050): "built", "failed" (ERROR.txt only) or
             # "incomplete" (built, but data files that could not be copied are `*_ERROR.txt` files).
             repro_status = "built"
             repro_missing_files: list[str] = []
             if wants_mode2:
                 try:
-                    from blueprint_arch.t3_translator import build_mode2_recipe
                     import yaml as _yaml
 
-                    # the steps written at a table go into that table's own steps, so that the recipe alone builds the audited tables
-                    mode2_cfg, mode2_skipped = build_mode2_recipe(bake_place_steps(cfg.raw_config, _place_nodes_all) if _place_nodes_all else cfg.raw_config, _t3_by_plot)
+                    # every audit step goes into the steps of its own place (the tier 1 or tier 2 of a table, the tier 3 of a plot), so that the recipe alone, run by the engine
+                    # with no audit machinery, builds the audited tables and plots; a step that cannot be written as an action stops the part (below), it is never left out
+                    mode2_cfg = bake_place_steps(cfg.raw_config, _place_nodes_all)
                     # SEED-HOLDS-1: the seed each plot was exported with is written into this recipe, so the
                     # re-run draws the same arrangement (the recipe is the scientific document).
                     mode2_cfg = bake_plot_seeds(mode2_cfg, _plot_seeds)
@@ -1655,21 +1695,10 @@ def define_export_server(input, output, session, *,
                             "Understanding Your Export).",
                             type="warning", duration=12,
                         )
-                    if mode2_skipped:
-                        with reactive.isolate():
-                            _notify(
-                                f"{len(mode2_skipped)} plot(s)' T3 steps could not be fully "
-                                "baked into the reproducibility recipe (see "
-                                "t3_translation_skipped in effective_run.yaml) — they are "
-                                "still in the Publication content, just not engine-replayable "
-                                "yet.",
-                                type="warning", duration=10,
-                            )
                 except Exception as e:
                     zf.writestr(
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
                     )
-                    mode2_skipped = {"_error": str(e)}
                     repro_status = "failed"
                     _later("⚠️ " + notice(
                         "The reproducibility part of this export could not be built, so the bundle holds no recipe and no "
@@ -1723,11 +1752,6 @@ def define_export_server(input, output, session, *,
                 "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
                 "plot_warnings": _plot_warning_rows,
                 "plot_warnings_unreadable": list(_warnings_unreadable),
-                "t3_translation_skipped": (
-                    mode2_skipped if wants_mode2 else
-                    "not attempted — check 'Also include a reproducibility/reimport "
-                    "bundle' to translate T3 steps into replayable recipe actions"
-                ),
             }
             zf.writestr(
                 f"{bundle_dir}/effective_run.yaml",
@@ -2047,6 +2071,9 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"[Raw data (T1)]({_data_folder}/T1_data.tsv)")
                 if _data_key in exported_t2:
                     qmd_lines.append(f"[Result data (T2)]({_data_folder}/T2_data.tsv)")
+                for _tier, _tier_name in (("T1", "Raw data (T1)"), ("T2", "Result data (T2)")):
+                    if (_data_key, _tier) in _audited_written:
+                        qmd_lines.append(f"[Audited {_tier_name[0].lower() + _tier_name[1:]}]({_data_folder}/{_tier}_data_audited.tsv)")
                 for _plot in plot_list:
                     if (_data_key, _plot) in _t3_written:
                         _t3_label = "Analyst-filtered data (T3)" if _plot in audited_plots else "Data of the plot (T3)"
@@ -2062,21 +2089,30 @@ def define_export_server(input, output, session, *,
                 for _t, _r in unread_rows.items():
                     if _r["error"] is None:
                         qmd_lines.append(f"- {_qp(_t)}: [Raw data (T1)]({_quote(_r['folder'])}/T1_data.tsv), "
-                                         f"{_qp(str(_r['rows']))} rows × {_qp(str(_r['columns']))} columns")
+                                         f"{_qp(str(_r['rows']))} rows × {_qp(str(_r['columns']))} columns"
+                                         + (f"; [audited data (T1)]({_quote(_r['folder'])}/T1_data_audited.tsv)" if (_t, "T1") in _audited_written else ""))
                     else:
                         qmd_lines.append(f"- {_qp(_t)}: not written, see `{_quote(_r['folder'])}/T1_data_ERROR.txt`")
                 qmd_lines.append("")
 
-            # ── Audit steps written at a table upstream (demo step 4) ──────────
+            # ── The audit steps, at every tier (demo steps 4 and 7) ──────────
             if _place_records:
-                qmd_lines += ["## Audit steps written at a table", "",
-                              "Each step below was written at the table named; every table and plot built from that table is built again from it, and the figures and data files of this bundle are those.", "",
+                qmd_lines += ["## Audit steps", "",
+                              "Each step below was written at the table or plot named; every table and plot built from that place is built again from it, and the figures and data files of this bundle are those.", "",
                               "| Step | Written at | Action | Details | Justification | Plots built from it |",
                               "|------|------------|--------|---------|---------------|---------------------|"]
                 for _i, _r in enumerate(_place_records, 1):
                     _details = _qp("; ".join(f"{k}={v}" for k, v in _r["params"].items())) if _r["params"] else "—"
                     _plots = _qp(", ".join(_r["plots"]) or "none")
                     qmd_lines.append(f"| {_i} | {_qp(_r['place_words'])} | {_qc(_r['action'], True)} | {_details} | {_qp(_r['reason'] or '—')} | {_plots} |")
+                qmd_lines.append("")
+                # which table file is which (PROVISIONAL words): in an export made in Audit mode the audited table is written beside its original
+                if _audited_written:
+                    qmd_lines += ["This export was made in Audit mode, so the table files of every table that a step changes come twice, the original and the audited one:", ""]
+                    qmd_lines += [f"- {_qp(_l)}" for _l in _audited_file_sentences(_audited_written, exported_t2)]
+                else:
+                    qmd_lines += ["The table files `T1_data.tsv` and `T2_data.tsv` are the tables as the recipe builds them, without these steps; "
+                                  + ("this export was made in Exploration mode." if not _audit_now else "no step changes a table here, steps at a plot change only the T3 files and the plot."), ""]
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
@@ -2360,19 +2396,26 @@ def define_export_server(input, output, session, *,
                 *mapping_block,
                 "",
                 *unread_block,
-                "Audited T3 steps (always applied to the plot and its data):",
-                *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see t3_steps.yaml and the T3 Audit Trail in report.qmd"
+                "Plots reached by audit steps (the steps are always applied to the plot and its data):",
+                *([f"  {_p}: {sum(1 for _r in _place_records if _p in _r['plots'])} step(s), see t3_steps.yaml (steps_by_place) and the report"
                    for _p in sorted(audited_plots)] or ["  none"]),
-                *(["", "Audit steps written at a table (every table and plot built from that table is built again from it; always applied):",
+                *(["", "Audit steps, each at the place it is written (every table and plot built from that place is built again from it; always applied):",
                    *[f"  {_r['place_words']}: {_r['action']} {', '.join(f'{k}={v}' for k, v in _r['params'].items())} -- reason: {_r['reason']} -- plots built from it: "
                      f"{', '.join(_r['plots']) or 'none'}" for _r in _place_records],
-                   "  The T1 and T2 files of a table are the tables as the recipe builds them (without these steps); the T3 file of every plot built from the",
-                   "  table holds the audited table, and the figures are drawn from it. (see t3_steps.yaml, audit_steps_at_tables, and the report)"] if _place_records else []),
+                   "  The T3 file of every plot built from a place holds the audited table, and the figures are drawn from it. (see t3_steps.yaml, steps_by_place, and the report)",
+                   *(["  This export was made in Audit mode: the audited table of every table a step changes is written BESIDE its original (a table no step changes has only its original):",
+                      *[f"    {_l}" for _l in _audited_file_sentences(_audited_written, exported_t2)]]
+                     if _audited_written else
+                     ["  The T1 and T2 files of every table are the tables as the recipe builds them, without these steps: "
+                      + ("this export was made in Exploration mode, where the table files are not audited."
+                         if not _audit_now else "no audit step changes a table here (steps at a plot change only the T3 files and the plot).")])] if _place_records else []),
                 "",
                 "Contents:",
                 "  <dataset>/plots/  — rendered figures, grouped by source dataset",
                 "  <dataset>/T1_data.tsv — raw assembled data (T1)",
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
+                *(["  <dataset>/T1_data_audited.tsv, T2_data_audited.tsv — the same tables with the audit steps applied (only in an export made in Audit mode, only for a",
+                   "                     table an audit step changes; the original file beside it is unchanged)"] if _audited_written else []),
                 "  <dataset>/T3_data_<plot>.tsv — the table of each plot with its audited steps (T3, when exported): T2 (T1 when there",
                 "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
@@ -2387,9 +2430,8 @@ def define_export_server(input, output, session, *,
                 "  README.txt        — this file",
                 *([
                     "  data_analysis_recipes_reproducibility/<id>.yaml — frozen recipe copy with",
-                    "       your audited T3 steps baked in as real wrangling actions, per plot.",
-                    "       Any plot whose steps couldn't be fully baked in is named in",
-                    "       effective_run.yaml's t3_translation_skipped.",
+                    "       your audit steps baked in as real wrangling actions, each at its own place",
+                    "       (the tier 1 or tier 2 of a table, the tier 3 of a plot).",
                     "       The random scatter (jitter) seeds the export wrote into it are listed below and in",
                     "       effective_run.yaml (seeds_added_to_recipe, seeds_per_layer); a number the recipe",
                     "       already wrote on a layer is kept.",

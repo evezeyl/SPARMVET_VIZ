@@ -251,8 +251,8 @@ class VizFactory:
                 if col is None:
                     continue
                 # PLOT-TABLE-ORDER-1: a filter that the plot spec writes on a column the data does not have is an error, never
-                # skipped. (HOME and the export no longer hand their audited steps to this key: they apply them to the frame
-                # with `audited_frame`, in the recorded order, before the factory is called.)
+                # skipped. (HOME and the export no longer hand their audited steps to this key: they read the table of the audit
+                # copy, in which the audit steps of every tier run in one order, before the factory is called.)
                 if actual_dtypes and col not in actual_dtypes:
                     raise plot_failure(
                         plot_id, f"the filter on the column {col!r} names a column that the data does not have",

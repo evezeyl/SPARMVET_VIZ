@@ -58,7 +58,7 @@ class LiveInput:
 
 
 def _step(reason):
-    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "subtab_p", reason)
+    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "__places__", reason, place="T3:p")
 
 
 class Live:
@@ -86,7 +86,7 @@ class Live:
         self.manager = SessionManager(tmp_path / "user")
         for key, tag in ((KEY_A, "a"), (KEY_B, "c")):
             self.manager.write_assembly_ghost(key, "tiny", tag * 64, "b" * 64, {}, {})
-        self.manager.write_t3_ghost(KEY_A, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"subtab_p": [_step("saved")]})
+        self.manager.write_t3_ghost(KEY_A, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [_step("saved")]})
         self.input = LiveInput()
         for name in ("session_import_upload", "session_delete_all_btn", "session_delete_all_confirm", "session_delete_one_confirm"):
             self.input.set(name, None)
@@ -133,7 +133,7 @@ def test_one_restore_click_restores_once_and_later_re_runs_do_not_repeat_it(tmp_
         live.input.set(f"session_restore_{SAFE(KEY_B)}", 0)
         await _flush(6)
         assert len(live.texts("Session restored")) == 1, live.notes[:6]
-        assert [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["subtab_p"]] == ["saved"]
+        assert [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["__places__"]] == ["saved"]
         # things that re-run the effect: another box changes, a label is edited, the effect's own writes
         live.input.set(f"session_label_input_{SAFE(KEY_B)}", "a new label")
         await _flush(6)
@@ -158,11 +158,11 @@ def test_a_step_added_after_a_restore_is_not_overwritten_by_a_later_re_run(tmp_p
         with reactive.isolate():
             state = live.home_state.get()
             new_step = _step("added after the restore")
-            live.home_state.set({**state, "t3_audit_steps_by_plot": {"subtab_p": state["t3_audit_steps_by_plot"]["subtab_p"] + [new_step]}})
+            live.home_state.set({**state, "t3_audit_steps_by_plot": {"__places__": state["t3_audit_steps_by_plot"]["__places__"] + [new_step]}})
         live.input.set(f"session_label_input_{SAFE(KEY_B)}", "x")
         live.input.set(f"session_delete_{SAFE(KEY_B)}", 1)
         await _flush(8)
-        reasons = [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["subtab_p"]]
+        reasons = [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["__places__"]]
         assert reasons == ["saved", "added after the restore"], reasons
     asyncio.run(scenario())
 

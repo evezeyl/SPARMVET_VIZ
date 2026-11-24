@@ -16,7 +16,7 @@ from shiny import reactive
 
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.view_badge import PREVIEW_ROW_LIMIT
-from app.tests.audit_nodes import filter_nodes
+from app.tests.audit_nodes import audit_state, filter_nodes
 from app.tests.home_harness import Home, ViewWorld
 
 AUDIT = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled", "session_management_enabled", "export_enabled")
@@ -131,7 +131,7 @@ def test_audit_t3_says_the_columns_are_not_dropped(world, monkeypatch):
 def test_a_column_dropped_by_an_audit_step_is_not_counted_as_hidden(world, monkeypatch):
     nodes = filter_nodes([], drops=["group"])
     home = choose(Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                       home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}}), ["sample_id", "score", MARKER])
+                       home_state=audit_state("p_table", nodes)), ["sample_id", "score", MARKER])
     text = badge_text(home)
     assert "hidden" not in text and "not dropped" not in text
 
@@ -139,7 +139,7 @@ def test_a_column_dropped_by_an_audit_step_is_not_counted_as_hidden(world, monke
 def test_an_audit_step_that_cannot_run_gives_no_count_and_no_second_error(world, monkeypatch):
     nodes = filter_nodes([{"column": "no_such_column", "op": "ge", "value": 1, "dtype": "Int64", "na": "remove"}])
     home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}})
+                home_state=audit_state("p_table", nodes))
     text = badge_text(home)
     assert "rows" not in text and "Error" not in text      # the table's place says why; the badge stays quiet
     assert not home.notes                                  # and the badge raised no notification of its own
@@ -200,7 +200,7 @@ def test_audit_t3_counts_the_audited_table_and_a_pending_step_changes_nothing(wo
     expected = sum(1 for i in range(ROWS) if 1 + i % 4 >= 4)
     assert 0 < expected < ROWS
     home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": applied}})
+                home_state=audit_state("p_table", applied))
     text = badge_text(home)
     assert f"{expected} rows" in text and f"of {ROWS} rows" not in text
     # a step that is only pending (not applied) does not change the table, so it does not change the count
@@ -250,7 +250,7 @@ def test_the_grid_and_the_badge_read_the_same_table_with_an_exploration_filter(w
 def test_the_grid_and_the_badge_read_the_same_table_with_an_applied_audit_step(world, monkeypatch):
     applied = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
     home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table", inputs={"preview_all_rows": True},
-                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": applied}})
+                home_state=audit_state("p_table", applied))
     grid = _grid_height(home)
     assert 0 < grid < ROWS
     assert _badge_count(home) == grid

@@ -23,14 +23,14 @@ from shiny.types import SilentException
 import app.handlers.audit_stack as audit_stack
 from app.modules.session_manager import SessionManager, make_audit_step
 
-PLOT = "subtab_p"
+PLOT = "__places__"      # the one bucket of the committed audit steps; each step carries its place (here the tier 3 of the plot p)
 
 
 def _step(kind, reason, **params):
     base = {"filter_row": {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"},
             "exclusion_row": {"column": "a", "op": "ne", "value": 2, "dtype": "Int64"},
             "drop_column": {"column": "b"}}[kind]
-    return make_audit_step(kind, {**base, **params}, PLOT, reason)
+    return make_audit_step(kind, {**base, **params}, PLOT, reason, place="T3:p")
 
 
 class Screen:
@@ -114,7 +114,7 @@ def test_apply_with_steps_of_two_kinds_names_how_many_of_each(tmp_path, monkeypa
 def test_copies_that_share_an_id_are_one_step(tmp_path, monkeypatch):
     """A decision propagated to three plots is one step with three copies: the user typed (or did not type) one reason."""
     one = _step("filter_row", "")
-    copies = [{**one, "plot_scope": f"subtab_{i}"} for i in range(3)]
+    copies = [{**one, "place": f"T3:p{i}"} for i in range(3)]
     screen = Screen(tmp_path, monkeypatch, pending=copies)
     screen.apply()
     assert "1 step(s) have no reason" in screen.texts("error")[0], screen.notes

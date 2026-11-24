@@ -70,7 +70,8 @@ def test_a_baked_recipe_holds_the_step_at_the_end_of_the_tier_and_changes_nothin
     assert "audit steps" in table["comment"] and table["comment"].count("Written by the export") == 2
     untouched = {k: v for k, v in baked["data_schemas"].items() if k != "ResFinder"}
     assert untouched == {k: v for k, v in raw["data_schemas"].items() if k != "ResFinder"}
-    assert bake_place_steps(raw, []) == raw
+    assert bake_place_steps(raw, []) == {k: v for k, v in raw.items() if k != "plots"}, "an empty list bakes a copy equal to the recipe, without the loader's mirror `plots`"
+    assert "plots" not in bake_place_steps(raw, [node()]), "a written recipe never carries the loader's mirror of analysis_groups (a root `plots:` does not load again)"
 
 
 def test_a_step_at_a_table_the_recipe_does_not_have_is_refused(world):
@@ -85,7 +86,6 @@ def test_the_recipe_built_from_the_baked_one_gives_the_plot_the_table_of_the_aud
     anchors = tmp_path / "anchors"
     audited = PlaceAudit(world["orch"], anchors, tmp_path / "audit").plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world["plans"]).collect()
     baked = bake_place_steps(world["loaded"].raw, nodes)
-    baked.pop("plots", None)           # the engine's own mirror of analysis_groups is not part of a written recipe (see `build_mode2_recipe`)
     folder = tmp_path / "pipelines"
     folder.mkdir()
     (folder / f"{RECIPE_ID}.yaml").write_text(yaml.safe_dump(baked, sort_keys=False, allow_unicode=True), encoding="utf-8")
@@ -98,7 +98,7 @@ def test_the_recipe_built_from_the_baked_one_gives_the_plot_the_table_of_the_aud
 # ------------------------------------------------------------------ the session keeps a step written at a table
 def test_a_saved_and_restored_session_keeps_the_step_with_its_place_and_the_format_number_is_the_current_one(tmp_path):
     from app.modules.session_manager import SESSION_FORMAT_VERSION, SessionManager, split_key_drops
-    assert SESSION_FORMAT_VERSION == 4, "the stored form changed (a node with a place, in the bucket `__places__`): an older file is refused, never converted"
+    assert SESSION_FORMAT_VERSION == 5, "the stored form changed (every step is a node with a place, T1, T2 or T3, in the bucket `__places__`): an older file is refused, never converted"
     sm = SessionManager(tmp_path)
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     step = node()
@@ -109,13 +109,15 @@ def test_a_saved_and_restored_session_keeps_the_step_with_its_place_and_the_form
     assert back == [step] and back[0]["place"] == "T1:ResFinder" and back[0]["started_from"] == "subtab_amr_heatmap" and back[0]["reason"]
 
 
-def test_a_file_of_the_older_format_is_refused_not_converted(tmp_path):
+@pytest.mark.parametrize("old_number", [3, 4])
+def test_a_file_of_the_older_format_is_refused_not_converted(tmp_path, old_number):
+    """3: before the steps written at a table; 4: before the steps written at a plot's tier 3 went into the same list (format 5)."""
     import json
     from app.modules.session_manager import LegacySessionError, SessionManager
     sm = SessionManager(tmp_path)
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     sm.session_dir(key).mkdir(parents=True, exist_ok=True)
-    (sm.session_dir(key) / "t3_20261101T000000.json").write_text(json.dumps({"session_key": key, "saved_at": "2026-11-01T00:00:00", "schema_version": 3,
+    (sm.session_dir(key) / "t3_20261101T000000.json").write_text(json.dumps({"session_key": key, "saved_at": "2026-11-01T00:00:00", "schema_version": old_number,
                                                                           "t3_audit_steps_by_plot": {}, "t3_plot_overrides": {}}))
     with pytest.raises(LegacySessionError, match="older version of the app and cannot be opened"):
         sm.scan_t3_ghosts(key)

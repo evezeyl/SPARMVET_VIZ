@@ -5,7 +5,7 @@ Pure: no Shiny, no file, no engine call. Input: the recipe graph (`utils.recipe_
 
 WHAT A LINE IS (D-0346: "only distinct tables are lines"). A line is the tier 1 of a table upstream of the plot, or the tier 2 of such a table when a
 plot reads it and it has tier-2 steps of its own (a tier 2 with no steps is the same table as its tier 1, so it is not a second line). The plot's own place (its tier 3)
-is not a line here: "This plot only" is the plot's own place and is written as before (`audited_frame` on the table the plot reads). A place is offered only where
+is not a line here (`own_place_line` is: the dialog adds it beside them, so that the rule covers all three tiers). A place is offered only where
 the engine's plan HOLDS the column(s) of the step at the end of that place; where the plan failed, the place is listed apart (`unknown`), never guessed.
 
 THE RULE (D-0535, D-0553): the user chooses at most one place on a path; the first places of several original tables may be chosen together. The check is
@@ -17,8 +17,9 @@ THE REACH (what the user is told before choosing): the other tables and the plot
 PROVISIONAL (the builder's choices, not decided by the owner): the words of `reach_sentence` and `line_label`; that the tier-2 line is offered only when the table has tier-2 steps
 of its own; that a place whose plan failed is not offered and is returned in `unknown`.
 
-THE NODES THAT ARE WRITTEN AT A PLACE (`place_nodes`, `audit_copy_for`, `nodes_signature`): the audit node of HOME (`session_manager.make_audit_step`) with a `place` (`T1:<table>` or
-`T2:<table>`) and the plot it was started from (`started_from`), kept in the bucket `PLACES_BUCKET`. The audit copy of the recipe (`utils.audit_copy`) is made from them, in the
+THE NODES THAT ARE WRITTEN AT A PLACE (`place_nodes`, `audit_copy_for`, `nodes_signature`): the audit node of HOME (`session_manager.make_audit_step`) with a `place` (`T1:<table>`,
+`T2:<table>` or `T3:<plot>`: the three tiers are ONE mechanism) and the plot it was started from (`started_from`), kept in the bucket `PLACES_BUCKET`. A decision written for several plots or
+tables is one node per place, all with the id of the decision (removal by that id removes them all). The audit copy of the recipe (`utils.audit_copy`) is made from them, in the
 order they were committed, by the translation of the node into the registered action (`blueprint_arch.t3_translator`, the one translation of the export too); the reason of the
 node is the `audit_comment` of the step (D-0329). The copy is the original plus audit steps and nothing else (`add_step` refuses an action that is not a filter or a column drop,
 a key dropped where a later join reads it, a place that does not exist).
@@ -26,7 +27,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_lines, function:own_place_line, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -42,7 +43,8 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from blueprint_arch.t3_translator import translate_t3_node
 from utils import recipe_tiers
-from utils.audit_copy import AuditCopy, add_step, start_audit
+from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
+from utils.audit_copy import AuditCopy, AuditCopyError, add_step, start_audit
 from utils.plan_book import Plan, PlanBook
 from utils.recipe_graph import RecipeGraph
 
@@ -112,11 +114,44 @@ def place_lines(graph: RecipeGraph, plans: PlanBook, plot_id: str, columns: Iter
 
 
 def plots_below(graph: RecipeGraph, places: Iterable[str]) -> List[str]:
-    """The plots that lie below any of the places, each once, in the order of the recipe. KeyError for an id that is not a node."""
+    """The plots that are built from any of the places, each once, in the order of the recipe: the plots below a table's place, and the plot of a `T3:<plot>` place itself
+    (its own tier 3 is where it reads). KeyError for an id that is not a node."""
     reached = set()
     for nid in places:
         reached.update(graph.below(nid))
+        if graph.node(nid).kind == "T3":
+            reached.add(nid)
     return [graph.node(n).name for n in graph.nodes() if n in reached and graph.node(n).kind == "T3"]
+
+
+def steps_changing_table(graph: RecipeGraph, nodes: Iterable[dict], table: str, tier: str) -> List[dict]:
+    """The audit nodes whose place makes the table `table` differ at `tier` (`T1` or `T2`): a step at the tier 1 of the table or of a table it is built from, and (for `T2`) a
+    step at its own tier 2. A step at a plot's tier 3 changes no table; a table beside the place is changed by none. In the order given (the export says which steps made the
+    audited file differ from the original)."""
+    if tier not in ("T1", "T2"):
+        raise ValueError("tier is T1 or T2")
+    here = f"T1:{table}"
+    places = {here} | {n for n in graph.lineage_back(here) if graph.node(n).kind == "T1"}
+    if tier == "T2":
+        places.add(f"T2:{table}")
+    return [n for n in nodes if (n.get("place") or "") in places]
+
+
+def own_plot_place(plot_id: str) -> str:
+    """The place of a plot's own tier 3: `T3:<plot>`."""
+    return f"T3:{plot_id}"
+
+
+def nodes_reaching_plot(graph: RecipeGraph, nodes: Iterable[dict], plot_id: str) -> List[dict]:
+    """The audit nodes (committed or pending) whose place the plot is built from: a place of its own tier 3, or a table place above it. In the order given; a node whose place the
+    graph does not have reaches no plot."""
+    plot_node = own_plot_place(plot_id)
+    found: List[dict] = []
+    for node in nodes:
+        place = node.get("place") or ""
+        if place == plot_node or (graph.has_node(place) and plot_node in graph.below(place)):
+            found.append(node)
+    return found
 
 
 def line_label(line: PlaceLine) -> str:
@@ -137,13 +172,18 @@ def reach_sentence(line: PlaceLine) -> str:
     return " and ".join(parts) + (" is" if tables + plots == 1 else " are") + " built from it."
 
 
-def choice_problem(graph: RecipeGraph, offered: Sequence[PlaceLine], chosen: Iterable[str]) -> Optional[str]:
-    """None when the chosen places may be written in one step, else ONE plain sentence. Nothing chosen is a problem here (the caller offers
-    the plot's own place for that). Every chosen place must be a line offered; the rest of the rule is `RecipeGraph.chosen_places_problem`."""
+def own_place_line(plot_id: str) -> str:
+    """The words of the line for the plot's own tier 3 in the dialog's list of places (PROVISIONAL words)."""
+    return f"Plot {plot_id} (tier 3): only this plot is built from it"
+
+
+def choice_problem(graph: RecipeGraph, offered: Sequence[PlaceLine], chosen: Iterable[str], extra_offered: Iterable[str] = ()) -> Optional[str]:
+    """None when the chosen places may be written in one step, else ONE plain sentence. Nothing chosen is a problem here. Every chosen place must be a line offered (or one of
+    `extra_offered`, the plot's own place); the rest of the rule is `RecipeGraph.chosen_places_problem`, the same for a table and for a plot below it."""
     ids = list(dict.fromkeys(chosen))
     if not ids:
-        return "Choose at least one table."
-    offered_ids = {line.place for line in offered}
+        return "Choose at least one place."
+    offered_ids = {line.place for line in offered} | set(extra_offered)
     for nid in ids:
         if nid not in offered_ids:
             return f"'{nid}' is not one of the places offered for this step."
@@ -169,12 +209,16 @@ def audit_copy_for(original_raw: dict, nodes: Iterable[dict], plans: Optional[Pl
     """The audit copy of a recipe that holds one audit step for each action of each node, at the place of the node, in the order of the list.
 
     The 8 characters of the ids of the steps come from the ids of the nodes (a label, in no key: `audit_copy.start_audit`). `plans` is the engine's plan book of the ORIGINAL
-    recipe, for the rule of a key drop (`add_step`). Raises `AuditCopyError` (a place that does not exist, an action an audit may not use, a key dropped where a later join reads
+    recipe, for the rule of a key drop (`add_step`). Raises `AuditCopyError` (a step the app cannot apply: a type it does not know or a step that lacks what it needs, see `renamed_keys.audit_step_defect`; a place that does not exist, an action an audit may not use, a key dropped where a later join reads
     it, a node without a reason) or `UntranslatableNode` (a node that has no registered action), each with a plain sentence, and builds nothing then."""
     listed = list(nodes)
     label = hashlib.sha256("|".join(str(n.get("id")) for n in listed).encode("utf-8")).hexdigest()[:8]
     audit = start_audit(original_raw, label)
-    for node in listed:
+    for number, node in enumerate(listed, start=1):
+        defect = audit_step_defect(node)
+        if defect:                                   # a step the app cannot apply is refused with a plain message, never skipped (the one rule of the list and the files)
+            reason = f', reason: "{node["reason"]}"' if node.get("reason") else ""
+            raise AuditCopyError(f"The audit step {number} (id {node.get('id', '?')}{reason}) at {place_words(node.get('place', ''))} is refused: {defect}. Fix: {FIX_IN_APP}.")
         for step in translate_t3_node(node):
             add_step(audit, node["place"], step, node.get("reason") or "", plans)
     return audit
@@ -186,9 +230,11 @@ def audit_copy_for(original_raw: dict, nodes: Iterable[dict], plans: Optional[Pl
 
 
 def place_words(place: str) -> str:
-    """A place in plain words: `T1:ResFinder` is "Table ResFinder (tier 1)"."""
-    tier, _, table = (place or "").partition(":")
-    return f"Table {table} (tier {tier[1:]})" if tier in ("T1", "T2") and table else str(place)
+    """A place in plain words: `T1:ResFinder` is "Table ResFinder (tier 1)", `T3:amr_heatmap` is "Plot amr_heatmap (tier 3)"."""
+    tier, _, name = (place or "").partition(":")
+    if tier in ("T1", "T2") and name:
+        return f"Table {name} (tier {tier[1:]})"
+    return f"Plot {name} (tier 3)" if tier == "T3" and name else str(place)
 
 
 def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[str, Any]]:
@@ -207,23 +253,38 @@ def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[s
 
 
 def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
-    """A deep copy of the recipe in which each node written at a place is a plain step at the END of that tier (`tier1.steps` or `tier2.steps` of its table), so that the recipe
-    alone, run by the engine with no audit machinery, builds the audited tables (the reproducibility part of the export). The table says so in its `comment`, with the ids of the
-    audit steps (the reasons are in `t3_steps.yaml`). The argument is not changed. Raises `UntranslatableNode` for a node with no registered action and `KeyError` for a table
+    """A deep copy of the recipe in which each node written at a place is a plain step at the END of that tier (`tier1.steps` or `tier2.steps` of its table, `tier3.steps` of its plot), so
+    that the recipe alone, run by the engine with no audit machinery, builds the audited tables and plots (the reproducibility part of the export). The table or plot says so in its `comment`, with
+    the ids of the audit steps (the reasons are in `t3_steps.yaml`). The argument is not changed; the loader's root-level `plots` mirror is left out. Raises `UntranslatableNode` for a node with no registered action and `KeyError` for a table or plot
     the recipe does not have."""
     baked = copy.deepcopy(raw)
+    # The loader's own root-level `plots` is an internal mirror of `analysis_groups` (config_loader.py); a recipe written with it does not load again (a root `plots:` is refused),
+    # so the baked recipe, which is written to a file, never carries it. (The fork of a join that this replaces dropped it too.)
+    baked.pop("plots", None)
     written: Dict[Tuple[str, str], List[str]] = {}
     for node in nodes:
-        tier, table = (node.get("place") or "").split(":", 1)
-        tier_key = {"T1": "tier1", "T2": "tier2"}[tier]
-        body = recipe_tiers.collection_body(baked, table)
-        if not isinstance(body, dict):
-            raise KeyError(f"the recipe has no table or join '{table}'")
+        tier, name = (node.get("place") or "").split(":", 1)
+        tier_key = {"T1": "tier1", "T2": "tier2", "T3": "tier3"}[tier]
+        body = _body_of(baked, tier, name)
         held = body.get(tier_key) if isinstance(body.get(tier_key), dict) else {}
         body[tier_key] = {**held, "steps": list(held.get("steps") or []) + translate_t3_node(node)}
-        written.setdefault((table, tier_key), []).append(str(node.get("id")))
-    for (table, tier_key), ids in written.items():
-        body = recipe_tiers.collection_body(baked, table)
+        written.setdefault((f"{tier}:{name}", tier_key), []).append(str(node.get("id")))
+    for (place, tier_key), ids in written.items():
+        tier, name = place.split(":", 1)
+        body = _body_of(baked, tier, name)
         note = f"Written by the export: the audit steps {', '.join(ids)} are added at the end of {tier_key}."
         body["comment"] = f"{body['comment']} {note}" if body.get("comment") else note
     return baked
+
+
+def _body_of(recipe: dict, tier: str, name: str) -> dict:
+    """The table, join or plot entry (the live dictionary of `recipe`) that a place names; KeyError in plain words when the recipe has none."""
+    if tier == "T3":
+        body = recipe_tiers.plot_entry(recipe, name)
+        if not isinstance(body, dict):
+            raise KeyError(f"the recipe has no plot '{name}'")
+        return body
+    body = recipe_tiers.collection_body(recipe, name)
+    if not isinstance(body, dict):
+        raise KeyError(f"the recipe has no table or join '{name}'")
+    return body

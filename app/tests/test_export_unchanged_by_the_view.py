@@ -1,5 +1,9 @@
 """The export holds the Result plus the audited steps whatever the mode and the data choice on screen (slice B; ui_implementation_contract 7.2).
 
+The one thing the mode decides is the AUDITED TABLE FILES (owner, 2026-11-24): an export made in Audit mode writes, beside the original, the audited table of every table
+an audit step changes; here the only step is written at the tier 3 of a plot, which changes no table, so there is no such file in any mode and the content is the same
+(`test_export_audited_tables.py` holds the cases with a step at a table).
+
 The real export generator (run as `test_export_download_path.py` runs it) is called three times on the same recipe, data and audited steps with a
 different record of the screen (`screen_view`): "Exploration mode, data view T3", "Audit mode, data view Source (table 'T')", "Audit mode, data
 view T1". Every data file, the audit trail files and the pictures are the same; only the README line "Screen view" differs, and it says the
@@ -11,12 +15,11 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_unchanged_b
 """
 import io
 import zipfile
-from types import SimpleNamespace
-
 import pytest
 from PIL import Image
 
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
+from app.tests.audit_export_harness import FLAGS, audit_kwargs
 from app.tests.audit_nodes import filter_nodes
 from app.tests.test_export_download_path import _download_function, _run
 from app.tests.test_tier3_reader import Tier3World
@@ -34,11 +37,10 @@ def _fresh_cache():
 def _export(tmp_path, monkeypatch, screen_view: str) -> zipfile.ZipFile:
     world = Tier3World(tmp_path)
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
-    home_state = SimpleNamespace(get=lambda: {"t3_audit_steps_by_plot": {"subtab_p_steps": filter_nodes(
-        [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])}})
-    yielded = _run(_download_function(world, view, [], monkeypatch, home_state=home_state, screen_view=lambda: screen_view,
-                                      t3_filter_rows=lambda subtab: [{"column": "score"}] if subtab == "subtab_p_steps" else [],
-                                      t3_drop_columns=lambda subtab: []))
+    nodes = [{**n, "place": "T3:p_steps", "plot_scope": "__places__", "created_at": "t"} for n in filter_nodes(
+        [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])]
+    yielded = _run(_download_function(world, view, [], monkeypatch, flags=FLAGS, screen_view=lambda: screen_view,
+                                      **audit_kwargs(world, nodes, in_audit=screen_view.startswith("Audit"))))
     return zipfile.ZipFile(io.BytesIO(yielded[0]))
 
 
@@ -50,7 +52,9 @@ def _content(bundle: zipfile.ZipFile) -> dict:
         data = bundle.read(full)
         if name.endswith(".png"):
             out[name] = Image.open(io.BytesIO(data)).convert("RGB").tobytes()
-        elif name.endswith((".tsv", "t3_steps.yaml")):
+        elif name.endswith("t3_steps.yaml"):
+            out[name] = b"\n".join(l for l in data.splitlines() if not l.startswith(b"generated:"))   # the time of the export is the one line that differs
+        elif name.endswith(".tsv"):
             out[name] = data
         else:
             out[name] = None   # present is what is compared (the timestamps inside differ)
@@ -79,5 +83,7 @@ def test_the_readme_differs_only_in_the_timestamp_and_the_screen_view_line(tmp_p
     for i, text in enumerate(VIEWS[:2]):
         bundle = _export(tmp_path, monkeypatch, text)   # the same folder: the keys hold the path of the data file
         readme = bundle.read(next(n for n in bundle.namelist() if n.endswith("/README.txt"))).decode().splitlines()
-        lines.append([l for l in readme if not l.startswith(("Timestamp", "Screen view"))])
+        # the one sentence about the table files names the mode (the Audit mode writes audited table files where a step changes a table: here none does)
+        lines.append([l for l in readme if not l.startswith(("Timestamp", "Screen view")) and "table files" not in l and "audited table" not in l and "Exploration mode" not in l
+                      and "no audit step changes a table" not in l])
     assert lines[0] == lines[1]

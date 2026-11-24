@@ -19,7 +19,7 @@ import pytest
 from shiny import reactive
 
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
-from app.tests.audit_nodes import filter_nodes
+from app.tests.audit_nodes import audit_state, filter_nodes
 from app.tests.home_harness import Home, ViewWorld, ids
 
 AUDIT = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled", "session_management_enabled", "export_enabled")
@@ -107,7 +107,7 @@ def test_an_exploration_filter_changes_the_table_of_the_view_shown_and_never_the
 
 def test_exploration_draws_the_result_even_when_audited_steps_exist(world, monkeypatch):
     """D-0019, D-0180: Exploration has ONE plot, the Result, with no audited step on it; the audited steps wait in Audit mode."""
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=AUDIT, mode="exploration", home_state=state)
     assert ids(home.plot("p_join")) == ["s2", "s3", "s4"]
     assert ids(table(home, "T3", "p_join")) == ["s2", "s3", "s4"], "the T3 table of Exploration holds no audited step either"
@@ -116,7 +116,7 @@ def test_exploration_draws_the_result_even_when_audited_steps_exist(world, monke
 # -- (f) Audit mode ------------------------------------------------------------------------------------------------
 
 def test_audit_mode_t3_is_the_audited_table_and_the_plot_is_the_audited_plot(world, monkeypatch):
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
     assert ids(table(home, "T3", "p_join")) == ["s2", "s3"], "T3 of Audit mode: the plot's table after the audited step (score <= 3)"
     assert ids(home.plot("p_join")) == ["s2", "s3"] and home.plot("p_join").equals(table(home, "T3", "p_join"))
@@ -130,21 +130,21 @@ def test_audit_mode_t3_is_the_audited_table_and_the_plot_is_the_audited_plot(wor
 
 @pytest.mark.parametrize("view", ["T1", "T2"])
 def test_audit_mode_shows_the_original_tables_on_t1_and_t2(world, monkeypatch, view):
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     audit = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
     exploration = Home(world, monkeypatch, flags=AUDIT, mode="exploration", home_state=state)
     assert table(audit, view, "p_join").equals(table(exploration, view, "p_join"))
 
 
 def test_audit_mode_source_is_the_original_table(world, monkeypatch):
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
     assert ids(table(home, "SRC", "p_join", "T")) == ["s1", "s2", "s3", "s4", "s5"]
 
 
 def test_exploration_filters_do_not_exist_in_audit_mode(world, monkeypatch):
     """A filter that survived in the reactive value (cleared by the effect in the app) changes neither the table nor the plot in Audit mode."""
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
     row = stamped(home, SCORE_GE_4)
     with reactive.isolate():
@@ -155,7 +155,7 @@ def test_exploration_filters_do_not_exist_in_audit_mode(world, monkeypatch):
 
 def test_without_the_audit_flag_the_mode_is_exploration_even_if_the_value_says_audit(world, monkeypatch):
     """No audit flag, no Audit mode: a stale value cannot put audited steps on a plot."""
-    state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
+    state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=("interactivity_enabled",), mode="audit", home_state=state)
     assert ids(home.plot("p_join")) == ["s2", "s3", "s4"] and ids(table(home, "T3", "p_join")) == ["s2", "s3", "s4"]
 

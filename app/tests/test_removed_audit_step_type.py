@@ -1,14 +1,14 @@
 """The audit step type `developer_raw_yaml` is removed (AUDIT-RAWYAML-REMOVE-1, Eve 2026-11-12; removal 2026-11-15).
 
 # @deps
-# consumes: app/modules/renamed_keys.py, app/modules/t3_audit_engine.py, app/modules/session_manager.py, app/modules/bundle_importer.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py
+# consumes: app/modules/renamed_keys.py, app/modules/audit_places.py, app/modules/session_manager.py, app/modules/bundle_importer.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py
 # @end_deps
 
 Before: nothing created such a step, but a session file, an imported bundle or an audit list could still hold one. HOME's
 table, plot and bundle ignored it and the exported recipe applied it (42 rows against 22, silently). Now every entry point
 refuses it with a message that names the step and says the type was removed:
 
-- the audit list of a plot (`audited_frame`: the table, the plot, the bundle, the export check, the filter dialog);
+- the audit list (`audit_copy_for`: the one entry of the audit copy that the table, the plot, the bundle, the export check and the filter dialog read);
 - a stored session file and an imported session zip (`SessionManager`);
 - the audit record `t3_steps.yaml` of an imported bundle (`import_bundle`);
 - the translator has no branch for it any more (an unknown type like any other);
@@ -28,7 +28,9 @@ import yaml
 
 from app.modules.bundle_importer import BundleImportError, import_bundle
 from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
-from app.modules.t3_audit_engine import AuditStepError, audited_frame
+from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.tests.test_audit_places import small
+from utils.audit_copy import AuditCopyError
 
 REMOVED = "developer_" + "raw_yaml"
 REPO = Path(__file__).resolve().parents[2]
@@ -36,11 +38,11 @@ FRAGMENT = "- action: cast\n  columns: [Year]\n  dtype: String\n"
 
 
 def removed_node(reason="old fragment", node_id="n9"):
-    return {"id": node_id, "node_type": REMOVED, "params": {"yaml_fragment": FRAGMENT}, "reason": reason}
+    return {"id": node_id, "node_type": REMOVED, "params": {"yaml_fragment": FRAGMENT}, "reason": reason, "place": "T3:P"}
 
 
 def filter_node():
-    return {"id": "f1", "node_type": "filter_row", "params": {"column": "x", "op": "ge", "value": 2}, "reason": "keep high"}
+    return {"id": "f1", "node_type": "filter_row", "params": {"column": "id", "op": "ge", "value": 2}, "reason": "keep high", "place": "T3:P"}
 
 
 FRAME = pl.LazyFrame({"x": [1, 2, 3, 4], "y": ["a", "b", "c", "d"]})
@@ -49,24 +51,23 @@ FRAME = pl.LazyFrame({"x": [1, 2, 3, 4], "y": ["a", "b", "c", "d"]})
 # -- the audit list ---------------------------------------------------------------------------------------------------
 
 def test_an_audit_list_with_the_removed_type_is_refused_and_names_the_step():
-    with pytest.raises(AuditStepError) as caught:
-        audited_frame(FRAME, [filter_node(), removed_node()], "the_plot")
+    with pytest.raises(AuditCopyError) as caught:
+        audit_copy_for(small(), [filter_node(), removed_node()])
     text = str(caught.value)
-    assert "audit step 2 of the plot 'the_plot'" in text and "n9" in text and 'reason: "old fragment"' in text, text
-    assert "was removed" in text and "Fix: remove audit step 2" in text, text
-    assert caught.value.pipeline_error is not None and "the_plot" in caught.value.pipeline_error.location
+    assert "The audit step 2" in text and "n9" in text and 'reason: "old fragment"' in text and "at Plot P (tier 3)" in text, text
+    assert "was removed" in text and "Fix:" in text and "new session" in text, text
 
 
 def test_the_removed_type_is_never_ignored_even_as_the_only_step():
-    with pytest.raises(AuditStepError, match="audit step 1"):
-        audited_frame(FRAME, [removed_node()])
+    with pytest.raises(AuditCopyError, match="The audit step 1"):
+        audit_copy_for(small(), [removed_node()])
 
 
-def test_an_inactive_removed_step_is_refused_too_like_in_a_session_file():
-    """One rule for the list and the files (round 3, point 2): a switched-off step of a removed type is refused, never applied
-    or ignored in one place and refused in another. Nothing creates an inactive step today (contract 12c, F-07)."""
-    with pytest.raises(AuditStepError, match="audit step 1"):
-        audited_frame(FRAME, [{**removed_node(), "active": False}, filter_node()])
+def test_an_inactive_removed_step_is_not_run_and_is_refused_where_a_file_is_read():
+    """One rule for the files (round 3, point 2): a switched-off step of a removed type is refused when a session file, a session zip or a bundle holds it (below).
+    The list the audit runs holds the ACTIVE steps only (`place_nodes`), so an inactive step is never applied or ignored in one place and refused in another by accident:
+    it is not a step of the audit. Nothing creates an inactive step today (contract 12c, F-07)."""
+    assert place_nodes({PLACES_BUCKET: [{**removed_node(), "active": False}, filter_node()]}) == [filter_node()]
 
 
 # -- a stored session file and an imported session zip ------------------------------------------------------------------
@@ -83,8 +84,8 @@ def _session(tmp_path, steps_by_plot=None, flat=None):
 
 
 def test_a_session_file_with_the_removed_type_is_refused_when_it_is_read(tmp_path):
-    sm, key = _session(tmp_path, {"subtab_p": [filter_node(), removed_node()]})
-    with pytest.raises(LegacySessionError, match=r"audit step 2 of the plot 'subtab_p'.*n9.*was removed"):
+    sm, key = _session(tmp_path, {PLACES_BUCKET: [filter_node(), removed_node()]})
+    with pytest.raises(LegacySessionError, match=r"audit step 2 of the audit list.*n9.*was removed"):
         sm.list_t3_ghosts(key)
 
 
@@ -95,18 +96,18 @@ def test_the_flat_list_of_an_old_session_file_is_refused_too(tmp_path):
 
 
 def test_the_session_panel_lists_such_a_session_with_the_problem_not_silently(tmp_path):
-    sm, key = _session(tmp_path, {"subtab_p": [removed_node()]})
+    sm, key = _session(tmp_path, {PLACES_BUCKET: [removed_node()]})
     listed = sm.list_all_sessions()
     assert len(listed) == 1 and "was removed" in listed[0].get("legacy_problem", ""), listed
 
 
 def test_a_session_file_without_the_type_is_read_as_before(tmp_path):
-    sm, key = _session(tmp_path, {"subtab_p": [filter_node()]})
-    assert sm.list_t3_ghosts(key)[0]["t3_audit_steps_by_plot"] == {"subtab_p": [filter_node()]}
+    sm, key = _session(tmp_path, {PLACES_BUCKET: [filter_node()]})
+    assert sm.list_t3_ghosts(key)[0]["t3_audit_steps_by_plot"] == {PLACES_BUCKET: [filter_node()]}
 
 
 def test_an_imported_session_zip_with_the_removed_type_is_refused_and_nothing_is_extracted(tmp_path):
-    source, key = _session(tmp_path / "from", {"subtab_p": [removed_node()]})
+    source, key = _session(tmp_path / "from", {PLACES_BUCKET: [removed_node()]})
     archive = source.export_session_zip(key)
     target = SessionManager(tmp_path / "to")
     with pytest.raises(LegacySessionError, match="removed"):

@@ -32,7 +32,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -55,12 +55,12 @@ from app.modules.recipe_banner import recipe_banner_title
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
-from app.modules.orchestrator import plot_read_error_text
+from app.modules.orchestrator import InputsChanged, plot_read_error_text
 from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
-from app.modules.audit_places import place_nodes
-from app.modules.audit_view import PlaceAudit
+from app.modules.audit_places import nodes_reaching_plot, own_plot_place, place_nodes
+from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
 from app.handlers.id_warning_handlers import define_server as define_id_warning_server
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
 from utils.pipeline_error import capture_entry
@@ -68,7 +68,7 @@ from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_capt
 from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import (
-    AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, rows_built_on, source_table_identity, stored_table_identity,
+    _apply_filter_rows, rows_built_on, source_table_identity, stored_table_identity,
     view_key, viewed_table)
 from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
@@ -425,8 +425,9 @@ def define_server(input, output, session, *,
             _graph_memo[memo_key] = build_graph(loaded.raw)
         return _graph_memo[memo_key]
 
-    def _place_nodes_above(subtab_id: str | None) -> list[dict]:
-        """The committed audit steps written at a place upstream of the plot `subtab_id` (the plot lies below their place), each decision once."""
+    def _audit_nodes_for(subtab_id: str | None) -> list[dict]:
+        """The committed audit steps the plot `subtab_id` is built from, at any tier: written at its own tier 3 or at a table it is built from (`nodes_reaching_plot`), each
+        decision once. THE one list every reader of the audited plot asks (HOME's plot and tables, the badge, the dialog); the table itself is the audit copy's (`_audited_t3_lf`)."""
         if home_state is None or not subtab_id:
             return []
         nodes = place_nodes(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
@@ -436,8 +437,7 @@ def define_server(input, output, session, *,
             graph = _open_graph()
         except Exception:
             return []
-        plot_node = f"T3:{subtab_id.removeprefix('subtab_')}"
-        found = [n for n in nodes if graph.has_node(n["place"]) and plot_node in graph.below(n["place"])]
+        found = nodes_reaching_plot(graph, nodes, subtab_id.removeprefix("subtab_"))
         return list({n.get("id"): n for n in found}.values())
 
     def _effective_source_table(p_id: str | None) -> str | None:
@@ -529,8 +529,19 @@ def define_server(input, output, session, *,
         nodes = _committed_place_nodes()
         return _the_place_audit().plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, told or _tell_inputs_changed)
 
+    def _audit_run_for_export(told=None):
+        """The run of the audit copy made from every committed audit step, for the export's audited table files; None when no step is committed. Raises what the run raises."""
+        nodes = _committed_place_nodes()
+        if not nodes:
+            return None
+        run = _the_place_audit().run_of(_open_recipe_id(), nodes, _recipe_plans())
+        if run is not None and told is not None:
+            for text in run.inputs_changed:
+                told(InputsChanged(text))
+        return run
+
     def _plot_table_changed(plot_id: str) -> bool | None:
-        """Whether the audit steps written at a place upstream changed the CONTENT of the table of `plot_id` (a step that removes nothing moves a key and no row, ADR-101 point 6);
+        """Whether the audit steps (at any tier) changed the CONTENT of the table of `plot_id` (a step that removes nothing moves a key and no row, ADR-101 point 6);
         None when it cannot be told (the run fails: the plot itself shows why)."""
         nodes = _committed_place_nodes()
         if not nodes:
@@ -543,14 +554,13 @@ def define_server(input, output, session, *,
     def _resolve_active_lf(spec: dict | None, tier: str | None = None, original: bool = False):
         """Return a LazyFrame for the table the data choice names, for the plot of `spec` (or tier1_anchor).
 
-        In Audit mode the T3 table is the AUDITED one when an audit step is written at a place upstream of the plot (`_audited_t3_lf`); `original=True` asks for the plot's own
-        table whatever the mode (the "Original" pane of Compare).
+        In Audit mode the T3 table is the AUDITED one when an audit step is written at the plot's own tier 3 or at a place upstream of it (`_audited_t3_lf`: the table of the audit
+        copy, the same for the plot, the table, the dialog and the export); `original=True` asks for the plot's own table whatever the mode (the "Original" pane of Compare).
 
         "SRC" is one source table as read from its file (`_read_source_lf`). "T1" is the plot's table after tier 1. "T2" reads the assembly's
         stored Tier 2 parquet (issue #10; equal to T1 when the table has no tier2 steps). "T3" reads the table the plot reads
         (`materialize_tier3`: that Tier 2 plus the plot's own `tier3` steps of the recipe; the same table when the plot has none): the
-        table the plot shows. The audited steps of Audit mode (filters, drops) go on top of the T3 table, applied by the callers with
-        `audited_frame`.
+        table the plot shows. The audit steps of Audit mode (filters, drops, at any tier) are in the audit copy's table, not applied on top by the callers.
 
         `tier` defaults to the data choice (`data_view`). Plot handlers and the audit write pass "T3" explicitly: a plot is drawn from the
         table it reads, in Exploration as in Audit mode (D-0310, D-0019), and audit steps are written at the plot's table.
@@ -602,35 +612,6 @@ def define_server(input, output, session, *,
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
             keys.plot_key_of(plot_id) if tier == "T3" and plot_id is not None else None, keys.tier2_key_of(target_ds))
 
-    def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
-        """Return the committed T3 AuditSteps for the active plot subtab.
-
-        Phase 22-J / ADR-049: per-plot stacks. When `plot_id` is None, uses
-        the currently active subtab. Empty list if no T3 nodes for that plot.
-        """
-        if home_state is None:
-            return []
-        state = home_state.get()
-        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
-        if plot_id is None:
-            plot_id = state.get("active_plot_subtab") or active_home_subtab.get()
-        if not plot_id:
-            return []
-        return list(by_plot.get(plot_id, []))
-
-    def _t3_drop_columns(plot_id: str | None = None) -> list[str]:
-        """Active drop_column column names for the active plot's stack."""
-        cols: list[str] = []
-        for n in _active_plot_t3_nodes(plot_id):
-            if not n.get("active", True):
-                continue
-            if n.get("node_type") != "drop_column":
-                continue
-            c = n.get("params", {}).get("column", "")
-            if c:
-                cols.append(c)
-        return cols
-
     def _all_plot_subtab_ids() -> list[str]:
         """Enumerate every plot subtab id available in the active data analysis recipe.
 
@@ -665,19 +646,6 @@ def define_server(input, output, session, *,
             if entry:
                 return plot_list_label(p_id, entry)
         return p_id
-
-    def _t3_filter_rows(plot_id: str | None = None) -> list[dict]:
-        """Active filter_row + exclusion_row nodes for the active plot.
-
-        Both filter_row and exclusion_row are now applied via the same
-        _apply_filter_rows path (an exclusion_row on a primary key is just
-        a `not_in` filter once committed). The audit-trail distinction
-        between the two node types is purely documentary — see ADR-049.
-        """
-        return filter_rows_from_nodes(_active_plot_t3_nodes(plot_id))
-
-    # _apply_filter_rows moved to app/modules/t3_audit_engine.py (Phase 24-A, ADR-051)
-    # Imported at module top.
 
     def _spec_discrete_axes(spec: dict | None) -> tuple[set[str], set[str]]:
         """
@@ -735,15 +703,25 @@ def define_server(input, output, session, *,
             # audited steps (Apply-gated); Compare's left pane never carries them (its own handler).
             # GUARDED by test_filters_change_the_table_not_the_plot.py and test_shiny_smoke.py::TestPreviewFiltersOnReferenceViews.
             in_audit_plot = _in_audit()
-            # PLOT-TABLE-ORDER-1: the plot gets its data from the same frame as the table of the audited T3 view: the audited
-            # steps in their recorded order (`audited_frame`), applied below to the frame. Nothing is handed to the
-            # factory's `filters` key any more (that key is for what a recipe's plot spec writes), so the audited steps are
+            # PLOT-TABLE-ORDER-1: the plot gets its data from the same frame as the table of the audited T3 view: the table of the audit
+            # copy (`_resolve_active_lf`), in which the audit steps of every tier run in one order (tier 1, tier 2, tier 3; inside a tier the order written).
+            # Nothing is handed to the factory's `filters` key (that key is for what a recipe's plot spec writes), so the audited steps are
             # applied once, in one order, and a step that cannot run is an error, never a skip.
             # the recipe the plot engine draws from: the same call as the opening's proof of drawing (`opening_build.plot_render_recipe`)
             synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
 
             try:
-                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads, in every mode and every data choice (D-0310)
+                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads (in Audit mode the audit copy's), in every data choice (D-0310)
+            except AUDIT_ERRORS as e:
+                # a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped (D-0102)
+                _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
+                import matplotlib.pyplot as plt
+                import textwrap
+                fig, ax = plt.subplots()
+                ax.text(0.5, 0.5, "\n".join(textwrap.fill(line, 70) for line in f"Audit step error:\n{e}".splitlines()),
+                        ha="center", va="center", transform=ax.transAxes, color="#d62828", fontsize=8)
+                ax.axis("off")
+                return fig
             except Exception as e:
                 # ADR-094: data materialization (ingestion/assembly) failures get the same
                 # session_processing_issues capture the VizFactory render path already has
@@ -759,22 +737,6 @@ def define_server(input, output, session, *,
                         transform=ax.transAxes, color="red", fontsize=9)
                 ax.axis("off")
                 return fig
-
-            # Audit mode: the audited steps in the recorded order (the same call as the table and the results bundle). Exploration
-            # filters are not part of it: they do not exist in Audit mode and never change a plot.
-            if in_audit_plot:
-                try:
-                    lf = audited_frame(lf, _active_plot_t3_nodes(this_subtab), p_id)
-                except AuditStepError as e:
-                    # PLOT-TABLE-ORDER-1: a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped.
-                    _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
-                    import matplotlib.pyplot as plt
-                    import textwrap
-                    fig, ax = plt.subplots()
-                    ax.text(0.5, 0.5, "\n".join(textwrap.fill(line, 70) for line in f"Audit step error:\n{e}".splitlines()),
-                            ha="center", va="center", transform=ax.transAxes, color="#d62828", fontsize=8)
-                    ax.axis("off")
-                    return fig
 
             # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state (the Reshuffle pin among them). D-0341: only the audited plot of
             # Audit mode carries it; the Exploration plot is the recipe's plot and equals the "Original" pane of Compare, whatever is stored.
@@ -892,8 +854,13 @@ def define_server(input, output, session, *,
         )
 
     def _audited_step_count(subtab_id) -> int:
-        """How many audited steps (filters and column drops) this plot has: what Audit mode puts on its T3 table and its plot (issue #17)."""
-        return len(_t3_filter_rows(subtab_id)) + len(_t3_drop_columns(subtab_id)) + len(_place_nodes_above(subtab_id))
+        """How many audited steps (filters and column drops, at any tier) this plot is built from: what Audit mode puts on its T3 table and its plot (issue #17)."""
+        return len(_audit_nodes_for(subtab_id))
+
+    def _upstream_step_count(subtab_id) -> int:
+        """How many of them were written at a table the plot is built from (not at its own tier 3)."""
+        own = own_plot_place((subtab_id or "").removeprefix("subtab_"))
+        return len([n for n in _audit_nodes_for(subtab_id) if n.get("place") != own])
 
     # Compare (Audit mode only, D-0147): a switch of the strip. Its value is kept here, so that a rebuild of the strip (a workspace switch)
     # or a stay in Exploration does not forget it. PROVISIONAL P-B7: the input is called `audit_compare`.
@@ -1021,8 +988,8 @@ def define_server(input, output, session, *,
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
             return _badge_ui(plot_badge("audit" if audit else "exploration", has_plot_steps(active_cfg().raw_config, p_id), has_t2,
                                         preview_filters=len(_applied_for_view()), audited_steps=_audited_step_count(f"subtab_{p_id}"),
-                                        upstream_steps=len(_place_nodes_above(f"subtab_{p_id}")),
-                                        table_changed=_plot_table_changed(p_id) if audit and _place_nodes_above(f"subtab_{p_id}") else None))
+                                        upstream_steps=_upstream_step_count(f"subtab_{p_id}"),
+                                        table_changed=_plot_table_changed(p_id) if audit and _audited_step_count(f"subtab_{p_id}") else None))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui
@@ -1489,7 +1456,7 @@ def define_server(input, output, session, *,
             previous, _seen_ghost_file["file"] = _seen_ghost_file["file"], ghost_file
             if not ghost_file or ghost_file == previous or not _audit_available():
                 return
-            if any(home_state.get().get("t3_audit_steps_by_plot", {}).values()) and home_mode.get() != "audit":
+            if place_nodes(home_state.get().get("t3_audit_steps_by_plot", {}) or {}) and home_mode.get() != "audit":
                 home_mode.set("audit")
                 ui.update_radio_buttons("home_mode", selected="audit")
 
@@ -1697,20 +1664,21 @@ def define_server(input, output, session, *,
     def _preview_lf(spec, p_id):
         """The lazy table the data preview shows the head of: the view's table, then (Audit mode, T3) the audited steps, or (Exploration) the
         filters built on this view. The grid and the badge's row count both read it, so the count is the count of what the grid is cut from
-        (D-0488). Raises what the table raises (an AuditStepError, a read error): each caller decides what to show."""
+        (D-0488). Raises what the table raises (an audit step that cannot run, a read error): each caller decides what to show."""
         lf = _resolve_active_lf(spec)
         # ADR-098 (issue #56), D-0311: exploration filters change the table of the view shown (Source, T1, T2 or T3), never saved and
         # never a plot. They do not exist in Audit mode, where T3 is the audited table.
-        # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the plot's table after the audited steps in their recorded order, the
-        # same call as the audited plot and the results bundle. A step that cannot run raises AuditStepError: it is shown below in
-        # the table's place and in the Alerts panel, never skipped.
-        if _in_audit():
-            if data_view.get() == "T3":
-                lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
-        else:
+        # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the table of the audit copy (`_resolve_active_lf`): the plot's table after the audit steps of every tier,
+        # the same table as the audited plot and the results bundle. A step that cannot run raises (`AUDIT_ERRORS`): it is shown below in the table's place and in the
+        # Alerts panel, never skipped.
+        if not _in_audit():
             # review F3: only the filters built on this very view; one built on another table is not applied, whatever the clearing effect did
             lf = _apply_filter_rows(lf, _applied_for_view())
         return lf
+
+    def _dropped_columns(p_id: str | None) -> list[str]:
+        """The columns the committed audit steps of this plot drop (a column drop written at any tier it is built from): what the audited table no longer has."""
+        return [str((n.get("params") or {}).get("column")) for n in _audit_nodes_for(p_id) if n.get("node_type") == "drop_column" and (n.get("params") or {}).get("column")]
 
     def _chooser_key(p_id: str | None) -> str | None:
         """The key of the table the column chooser is built for: everything `home_col_selector_ui` depends on (the open recipe and the data it
@@ -1732,7 +1700,8 @@ def define_server(input, output, session, *,
         except Exception:
             table = ""
         audit_t3 = _in_audit() and view == "T3"
-        drops = ",".join(sorted(_t3_drop_columns())) if audit_t3 else ""
+        # the columns the audit steps drop from this table: the chooser is built again when they change (a filter does not change its columns)
+        drops = ",".join(sorted(_dropped_columns(p_id))) if audit_t3 else ""
         return "|".join((recipe_part, str(p_id), view, str(table), "audit" if audit_t3 else "view", drops))
 
     @output
@@ -1816,7 +1785,7 @@ def define_server(input, output, session, *,
             # summary off: the grid counts the table it is handed (the first 100 rows), so "of 100" would read as the table's total; the badge says the size (D-0488)
             return render.DataGrid(df, filters=False, height="300px", summary=False)
         except Exception as e:
-            if isinstance(e, AuditStepError):
+            if isinstance(e, AUDIT_ERRORS):
                 _report_plot_exception(e, "T3Audit", "audit steps of the data preview")
             elif data_view.get() == "SRC":
                 # the source table could not be read or listed: the plain text of the error, in the Alerts panel as well as in the table's place
@@ -1841,10 +1810,10 @@ def define_server(input, output, session, *,
         spec = _resolve_active_spec(p_id)
         try:
             lf = _resolve_active_lf(spec)
-            # HOM-41 fix: audited drops remove columns from the T3 table in Audit mode only — every other view is the table as it is.
+            # HOM-41 fix: audited drops remove columns from the T3 table in Audit mode only — every other view is the table as it is. The table
+            # of the audit copy already lacks them: the chooser lists the columns of the table it is shown with.
             audit_t3 = _in_audit() and data_view.get() == "T3"
-            committed_drops = set(_t3_drop_columns()) if audit_t3 else set()
-            cols = [c for c in lf.collect_schema().names() if c not in committed_drops]
+            cols = list(lf.collect_schema().names())
             # Dropping via audit exists in Audit mode on T3 only.
             label_text = (
                 "Columns (drop unselected via audit):"
@@ -1923,8 +1892,7 @@ def define_server(input, output, session, *,
             lf = _resolve_active_lf(spec, tier="T3")
         except Exception:
             return ui.span()
-        committed = set(_t3_drop_columns())
-        cols = [c for c in lf.collect_schema().names() if c not in committed]
+        cols = list(lf.collect_schema().names())    # the audited table: a column an audit step dropped is not in it
         visible = safe_input(input, "preview_col_selector", cols)
         vis_set = set(visible) if isinstance(visible, (list, tuple)) else set(cols)
         n_drop = len([c for c in cols if c not in vis_set])
@@ -2540,16 +2508,9 @@ def define_server(input, output, session, *,
     def filter_inventory_ui():
         filters = _applied_for_view()
         t3_nodes: list[dict] = []
-        active_sub = ""
         if home_state is not None:
-            state = home_state.get()
-            active_sub = state.get("active_plot_subtab", "")
-            by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
-            t3_nodes = [
-                n for n in by_plot.get(active_sub, [])
-                if n.get("active", True)
-                and n.get("node_type") in ("filter_row", "exclusion_row")
-            ]
+            active_sub = home_state.get().get("active_plot_subtab", "")
+            t3_nodes = [n for n in _audit_nodes_for(active_sub) if n.get("node_type") in ("filter_row", "exclusion_row")]
 
         if not filters and not t3_nodes:
             return ui.div()
@@ -2704,10 +2665,10 @@ def define_server(input, output, session, *,
         safe_input=safe_input,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
-        t3_filter_rows=_t3_filter_rows,
-        t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,
         audited_plot_table=_audited_t3_lf,
+        in_audit=_in_audit,
+        audit_run=_audit_run_for_export,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────
@@ -2754,7 +2715,7 @@ def define_server(input, output, session, *,
         _resolve_active_spec=_resolve_active_spec,
         _resolve_active_lf=_resolve_active_lf,
         _spec_discrete_axes=_spec_discrete_axes,
-        _t3_drop_columns=_t3_drop_columns,
+        audit_nodes_for=_audit_nodes_for,
         _all_plot_subtab_ids=_all_plot_subtab_ids,
         _plot_label=_plot_label,
         _table_identity=_dialog_table_identity,

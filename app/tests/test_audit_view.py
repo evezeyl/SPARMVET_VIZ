@@ -10,6 +10,10 @@ Proved on the demo `1_test_data_ST22_dummy` and its real data (the engine builds
 - a step the engine cannot apply is refused naming its id and its place, never skipped; a key dropped where a later join reads it, a place that does not exist and a step without a
   reason are refused in plain words and nothing is built.
 
+- the third tier is the same mechanism (demo step 7): a step written at the tier 3 of a plot (`T3:<plot>`) reaches that plot and no other, also not another plot that reads the SAME table
+  (`mlst_bar` and `year_distribution` read MLST_with_metadata); it builds no table at tier 1 or tier 2 (the stored tables are the original's); the steps of the three tiers run in the order
+  tier 1, tier 2, tier 3 whatever order they were written in, and inside a tier in the order written; a tier-3 step that cannot be applied is refused naming its id and `T3:<plot>`.
+
 Mutation index (each seen failing): MUTATION V1 `AuditRun.plot_table` returns None for every plot (the audited table is never read); MUTATION V2 `run_of` ignores the nodes
 (always None); MUTATION V3 `nodes_signature` leaves the parameters out (the memo serves the old run).
 
@@ -195,3 +199,88 @@ def test_a_build_whose_inputs_changed_is_told_to_the_caller_so_that_the_export_c
     with mock.patch.object(PlaceAudit, "run_of", return_value=fake):
         assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", [world.node()], world.plans, told=told.append) == "LAZY"
     assert told == [InputsChanged("the audit's table 'ResFinder' (tier 1): the data files changed; it was returned and not stored")]
+
+
+# -- the third tier (demo step 7) ----------------------------------------------------------------------------------------
+
+def mlst_victim(world):
+    return world.original_table("mlst_bar")["sample_id"].to_list()[0]
+
+
+def test_a_step_at_the_tier3_of_one_plot_changes_that_plot_and_not_another_plot_that_reads_the_same_table(world):
+    audit = world.audit()
+    victim = mlst_victim(world)
+    nodes = [world.node(place="T3:mlst_bar", value=victim)]
+    before = world.stored()
+    assert world.graph.plot_target("mlst_bar") == world.graph.plot_target("year_distribution"), "the two plots read one table"
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == ["mlst_bar"]
+    assert victim not in audit.plot_lazy(RECIPE_ID, "mlst_bar", nodes, world.plans).collect()["sample_id"].to_list()
+    assert audit.plot_lazy(RECIPE_ID, "year_distribution", nodes, world.plans) is None, "the other plot reads its original table"
+    table = run.tables["MLST_with_metadata"]
+    assert table.t1 == "original" and table.t2 in ("original", "none"), "a step at a plot builds no table at tier 1 or tier 2"
+    assert world.stored() == before, "the original's stored tables are what they were"
+    assert audit.plot_lazy(RECIPE_ID, "mlst_bar", nodes, world.plans).collect().equals(world.original_table("mlst_bar").filter(pl.col("sample_id") != victim))
+
+
+def test_all_plots_is_one_node_per_plot_with_one_id_and_removing_by_that_id_removes_every_copy(world):
+    audit = world.audit()
+    victim = mlst_victim(world)
+    one = world.node(place="T3:mlst_bar", value=victim)
+    two = world.node(place="T3:year_distribution", value=victim) | {"id": one["id"]}
+    both = [one, two]
+    assert set(audit.affected_plots(RECIPE_ID, both, world.plans)) == {"mlst_bar", "year_distribution"}
+    for plot in ("mlst_bar", "year_distribution"):
+        assert victim not in audit.plot_lazy(RECIPE_ID, plot, both, world.plans).collect()["sample_id"].to_list()
+    by_plot = {PLACES_BUCKET: both}
+    removed = [n for n in by_plot[PLACES_BUCKET] if n["id"] != one["id"]]              # what the panel's Remove step does: every node of the id
+    assert removed == [] and audit.affected_plots(RECIPE_ID, removed, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "mlst_bar", removed, world.plans) is None and not world.audit_dir.exists()
+
+
+def test_the_steps_of_the_three_tiers_run_tier_by_tier_whatever_order_they_were_written_in(world):
+    audit = world.audit()
+    ids = world.ids
+    t1 = world.node(place="T1:ResFinder", value=ids[0])
+    t2 = world.node(place="T2:ResFinder", value=ids[1])
+    t3 = world.node(place="T3:amr_heatmap", value=ids[2])
+    expected = world.original_table("amr_heatmap").filter(~pl.col("sample_id").is_in(ids[:3]))
+    for written in ([t1, t2, t3], [t3, t2, t1], [t2, t3, t1]):
+        got = audit.plot_lazy(RECIPE_ID, "amr_heatmap", written, world.plans).collect()
+        assert got.equals(expected), "every step is applied once, at its own tier"
+    # a column dropped at the tier 3 is still there for a filter written at the tier 2 AFTER it (tier 2 runs first); written the other way round it is the same
+    drop3 = world.node(place="T3:amr_heatmap", node_type="drop_column", params={"column": "identity"})
+    filter2 = world.node(place="T2:ResFinder", params={"column": "identity", "op": "ge", "value": 0.0, "na": "remove"})
+    for written in ([drop3, filter2], [filter2, drop3]):
+        got = audit.plot_lazy(RECIPE_ID, "amr_heatmap", written, world.plans).collect()
+        assert "identity" not in got.columns and got.height > 0
+
+
+def test_inside_a_tier_the_steps_run_in_the_order_written_and_a_step_on_a_column_an_earlier_step_dropped_is_refused_naming_it_and_its_place(world):
+    audit = world.audit()
+    drop = world.node(place="T3:amr_heatmap", node_type="drop_column", params={"column": "identity"})
+    keep = world.node(place="T3:amr_heatmap", params={"column": "identity", "op": "ge", "value": 0.0, "na": "remove"})
+    ok = audit.plot_lazy(RECIPE_ID, "amr_heatmap", [keep, drop], world.plans).collect()
+    assert "identity" not in ok.columns, "filter then drop: both applied"
+    with pytest.raises(AuditRunError) as excinfo:
+        audit.plot_lazy(RECIPE_ID, "amr_heatmap", [drop, keep], world.plans)
+    text = str(excinfo.value)
+    assert "T3:amr_heatmap" in text and "audit_" in text and excinfo.value.place == "T3:amr_heatmap", text
+    assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet")), "a refused run leaves nothing it built"
+
+
+def test_a_tier3_step_a_key_drop_and_a_missing_plot_are_judged_like_any_other_place(world):
+    audit = world.audit()
+    with pytest.raises(AuditCopyError, match="no plot 'no_such_plot'"):
+        audit.run_of(RECIPE_ID, [world.node(place="T3:no_such_plot")], world.plans)
+    with pytest.raises(AuditCopyError, match="reason"):
+        audit.run_of(RECIPE_ID, [world.node(place="T3:amr_heatmap", reason="")], world.plans)
+    with pytest.raises(UntranslatableNode):
+        audit_copy_for(world.loaded.raw, [world.node(place="T3:amr_heatmap", node_type="aesthetic_override", params={"fill": "red"})], world.plans)
+
+
+def test_a_tier3_step_that_removes_nothing_is_told_as_the_same_as_the_original(world):
+    audit = world.audit()
+    nodes = [world.node(place="T3:amr_heatmap", params={"column": "sample_id", "op": "ne", "value": "no_such_sample_id", "na": "keep"})]
+    assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect().equals(world.original_table("amr_heatmap"))

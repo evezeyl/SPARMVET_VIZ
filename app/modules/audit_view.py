@@ -1,4 +1,4 @@
-"""What HOME and the export read when audit steps are written at a place upstream of a plot (HOME audit, demo step 2).
+"""What HOME and the export read when audit steps are written at a place (tier 1, tier 2 or tier 3) (HOME audit, demo steps 2 and 7).
 
 One object per open recipe: it makes the audit copy of the recipe from the committed place nodes (`audit_places.audit_copy_for`), runs it (`audit_run.run_audit`, which builds
 into a folder of its own and never touches the stored tables of the original) and hands out the table a plot reads in the copy. Every reader of the audited plot (the plot, the
@@ -12,7 +12,7 @@ T3 table, the filter dialog, the results bundle) asks this one object, so they c
 Pure of Shiny. Consumed by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py.
 
 # @deps
-# provides: class:PlaceAudit
+# provides: class:PlaceAudit, constant:AUDIT_ERRORS
 # consumes: app/modules/audit_places.py (audit_copy_for, nodes_signature), app/modules/audit_run.py (run_audit, AuditRun), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/orchestrator.py (DataOrchestrator)
 # consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/knowledge/architecture_decisions.md#adr-101
@@ -25,10 +25,16 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional
 
 from app.modules.audit_places import audit_copy_for, nodes_signature
-from app.modules.audit_run import AuditRun, run_audit
+from app.modules.audit_run import AuditRun, AuditRunError, run_audit
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator, InputsChanged
+from blueprint_arch.t3_translator import UntranslatableNode
+from utils.audit_copy import AuditCopyError
 from utils.plan_book import PlanBook
+
+# What the audit copy raises when a committed step cannot be made into a step of the copy or cannot be run, each with a plain sentence that names the step and its place:
+# every reader shows it in the place of the table or the plot, never skips the step (D-0102).
+AUDIT_ERRORS = (AuditRunError, AuditCopyError, UntranslatableNode)
 
 
 class PlaceAudit:
