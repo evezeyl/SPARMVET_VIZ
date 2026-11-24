@@ -168,7 +168,7 @@ def test_the_rewritten_demo_tables_keep_their_rows_and_all_42_entities(collectio
     assert t1["sample_id"].null_count() == 0
 
 
-def test_the_demo_join_of_demo_abromics_is_27_rows_for_27_samples_and_the_three_lines_with_no_id_are_not_in_it(tmp_path):
+def test_the_demo_join_of_demo_abromics_is_27_rows_for_27_samples(tmp_path):
     table = built(tmp_path, "demo_abromics", "demo_join")
     assert table.height == 27 and table["sample_id"].n_unique() == 27 and table["sample_id"].null_count() == 0
     assert table["sequence_type"].null_count() == 0 and (table["sequence_type"] == "Non Determined").sum() >= 12

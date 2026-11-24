@@ -200,15 +200,33 @@ def test_check_3_passes_on_every_shipped_recipe_and_nothing_is_a_problem(recipe_
         assert report.check3_ok, report.as_dict()
 
 
-def test_demo_abromics_lists_its_three_lines_with_no_id_and_the_completion_adds_the_other_ids_to_mlst():
+def test_demo_abromics_has_no_line_without_an_id_and_the_completion_adds_the_other_ids_to_mlst():
+    """The three lines with no usable id were removed from the shipped metadata file (D-0624): its report lists none; the behaviour itself is tested on a small file below."""
     orchestrator = DataOrchestrator(PIPELINES, ROOT)
     raw = load_data_analysis_recipe(PIPELINES / "demo_abromics.yaml").raw
     report = quiet(orchestrator.id_report, "demo_abromics", raw)
     by = {t.table: t for t in report.tables}
-    assert by["metadata_schema"].no_id_lines == 3 and by["metadata_schema"].no_id_line_numbers == (4, 5, 10)
+    assert by["metadata_schema"].no_id_lines == 0 and by["metadata_schema"].no_id_line_numbers == ()
     assert report.union_count == 27 and len(by["MLST"].added) == 12 and report.check3_ok
-    lines = " ".join(report_lines(report))
-    assert "3 line(s) have no usable id" in lines
+    assert "no usable id" not in " ".join(report_lines(report))
+
+
+def test_an_empty_a_dash_and_two_quote_marks_in_the_id_column_are_three_lines_with_no_usable_id(tmp_path):
+    """Own small fixture (the shipped demo file no longer holds these lines): the id column declares `null_values: ["", "-"]`; two quote marks are an empty text."""
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "meta.tsv").write_text("sample_id\tv\ns1\t1\n\t2\n-\t3\ns2\t4\n\"\"\t5\n")
+    (data / "A.tsv").write_text("sample_id\tv\ns1\t1\n")
+    meta = minimal_schema(str(data / "meta.tsv"), {"sample_id": "String", "v": "Float64"}, entity_key="sample_id", table_id="metadata_schema")
+    meta["input_fields"]["sample_id"]["null_values"] = ["", "-"]
+    recipe = minimal_recipe("w", schemas={"A": minimal_schema(str(data / "A.tsv"), {"sample_id": "String", "v": "Float64"}, entity_key="sample_id")})
+    recipe["metadata_schema"] = meta
+    write_recipe(tmp_path / "w.yaml", recipe)
+    orchestrator = DataOrchestrator(tmp_path, tmp_path)
+    report = quiet(orchestrator.id_report, "w", recipe)
+    by = {t.table: t for t in report.tables}
+    assert by["metadata_schema"].no_id_lines == 3 and by["metadata_schema"].no_id_line_numbers == (2, 3, 5)
+    assert report.union_count == 2 and "3 line(s) have no usable id" in " ".join(report_lines(report))
 
 
 # -- small recipes -------------------------------------------------------------------------------
