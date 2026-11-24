@@ -1,5 +1,7 @@
 # How to build recipes from the directed-graph model: what two agents agree on, and what is open for her (2026-11-23)
 
+Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
+
 **What this is.** Step 2 of her sequence (ledger D-0554): "how to build the recipes from the directed-graph model". It carries her decision D-0562 (the field `is_entity_key` is renamed `is_entity_id`) and her open topic "joins that are not metadata". An Opus agent and a Sonnet agent each wrote a position without seeing the other, then compared them and agreed before this text was written (D-0552). The evidence rules D-0558 to D-0561 hold: every engine run was rebuilt from scratch in its own empty folder, nothing went through the old lineage code, every run was registered before it ran with its three points, and an equality counts only when both sides were rebuilt. NOT confirmed by her. Nothing here is built and no recipe is changed.
 
 **Where the evidence lives.** The registers are `tmpAI/coordinator/design_dialogue/RUN_REGISTER_sonnet_recipes.md`, `RUN_REGISTER_opus_recipes.md` and `RUN_REGISTER_sonnet_cause.md`. The scratch recipes, data and outputs are in the same folder (`paths2/`, `opus3_*`, `cause/`). This folder is scratch (not in git); the registers and the two agents' positions (`SONNET_recipes_1.md`, `OPUS_recipes_1.md`, `RECIPES_AGREED_AND_OPEN_v1.md`, `OPUS_signs_recipes_v1.md`) are the source of the numbers below. The cause of the two identical tables, and the catalogue of solutions for the join that starts from the metadata, are in `CAUSE_AND_SOLUTIONS_ZEROS.md` (written from the files and her rules, no run, D-0566; checked by both agents by reading; the final file is `CAUSE_AND_SOLUTIONS_ZEROS.md`, beside this one).
@@ -313,7 +315,7 @@ This is the same form as the names pass, so it adds no new kind of tool. [CODE R
 
 ## THE OLD RECIPE STUDY: kept, changed, dropped
 
-Checked against `RECIPE_PROPOSAL_refined.md` (flags of Part 0, Part 3), `RECIPE_REDESIGN_REVIEW.md` (parts 5 and 6), `RECIPE_PROPOSAL_answers.md` (Q8, Q11) and `RECIPE_PROPOSAL_dialog_walkthrough.md` (its header). Not rerun.
+Checked against `RECIPE_PROPOSAL_refined.md` (flags of Part 0, Part 3), `RECIPE_REDESIGN_REVIEW.md (removed 2026-11-24 in the cleaning of the studies; see git history)` (parts 5 and 6), `RECIPE_PROPOSAL_answers.md (removed 2026-11-24 in the cleaning of the studies; see git history)` (Q8, Q11) and `RECIPE_PROPOSAL_dialog_walkthrough.md (removed 2026-11-24 in the cleaning of the studies; see git history)` (its header). Not rerun.
 
 **KEPT:** a definition comes before its use (form 3); a derived table reads one table (D-0517); the flag "a step at a shared table changes every reader" (now G17, D-0555); the two reading rules (a join reads tier 1, `from:` would read the last stage) and the warning not to unify them silently; J14 must count a derived table as a reader if derived tables come; result ids unique across the recipe.
 

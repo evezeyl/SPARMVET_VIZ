@@ -1,5 +1,7 @@
 Copied on 2026-11-22 from the panel's scratch folder so that the study does not depend on scratch (D-0419). NOT confirmed by the owner (D-0496). Its walk-through of the audit dialog uses the earlier default (every place ticked) and is to be redone.
 
+Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
+
 # Where tier 3, `from:` and the results go: the refined proposal, with complete files (2026-11-22)
 
 For you, after your order of channel block M555. Written by an Opus worker for the coordinator.

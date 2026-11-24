@@ -1,11 +1,13 @@
 # Your goals, and the path to them (2026-11-22, second pass)
 
-A study, not a decision: nothing is built from it before you answer (D-0507, D-0528). The short version is part 0 of `WHOLE_PICTURE.md`. This file holds the detail, for you if you want it, and for the builders. The list of which decisions and builds match the goals is `MATCH_LIST.md` (same folder).
+Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
+
+A study, not a decision: nothing is built from it before you answer (D-0507, D-0528). The short version is part 0 of `WHOLE_PICTURE.md`. This file holds the detail, for you if you want it, and for the builders. The list of which decisions and builds match the goals is `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)` (same folder).
 
 **How to read it.**
 - Your words are between quotation marks, exactly as you typed them, with the ledger number.
 - "My reading" and "mine" mark what is not yours. "Suggestion:" comes before a remedy.
-- Evidence: [read] = read in the code at file:line on 22 November; [run] = a run of this study or of its reviews, named; [inventory] = taken from `PARTS_TABLES.md`, `DIFFERENCES.md` or the two collected files of the main tree (`tmpAI/coordinator/whole_picture/BUILT_audit_lineage.md`, `BUILT_format_export_names.md`), not re-read; [fact check] = the independent check of the first pass (`tmpAI/coordinator/whole_picture/GOALS_CHECK_facts.md`, main tree).
+- Evidence: [read] = read in the code at file:line on 22 November; [run] = a run of this study or of its reviews, named; [inventory] = taken from `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` or the two collected files of the main tree (`tmpAI/coordinator/whole_picture/BUILT_audit_lineage.md`, `BUILT_format_export_names.md`), not re-read; [fact check] = the independent check of the first pass (`tmpAI/coordinator/whole_picture/GOALS_CHECK_facts.md`, main tree).
 - The app is data agnostic: "the entity" and "the entity key"; on the demo recipe the entity is a sample and the key is `sample_id`. "Observations" is your word: I read it as the rows of a table (my reading).
 
 **What changed in this second pass, and why.** The first pass proposed that you choose the results and that the app choose the places where a step is written. Your words of the same evening rule that out: "I am monitoring and i already think the reviewer might miss the point the context is so depend for the user that is much choose the scope adapted to its case. We cannot choose for him..the app cannot decide the scope. The reviewer should understand the lineage and the user the effects of its choices" (D-0531). In your earlier words the scope IS the places: "That is the choice of the user - because the user decide the scope - the steps are added at the end of one Tier so the steps applies in the Tier where the steps are added" (D-0355). An independent check also found cases that a choice of results cannot write (section 8). So the path now keeps every place yours, and keeps from the first pass only what serves your choice: the effect on each result, measured before you confirm. Where I still think you may be missing something, I argue it, as you asked: "So if i miss something i want a good argumentation of why and how .." (D-0532). The fixes of the two independent checks are mapped in section 10. A third pass answers the independent review you ordered (D-0533), finding by finding, in section 11.
@@ -71,10 +73,10 @@ Not a tension (corrected from the first pass): the user learning where a change 
 For each goal: the conditions that must be true, whether the design as decided makes them true, and whether the app on `dev` does. "Decided" = the earlier study's design, from your decisions. Marks: **yes**, **partly**, **no**.
 
 **G1. Audits that are clear, correct, reproducible and transparent.**
-1. Each correction is written once, in a copy of the recipe, with its reason; the original never changes. Decided: **yes** (D-0102, D-0143, D-0332). Today: **no**: one step lives in three forms (`DIFFERENCES.md` A11).
+1. Each correction is written once, in a copy of the recipe, with its reason; the original never changes. Decided: **yes** (D-0102, D-0143, D-0332). Today: **no**: one step lives in three forms (`DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` A11).
 2. Before confirming, the user sees what the correction does to each result. Decided: **partly**: the rows at each place, and "table changed" and "picture changed" per plot (D-0316, D-0318); the count at the plot was removed (D-0501). Today: **no**.
 3. What is shown is true. Decided: **partly**. Two reviews wrote sentences about tables where no step is written; each kind was false somewhere [run, `tmpAI/coordinator/whole_picture/EVIDENCE_untick_branch_reviews.md`, main tree]. Only a run of the audit recipe tells the effect at a result.
-4. The step sits where the user intends. Decided: **yes**, the user ticks the places (D-0093, D-0355, D-0531). With the default read as "tier 1 of each original table", three runs on the demo, one entity each, with places listed by hand, left the entity in 7 plots: in 4 because their tables never meet MLST or the metadata, and in 3 with its metadata emptied (source and country; in one also the year) [run, `DIFFERENCES.md` C1]. The default is question 1. Today: **no** (tier 3 of one plot only).
+4. The step sits where the user intends. Decided: **yes**, the user ticks the places (D-0093, D-0355, D-0531). With the default read as "tier 1 of each original table", three runs on the demo, one entity each, with places listed by hand, left the entity in 7 plots: in 4 because their tables never meet MLST or the metadata, and in 3 with its metadata emptied (source and country; in one also the year) [run, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C1]. The default is question 1. Today: **no** (tier 3 of one plot only).
 5. Anyone can re-run it and get the same result. Decided: **yes** (two parts, D-0490, D-0492; the record, D-0333). Today: **no** (A17).
 
 **G2. A tool for good data science.**
@@ -112,7 +114,7 @@ For each goal: the conditions that must be true, whether the design as decided m
 
 **E4. The author and the user.** The author is helped to make a well-made recipe (key declared; one column name for one meaning), and BLUEPRINT never damages one. Decided: **yes** (D-0495, D-0498, D-0500). Today: **no**: BLUEPRINT drops parameters on Apply and loses comments on Save (`tmpAI/coordinator/blueprint_verify/REPORT.md` section 2, main tree) [inventory].
 
-**E5. The story.** Any table and its stages can be looked at. Decided: **yes** (D-0457, D-0508). Today: **no** (V2, V3 of `PARTS_TABLES.md`).
+**E5. The story.** Any table and its stages can be looked at. Decided: **yes** (D-0457, D-0508). Today: **no** (V2, V3 of `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`).
 
 **E6. Well built.** One representation of an audit step; no old code taken up again. Decided: **yes**. Today: **no** (A11, A12, A21).
 
@@ -169,7 +171,7 @@ The choices that are yours, in the order they meet the path: question 28 (start 
 - **Where a result has no key column** (for example a count per group), the line says "n rows before, m after" and that the entity cannot be seen in it.
 - **Nothing is refused and nothing is moved.** The app never changes a tick and never writes at a place you did not tick. A result that changes although you did not mean it to is shown; you decide.
 - **The place lines** come from the walk of the lineage (`libs/utils/src/utils/lineage_walk.py`, `walk()`, called by tests only today), with its notes (`recomputed_here`, `aggregated_here`, `another_type_here`) on the line where they apply, and the red lines where the app cannot follow a column YET (D-0460, D-0454).
-- **Evidence on the demo** [run, three entities, places listed by hand, `DIFFERENCES.md` C1]: with the default read as tier 1 of each original table, the measured effect would show the 3 quality plots "still found", with emptied metadata; with the end of tier 1 of each table that joins the metadata ticked, nothing is emptied. Your case of D-0499 with "remove from all the data" as built (27 places) [run, mine, section 11 a]: with `QC_Reads_Anchor` and `Quast_with_metadata` unticked, all 17 plots change and the entity is in none; with `FastP`, `Quast`, `Bracken` and `metadata_schema` also unticked (six places in all), the entity stays in exactly the 3 quality plots, with its metadata, and 14 plots change. The dialog itself is not built and was not run.
+- **Evidence on the demo** [run, three entities, places listed by hand, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C1]: with the default read as tier 1 of each original table, the measured effect would show the 3 quality plots "still found", with emptied metadata; with the end of tier 1 of each table that joins the metadata ticked, nothing is emptied. Your case of D-0499 with "remove from all the data" as built (27 places) [run, mine, section 11 a]: with `QC_Reads_Anchor` and `Quast_with_metadata` unticked, all 17 plots change and the entity is in none; with `FastP`, `Quast`, `Bracken` and `metadata_schema` also unticked (six places in all), the entity stays in exactly the 3 quality plots, with its metadata, and 14 plots change. The dialog itself is not built and was not run.
 
 ### 4.5 What a scientist needs to defend the result to a reviewer (mine, from G1, G3, G4)
 
@@ -188,7 +190,7 @@ For the user's choice (not for the defence), the lineage shown as a propagation 
 - **Derived tables made with `from:`** (form 3, question 2): they serve G2 and G3: one definition per table, so a plot and a table of the same summary show the same numbers by construction. One level for now (option a1 of question 2). A derived table adds places to the lineage (its tier 1, and its tier 2 while the key exists there); the dialog shows them like any other place.
 - **The three blocks** (D-0513) and **the metadata join in tier 1** (D-0510, D-0523; built, ST05): keep. With the metadata joined in tier 1, the end of tier 1 of a joined table is a place where a removal by the entity key leaves with its metadata.
 - **Every join in tier 1** (ST05; not a line of yours): keep for now. Question 27 matters only when a recipe needs a look-up join after a count; the demo needs neither option.
-- **Is the form as simple as the goals allow?** For small corrections, the author writes nothing for the audit; the audit writes its own steps. For publication results, a result names one table. One complication stays and must be documented: a join reads its tables after their tier 1, `from:` reads its table at its last stage; making joins read tier 2 would change results silently on the demo (the proposal's flag 3, `RECIPE_REDESIGN_REVIEW.md` 5.3).
+- **Is the form as simple as the goals allow?** For small corrections, the author writes nothing for the audit; the audit writes its own steps. For publication results, a result names one table. One complication stays and must be documented: a join reads its tables after their tier 1, `from:` reads its table at its last stage; making joins read tier 2 would change results silently on the demo (the proposal's flag 3, `RECIPE_REDESIGN_REVIEW.md (removed 2026-11-24 in the cleaning of the studies; see git history)` 5.3).
 
 ### 4.7 The two kinds of person (place 2 of D-0529)
 
@@ -206,7 +208,7 @@ For the user's choice (not for the defence), the lineage shown as a propagation 
 
 - The seven-point check found that BLUEPRINT can damage a recipe silently today: Apply drops a parameter the form does not show; a number becomes text; Save writes with no check and loses the comments; the preview drops a failing step (`tmpAI/coordinator/blueprint_verify/REPORT.md` section 2, items 1 to 4, main tree) [inventory]. A recipe damaged by its author gives wrong results to every user: this goes against G1 and E4 before any audit.
 - The coordinator's build plan already moves "a save keeps the comments" and "Save never replaces a recipe by mistake" into its slice 1, after your D-0495 (`BUILD_PLAN.md` of the same folder) [inventory].
-- What the goals add (mine): the advice to declare the entity key (BUILD_PLAN item 5; D-0500); the advice from your words of D-0498; one lineage function shared with HOME's dialog (D-0065; `DIFFERENCES.md` A10).
+- What the goals add (mine): the advice to declare the entity key (BUILD_PLAN item 5; D-0500); the advice from your words of D-0498; one lineage function shared with HOME's dialog (D-0065; `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` A10).
 - When: you put BLUEPRINT after HOME and the Gallery ("we do changes to blueprint and lab after - we focus on home and gallery", D-0271). It is not needed for the demo of HOME and the Gallery; its safety slice is needed before anyone writes recipes with it.
 
 ### 4.9 Documentation and help, part of the tool (place 4 of D-0529)
@@ -222,7 +224,7 @@ For the user's choice (not for the defence), the lineage shown as a propagation 
 - the audit folder and why it must not be edited by hand (D-0423);
 - what Exploration does and does not do (nothing saved, never exported, D-0327).
 
-Today: the page does not exist (`PARTS_TABLES.md` I5); screen texts state old limits (A7) and say "samples" (A8).
+Today: the page does not exist (`PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` I5); screen texts state old limits (A7) and say "samples" (A8).
 
 ### 4.10 Where it runs (place 5 of D-0529)
 
@@ -257,7 +259,7 @@ Today: the page does not exist (`PARTS_TABLES.md` I5); screen texts state old li
 
 ## 5. What must be modified
 
-Each item: **keep**, **change** (to what), **drop**, **later**, **not sure**; the goal that asks for it; and the question it depends on. This is my reading; you may object to any line. `MATCH_LIST.md` gives the same verdicts as two tables, decisions and builds.
+Each item: **keep**, **change** (to what), **drop**, **later**, **not sure**; the goal that asks for it; and the question it depends on. This is my reading; you may object to any line. `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)` gives the same verdicts as two tables, decisions and builds.
 
 ### 5.1 From your plans
 
@@ -290,7 +292,7 @@ Each item: **keep**, **change** (to what), **drop**, **later**, **not sure**; th
 | D-0341: the Reshuffle in Audit mode | not sure: my reading is that a new arrangement is not a correction | G3, G4; question 17 |
 | D-0120, D-0145: no plot-style change for now | keep; remove the unmounted code | G4, E6 |
 | D-0313: two lists of keys | keep | G5 |
-| D-0203: a warning between ticked places when a value does not match one to one | not sure: it pulls against D-0501 (`DIFFERENCES.md` C14) | G5; question 28 |
+| D-0203: a warning between ticked places when a value does not match one to one | not sure: it pulls against D-0501 (`DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C14) | G5; question 28 |
 | D-0337, D-0351 to D-0353, D-0356, D-0444, D-0445: the walk's rules for places and lines | keep | G5 |
 | D-0452, D-0454, D-0460, D-0473, D-0486: the joins the app cannot follow YET; red lines | keep | E1 |
 | D-0463: the lineage colours | keep; which colour means what is question 23 | G5 |
@@ -300,7 +302,7 @@ Each item: **keep**, **change** (to what), **drop**, **later**, **not sure**; th
 
 **The questions.** See part 8 of `WHOLE_PICTURE.md` (the table at its start). In short: now 28, 1, 29, 17, 4; then 2, 26, 15; after 28 and 1: 3, 5 to 8; 9 is not needed under 28 (a) or (b); my reading of your goals answers 10 to 12, 16, 18 to 22, 24, 25 (you may object); later 23, 27, 13, 14.
 
-**The slices of `BUILD_ORDER.md`.**
+**The slices of `BUILD_ORDER.md (removed 2026-11-24 in the cleaning of the studies; see git history)`.**
 
 | Slice | Verdict | What changes |
 |---|---|---|
@@ -449,7 +451,7 @@ After 28 and 1: 3, 5 to 8. Not needed under 28 (a) or (b): 9. My reading of your
 
 - **Ledger lines read** (each opened in the ledger): D-0004, D-0008, D-0015, D-0018, D-0021, D-0022, D-0034, D-0050, D-0053, D-0056, D-0065, D-0077, D-0093, D-0102, D-0108, D-0117, D-0125, D-0143, D-0147, D-0168, D-0194, D-0195, D-0199, D-0255, D-0268 (her words), D-0271, D-0313, D-0316, D-0324, D-0331, D-0332, D-0340, D-0341, D-0346, D-0355, D-0370, D-0389, D-0400, D-0401, D-0415, D-0416, D-0422, D-0423, D-0449, D-0450, D-0451, D-0457, D-0461, D-0478, D-0485, D-0487, D-0490, D-0492, D-0495, D-0496, D-0498 to D-0501, D-0507, D-0508, D-0512, D-0514, D-0516, D-0521, D-0527 to D-0532. D-0022 holds no words of yours (its evidence is a design file "decided 2026-11-12, Eve"); I quote its decision text only as the ledger's record. Other numbers are cited from the study's files, which its reviews checked.
 - **Code read by me:** `app/handlers/export_handlers.py:1559-1572` and the seed lines found by search; `app/modules/plot_seeds.py:156-181`; `app/handlers/audit_stack.py:815-845, 1040-1060`; `libs/utils/src/utils/recipe_check.py:565-592`; the `key_drop` lines of `libs/utils/src/utils/audit_copy.py`. The callers named in 5.2 and the line numbers corrected come from the fact check. Every other code claim is [inventory].
-- **Runs:** none by me. The numbers on the demo are the study's runs and its reviews' (`DIFFERENCES.md` C1; `TRIAL.md` and `EVIDENCE_untick_branch_reviews.md` of the main tree).
+- **Runs:** none by me. The numbers on the demo are the study's runs and its reviews' (`DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C1; `TRIAL.md` and `EVIDENCE_untick_branch_reviews.md` of the main tree).
 - **Not checked:** the dialog of section 4 does not exist and was not run; the measured effect was never computed by the app, only by the study's scripts with places listed by hand; whether the demo has other steps that compute over all observations was not searched; no browser was used. I read only block M593 of the agent channel, as the coordinator asked, and not `tmp.md`.
 
 ---
@@ -481,17 +483,17 @@ After 28 and 1: 3, 5 to 8. Not needed under 28 (a) or (b): 9. My reading of your
 
 ## 11. Answer to the independent review (third pass)
 
-You ordered an independent review of this work (D-0533: "independent errors - opus agents often overlook important points"). It is `GOALS_REVIEW_sonnet.md` in the worktree `SPARMVET_VIZ_wt_goals_sonnet` (commits `a36bd0e5` for its blind part, `563bb774` for its comparison and its check of `MATCH_LIST.md`). I checked each finding of its parts B and C myself: by a ledger line, by the code at file:line, or by a run. ACCEPTED means I changed the text; NOT ACCEPTED gives my evidence. Where we still disagree, you decide; you see both documents.
+You ordered an independent review of this work (D-0533: "independent errors - opus agents often overlook important points"). It is `GOALS_REVIEW_sonnet.md (removed 2026-11-24 in the cleaning of the studies; see git history)` in the worktree `SPARMVET_VIZ_wt_goals_sonnet` (commits `a36bd0e5` for its blind part, `563bb774` for its comparison and its check of `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)`). I checked each finding of its parts B and C myself: by a ledger line, by the code at file:line, or by a run. ACCEPTED means I changed the text; NOT ACCEPTED gives my evidence. Where we still disagree, you decide; you see both documents.
 
 **a. Your case of D-0499 (its B2.1). ACCEPTED.**
 - My run (`check_a.py`, the app's own run of an audit copy, the demo, entity `10668076`): "remove from all the data" as built reaches 27 places. With `QC_Reads_Anchor` and `Quast_with_metadata` unticked, all 17 plots change and the entity is in none: the sources `FastP`, `Quast`, `Bracken` and the metadata are still ticked, so the row is gone before the joins. With those four also unticked (six places in all), the entity stays in exactly the 3 quality plots, with its source, year and country, and 14 plots change.
-- My sentence of 4.4 came from the study's 19-place variant (`DIFFERENCES.md` C1), which is not the option you decided: "1. yes (though unlikely no plot)" to "it reaches every table that holds the key column" (D-0416).
-- Changed: 4.4, 4.11, part 0, `MATCH_LIST.md`. One run, one entity.
+- My sentence of 4.4 came from the study's 19-place variant (`DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C1), which is not the option you decided: "1. yes (though unlikely no plot)" to "it reaches every table that holds the key column" (D-0416).
+- Changed: 4.4, 4.11, part 0, `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)`. One run, one entity.
 
 **b. The export's T1 and T2 files are the original tables (its B2.6, C5). ACCEPTED.**
 - Read: `app/handlers/export_handlers.py:1405-1409` writes `T1_data.tsv` and `:1428-1431` writes `T2_data.tsv` from the tables as built; only `T3_data_<plot>.tsv` passes through `audited_frame` (`:1463-1467`). The import marks the audit steps "not_checked" (`app/modules/bundle_importer.py:186-194`).
 - What it means for "results it can trust": today an audit step lives only at a plot's own table, so the T1 and T2 files are the originals by construction. A reader who takes the T2 file publishes the observation you removed; the README names each file, but nothing in the file says it is not audited. Once a step can be written at tier 1 or tier 2, the audited part must hold the audited tables, or a plain line must say that the files are the originals; and the import must check the audit recipe's fingerprint.
-- Changed: section 3 (G3 point 2), 5.2, section 6 point 6, part 0, slice 5 in `MATCH_LIST.md`.
+- Changed: section 3 (G3 point 2), 5.2, section 6 point 6, part 0, slice 5 in `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)`.
 
 **c. The z-score (its B2.6). ACCEPTED, with my reading of what it shows.**
 - My rerun of its script (`e2.py`): removing the entity after the z-score of `QA_population_zscore` (a filter on the finished table: what the audit can do today) and removing it before (tier 1) give different z-scores for all 41 other entities; the largest difference is 0.064, on a z-score near 1.8.
@@ -529,9 +531,9 @@ You ordered an independent review of this work (D-0533: "independent errors - op
 **Other points of its parts B and C.**
 - B2.4, the default ticks: agreed; the screen must say "starting point" (added to question 1 in part 0.8).
 - B2.5, ST05: the review withdrew its own proposal of part A; agreed.
-- B2.9, the summary-table run (a new group with an empty country and year): the review did not reproduce it. It rests on the proposal authors' run, re-run once by the author of the earlier study (`RECIPE_REDESIGN_REVIEW.md` section 1), not by me. The recommendation of question 1 stands on the demo numbers alone.
+- B2.9, the summary-table run (a new group with an empty country and year): the review did not reproduce it. It rests on the proposal authors' run, re-run once by the author of the earlier study (`RECIPE_REDESIGN_REVIEW.md (removed 2026-11-24 in the cleaning of the studies; see git history)` section 1), not by me. The recommendation of question 1 stands on the demo numbers alone.
 - B2.10 and B2.11: no quote said more than your words; no code claim was wrong in substance. Noted.
 - B2.13: I ran the checks of a and c in this pass.
-- The opening-build row of `MATCH_LIST.md`: after the filter branch is merged, the filters are kept while the table is the same; the row's words follow.
+- The opening-build row of `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)`: after the filter branch is merged, the filters are kept while the table is the same; the row's words follow.
 
 **What I could not verify.** Its test runs of the filter branch (88 passed) and of the held branch (125 passed, 1 skipped); its probe of a result id written twice (weak, as it says); its blind part A as a whole (I answered parts B and C, as asked).
