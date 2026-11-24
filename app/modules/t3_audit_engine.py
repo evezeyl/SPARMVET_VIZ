@@ -13,7 +13,7 @@ themselves (a filter or a column drop written at a tier) are not applied here: t
 from __future__ import annotations
 
 # @deps
-# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:trim_typed, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -297,6 +297,27 @@ def refuse_decimal_for_whole_numbers(value, dtype) -> None:
             raise FilterValueError(f"This column holds whole numbers ({dtype}); type a whole number.")
 
 
+def trim_typed(value):
+    """Leading and trailing spaces removed from what the user TYPED (D-0626); inner spaces are never touched.
+
+    A text is trimmed, each item of a list or tuple is trimmed, any other value (a number, true or false, None) is returned as it is.
+    A text that is only spaces becomes the empty text. Never used on values PICKED from a list of the column's own values: those
+    stay exactly as they are in the data (a value of the data may itself hold a leading space). The user is not told that something
+    was trimmed (PROVISIONAL, an agent's choice).
+    """
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (list, tuple)):
+        return [trim_typed(item) for item in value]
+    return value
+
+
+def _typed_or_none(value):
+    """A typed value after trimming, or None when nothing is left of it: an empty typed value is refused like an empty box (D-0626, PROVISIONAL)."""
+    value = trim_typed(value)
+    return None if isinstance(value, str) and value == "" else value
+
+
 def typed_operand(raw, dtype):
     """What a control gave, in the type of the column, as the panel stores it (ADR-104 point 7).
 
@@ -304,6 +325,7 @@ def typed_operand(raw, dtype):
     boolean, a date its year-month-day text (a session file holds no date object; the export types it from the dtype), a
     date and time, a time of day and a duration their exact text. A value that cannot be read is a `FilterValueError`.
     """
+    raw = trim_typed(raw)   # D-0626: the stored value never carries the spaces the user typed round it
     refuse_decimal_for_whole_numbers(raw, dtype)
     value = read_filter_value(raw, dtype)
     return value.isoformat() if kind_of(dtype) == "date" else value
@@ -584,6 +606,7 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     """
     if dtype is not None and not ops_for_column(dtype, discrete_axis):
         raise FilterValueError(not_offered_line(column, dtype), "filter another column")
+    operand, low, high = _typed_or_none(operand), _typed_or_none(low), _typed_or_none(high)   # D-0626: what the user typed; `picked` is never trimmed
     widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
     kind = kind_of(dtype)
     ends = closed if closed in CLOSED_CHOICES else "both"
@@ -611,7 +634,7 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
         value = typed_operand(operand, dtype)
         filter_condition(column, op, value, dtype)         # the rule judges the whole value now (a time of a zone that has no such time is refused here)
         return op, value, "both"
-    text = (text or "").strip()
+    text = trim_typed(text or "")
     return (op, text, "both") if text else None
 
 
