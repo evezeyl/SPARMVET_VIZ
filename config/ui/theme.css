@@ -28,6 +28,7 @@
  *  25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1)
  *  26. Side panel drag handle (D-0375, D-0381)
  *  27. HOME warning of the ids (D-0582)
+ *  28. Audit dialog: the places as the path of the lineage (D-0553)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1233,3 +1234,10 @@ body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
 .spv-id-export-note { font-size: 0.75rem; }
 /* While a recipe opens, the cover stands in the place of the theater (section above): the warning of the previous recipe is hidden too. */
 body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
+
+/* ── 28. Audit dialog: the places as the path of the lineage (D-0553) ───────── */
+/* The list of places in the dialog "Send to Audit" (app/src/www/audit_places_path.js sets --spv-depth and the two classes). A derived place (below a ticked one) is grey and
+   cannot be ticked; a blocked place (above a ticked one) is grey too. Palette: muted text #6c757d, border #dee2e6; type scale 0.75rem notes. PROVISIONAL look. */
+.spv-places-path .spv-place-row { margin-left: calc(var(--spv-depth, 0) * 18px); padding-left: 8px; border-left: 2px solid #dee2e6; }
+.spv-places-path .spv-place-derived, .spv-places-path .spv-place-blocked { color: #6c757d; background-color: #f8f9fa; }
+.spv-places-path .spv-place-note { font-size: 0.75rem; font-weight: 400; margin-left: 20px; }

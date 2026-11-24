@@ -4,6 +4,12 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - HOME audit dialog: the places along the path and the derived places (branch `task/audit-dialog-path`; D-0553, D-0346, D-0613)
+
+- The places of the choice "At a table this plot is built from" are listed as the path of the lineage (original tables first, indented by depth, the plot's own tier 3 last). Ticking a place greys the places below it ("~ follows from the place chosen above") and disables the places above it; untick frees them (`app/src/www/audit_places_path.js`, `audit_places.path_rows`, `config/ui/theme.css` section 28). The words are PROVISIONAL.
+- A step that cannot run shows its error only at the plots it reaches; a plot no step reaches reads its original table (`audit_view.PlaceAudit.plot_lazy`).
+- `test_the_rule_has_no_way_to_let_exploration_in` tests production code; `design_t3_export_threading.md` names what is built.
+
 ## [2026-11-24] - HOME audit: the third tier through the audit copy, and the audited table files of an export made in Audit mode (branch `task/audit-places-demo`; D-0535, D-0553, D-0329, D-0613; owner's word of 2026-11-24 on the table files)
 
 The tiers work ONE way now: every audit step is a node written at a place (`T1:<table>`, `T2:<table>`, `T3:<plot>`), all in the one bucket `__places__`, and HOME, the filter dialog, the audit panel, the export and the session read the audit copy.

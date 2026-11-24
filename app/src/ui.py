@@ -4,7 +4,7 @@
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
-# consumes: app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)
+# consumes: app/src/www/audit_places_path.js (the places of the audit dialog as a path), app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)
 # consumes: app/src/www/panel_widths.js (D-0381, D-0382, D-0384: the drag of the side panels), app/modules/frame_widths.py (the widths)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
@@ -122,6 +122,8 @@ app_ui = ui.page_fillable(
         *panel_widths_script_tags(),
         # the "All rows" switch of the data preview sits in a panel header: its click must not fold the panel
         ui.tags.script(src=_versioned("/preview_switch.js")),
+        # the places of the audit dialog as the path of the lineage; the places that follow from a ticked place are derived (greyed)
+        ui.tags.script(src=_versioned("/audit_places_path.js")),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),
