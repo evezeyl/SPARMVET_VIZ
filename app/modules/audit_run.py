@@ -104,11 +104,22 @@ class AuditRun:
     tables: Dict[str, TableRun] = field(default_factory=dict)
     plots: Dict[str, PlotRun] = field(default_factory=dict)
     inputs_changed: tuple = ()   # one sentence per build whose inputs changed while it ran ("the data files changed"): that table was not stored
+    context: Optional["_Run"] = field(default=None, compare=False, repr=False)   # what `plot_table` needs to read a plot of the copy (set by `run_audit`)
 
     @property
     def affected_plots(self) -> List[str]:
         """The plots whose table differs in content between the original and the audit run, in the order of the recipe."""
         return [plot_id for plot_id, run in self.plots.items() if run.affected]
+
+    def plot_table(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[pl.LazyFrame]:
+        """The table a plot reads in the copy, LAZY, read from the tables this run placed; None when the copy leaves the plot's table as it is (the plot's key is the
+        original's: the plot lies below no audit step), so that the caller reads the original's table as it always does. KeyError for a plot the recipe does not have.
+        `told` receives what a build says when its inputs changed while it read (the same callback as `materialize_tier3`)."""
+        if plot_id not in self.plots:
+            raise KeyError(f"The recipe has no plot '{plot_id}'.")
+        if self.plots[plot_id].reused or self.context is None:
+            return None
+        return self.context.plot_lazy(plot_id, told)
 
     @property
     def built_tables(self) -> List[str]:
@@ -183,6 +194,12 @@ class _Run:
             self.orch.materialize_tier2(self.recipe_id, table, t1_path, keys=keys, loaded=loaded, tier2_path=t2_path,
                                         on_inputs_changed=self.told(changed, f"the audit's table '{table}' (tier 2)"))
         return TableRun(table, k1o, k1c, t1, t1_path, k2o, k2c, t2, t2_path)
+
+    def plot_lazy(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> pl.LazyFrame:
+        """The lazy table of a plot of the copy, over the tables the run placed (the Tier 3 of a copy is stored nowhere, see `materialize_tier3`)."""
+        target = self.graph.plot_target(plot_id)
+        return self.orch.materialize_tier3(self.recipe_id, plot_id, self.t1_dir(target, self.keys_audit, self.audit_dir), keys=self.keys_audit,
+                                           loaded=self.audit_loaded, tier2_path=self.t2_path(target, self.keys_audit, self.audit_dir), on_inputs_changed=told)
 
     def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path, changed: List[str]) -> pl.DataFrame:
         """The table a plot reads in the copy, collected. The tables under it are those `copy_table` placed."""
@@ -270,7 +287,7 @@ class _Run:
                                                          on_inputs_changed=self.told(self.changed, f"the original's table of the plot '{plot_id}'")).collect()
             plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))
         self.clean(tables)
-        return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed))
+        return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed), self)
 
     def clean(self, tables: Dict[str, TableRun]) -> None:
         """Take out of the audit's folder the stored tables that are the original's again: a leftover that cannot be served today can be served by a

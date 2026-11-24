@@ -64,6 +64,8 @@ class AuditStep(TypedDict, total=False):
     active: bool                # legacy soft-delete flag — Phase 22-I switched to hard delete
     primary_key_warning: bool   # True when authoring touched a join key (ADR-049, §12g.5)
     gallery_source: dict        # optional: {gallery_id, gallery_yaml_hash}
+    place: str                  # optional: the place upstream of the plot where the step is written (`T1:<table>`, `T2:<table>`); such a node lives in the bucket `__places__`
+    started_from: str           # with `place`: the plot sub-tab the user was on when sending the step
 
 
 def make_audit_step(
@@ -74,8 +76,13 @@ def make_audit_step(
     gallery_source: dict | None = None,
     primary_key_warning: bool = False,
     node_id: str | None = None,
+    place: str | None = None,
+    started_from: str | None = None,
 ) -> AuditStep:
     """Create a new AuditStep.
+
+    A step written at a place upstream of a plot (HOME audit, demo step 3) carries `place` (`T1:<table>`, `T2:<table>`) and `started_from` (the plot sub-tab the
+    user sent it from); its `plot_scope` is then the bucket `__places__` (`audit_places.PLACES_BUCKET`).
 
     Parameters
     ----------
@@ -103,6 +110,9 @@ def make_audit_step(
         node["primary_key_warning"] = True
     if gallery_source:
         node["gallery_source"] = gallery_source
+    if place:
+        node["place"] = place
+        node["started_from"] = started_from or ""
     return node
 
 

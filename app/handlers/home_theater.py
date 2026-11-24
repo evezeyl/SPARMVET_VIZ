@@ -59,6 +59,8 @@ from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
+from app.modules.audit_places import place_nodes
+from app.modules.audit_view import PlaceAudit
 from app.handlers.id_warning_handlers import define_server as define_id_warning_server
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
 from utils.pipeline_error import capture_entry
@@ -491,8 +493,22 @@ def define_server(input, output, session, *,
             _source_memo[key] = orchestrator.read_source(data_analysis_recipe_id, table)
         return _source_memo[key]
 
-    def _resolve_active_lf(spec: dict | None, tier: str | None = None):
+    _place_audit: list = []      # [PlaceAudit] once made: it keeps the run of the audit copy between two reads
+
+    def _audited_t3_lf(plot_id: str):
+        """The table `plot_id` reads in the audit copy made from the audit steps written at a place upstream (`audit_view.PlaceAudit`), lazy; None when no such step
+        lies above the plot (it then reads its original table). Audit mode only: the caller asks `_in_audit()`. Raises what the run raises (an `AuditRunError` that names the
+        step and its place, an `AuditCopyError`): the callers show it in the place of the plot, never skip a step."""
+        if not _place_audit:
+            _place_audit.append(PlaceAudit(orchestrator, bootloader.get_location("user_data") / "anchors", bootloader.get_location("user_data") / "audit_anchors"))
+        nodes = place_nodes((home_state.get().get("t3_audit_steps_by_plot", {}) or {}) if home_state is not None else {})
+        return _place_audit[0].plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, _tell_inputs_changed)
+
+    def _resolve_active_lf(spec: dict | None, tier: str | None = None, original: bool = False):
         """Return a LazyFrame for the table the data choice names, for the plot of `spec` (or tier1_anchor).
+
+        In Audit mode the T3 table is the AUDITED one when an audit step is written at a place upstream of the plot (`_audited_t3_lf`); `original=True` asks for the plot's own
+        table whatever the mode (the "Original" pane of Compare).
 
         "SRC" is one source table as read from its file (`_read_source_lf`). "T1" is the plot's table after tier 1. "T2" reads the assembly's
         stored Tier 2 parquet (issue #10; equal to T1 when the table has no tier2 steps). "T3" reads the table the plot reads
@@ -516,6 +532,10 @@ def define_server(input, output, session, *,
                 plot_id = _plot_id_of(spec)
                 if plot_id is None:
                     raise RuntimeError(f"The plot of the dataset '{target_ds}' is not a plot of the open data analysis recipe, so the table it reads cannot be built.")
+                if not original and _in_audit():
+                    audited = _audited_t3_lf(plot_id)
+                    if audited is not None:
+                        return audited
                 return orchestrator.materialize_tier3(
                     data_analysis_recipe_id=data_analysis_recipe_id, plot_id=plot_id, anchors_dir=anchor_dir,
                     keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
@@ -785,7 +805,7 @@ def define_server(input, output, session, *,
             # the recipe the plot engine draws from: the same call as the opening's proof of drawing (`opening_build.plot_render_recipe`)
             synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
             try:
-                lf = _resolve_active_lf(spec, tier="T3")  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
+                lf = _resolve_active_lf(spec, tier="T3", original=True)  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's

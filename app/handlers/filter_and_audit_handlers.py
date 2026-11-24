@@ -34,6 +34,7 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
+from app.modules.audit_places import PLACES_BUCKET
 from utils import key_drop
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -346,7 +347,7 @@ def define_filter_audit_server(input, output, session, *,
                     # No identity, no way to tell two tables apart: the signature is never equal (one more render).
                     _log.exception("filter dialog: the stored table the form reads could not be identified")
             # The same condition as `_active_frame`: the audited steps apply on T3 in Audit mode only.
-            rows = dialog_rows_signature(identity, _audit_nodes_of(subtab) if audit_t3 else [])
+            rows = dialog_rows_signature(identity, (_audit_nodes_of(subtab) + _place_nodes_now()) if audit_t3 else [])
         except Exception as exc:
             # The outputs read the table again and show the error themselves; this only makes them run again when it changes.
             _log.exception("filter dialog: the table of the form could not be read")
@@ -604,11 +605,18 @@ def define_filter_audit_server(input, output, session, *,
             by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
         return list(by_plot.get(subtab, [])) if subtab else []
 
+    def _place_nodes_now() -> list:
+        """The audit steps written at a place upstream of any plot (the bucket `__places__`): they change the table of the plot too, but the engine runs them, so they are
+        never part of the plot's own list that `audited_frame` applies. Only a SIGNAL of the form reads them (a change builds the dialog again)."""
+        with reactive.isolate():
+            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
+        return list(by_plot.get(PLACES_BUCKET, []))
+
     @reactive.Effect
     def _signal_dialog_audit_steps():
         subtab = active_home_subtab.get()
         by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}   # the dependency
-        nodes = list(by_plot.get(subtab, [])) if subtab else []
+        nodes = (list(by_plot.get(subtab, [])) if subtab else []) + list(by_plot.get(PLACES_BUCKET, []))   # a step upstream changes the table too
         with reactive.isolate():
             if _dialog_audit_steps_changed.get() != nodes:
                 _dialog_audit_steps_changed.set(nodes)

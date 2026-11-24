@@ -18,22 +18,36 @@ THE REACH (what the user is told before choosing): the other tables and the plot
 PROVISIONAL (the builder's choices, not decided by the owner): the words of `reach_sentence` and `line_label`; that the tier-2 line is offered only when the table has tier-2 steps
 of its own; that a place whose plan failed is not offered and is returned in `unknown`.
 
-Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
+THE NODES THAT ARE WRITTEN AT A PLACE (`place_nodes`, `audit_copy_for`, `nodes_signature`): the audit node of HOME (`session_manager.make_audit_step`) with a `place` (`T1:<table>` or
+`T2:<table>`) and the plot it was started from (`started_from`), kept in the bucket `PLACES_BUCKET`. The audit copy of the recipe (`utils.audit_copy`) is made from them, in the
+order they were committed, by the translation of the node into the registered action (`blueprint_arch.t3_translator`, the one translation of the export too); the reason of the
+node is the `audit_comment` of the step (D-0329). The copy is the original plus audit steps and nothing else (`add_step` refuses an action that is not a filter or a column drop,
+a key dropped where a later join reads it, a place that does not exist).
+
+Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, class:PlaceLine, class:PlaceLines
-# consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan)
-# consumed_by: app/handlers/filter_and_audit_handlers.py, app/tests/test_audit_places.py
+# provides: function:place_lines, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:place_nodes, function:audit_copy_for, function:nodes_signature, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node)
+# consumed_by: app/handlers/filter_and_audit_handlers.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
 # @end_deps
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+from blueprint_arch.t3_translator import translate_t3_node
+from utils.audit_copy import AuditCopy, add_step, start_audit
 from utils.plan_book import Plan, PlanBook
 from utils.recipe_graph import RecipeGraph
+
+# The bucket of `home_state["t3_audit_steps_by_plot"]` that holds the audit steps written at a place upstream of a plot (a node with a `place`): one step at one
+# place is ONE node here, not one copy per plot. Every plot-level reader asks the bucket of its own plot, so none of them sees these nodes by mistake.
+PLACES_BUCKET = "__places__"
 
 
 @dataclass(frozen=True)
@@ -133,3 +147,33 @@ def choice_problem(graph: RecipeGraph, offered: Sequence[PlaceLine], chosen: Ite
         if nid not in offered_ids:
             return f"'{nid}' is not one of the places offered for this step."
     return graph.chosen_places_problem(ids)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# The nodes written at a place, and the audit copy they make
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def place_nodes(by_plot: Dict[str, List[dict]]) -> List[dict]:
+    """The committed audit nodes written at a place (the bucket `PLACES_BUCKET` of the per-plot stacks), the ones that are still active, in the order they were committed."""
+    return [n for n in (by_plot or {}).get(PLACES_BUCKET, []) if n.get("place") and n.get("active", True)]
+
+
+def nodes_signature(nodes: Iterable[dict]) -> Tuple[Any, ...]:
+    """What decides the DATA of the audit copy: for each node its id, place, kind and parameters (not the reason, not the date). Two lists with the same signature build the same tables."""
+    return tuple((n.get("id"), n.get("place"), n.get("node_type"), json.dumps(n.get("params") or {}, sort_keys=True, default=str)) for n in nodes)
+
+
+def audit_copy_for(original_raw: dict, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> AuditCopy:
+    """The audit copy of a recipe that holds one audit step for each action of each node, at the place of the node, in the order of the list.
+
+    The 8 characters of the ids of the steps come from the ids of the nodes (a label, in no key: `audit_copy.start_audit`). `plans` is the engine's plan book of the ORIGINAL
+    recipe, for the rule of a key drop (`add_step`). Raises `AuditCopyError` (a place that does not exist, an action an audit may not use, a key dropped where a later join reads
+    it, a node without a reason) or `UntranslatableNode` (a node that has no registered action), each with a plain sentence, and builds nothing then."""
+    listed = list(nodes)
+    label = hashlib.sha256("|".join(str(n.get("id")) for n in listed).encode("utf-8")).hexdigest()[:8]
+    audit = start_audit(original_raw, label)
+    for node in listed:
+        for step in translate_t3_node(node):
+            add_step(audit, node["place"], step, node.get("reason") or "", plans)
+    return audit
