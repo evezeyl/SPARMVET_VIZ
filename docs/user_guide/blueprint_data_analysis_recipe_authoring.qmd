@@ -208,7 +208,7 @@ joins:
         - action: polars_join
           right_ingredient: Metadata
           'on': [sample_id]
-          how: inner
+          how: left
           maintain_order: left_right
         - action: polars_select
           exprs: [sample_id, Year, Country]
@@ -224,8 +224,8 @@ The steps of a join are written in its `tier1` (and `tier2`), the same way as in
 
 | `how` value | Keeps rows where… |
 |---|---|
-| `inner` | sample_id exists in **both** datasets (most common) |
-| `left` | all rows from the left dataset; fills missing right-side values with null |
+| `inner` | sample_id exists in **both** datasets. Use it with a look-up list (it is a filter there), not with the metadata: it drops data lines silently |
+| `left` | all rows from the left dataset; fills missing right-side values with null. Start from a data table and left-join the metadata to it |
 | `full` | all rows from either dataset |
 | `semi` | left rows that have a match in the right (no right columns added) |
 | `anti` | left rows that have **no** match in the right |
@@ -253,7 +253,7 @@ Add computed columns after the join (columns from the right ingredient are avail
         - action: polars_join
           right_ingredient: Metadata
           'on': [sample_id]
-          how: inner
+          how: left
           maintain_order: left_right
         - action: polars_with_columns
           named_exprs:
