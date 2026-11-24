@@ -80,7 +80,7 @@
       "total_gene_count:UInt32"
      ],
      "rows": 74,
-     "sha256": "0028bf58585f333ff7ae7dd5b33470d126947d1dd80215bcde9ebe0f93cf87cc"
+     "sha256": "a151df8e7d268dd8fdf0734afbc10ce1c0e1aecb66e1e2757ede5021d47ae0ee"
     },
     "assembly_quality_dotplot": {
      "columns": [
@@ -109,6 +109,7 @@
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
@@ -116,7 +117,7 @@
       "era:String"
      ],
      "rows": 33,
-     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     },
     "phenotype_genome_length_fragmentation": {
      "columns": [
@@ -145,7 +146,7 @@
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
-     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+     "sha256": "deade86d74dbf7af4ce053e44665160a111a146d8c20c71b9c3d4b70aeb25b76"
     },
     "qa_facet_by_mapping": {
      "columns": [
@@ -153,11 +154,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "metadata_schema_not_in_original_data:Boolean",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "qa_fanout_rows_per_sample": {
      "columns": [
@@ -165,7 +166,7 @@
       "rows_per_sample:UInt32"
      ],
      "rows": 42,
-     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+     "sha256": "ff1094a73f99692eedd9d66e3ead1889bd0fec0880b83a5a1ad367ee5b236fdd"
     },
     "qa_l50_integer": {
      "columns": [
@@ -199,11 +200,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "metadata_schema_not_in_original_data:Boolean",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "qc_reads_horizontal_barplot": {
      "columns": [
@@ -244,7 +245,7 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "b2dd1e033f28c1fc96be6e9416e0f8bce5bed64419ba63ab50a9efc8fa0873a7"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "virulence_variants": {
      "columns": [
@@ -262,13 +263,14 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "b2dd1e033f28c1fc96be6e9416e0f8bce5bed64419ba63ab50a9efc8fa0873a7"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "year_distribution": {
      "columns": [
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
@@ -276,7 +278,7 @@
       "era:String"
      ],
      "rows": 33,
-     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     }
    },
    "t1": {
@@ -328,13 +330,14 @@
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
       "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "9d74602837db47a68f6e9d4c643640b08ac439207cf4977f051136edacea7b9c"
+     "sha256": "b1daaa3892549d4d2a435c4d53132ab29e38ce95000248fa400600cc1dd06f63"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -346,7 +349,7 @@
       "predicted_phenotype:String"
      ],
      "rows": 74,
-     "sha256": "79048c15e9cd5d73aaa4e975715afa1230c02c722920fe99c1735c5c07fa2f62"
+     "sha256": "212373534e85db708d224f303f06f22dc2edc7225e945eb920e94a08ad808f3f"
     },
     "QA_L50_integer": {
      "columns": [
@@ -370,11 +373,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "metadata_schema_not_in_original_data:Boolean",
+      "QA_aggregated_no_key_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
+     "sha256": "882b61e310ae7507c38fef5010b5455d8dd4484c34523764a35f9fa9515ddb33"
     },
     "QA_fanout_exhibit": {
      "columns": [
@@ -384,7 +387,7 @@
       "VF_gene:String"
      ],
      "rows": 1731,
-     "sha256": "e29dd86aafd48174a4def61ba30f0b3363face68e7e76d422bdbb1d9dd9540c0"
+     "sha256": "754765e87fbe8e5407191a4783450ec45e3c57406744a6a29a8457753396c2dc"
     },
     "QA_population_zscore": {
      "columns": [
@@ -401,11 +404,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "metadata_schema_not_in_original_data:Boolean",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -452,7 +455,7 @@
       "status:String"
      ],
      "rows": 74,
-     "sha256": "b3aaf76008c072dd87cf306034b33f521ab4d92a24cfd1a62d61f66d0e387eac"
+     "sha256": "7f268866b697e8d1633864c6e1e326488685d8f3d11c4bf71ed85e38a015cb02"
     },
     "ResFinder_with_metadata": {
      "columns": [
@@ -469,7 +472,7 @@
       "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 74,
-     "sha256": "a0dc45c78d1458fd2ef085b9ae2dfa793db5f27d1d64325146c7067c9f5e781e"
+     "sha256": "7ac84f84a4f2f5dd4f0a3d6dac1d955971ae6871cb096c3ad71d0a979efe8a46"
     },
     "ST22_Anchor": {
      "columns": [
@@ -486,7 +489,7 @@
       "phenotype:String"
      ],
      "rows": 617,
-     "sha256": "014cce24f1eb8b19a443ff272416fbfd336f12eab49778078eb09a106034fa11"
+     "sha256": "e2f968db996b8ecad162887d1e24643e8a182ae6c7919adb1e2b1abf8d5ede02"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -549,6 +552,7 @@
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
@@ -556,7 +560,7 @@
       "era:String"
      ],
      "rows": 33,
-     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -565,7 +569,7 @@
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
-     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+     "sha256": "deade86d74dbf7af4ce053e44665160a111a146d8c20c71b9c3d4b70aeb25b76"
     },
     "QA_L50_integer": {
      "columns": [
@@ -598,7 +602,7 @@
       "rows_per_sample:UInt32"
      ],
      "rows": 42,
-     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+     "sha256": "ff1094a73f99692eedd9d66e3ead1889bd0fec0880b83a5a1ad367ee5b236fdd"
     },
     "QA_population_zscore": {
      "columns": [
@@ -616,11 +620,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "metadata_schema_not_in_original_data:Boolean",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -668,7 +672,7 @@
       "total_gene_count:UInt32"
      ],
      "rows": 74,
-     "sha256": "0028bf58585f333ff7ae7dd5b33470d126947d1dd80215bcde9ebe0f93cf87cc"
+     "sha256": "a151df8e7d268dd8fdf0734afbc10ce1c0e1aecb66e1e2757ede5021d47ae0ee"
     },
     "ResFinder_with_metadata": {
      "columns": [
@@ -685,7 +689,7 @@
       "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 74,
-     "sha256": "a0dc45c78d1458fd2ef085b9ae2dfa793db5f27d1d64325146c7067c9f5e781e"
+     "sha256": "7ac84f84a4f2f5dd4f0a3d6dac1d955971ae6871cb096c3ad71d0a979efe8a46"
     },
     "ST22_Anchor": {
      "columns": [
@@ -703,7 +707,7 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "b2dd1e033f28c1fc96be6e9416e0f8bce5bed64419ba63ab50a9efc8fa0873a7"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -824,10 +828,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    },
    "t1": {
@@ -835,10 +840,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    },
    "t2": {
@@ -846,10 +852,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    }
   },
@@ -864,7 +871,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    },
    "t1": {
@@ -877,7 +884,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    },
    "t2": {
@@ -890,7 +897,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    }
   },
@@ -904,17 +911,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     },
     "plot_b_genotype_bar": {
      "columns": [
@@ -924,17 +934,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     },
     "plot_c_resistance_class": {
      "columns": [
@@ -944,17 +957,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    },
    "t1": {
@@ -966,17 +982,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    },
    "t2": {
@@ -988,17 +1007,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    }
   },

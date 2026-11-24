@@ -320,7 +320,7 @@ def joins_of(R: Recipes, path: Path, top):
 def section_joins(R: Recipes, rep: Report) -> None:
     rep.add(3, "Ledger D-0586. In these joined tables the FIRST table is the metadata. The rule is that a recipe does not start from the metadata: "
                "the table is to be rewritten with the data table first; the metadata is then added to it, keeping every row of the data table. "
-               "The rewriting is written by hand and shown in a second dry run (it depends on the completion of the ids, which is not built). "
+               "The rewriting is written by hand (the completion of the ids is built, so a left join from a data table loses no entity). "
                "Each line gives the joined table, its tables in order, and what its join steps do today.")
     rep.add(3, "")
     only_meta: List[str] = []
@@ -647,7 +647,7 @@ def first_screen(rep: Report) -> List[str]:
         out.append(f"{n}. {st['joins_only_meta']} joined table(s) are made from the metadata alone; the rule 'do not start from the metadata' does not touch them. What do you want for them? (section 3)")
         n += 1
     if st.get("joins_first_meta"):
-        out.append(f"{n}. {st['joins_first_meta']} joined table(s) start from the metadata and are to be rewritten by hand with the data table first; the rewriting is shown in a second dry run. Nothing to decide now. (section 3)")
+        out.append(f"{n}. {st['joins_first_meta']} joined table(s) start from the metadata and are to be rewritten by hand with the data table first. Nothing to decide now. (section 3)")
         n += 1
     keep = sum(st.get(k, 0) for k in ("select_first", "select_last", "select_middle", "select_only", "group_by"))
     if keep:

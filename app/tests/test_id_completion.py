@@ -69,12 +69,16 @@ def test_the_resfinder_file_lacks_4_of_the_42_ids_and_only_it():
     assert report.check3_ok and all(t.no_id_lines == 0 for t in report.tables)
 
 
-def test_the_demo_has_ten_tables_that_take_part_and_the_look_ups_do_not():
+def test_the_demo_has_thirteen_tables_that_take_part_and_the_look_up_does_not():
+    """The metadata, the nine tables of the first stage, VirulenceFinder (moved under the data schemas, D-0610) and the two QA tables made from the metadata file
+    (data schemas of their own, D-0610): 13. The APEC/STEC list is a look-up (`additional_datasets_schemas`) and is never completed."""
     orchestrator, raw = demo()
     report = quiet(orchestrator.id_report, DEMO, raw)
     names = [t.table for t in report.tables]
-    assert names[0] == "metadata_schema" and len(names) == 10
-    assert "VirulenceFinder" not in names and "APEC_STEC_virulence_genes" not in names   # additional tables: never completed
+    assert names[0] == "metadata_schema" and len(names) == 13
+    assert {"VirulenceFinder", "QA_year_types", "QA_aggregated_no_key"} <= set(names)
+    assert "APEC_STEC_virulence_genes" not in names   # additional tables: never completed
+    assert "VirulenceFinder" not in raw["additional_datasets_schemas"]
 
 
 def test_the_table_the_build_reads_has_4_more_lines_marked_and_empty_except_the_id():
@@ -106,9 +110,9 @@ def test_the_metadata_table_is_completed_with_its_own_marker_and_here_nothing_is
 
 def test_a_look_up_table_is_read_as_it_is():
     orchestrator, raw = demo()
-    schema = raw["additional_datasets_schemas"]["VirulenceFinder"]
-    plain = quiet(orchestrator._read_plain, "VirulenceFinder", schema, DEMO)[0].collect()
-    done = quiet(orchestrator._read_source, "VirulenceFinder", schema, DEMO, raw)[0].collect()
+    schema = raw["additional_datasets_schemas"]["APEC_STEC_virulence_genes"]
+    plain = quiet(orchestrator._read_plain, "APEC_STEC_virulence_genes", schema, DEMO)[0].collect()
+    done = quiet(orchestrator._read_source, "APEC_STEC_virulence_genes", schema, DEMO, raw)[0].collect()
     assert done.equals(plain)
 
 
@@ -133,15 +137,41 @@ def test_the_built_tier_1_of_resfinder_holds_the_four_added_lines(tmp_path):
     assert set(NOT_IN_ORIGINAL) <= set(table["sample_id"].to_list())
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "KNOWN, not fixed here (the recipes' own steps are the next step, D-0613): `ResFinder_wrangling_tier1.yaml` stamps status 'Detected' on EVERY line of the table, the lines the completion "
-    "adds included, so an entity that has no ResFinder result reads 'Detected' in ST22_Anchor (31 rows of the entity 87836481) and in the plots built on it. A marker is not a zero (D-0573): "
-    "the recipe must say what an added line means. The test states what the design expects; the day the recipe is corrected it passes, and this mark is removed."))
-def test_an_entity_with_no_resfinder_result_does_not_read_detected_in_the_anchor(tmp_path):
+def test_an_entity_with_no_resfinder_result_reads_not_found_and_never_detected_in_the_anchor(tmp_path):
+    """The recipe says what an added ResFinder line means (the `completion` of ResFinder): the tool ran and found no resistance gene, so the status is Not Found, not
+    Detected (D-0613, the owner's reading of ResFinder). Every row of the four entities in ST22_Anchor (31 rows together) reads Not Found; the entities that have a result read Detected."""
     orchestrator, _ = demo()
     anchor = quiet(orchestrator.materialize_tier1, DEMO, "ST22_Anchor", tmp_path / "ST22_Anchor.parquet").collect()
-    rows = anchor.filter(pl.col("sample_id") == NOT_IN_ORIGINAL[3])
-    assert rows.height > 0 and rows["status"].null_count() == rows.height
+    mine = anchor.filter(pl.col("sample_id").is_in(NOT_IN_ORIGINAL))
+    assert mine.height == 31 and mine["status"].to_list() == ["Not Found"] * 31
+    for entity in NOT_IN_ORIGINAL:
+        assert anchor.filter(pl.col("sample_id") == entity).height > 0
+    others = anchor.filter(~pl.col("sample_id").is_in(NOT_IN_ORIGINAL))
+    assert others.height == 586 and set(others["status"].to_list()) == {"Detected"}
+
+
+def test_the_resfinder_table_counts_the_four_added_lines_as_zero_genes(tmp_path):
+    """The tier 2 count of genes per entity counts the lines of the file only: an added line is not a gene (a count of rows would give 1)."""
+    orchestrator, _ = demo()
+    path = tmp_path / "ResFinder.parquet"
+    quiet(orchestrator.materialize_tier1, DEMO, "ResFinder", path)
+    table = quiet(orchestrator.materialize_tier2, DEMO, "ResFinder", path).collect()
+    added = table.filter(pl.col(MARKER))
+    assert added["sample_id"].sort().to_list() == sorted(NOT_IN_ORIGINAL) and added["total_gene_count"].to_list() == [0] * 4
+    assert added["status"].to_list() == ["Not Found"] * 4
+    assert table.filter(~pl.col(MARKER))["status"].unique().to_list() == ["Detected"]
+    assert table.filter(~pl.col(MARKER))["total_gene_count"].min() >= 1
+
+
+def test_the_qa_amr_plot_table_has_42_entities_and_4_of_them_at_zero(tmp_path):
+    """`qa_amr_genes_per_sample` reads QA_AMR_per_sample: 42 entities, 4 with 0 genes, 70 genes in total (its own subtitle)."""
+    orchestrator, _ = demo()
+    path = tmp_path / "QA_AMR_per_sample.parquet"
+    quiet(orchestrator.materialize_tier1, DEMO, "QA_AMR_per_sample", path)
+    table = quiet(orchestrator.materialize_tier2, DEMO, "QA_AMR_per_sample", path).collect()
+    assert table.height == 42 and table["sample_id"].n_unique() == 42
+    assert sorted(table.filter(pl.col("n_amr_genes") == 0)["sample_id"].to_list()) == sorted(NOT_IN_ORIGINAL)
+    assert table["n_amr_genes"].sum() == 70
 
 
 def test_the_data_check_returns_the_ids_as_warnings_and_never_as_a_problem():

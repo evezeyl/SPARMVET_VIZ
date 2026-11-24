@@ -2,9 +2,11 @@
 
 Her words: "No MLST is not an NA its a unknown result / non determined. Those 12 samples should not be gone.
 Raws without sample id must go. Must be a warning". So in `demo_abromics`:
-- the join is a left join from the metadata: a sample without an MLST result stays, with the sequence type "Non Determined"
+- the join is a left join: a sample without an MLST result stays, with the sequence type "Non Determined"
   (a visible step of the recipe, not a silent missing value);
-- the metadata lines without a sample id are removed by a visible step;
+- the metadata lines without a sample id are not in the table (D-0167); since the one big move (D-0586, D-0613) the table starts from the MLST
+  table, which the app completes with every id of the metadata, and the metadata is brought in by a left join: the lines with no id match nothing, so
+  they are not in the table and the recipe has no step that removes them (the metadata file is not touched, D-0594); the app's own warning lists them;
 - the description of the join says it in words, with the numbers (the recipe's own warning), and the numbers are true.
 
 Since DATA-IDS-FIX-1 (Eve 2026-11-17, ledger D-0205: "The same set of ids is used across all the datasets of the recipes")
@@ -163,14 +165,14 @@ def test_the_recipe_description_shown_in_home_says_the_same_numbers(built):
 
 
 def test_the_recipe_says_why_in_a_comment_next_to_each_step():
-    """Her decision asks for visible steps: each of the three steps carries a `#` comment that says why."""
+    """Her decision asks for visible steps: each of the two steps carries a `#` comment that says why (the join says why the lines with no id are not there)."""
     lines = (RECIPES_DIR / "demo_abromics.yaml").read_text(encoding="utf-8").splitlines()
 
     def comment_above(action_line_start):
         index = next(i for i, line in enumerate(lines) if line.strip().startswith(action_line_start))
         return lines[index - 1].strip().startswith("#")
 
-    assert comment_above("- action: polars_drop_nulls")
+    assert "polars_drop_nulls" not in "\n".join(lines), "the table starts from the data: no metadata line enters it, so there is nothing to drop"
     assert comment_above("- action: polars_join")
     assert comment_above("- action: polars_fill_null")
     assert re.search(r"how: left", "\n".join(lines))
