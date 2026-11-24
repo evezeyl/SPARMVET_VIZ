@@ -6,7 +6,7 @@ T3 table, the filter dialog, the results bundle) asks this one object, so they c
 
 - No place node: nothing is built, the audit folder is removed when it exists (a stored table that cannot be served today is not left for a later bug,
   `rules_verification_testing.md` section 9) and every plot reads its original table (the answer is None).
-- Place nodes (tier 1, tier 2 or tier 3): the run is made once per (recipe, data, nodes); a plot no step reaches reads its original table (None); a plot a step reaches (written at its own tier 3 or at a table it is built from) reads the lazy table of the copy.
+- Place nodes (tier 1, tier 2 or tier 3): the run is made once per (recipe, data, nodes); a plot no step reaches reads its original table (None) even when a step beside it cannot be applied (that error is shown at the plots that step reaches); a plot a step reaches (written at its own tier 3 or at a table it is built from) reads the lazy table of the copy.
 - A step that cannot be applied raises `AuditRunError`, naming the step and its place: never skipped (D-0102). The caller shows it in the place of the plot.
 
 Pure of Shiny. Consumed by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py.
@@ -24,13 +24,14 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional
 
-from app.modules.audit_places import audit_copy_for, nodes_signature
+from app.modules.audit_places import audit_copy_for, nodes_reaching_plot, nodes_signature
 from app.modules.audit_run import AuditRun, AuditRunError, run_audit
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator, InputsChanged
 from blueprint_arch.t3_translator import UntranslatableNode
 from utils.audit_copy import AuditCopyError
 from utils.plan_book import PlanBook
+from utils.recipe_graph import RecipeGraphError, build_graph
 
 # What the audit copy raises when a committed step cannot be made into a step of the copy or cannot be run, each with a plain sentence that names the step and its place:
 # every reader shows it in the place of the table or the plot, never skips the step (D-0102).
@@ -69,13 +70,27 @@ class PlaceAudit:
     def plot_lazy(self, recipe_id: str, plot_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None,
                   told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[Any]:
         """The table `plot_id` reads in the copy, a Polars lazy frame (typed `Any`: this file names no engine); None when there is no copy or no step reaches the plot (neither at its own tier 3 nor at a table it is built from): it then reads its original table."""
-        run = self.run_of(recipe_id, nodes, plans)
+        listed = list(nodes)
+        if listed and not self._some_step_reaches(recipe_id, listed, plot_id):
+            return None                       # no step reaches this plot: it reads its original table, and a step that cannot run elsewhere is not its error
+        run = self.run_of(recipe_id, listed, plans)
         if run is None:
             return None
         for text in run.inputs_changed:                 # a table of the run was built while its inputs changed and was not stored: the caller is told, as for every build
             if told is not None:
                 told(InputsChanged(text))
         return run.plot_table(plot_id, told)
+
+    def _some_step_reaches(self, recipe_id: str, nodes: List[dict], plot_id: str) -> bool:
+        """Whether any committed step is written at a place the plot is built from (its own tier 3 or a table above it). A step at a place the recipe does not have counts as
+        reaching every plot, so that the error of that step is shown and never silenced. When the recipe's graph cannot be made, the answer is yes (the run then says why)."""
+        try:
+            graph = build_graph(load_data_analysis_recipe(self.orch.data_analysis_recipes_dir / f"{recipe_id}.yaml").raw)
+        except (RecipeGraphError, KeyError):
+            return True
+        if any(not graph.has_node(n.get("place") or "") for n in nodes):
+            return True
+        return bool(nodes_reaching_plot(graph, nodes, plot_id))
 
     def affected_plots(self, recipe_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> List[str]:
         """The plots whose table differs in CONTENT between the original and the copy, in the order of the recipe (ADR-101 point 6: a step that removes nothing affects none)."""

@@ -284,3 +284,24 @@ def test_a_tier3_step_that_removes_nothing_is_told_as_the_same_as_the_original(w
     nodes = [world.node(place="T3:amr_heatmap", params={"column": "sample_id", "op": "ne", "value": "no_such_sample_id", "na": "keep"})]
     assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == []
     assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect().equals(world.original_table("amr_heatmap"))
+
+
+def test_a_step_that_cannot_run_shows_its_error_only_at_the_plots_it_reaches_and_the_other_plots_read_their_original(world):
+    """One step on a column that does not exist, written at the tier 1 of ResFinder: the plots built from ResFinder show the one plain error naming the step and its place;
+    a plot no step reaches reads its original table and shows no error (it used to show the error of the whole recipe)."""
+    audit = world.audit()
+    audit.run_of(RECIPE_ID, [], world.plans)
+    bad = world.node(column="no_such_column", params={"column": "no_such_column", "op": "eq", "value": "x", "na": "remove"})
+    beside = [p for p in world.graph.plots() if p not in world.below]
+    assert beside and "mlst_bar" in beside
+    for plot in beside:
+        assert audit.plot_lazy(RECIPE_ID, plot, [bad], world.plans) is None, f"{plot} is not reached by the failing step: its original table, no error"
+    with pytest.raises(AuditRunError) as excinfo:
+        audit.plot_lazy(RECIPE_ID, "amr_heatmap", [bad], world.plans)
+    assert "T1:ResFinder" in str(excinfo.value) and "no_such_column" in str(excinfo.value)
+    # the export still refuses the whole run: one step that cannot run, nothing is exported
+    with pytest.raises(AuditRunError):
+        audit.run_of(RECIPE_ID, [bad], world.plans)
+    # a step at a place the recipe does not have is never silenced: it counts as reaching every plot
+    with pytest.raises(AuditCopyError, match="no table or join"):
+        audit.plot_lazy(RECIPE_ID, "mlst_bar", [world.node(place="T1:no_such_table")], world.plans)
