@@ -909,6 +909,19 @@ Without the guard, the effect re-fires every tick and produces an infinite react
 
 ---
 
+## 15. The id warning (HOME; D-0582, D-0585, D-0613; built 2026-11-24, step 6)
+
+When HOME opens a recipe it makes the three checks of the ids and writes their log (`app/modules/id_check_run.py`, `utils.id_log`). What they found is shown in HOME:
+
+- **Where and when.** A red block above the tabs (`output_ui("id_warning_ui")` in `app/src/ui.py`, handler `app/handlers/id_warning_handlers.py`), in every app features file: no flag gates a warning. Shown only in the HOME user space and only for the recipe HOME shows, and only when something was found: lines added to a table ("missing in original table", the app's fixed words, followed by the sentence of the recipe maker), ids of a table not in the metadata, lines with no usable id, a log that could not be written, or checks that failed. Nothing found: nothing is shown.
+- **Content.** A title, one line per finding, the place of the log (it travels with every export as `id_log.yaml`), a collapsible "Show the log of the ids", and the button "I have read this". Colours: error red on `#ffe0e0` and the primary button (`rules_css_style_spec.md`; `theme.css` section 27).
+- **The button blocks nothing.** Everything in HOME works before and after the click; the completion is applied anyway. The click is written in the log (`kind: read`, `who: read in the app`, the date, the fingerprints of the recipe and the data); the app has no user identity, so nothing identifies a person. Then the block is one quiet line ("Id warnings read on <date>. Show again"), which opens it again ("Hide" closes it). Read once per recipe and data batch: the read state is the log file itself, so a new session on the same data shows the quiet line; a changed recipe or new data shows the red block again. When the log cannot be written, the block says the click cannot be kept (PROVISIONAL).
+- **The export.** The Export panel shows one line ("This export includes the log of the ids: N warning(s)"; red until read) in a slot of its own (`export_id_warning_ui`), and README.txt and report.qmd say what was found and whether the warning was read in the app or the log is "automatic, no user". The export is never refused for it.
+- **Wiring.** The opening effect writes `id_run_state` (equality guard, section 14 R3); the two outputs only read (R1) and are small and of their own (R4); the three clicks are `Shiny.setInputValue(..., {priority: 'event'})` with a time stamp, because an action button drawn again restarts at its old count and a second recipe's first click would not be seen. Tests: `app/tests/test_id_warning.py` (words, read state, export sentences, the opening), `app/tests/test_id_warning_browser.py` (qa and `pipeline-static`).
+- **PROVISIONAL (D-0613, the owner reads them):** the place, the words, the read state per recipe and data batch, the word "read in the app".
+
+---
+
 # CSS & Styling Rules (ADR-055, 2026-05-02)
 
 - **CSS lives in `config/ui/theme.css`** — not inline in Python code. This is the authoritative base stylesheet, loaded at startup by `app/src/ui.py` via `bootloader.get_theme_css_path()` and injected via `ui.tags.style()`.

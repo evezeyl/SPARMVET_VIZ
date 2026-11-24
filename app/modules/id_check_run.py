@@ -2,7 +2,7 @@
 
 When HOME opens a recipe it makes the three checks of the ids (`DataOrchestrator.id_report`), writes what they found to the log of the ids, and returns the
 findings in plain words. Everything here is a warning: nothing refuses a recipe and nothing stops the opening. The log is written automatically ("automatic, no
-user"); the button "I have read this" comes in a later step (`utils.id_log.record_read` is the function it will call).
+user"); the button "I have read this" is in HOME (`app/handlers/id_warning_handlers.py`, `app/modules/id_warning.py`; it calls `utils.id_log.record_read`).
 
 The folder of the log is `<user_data>/_id_logs` (next to `_sessions`). When it cannot be written the opening goes on, the text of the entry is printed to the
 console and returned (`IdCheckRun.log_text`), so that the export and a warning can show it (the pattern of `SessionManager`, D-0581).
@@ -10,7 +10,7 @@ console and returned (`IdCheckRun.log_text`), so that the export and a warning c
 # @deps
 # provides: function:run_id_checks, function:id_log_folder, function:export_log_text, class:IdCheckRun, constant:ID_LOG_FOLDER
 # consumes: app/modules/orchestrator.py (id_report), libs/utils/src/utils/id_completion.py (report_lines), libs/utils/src/utils/id_log.py (build_entry, write_entry, read_log, entry_text, log_path)
-# consumed_by: app/handlers/opening_handlers.py, app/handlers/export_handlers.py, app/tests/test_id_checks_log.py
+# consumed_by: app/handlers/opening_handlers.py, app/handlers/export_handlers.py, app/modules/id_warning.py, app/tests/test_id_checks_log.py
 # doc: .claude/knowledge/decision_ledger.md (D-0575, D-0576, D-0581, D-0582, D-0592), .claude/rules/rules_data_analysis_recipe_structure.md#11
 # @end_deps
 """

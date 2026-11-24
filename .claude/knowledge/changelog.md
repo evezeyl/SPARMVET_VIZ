@@ -4,6 +4,16 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - The warning of the ids in HOME and its button "I have read this" (branch `task/id-warning-home`; D-0582, D-0585, D-0613)
+
+- **A red warning above the tabs of HOME** (`app/handlers/id_warning_handlers.py`, output `id_warning_ui`, slot in `app/src/ui.py`), in every app features file (no flag gates it), when the checks of the ids found something: lines added ("missing in original table" with the sentence of the recipe maker), ids of a table not in the metadata, lines with no usable id, a log that could not be written, or checks that failed. Nothing found: no warning. It shows the place of the log, the log itself in a collapsible block, and the button **I have read this**.
+- **The button blocks nothing.** The click is written in the log of the ids as an entry of kind `read` (`utils.id_log.record_read`, `who: read in the app`, the date, the fingerprints of the recipe and the data) and the warning shrinks to one quiet line ("Id warnings read on <date>. Show again"). PROVISIONAL: asked once per recipe and data batch (kept in the log file, so a new session on the same data shows the quiet line); a changed recipe or new data shows the red warning again; a click that cannot be written is said in the warning.
+- **The Export panel** shows one line ("This export includes the log of the ids: N warning(s)", red until read); **README.txt and report.qmd** (new section "The ids of the tables") say what was found, in the app's words with the recipe maker's sentence per table, and whether the warning was read in the app or the log is "automatic, no user". The export is never refused because of it. The block that writes `id_log.yaml` moved before the report so the report can say it.
+- `opening_handlers.define_server` takes `id_run_state` and writes what the checks found once per opening (equality guard); the warning reads it. CSS: `theme.css` section 27 (error red on `#ffe0e0`, primary button; no new colour or size).
+- Docs: `understanding_your_export.qmd` (new section), `good_practice_recipes.qmd`, `ui_implementation_contract.md` section 15.
+
+---
+
 ## [2026-11-24] - The one big move on the shipped recipes: data first, the entity id declared, an added ResFinder line reads Not Found (branch `task/ids-checks-completion`; D-0586, D-0610, D-0613)
 
 - 🔑 ⚠️ **A joined table of a shipped recipe starts from a data table and brings the metadata in by a left join** (D-0586, D-0613). Rewritten in `1_test_data_ST22_dummy`: `ST22_Anchor` (now FastP first), `QA_AMR_per_sample` and `QA_fanout_exhibit` (ResFinder first), `QA_population_zscore` (Quast first); in `demo_abromics`: `demo_join` (MLST first). Same rows, same entities as before (617, 74, 1731, 42, 27 rows); only the order of the rows of some tables differs. The rule is advice in `good_practice_recipes.qmd`; the checker does not enforce it (how it would be enforced is not decided).

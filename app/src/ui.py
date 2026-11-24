@@ -389,6 +389,8 @@ window.cyFit     = cyFit;
         # replacing the prior t3_sandbox_enabled flag check (ADR-053 violation, task 25-O).
         (
             ui.div(
+                # The warning of the ids (D-0582): above the tabs, in every app features file; empty when the checks found nothing (id_warning_handlers.py).
+                ui.output_ui("id_warning_ui"),
                 ui.output_ui("dynamic_tabs"),
                 class_="central-theater p-0 bg-transparent h-100",
                 id="main_layout_inner",
@@ -407,6 +409,7 @@ window.cyFit     = cyFit;
                 ),
                 # 2. Central Theater (Center)
                 ui.div(
+                    ui.output_ui("id_warning_ui"),
                     ui.output_ui("dynamic_tabs"),
                     class_="central-theater p-0 bg-transparent h-100"
                 ),

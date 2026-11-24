@@ -36,7 +36,7 @@ from __future__ import annotations
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
-# consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
+# consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/handlers/id_warning_handlers.py (define_server: the red warning of the ids), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/knowledge/architecture_decisions.md#ADR-099, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
@@ -59,6 +59,7 @@ from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
+from app.handlers.id_warning_handlers import define_server as define_id_warning_server
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
@@ -225,6 +226,8 @@ def define_server(input, output, session, *,
 
     # What the opening of the open recipe finished: {"signature", "status"}; written by `opening_handlers` (an effect), read by `dynamic_tabs`.
     opening_state = reactive.Value({})
+    # What the checks of the ids found for the open recipe (D-0582): written by `opening_handlers`, read by `id_warning_handlers` (the red warning of HOME).
+    id_run_state = reactive.Value(None)
 
     def _tell_inputs_changed(change):
         """The orchestrator built a table while its recipe or data changed (STALE-KEY-STORE-1): say so, in the form of the
@@ -2624,7 +2627,9 @@ def define_server(input, output, session, *,
             opening_state=opening_state,
             notify=_notify,
             shown_recipe=shown_recipe,
+            id_run_state=id_run_state,
         )
+    define_id_warning_server(input, output, session, bootloader=bootloader, safe_input=safe_input, id_run_state=id_run_state)
 
     # ── Export pipeline (system_tools_ui + bundle + audit reports) ────────────
     # Moved to app/handlers/export_handlers.py (Phase 24-C, ADR-051).

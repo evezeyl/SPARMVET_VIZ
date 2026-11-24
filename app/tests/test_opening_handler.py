@@ -72,7 +72,7 @@ class FakeProgress:
 class Opening:
     """The effect of `opening_handlers.define_server` over a staged world, with fakes for what is the screen's."""
 
-    def __init__(self, world, monkeypatch, *, available=("tiny",), workspace="Home", proven=None, state=None, bootloader=None, drawn=None):
+    def __init__(self, world, monkeypatch, *, available=("tiny",), workspace="Home", proven=None, state=None, bootloader=None, drawn=None, id_run_state=None):
         FakeProgress.instances = []
         self.world, self.notes, self.drawn = world, [], drawn if drawn is not None else []
         monkeypatch.setattr(handlers.ui, "Progress", FakeProgress)
@@ -105,7 +105,8 @@ class Opening:
 
         define_server(mock.MagicMock(), mock.MagicMock(), self.session, bootloader=self.bootloader, orchestrator=world.orch, viz_factory=self.factory,
                       safe_input=lambda i, k, d: self.inputs.get(k, d), view_keys=view_keys, recipe_gate_version=self.gate_version,
-                      opening_state=self.state, notify=lambda text, type="message", duration=5: self.notes.append((type, text)), proven=self.proven)
+                      opening_state=self.state, notify=lambda text, type="message", duration=5: self.notes.append((type, text)), proven=self.proven,
+                      id_run_state=id_run_state)
 
     def run(self):
         with reactive.isolate():
