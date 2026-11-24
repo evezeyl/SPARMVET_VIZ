@@ -2,6 +2,7 @@ sample_id:
   type: String
   original_name: sample_id
   ui_label: Sample ID
+  is_entity_id: true
 plasmid_name:
   type: String
   original_name: Plasmid

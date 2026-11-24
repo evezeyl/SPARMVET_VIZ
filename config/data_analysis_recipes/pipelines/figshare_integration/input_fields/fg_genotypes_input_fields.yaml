@@ -6,6 +6,7 @@ sample_id:
   original_name: sample_id
   type: String
   ui_label: Sample Id
+  is_entity_id: true
 gene:
   original_name: gene
   type: String

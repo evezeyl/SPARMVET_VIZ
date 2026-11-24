@@ -27,6 +27,9 @@ data_schemas:
       path: ./libs/transformer/tests/data/fg_metadata.tsv
     null_values: []
     strip: true
+    completion:
+      marker: fg_metadata_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
     tier1: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
 
@@ -38,6 +41,9 @@ data_schemas:
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
     null_values: []
     strip: true
+    completion:
+      marker: fg_phenotypes_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
     tier1: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
 
@@ -49,6 +55,9 @@ data_schemas:
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
     null_values: []
     strip: true
+    completion:
+      marker: fg_genotypes_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
     tier1: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
 
