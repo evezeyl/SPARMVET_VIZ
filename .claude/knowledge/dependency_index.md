@@ -339,8 +339,8 @@
 
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
-- **provides:** `method:id_report (the three checks of the ids`, `D-0581`, `D-0590)`, `method:_completed (the completion of the ids at the read`, `D-0613)`, `function:tier2_parts`, `function:tier3_parts`, `function:tier3_frames`, `class:JoinParts`, `method:ingredient_parts`, `method:join_parts (the engine`, `the steps and the assembler of a tier: read by the build and by the plan of every place)`, `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key`, `D-0343)`, `function:tier3_path_for`, `constant:TIER3_KEY_META`, `function:plot_read_error_text`, `method:prepare_ingredient`, `method:read_source`, `method:locate_dataset_file`, `method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads)`, `method:get_source_files`, `function:compute_data_analysis_recipe_keys`, `method:_plot_key_now (the key of the table of a plot now`, `reading only the data files that table reads: the last check of a Tier 3 store)`
-- **consumes:** `libs/utils/src/utils/id_completion.py (participants`, `complete_table`, `read_ids`, `build_report)`, `app/modules/build_failure.py (the plain error of a build that failed: table`, `tier`, `step)`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/utils/src/utils/recipe_tiers.py (collection_body`, `audit_step_places)`, `app/modules/engine_registry.py (data_entry: the engine that runs a tier`, `D-0219)`, `libs/utils/src/utils/recipe_tiers.py (plot_entry`, `tier3_steps)`, `libs/transformer/src/transformer/anchor.py`, `app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table`, `ADR-101; dataset_file_hashes)`
+- **provides:** `method:_ids_of (the ids of a table as read`, `kept by the bytes of its file and its declarations)`, `constant:IDS_MEMO_LIMIT`, `method:id_report (the three checks of the ids`, `D-0581`, `D-0590)`, `method:_completed (the completion of the ids at the read`, `D-0613)`, `function:tier2_parts`, `function:tier3_parts`, `function:tier3_frames`, `class:JoinParts`, `method:ingredient_parts`, `method:join_parts (the engine`, `the steps and the assembler of a tier: read by the build and by the plan of every place)`, `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key`, `D-0343)`, `function:tier3_path_for`, `constant:TIER3_KEY_META`, `function:plot_read_error_text`, `method:prepare_ingredient`, `method:read_source`, `method:locate_dataset_file`, `method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads)`, `method:get_source_files`, `function:compute_data_analysis_recipe_keys`, `method:_plot_key_now (the key of the table of a plot now`, `reading only the data files that table reads: the last check of a Tier 3 store)`
+- **consumes:** `libs/utils/src/utils/id_completion.py (participants`, `complete_table`, `read_ids`, `build_report`, `plan_material)`, `app/modules/cache_keys.py (canonical_hash: the key of the ids memo)`, `app/modules/build_failure.py (the plain error of a build that failed: table`, `tier`, `step)`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/utils/src/utils/recipe_tiers.py (collection_body`, `audit_step_places)`, `app/modules/engine_registry.py (data_entry: the engine that runs a tier`, `D-0219)`, `libs/utils/src/utils/recipe_tiers.py (plot_entry`, `tier3_steps)`, `libs/transformer/src/transformer/anchor.py`, `app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table`, `ADR-101; dataset_file_hashes)`
 - **mirrors:** `libs/transformer/tests/debug_assembler.py`
 - **consumed_by:** `app/modules/plan_composer.py (ingredient_parts`, `join_parts`, `tier2_parts`, `tier3_parts`, `tier3_frames: the plan of every place composed from the build's own functions`, `LBFB step 0b)`, `app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe)`, `app/tests/test_read_source.py (read_source: one source table as the ingestion reads it`, `for the Source view of HOME`, `D-0310)`, `app/src/server.py`, `app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure)`, `app/handlers/export_handlers.py (materialize_tier3)`, `app/modules/gallery_examples.py`, `assets/scripts/golden_baseline.py`, `assets/scripts/recipe_pictures.py`, `app/handlers/blueprint_handlers.py`, `app/modules/bundle_importer.py`, `app/modules/data_analysis_recipe_validator.py`, `app/tests/test_tier3_store.py`, `app/tests/test_build_failure_names.py`, `app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)`
 - **doc:** `.claude/knowledge/dependency_index.md`
@@ -608,6 +608,11 @@
 - **consumes:** `app/modules/orchestrator.py (id_report`, `_read_source`, `read_source)`, `app/modules/data_analysis_recipe_validator.py (check_data_analysis_recipe_data)`, `libs/utils/src/utils/id_completion.py`, `app/modules/cache_keys.py`
 - **doc:** `.claude/design/studies/whole_picture_2026-11/CAUSE_AND_SOLUTIONS_ZEROS.md`
 
+## `app/tests/test_id_completion_robust.py`
+- **Role:** `info`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/id_check_run.py`, `app/modules/plan_composer.py`, `app/modules/data_analysis_recipe_validator.py`, `libs/utils/src/utils/id_completion.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0613`, `D-0581)`
+
 ## `app/tests/test_left_sidebar_redraw_wiring.py`
 - **Role:** `info`
 - **consumes:** `app/tests/home_harness.py (Home`, `ViewWorld)`, `app/handlers/home_theater.py (sidebar_tools_ui`, `_sync_active_space)`, `app/modules/sidebar_open_panels.py`
@@ -646,6 +651,11 @@
 - **Role:** `info`
 - **consumes:** `app/modules/opening_build.py (plot_render_recipe)`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/engine_registry.py`, `app/tests/test_export_download_path.py`, `app/tests/test_cache_chain.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0237`, `D-0219)`
+
+## `app/tests/test_recipes_data_first.py`
+- **Role:** `info`
+- **consumes:** `config/data_analysis_recipes/pipelines/*.yaml`, `config/data_analysis_recipes/templates/*.yaml`, `app/modules/orchestrator.py`, `app/src/bootloader.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
 
 ## `app/tests/test_removed_audit_step_type.py`
 - **Role:** `info`
@@ -1156,7 +1166,7 @@
 ## `libs/transformer/tests/debug_assembler.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_assembler`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **consumes:** `libs/utils/src/utils/id_completion.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
 - **mirrors:** `app/modules/orchestrator.py`
 - **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
@@ -1268,7 +1278,7 @@
 
 ## `libs/utils/src/utils/id_completion.py`
 - **Role:** `ref`
-- **provides:** `function:participants`, `function:completion_problems`, `function:read_ids`, `function:complete_table`, `function:union_of`, `function:build_report`, `class:Participant`, `class:TableIds`, `class:IdReport`, `class:TableReport`
+- **provides:** `function:default_marker`, `function:added_line_words`, `function:starting_meaning`, `function:participants`, `function:completion_problems`, `function:read_ids`, `function:complete_table`, `function:union_of`, `function:build_report`, `class:Participant`, `class:TableIds`, `class:IdReport`, `class:TableReport`
 - **consumes:** `libs/utils/src/utils/recipe_spec.yaml (completion)`, `libs/utils/src/utils/errors.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/id_log.py`, `app/modules/cache_keys.py`
 - **doc:** `.claude/design/recipe_format_spec.md (7.3`, `E04 to E07)`, `.claude/design/studies/whole_picture_2026-11/CAUSE_AND_SOLUTIONS_ZEROS.md`
