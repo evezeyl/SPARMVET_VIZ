@@ -10,7 +10,7 @@ is kept per recipe and data batch (the same fingerprints read before: the quiet 
 kept in the log file itself, so a new session on the same data finds it; that a click that could not be written is said in the warning, never hidden.
 
 # @deps
-# provides: function:warning_lines, function:has_warning, function:read_status, function:mark_read, function:export_sentences, function:quiet_line, function:log_place_text, constant:READ_IN_APP, class:ReadStatus
+# provides: function:warning_lines, function:difference_lines, function:ids_differ, function:has_warning, function:read_status, function:mark_read, function:export_sentences, function:quiet_line, function:log_place_text, constant:READ_IN_APP, class:ReadStatus
 # consumes: app/modules/id_check_run.py (IdCheckRun), libs/utils/src/utils/id_completion.py (added_line_words), libs/utils/src/utils/id_log.py (read_log, record_read, log_path)
 # consumed_by: app/handlers/id_warning_handlers.py, app/handlers/export_handlers.py, app/tests/test_id_warning.py
 # doc: .claude/knowledge/decision_ledger.md (D-0582, D-0585, D-0613), .claude/rules/ui_implementation_contract.md#7.2
@@ -44,6 +44,19 @@ def warning_lines(run: Optional[IdCheckRun]) -> List[str]:
     no usable id and a difference after the completion (a bug of the app). Then the faults of the checks and of the log itself."""
     if run is None:
         return []
+    lines: List[str] = difference_lines(run)
+    if run.error:
+        lines.append(f"The checks of the ids could not be made: {run.error}")
+    if run.log_warning:
+        lines.append(run.log_warning)
+    return lines
+
+
+def difference_lines(run: Optional[IdCheckRun]) -> List[str]:
+    """The lines about ids that really differ (added lines, ids not in the metadata, lines with no usable id, a difference after the completion); no line for a fault of
+    the checks or of the log."""
+    if run is None:
+        return []
     lines: List[str] = []
     if run.report is not None:
         words = added_line_words()
@@ -56,11 +69,12 @@ def warning_lines(run: Optional[IdCheckRun]) -> List[str]:
                 lines.append(f"{t.table}: {t.no_id_lines} line(s) have no usable id; they stay as they are and are not completed.")
             if t.after_difference:
                 lines.append(f"{t.table}: after the completion this table does not hold the same ids as the others. This is a fault of the app: report it.")
-    if run.error:
-        lines.append(f"The checks of the ids could not be made: {run.error}")
-    if run.log_warning:
-        lines.append(run.log_warning)
     return lines
+
+
+def ids_differ(run: Optional[IdCheckRun]) -> bool:
+    """True only when the ids of the tables really differ (a finding about the ids). A check that could not be made, or a log that could not be written, is not "the ids differ"."""
+    return bool(difference_lines(run))
 
 
 def has_warning(run: Optional[IdCheckRun]) -> bool:
@@ -109,13 +123,21 @@ def export_sentences(run: Optional[IdCheckRun], status: ReadStatus) -> List[str]
     out: List[str] = []
     findings = warning_lines(run)
     if findings:
-        out.append("The ids of the tables were not equal; the log of the ids (id_log.yaml) lists them:")
+        if ids_differ(run):
+            out.append("The ids of the tables were not equal; the log of the ids (id_log.yaml) lists them:")
+        elif run.error:
+            out.append("The checks of the ids could not be made, so it is not known whether the ids of the tables are equal:")
+        else:
+            out.append("The ids of the tables are equal in every table of the recipe, but the log of the ids (id_log.yaml) could not be written:")
         out += [f"- {line}" for line in findings]
     else:
         out.append("The ids are equal in every table of the recipe; the log of the ids (id_log.yaml) says so.")
         return out
     if status.read:
         out.append(f"The warning of the ids was read in the app on {date_of(status.when)} ({status.who}).")
+    elif run.log_warning:
+        out.append("No person has said in the app that the warning of the ids was read; the log could not be written, so this text is the only record. "
+                   "The person who uses these results must read it.")
     else:
         out.append(f"No person has said in the app that the log of the ids was read: it was written automatically ({AUTOMATIC}). "
                    "The person who uses these results must read it.")

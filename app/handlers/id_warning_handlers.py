@@ -19,11 +19,12 @@ from __future__ import annotations
 
 from shiny import reactive, render, ui
 
-from app.modules.id_warning import log_place_text, mark_read, quiet_line, read_status, warning_lines
+from app.modules.id_warning import ids_differ, log_place_text, mark_read, quiet_line, read_status, warning_lines
 
 WARNING_ID = "id_warning_ui"
 EXPORT_SLOT_ID = "export_id_warning_ui"
 TITLE = "Check the ids before you use these results."
+LOG_TITLE = "The log of the ids could not be written."    # PROVISIONAL words: the only finding is the log, the ids themselves are equal
 READ_BUTTON = "I have read this"
 
 
@@ -77,7 +78,7 @@ def define_server(input, output, session, *, bootloader, safe_input, id_run_stat
         action = (ui.tags.a("Hide", href="#", class_="spv-id-link", onclick=_click("id_warning_hide") + " return false;") if status.read else
                   ui.tags.button(READ_BUTTON, type="button", id="id_warning_read", class_="btn btn-primary spv-id-button", onclick=_click("id_warning_read")))
         return ui.div(
-            ui.div(TITLE, class_="spv-id-title"),
+            ui.div(TITLE if (ids_differ(run) or run.error) else LOG_TITLE, class_="spv-id-title"),
             ui.tags.ul(*[ui.tags.li(line) for line in lines], class_="spv-id-lines"),
             ui.div(log_place_text(run), class_="spv-id-place"),
             ui.tags.details(ui.tags.summary("Show the log of the ids"), ui.tags.pre(run.log_text or "", class_="spv-id-log"), class_="spv-id-detail",
@@ -102,7 +103,7 @@ def define_server(input, output, session, *, bootloader, safe_input, id_run_stat
         status = _status(state)
         text = f"This export includes the log of the ids: {len(lines)} warning(s)."
         if status.read:
-            return ui.tags.small(f"{text} Read on {status.when.split('T')[0]}.", class_="text-muted d-block mb-1", style="font-size:0.7em;")
+            return ui.tags.small(f"{text} Read on {status.when.split('T')[0]}.", class_="text-muted d-block mb-1 spv-id-export-note")
         return ui.div(f"{text} Not read yet: see the warning at the top of HOME.", class_="spv-id-export-line")
 
     @reactive.Effect
