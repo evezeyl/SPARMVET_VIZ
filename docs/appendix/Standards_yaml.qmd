@@ -60,8 +60,8 @@ A table of `data_schemas`, and the `metadata_schema`, that declares an entity id
 
 | Key | Description | Example |
 | --- | --- | --- |
-| `marker` | The name of the yes/no column the app adds: true on an added line, false on the table's own lines. A name of letters, digits and underscores that is not a field of the table and that no other table uses (E06): with several result tables write the table into it, for example `ResFinder_not_in_original_data`. | `marker: not_in_original_data` |
-| `meaning` | What an added line means, one word of the list. Data table: `no result for this entity`, `not analysed`, `unknown`. Metadata: `no metadata for this entity`, `not described`, `unknown`. | `meaning: no result for this entity` |
+| `marker` | The name of the yes/no column the app adds: true on an added line, false on the table's own lines. A name of letters, digits and underscores that is not a field of the table and that no other table uses (E06): by convention `<table>_not_in_original_data` for every table, the metadata included (`metadata_schema_not_in_original_data`): write the table into it. | `marker: ResFinder_not_in_original_data` |
+| `meaning` | A sentence that you write: what an added line means for THIS table. It is required, and the checker does not judge it (a missing or empty sentence is refused, E05). The app shows it beside its own words for an added line, `missing in original table`. | `meaning: "The tool ran and found no resistance gene for this entity: Not Found, counted as 0."` |
 
 The app adds the lines when it reads the files, before the steps of tier 1. See the page "Good Practice for Writing Recipes".
 
