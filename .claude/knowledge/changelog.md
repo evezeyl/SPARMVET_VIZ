@@ -4,6 +4,19 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - HOME audit: an audit step written at a table upstream of the plot, in five functional steps (branch `task/audit-places-demo`; D-0535, D-0553, D-0346, D-0329, D-0613)
+
+Each step left the app working; the commits are marked `[DEMO STEP n/5 functional]`.
+
+- **Step 1** `app/modules/audit_places.py`: for an open plot and the column(s) of a step, the tables upstream where the engine's plan holds the column (tier 1; tier 2 when the table has tier-2 steps of its own), with the other tables and plots built from each (D-0346) and the check of a choice (at most one place on a path; the first places of several original tables together; D-0553).
+- **Step 2** `app/modules/audit_view.py` (`PlaceAudit`), `AuditRun.plot_table`: the committed nodes written at a place (node field `place`, bucket `__places__` of `t3_audit_steps_by_plot`) make an audit copy of the recipe (`utils.audit_copy`), run by `audit_run.run_audit` into a folder of its own (`user_data/audit_anchors`); HOME reads the audited table in Audit mode (plot, T3 view, filter dialog, Compare's audited pane; `_resolve_active_lf(..., original=True)` for the original pane). The original's stored tables are not touched; removing the last step removes the folder.
+- **Step 3** the dialog of Send to Audit has the choice "At a table this plot is built from" (default stays "This plot only"); a choice that breaks the rule of places, no table ticked, and a key drop that a later join reads are refused in one line with the dialog open; the audit card says "Written at Table X (tier n)"; the plot badge says how many steps were written upstream and whether its table changed.
+- **Step 4** export: the data file and the figure of each plot below the place are the audited ones; `t3_steps.yaml` `audit_steps_at_tables`; README, report (section "Audit steps written at a table") and Methods text; the checksum of the audit steps covers them; the reproducibility recipe holds each step as a plain step at the end of its tier (`bake_place_steps`). ⚠️ **Session format 4** (`SESSION_FORMAT_VERSION`): a session file of format 3 is refused, not converted; the tests that wrote the number 3 read the constant.
+- **Step 5** tests of the marker case (a filter on `ResFinder_not_in_original_data` at the tier 1 of ResFinder) and of the key drop at a place; user guide and contract.
+- PROVISIONAL (builder's choices): the words of the dialog, card, badge, README and report lines; that the T1 and T2 files of an audited table stay the original tables; that `Remove step` removes a decision with all its places.
+
+---
+
 ## [2026-11-24] - The warning of the ids in HOME and its button "I have read this" (branch `task/id-warning-home`; D-0582, D-0585, D-0613)
 
 - **A red warning above the tabs of HOME** (`app/handlers/id_warning_handlers.py`, output `id_warning_ui`, slot in `app/src/ui.py`), in every app features file (no flag gates it), when the checks of the ids found something: lines added ("missing in original table" with the sentence of the recipe maker), ids of a table not in the metadata, lines with no usable id, a log that could not be written, or checks that failed. Nothing found: no warning. It shows the place of the log, the log itself in a collapsible block, and the button **I have read this**.

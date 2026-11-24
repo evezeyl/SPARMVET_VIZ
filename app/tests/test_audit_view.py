@@ -171,3 +171,27 @@ def test_place_nodes_are_the_active_nodes_of_the_bucket_in_commit_order():
     plain = {"id": "c"}
     assert place_nodes({PLACES_BUCKET: [a, b, plain], "subtab_p": [{"id": "z", "place": "T1:X"}]}) == [a]
     assert place_nodes({}) == [] and place_nodes(None) == []
+
+
+def test_a_step_that_removes_nothing_moves_the_keys_and_no_row_so_no_plot_is_affected_and_the_badge_says_so(world):
+    """ADR-101 point 6: equal content under different keys. The plots below the place read the table of the copy (not None), none is AFFECTED."""
+    from app.modules.view_badge import plot_badge
+    audit = world.audit()
+    nodes = [world.node(params={"column": "sample_id", "op": "ne", "value": "no_such_sample_id", "na": "keep"})]
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    assert all(run.plots[p].reused is False for p in world.below) and audit.affected_plots(RECIPE_ID, nodes, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect().equals(world.original_table("amr_heatmap"))
+    badge = plot_badge("audit", False, True, audited_steps=1, upstream_steps=1, table_changed=False)
+    assert "its table is the same as the original" in " ".join(badge.notes)
+    assert "its table changed" in " ".join(plot_badge("audit", False, True, audited_steps=1, upstream_steps=1, table_changed=True).notes)
+    assert "table" not in " ".join(plot_badge("audit", False, True, audited_steps=1, upstream_steps=0, table_changed=None).notes).replace("audited step(s) on this plot", "")
+
+
+def test_a_build_whose_inputs_changed_is_told_to_the_caller_so_that_the_export_can_refuse(world):
+    from app.modules.orchestrator import InputsChanged
+    audit = world.audit()
+    told = []
+    fake = mock.Mock(inputs_changed=("the audit's table 'ResFinder' (tier 1): the data files changed; it was returned and not stored",), plot_table=mock.Mock(return_value="LAZY"))
+    with mock.patch.object(PlaceAudit, "run_of", return_value=fake):
+        assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", [world.node()], world.plans, told=told.append) == "LAZY"
+    assert told == [InputsChanged("the audit's table 'ResFinder' (tier 1): the data files changed; it was returned and not stored")]

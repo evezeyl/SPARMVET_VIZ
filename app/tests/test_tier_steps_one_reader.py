@@ -38,6 +38,7 @@ ALLOWED = {
     "libs/utils/src/utils/engine_keys_migration.py": (1, "a migration tool that rewrites old recipe FILES (text): it reads the key of a file as written"),
     "libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py": (1, "Blueprint's navigator reads the author's tier-1 steps of a join to number them by their place in the FILE; Blueprint shows the original recipe, which has no audit list"),
     "libs/blueprint_arch/src/blueprint_arch/t3_translator.py": (1, "the export's fork of a join (`build_mode2_recipe`) appends to the author's tier 2 of the ORIGINAL; it goes when the export holds the audit recipe (D-0324)"),
+    "app/modules/audit_places.py": (1, "`bake_place_steps` appends the audit steps written at a table to the author's list of a COPY of the recipe, for the reproducibility part of the export (the recipe alone then builds the audited table); it goes when the export holds the audit recipe (D-0324), as the fork of `t3_translator`"),
     "app/handlers/blueprint_handlers.py": (3, "Blueprint edits the ORIGINAL recipe: it reads the steps of an uploaded fragment and of a tier file, and its writer replaces the author's list and leaves any audit list alone"),
     "app/modules/data_analysis_recipe_validator.py": (5, "reads the steps of an UPLOADED fragment file (an author's file): the checker refuses audit keys there"),
     "libs/id_reconciliation/src/id_reconciliation/data_structures.py": (1, "the `steps` of an id transformation (a saved list of recoding steps), not a tier of a recipe"),

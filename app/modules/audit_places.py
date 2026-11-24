@@ -1,4 +1,3 @@
-# engine: python-polars (reads the engine's own type names from a plan book; no Polars call)
 """The places where an audit step can be written for an open plot, and the check of a choice (HOME audit, demo steps 1 to 3).
 
 Pure: no Shiny, no file, no engine call. Input: the recipe graph (`utils.recipe_graph`), the engine's plan book of the ORIGINAL recipe

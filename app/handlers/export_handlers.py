@@ -646,7 +646,7 @@ def define_export_server(input, output, session, *,
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
-      audited_plot_table : callable(plot_id) -> LazyFrame | None  the table a plot reads in the audit copy made from the audit steps written at a table upstream
+      audited_plot_table : callable(plot_id, told) -> LazyFrame | None  the table a plot reads in the audit copy made from the audit steps written at a table upstream
                            (HOME's `_audited_t3_lf`); None for a plot that lies below no such step. Read whatever the mode on screen is: the export is the Result plus the audit.
     """
     from app.modules.notification_utils import make_notifier
@@ -1131,7 +1131,7 @@ def define_export_server(input, output, session, *,
             export: the plot, its data file and the check before the export read it, as HOME's plot and T3 table do."""
             if _place_nodes_all and audited_plot_table is not None:
                 with reactive.isolate():
-                    audited = audited_plot_table(p_id)
+                    audited = audited_plot_table(p_id, _on_build_change)   # a build whose inputs changed refuses the export, as for every other table
                 if audited is not None:
                     return audited
             return orchestrator.materialize_tier3(

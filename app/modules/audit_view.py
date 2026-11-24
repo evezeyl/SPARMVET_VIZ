@@ -1,4 +1,3 @@
-# engine: python-polars (hands out the lazy table of a plot of the audit copy; Polars appears in type annotations only)
 """What HOME and the export read when audit steps are written at a place upstream of a plot (HOME audit, demo step 2).
 
 One object per open recipe: it makes the audit copy of the recipe from the committed place nodes (`audit_places.audit_copy_for`), runs it (`audit_run.run_audit`, which builds
@@ -23,9 +22,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional
-
-import polars as pl
+from typing import Any, Callable, Iterable, List, Optional
 
 from app.modules.audit_places import audit_copy_for, nodes_signature
 from app.modules.audit_run import AuditRun, run_audit
@@ -64,10 +61,15 @@ class PlaceAudit:
         return run
 
     def plot_lazy(self, recipe_id: str, plot_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None,
-                  told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[pl.LazyFrame]:
-        """The table `plot_id` reads in the copy, lazy; None when there is no copy or the plot lies below no step (it then reads its original table)."""
+                  told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[Any]:
+        """The table `plot_id` reads in the copy, a Polars lazy frame (typed `Any`: this file names no engine); None when there is no copy or the plot lies below no step (it then reads its original table)."""
         run = self.run_of(recipe_id, nodes, plans)
-        return None if run is None else run.plot_table(plot_id, told)
+        if run is None:
+            return None
+        for text in run.inputs_changed:                 # a table of the run was built while its inputs changed and was not stored: the caller is told, as for every build
+            if told is not None:
+                told(InputsChanged(text))
+        return run.plot_table(plot_id, told)
 
     def affected_plots(self, recipe_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> List[str]:
         """The plots whose table differs in CONTENT between the original and the copy, in the order of the recipe (ADR-101 point 6: a step that removes nothing affects none)."""

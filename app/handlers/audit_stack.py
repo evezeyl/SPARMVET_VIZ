@@ -35,7 +35,7 @@ from app.modules.error_notice import notice
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
-from app.modules.audit_places import PLACES_BUCKET, plots_below
+from app.modules.audit_places import PLACES_BUCKET, place_words, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -113,12 +113,6 @@ def _condition_summary(node: dict) -> str:
         keys = [k for k in ("fill", "colour", "alpha", "shape") if k in p]
         return ", ".join(keys) if keys else "overrides"
     return str(p)[:40]
-
-
-def place_words(place: str) -> str:
-    """A place in plain words for the audit card: `T1:ResFinder` is "Table ResFinder (tier 1)"."""
-    tier, _, table = (place or "").partition(":")
-    return f"Table {table} (tier {tier[1:]})" if tier in ("T1", "T2") and table else str(place)
 
 
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:

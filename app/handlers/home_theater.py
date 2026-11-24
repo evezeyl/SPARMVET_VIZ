@@ -522,12 +522,12 @@ def define_server(input, output, session, *,
     def _committed_place_nodes() -> list[dict]:
         return place_nodes((home_state.get().get("t3_audit_steps_by_plot", {}) or {}) if home_state is not None else {})
 
-    def _audited_t3_lf(plot_id: str):
+    def _audited_t3_lf(plot_id: str, told=None):
         """The table `plot_id` reads in the audit copy made from the audit steps written at a place upstream (`audit_view.PlaceAudit`), lazy; None when no such step
         lies above the plot (it then reads its original table). Audit mode only: the caller asks `_in_audit()`. Raises what the run raises (an `AuditRunError` that names the
         step and its place, an `AuditCopyError`): the callers show it in the place of the plot, never skip a step."""
         nodes = _committed_place_nodes()
-        return _the_place_audit().plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, _tell_inputs_changed)
+        return _the_place_audit().plot_lazy(_open_recipe_id(), plot_id, nodes, _recipe_plans() if nodes else None, told or _tell_inputs_changed)
 
     def _plot_table_changed(plot_id: str) -> bool | None:
         """Whether the audit steps written at a place upstream changed the CONTENT of the table of `plot_id` (a step that removes nothing moves a key and no row, ADR-101 point 6);
