@@ -41,6 +41,8 @@ from app.modules.id_warning import export_sentences, read_status
 from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
+from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, place_step_records, place_words, plots_below, place_nodes as _committed_place_nodes_of
+from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
 from utils.fix_text import fix_label
@@ -521,6 +523,9 @@ def _build_methods_section(
             p_id,
         ))
         for n in nodes:
+            # a step written at a table upstream (bucket `__places__`) says where, and applies to every plot built from there
+            at_table = p_id == PLACES_BUCKET
+            where = f" (written at {_qp(place_words(n.get('place', '')))}; it applies to every plot built from there)"
             nt = n.get("node_type", "")
             params = n.get("params", {})
             reason = n.get("reason", "").strip()
@@ -543,11 +548,11 @@ def _build_methods_section(
                 detail += (", keeping the rows with no value in **" + col + "**"
                            if params.get("na") == "keep"
                            else ", removing the rows with no value in **" + col + "**")
-                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
+                scope = where if at_table else (f" (plot: *{plot_label}*)" if p_id != "__all__" else "")
                 sentence = f"{verb} {detail}{scope}."
             elif nt == "drop_column":
                 col = _qp(params.get("column", "?"))
-                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
+                scope = where if at_table else (f" (plot: *{plot_label}*)" if p_id != "__all__" else "")
                 sentence = f"Column **{col}** was permanently removed from the exported data{scope}."
             elif nt == "aesthetic_override":
                 scope = f" for plot *{plot_label}*"
@@ -623,7 +628,8 @@ def define_export_server(input, output, session, *,
                          session_processing_issues=None,
                          t3_filter_rows=None,
                          t3_drop_columns=None,
-                         view_keys=None):
+                         view_keys=None,
+                         audited_plot_table=None):
     """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
@@ -640,6 +646,8 @@ def define_export_server(input, output, session, *,
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
+      audited_plot_table : callable(plot_id) -> LazyFrame | None  the table a plot reads in the audit copy made from the audit steps written at a table upstream
+                           (HOME's `_audited_t3_lf`); None for a plot that lies below no such step. Read whatever the mode on screen is: the export is the Result plus the audit.
     """
     from app.modules.notification_utils import make_notifier
     from app.modules.session_manager import SessionManager
@@ -1107,6 +1115,30 @@ def define_export_server(input, output, session, *,
                 if _subtab in _overrides_all and _overrides_all[_subtab]:
                     _t3_aesthetic_overrides[_pid] = _overrides_all[_subtab]
 
+        # The audit steps written at a table upstream of plots (demo step 4): one step is one record, always applied to every plot built from its place.
+        _place_nodes_all: list[dict] = []
+        _place_records: list[dict] = []
+        _place_plot_ids: set[str] = set()
+        if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
+            _place_nodes_all = _committed_place_nodes_of(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
+            if _place_nodes_all:
+                _graph = build_graph(cfg.raw_config)
+                _place_records = place_step_records(_graph, _place_nodes_all)
+                _place_plot_ids = {p for rec in _place_records for p in rec["plots"]}
+
+        def _read_plot_table(p_id: str):
+            """The table a plot reads, lazy: the audited one when an audit step is written at a table upstream of it, else its own table (`materialize_tier3`). The ONE read of the
+            export: the plot, its data file and the check before the export read it, as HOME's plot and T3 table do."""
+            if _place_nodes_all and audited_plot_table is not None:
+                with reactive.isolate():
+                    audited = audited_plot_table(p_id)
+                if audited is not None:
+                    return audited
+            return orchestrator.materialize_tier3(
+                data_analysis_recipe_id=data_analysis_recipe_id, plot_id=p_id,
+                anchors_dir=bootloader.get_location("user_data") / "anchors", keys=export_keys,
+                on_inputs_changed=_on_build_change)
+
         # The audit pin of a plot (Reshuffle, or an audit override) is a step of the audit trail too, whatever the
         # audit-trail flag: listed in t3_steps.yaml, the Methods text and the report's audit table, and hashed.
         _t3_listed = with_seed_steps(_t3_by_plot, _plot_seeds)
@@ -1131,7 +1163,7 @@ def define_export_server(input, output, session, *,
         audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
         # The plots whose table is not their target's Tier 2 as it is: the recipe writes tier-3 steps for them, or the user audited them.
         # Each has its own T3 data file in the bundle (the plot is drawn from it).
-        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)}
+        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)} | {p for p, _ in all_plots if p in _place_plot_ids}
 
         # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
         # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
@@ -1140,10 +1172,7 @@ def define_export_server(input, output, session, *,
             steps, plus the plot's own tier-3 steps), as the data and plot sections read it."""
             if not spec.get("target_dataset"):
                 return tier1_anchor()
-            return orchestrator.materialize_tier3(
-                data_analysis_recipe_id=data_analysis_recipe_id, plot_id=p_id,
-                anchors_dir=bootloader.get_location("user_data") / "anchors", keys=export_keys,
-                on_inputs_changed=_on_build_change)
+            return _read_plot_table(p_id)
 
         _failing = audit_failures([(_p, (lambda _p=_p, _s=_s: _base_frame(_p, _s)), _audited_nodes(_p)) for _p, _s in all_plots])
         if _failing:
@@ -1218,7 +1247,7 @@ def define_export_server(input, output, session, *,
                 plot_keys=plot_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
-                t3_by_plot=_t3_listed,
+                t3_by_plot={**_t3_listed, PLACES_BUCKET: _place_nodes_all} if _place_nodes_all else _t3_listed,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
             # The notices of the build are held and shown only when the bundle is handed over: an export that is refused
@@ -1304,13 +1333,7 @@ def define_export_server(input, output, session, *,
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             # Plots never show T1 (ADR-086): same base as HOME, the table the plot reads: the stored
                             # Tier 2 (equal to T1 when the table has no tier2 steps) plus the plot's own tier-3 steps.
-                            lf = orchestrator.materialize_tier3(
-                                data_analysis_recipe_id=data_analysis_recipe_id,
-                                plot_id=p_id,
-                                anchors_dir=anchor_dir,
-                                keys=export_keys,
-                                on_inputs_changed=_on_build_change,
-                            )
+                            lf = _read_plot_table(p_id)
                         else:
                             lf = tier1_anchor()
 
@@ -1470,13 +1493,7 @@ def define_export_server(input, output, session, *,
                                 continue
                             try:
                                 if target_ds:
-                                    lf_t3 = orchestrator.materialize_tier3(
-                                        data_analysis_recipe_id=data_analysis_recipe_id,
-                                        plot_id=_t3_pid,
-                                        anchors_dir=bootloader.get_location("user_data") / "anchors",
-                                        keys=export_keys,
-                                        on_inputs_changed=_on_build_change,
-                                    )
+                                    lf_t3 = _read_plot_table(_t3_pid)
                                 else:
                                     lf_t3 = tier1_anchor()
                                 lf_t3 = audited_frame(lf_t3, _audited_nodes(_t3_pid), _t3_pid)
@@ -1529,7 +1546,7 @@ def define_export_server(input, output, session, *,
 
                 # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
                 # human-readable audit record backing the Methods prose, not the recipe. ──
-                if _t3_listed or _t3_aesthetic_overrides:
+                if _t3_listed or _t3_aesthetic_overrides or _place_records:
                     try:
                         import yaml as _yaml
                         t3_steps_data = {
@@ -1547,6 +1564,14 @@ def define_export_server(input, output, session, *,
                                 for _pid, _nodes in _t3_listed.items()
                             },
                         }
+                        # the steps written at a table upstream: where each is written, its reason and the plots built from there (demo step 4)
+                        if _place_records:
+                            t3_steps_data["audit_steps_at_tables"] = [
+                                {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
+                                 "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
+                                 "plots_built_from_it": r["plots"]}
+                                for r in _place_records
+                            ]
                         # Aesthetic overrides are stored separately from audit step (§12c)
                         # the seed is listed as a step above, not a second time here
                         _overrides_listed = {
@@ -1580,7 +1605,8 @@ def define_export_server(input, output, session, *,
                     from blueprint_arch.t3_translator import build_mode2_recipe
                     import yaml as _yaml
 
-                    mode2_cfg, mode2_skipped = build_mode2_recipe(cfg.raw_config, _t3_by_plot)
+                    # the steps written at a table go into that table's own steps, so that the recipe alone builds the audited tables
+                    mode2_cfg, mode2_skipped = build_mode2_recipe(bake_place_steps(cfg.raw_config, _place_nodes_all) if _place_nodes_all else cfg.raw_config, _t3_by_plot)
                     # SEED-HOLDS-1: the seed each plot was exported with is written into this recipe, so the
                     # re-run draws the same arrangement (the recipe is the scientific document).
                     mode2_cfg = bake_plot_seeds(mode2_cfg, _plot_seeds)
@@ -1969,7 +1995,7 @@ def define_export_server(input, output, session, *,
             # ── Methods section (auto-generated from the audited T3 steps) ───
             _methods_lines = _build_methods_section(
                 all_plots=all_plots,
-                t3_by_plot=_t3_listed,
+                t3_by_plot={**_t3_listed, PLACES_BUCKET: _place_nodes_all} if _place_nodes_all else _t3_listed,
                 ds_to_plots=ds_to_plots,
                 tiers_exported=tiers_exported,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
@@ -2039,6 +2065,18 @@ def define_export_server(input, output, session, *,
                                          f"{_qp(str(_r['rows']))} rows × {_qp(str(_r['columns']))} columns")
                     else:
                         qmd_lines.append(f"- {_qp(_t)}: not written, see `{_quote(_r['folder'])}/T1_data_ERROR.txt`")
+                qmd_lines.append("")
+
+            # ── Audit steps written at a table upstream (demo step 4) ──────────
+            if _place_records:
+                qmd_lines += ["## Audit steps written at a table", "",
+                              "Each step below was written at the table named; every table and plot built from that table is built again from it, and the figures and data files of this bundle are those.", "",
+                              "| Step | Written at | Action | Details | Justification | Plots built from it |",
+                              "|------|------------|--------|---------|---------------|---------------------|"]
+                for _i, _r in enumerate(_place_records, 1):
+                    _details = _qp("; ".join(f"{k}={v}" for k, v in _r["params"].items())) if _r["params"] else "—"
+                    _plots = _qp(", ".join(_r["plots"]) or "none")
+                    qmd_lines.append(f"| {_i} | {_qp(_r['place_words'])} | {_qc(_r['action'], True)} | {_details} | {_qp(_r['reason'] or '—')} | {_plots} |")
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
@@ -2325,6 +2363,11 @@ def define_export_server(input, output, session, *,
                 "Audited T3 steps (always applied to the plot and its data):",
                 *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see t3_steps.yaml and the T3 Audit Trail in report.qmd"
                    for _p in sorted(audited_plots)] or ["  none"]),
+                *(["", "Audit steps written at a table (every table and plot built from that table is built again from it; always applied):",
+                   *[f"  {_r['place_words']}: {_r['action']} {', '.join(f'{k}={v}' for k, v in _r['params'].items())} -- reason: {_r['reason']} -- plots built from it: "
+                     f"{', '.join(_r['plots']) or 'none'}" for _r in _place_records],
+                   "  The T1 and T2 files of a table are the tables as the recipe builds them (without these steps); the T3 file of every plot built from the",
+                   "  table holds the audited table, and the figures are drawn from it. (see t3_steps.yaml, audit_steps_at_tables, and the report)"] if _place_records else []),
                 "",
                 "Contents:",
                 "  <dataset>/plots/  — rendered figures, grouped by source dataset",

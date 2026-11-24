@@ -20,7 +20,7 @@ import re
 import pytest
 from shiny import reactive
 
-from app.modules.session_manager import (SessionImportRefused, SessionManager, make_audit_step, session_id_collisions,
+from app.modules.session_manager import (SESSION_FORMAT_VERSION, SessionImportRefused, SessionManager, make_audit_step, session_id_collisions,
                                          session_input_id_part, session_input_id_parts)
 from app.tests.test_session_clicks_once import SAFE, KEY_A, KEY_B, _flush, _live
 from app.tests.test_session_import_safety import BIG, Screen, _session_zip, _tree, _zip_of
@@ -139,8 +139,8 @@ def test_the_panel_without_a_collision_has_no_notice(tmp_path, monkeypatch):
 
 def test_a_zip_whose_t3_file_holds_another_key_is_refused_and_nothing_is_written(tmp_path):
     sm = SessionManager(tmp_path / "user")
-    members = [(f"{KEY_A}/assembly.json", json.dumps({"session_key": KEY_A, "data_analysis_recipe_id": "t", "schema_version": 3})),
-               (f"{KEY_A}/t3_20261118T000000.json", json.dumps({"session_key": KEY_B, "schema_version": 3}))]
+    members = [(f"{KEY_A}/assembly.json", json.dumps({"session_key": KEY_A, "data_analysis_recipe_id": "t", "schema_version": SESSION_FORMAT_VERSION})),
+               (f"{KEY_A}/t3_20261118T000000.json", json.dumps({"session_key": KEY_B, "schema_version": SESSION_FORMAT_VERSION}))]
     before = _tree(sm.root) if sm.root.exists() else []
     with pytest.raises(SessionImportRefused) as err:
         sm.import_session_zip(_zip_of(members), limits=BIG)

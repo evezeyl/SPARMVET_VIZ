@@ -151,7 +151,8 @@ def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any, plans: Any 
     WHY: the audit refuses to drop a column that a join step later reads as a key, by place (D-0358, which modulates D-0297; `utils.key_drop`), but a session saved
     before that rule, or written by hand, can hold such a step, and Restore puts stored steps straight into the view. A stored step sits in the stack of a plot, so
     its place is `T3:<plot>` (the subtab id `subtab_<plot>` without its prefix): nothing is built from a plot, so today the rule finds nothing to refuse there and the
-    steps are kept; the question is still asked, so that a step stored at another place is judged the same way. Returns `(kept, refused)`: `kept` is a copy of
+    steps are kept; the question is still asked, so that a step stored at another place is judged the same way (a step written at a table upstream carries its `place` and is judged there: a
+    key that a join reads later is refused and not restored). Returns `(kept, refused)`: `kept` is a copy of
     `by_plot` without the refused steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step copy
     as `{"plot", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
     argument is not changed. `plans`: the engine's plan book of the open recipe (`app/modules/plan_composer.py`); without it the rule reads only the names the recipe declares and
@@ -165,6 +166,8 @@ def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any, plans: Any 
         place = f"T3:{plot.removeprefix('subtab_')}"
         for node in nodes or []:
             column = (node.get("params") or {}).get("column") if isinstance(node, dict) else None
+            # a step written at a table upstream (bucket `__places__`) is judged at ITS place; a plot-level step at the plot's own
+            place = (node.get("place") or place) if isinstance(node, dict) else place
             problem = gate.problem(place, [column]) if gate is not None and isinstance(node, dict) and node.get("node_type") == "drop_column" and isinstance(column, str) else None
             if problem:
                 refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", ""), "problem": problem})
@@ -224,7 +227,7 @@ class LegacySessionError(ValueError):
 # The format number of a session file (assembly.json and t3_*.json). Every writer writes it and every reader compares it
 # (D-0312): a file with no number, a lower one or a higher one is refused as a whole, nothing is converted. Number 3 is the
 # first of the redesigned sessions; the files written before it carried no number (assembly.json) or 2 (t3_*.json).
-SESSION_FORMAT_VERSION = 3
+SESSION_FORMAT_VERSION = 4
 
 
 def session_format_problem(data, where: str) -> str | None:

@@ -38,6 +38,7 @@ from shiny import reactive, render, ui
 import app.handlers.session_handlers as session_handlers
 from app.modules.session_manager import (
     DEFAULT_SESSION_IMPORT_MAX_UNPACKED_MB,
+    SESSION_FORMAT_VERSION,
     DEFAULT_SESSION_IMPORT_MAX_ZIP_MB,
     SessionImportLimits,
     SessionImportRefused,
@@ -137,7 +138,7 @@ def test_an_unknown_choice_is_refused_and_writes_nothing(sm):
 
 # --------------------------------------------------------------------------- member names
 
-GOOD = (f"{KEY}/assembly.json", json.dumps({"session_key": KEY, "data_analysis_recipe_id": "t", "schema_version": 3}))
+GOOD = (f"{KEY}/assembly.json", json.dumps({"session_key": KEY, "data_analysis_recipe_id": "t", "schema_version": SESSION_FORMAT_VERSION}))
 
 
 @pytest.mark.parametrize("bad", ["../escape.txt", f"{KEY}/../../escape.txt", "/abs/escape.txt", "C:/escape.txt",

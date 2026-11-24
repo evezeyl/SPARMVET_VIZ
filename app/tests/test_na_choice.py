@@ -12,7 +12,7 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.modules.session_manager import SessionManager, make_audit_step, normalise_audit_steps
+from app.modules.session_manager import SESSION_FORMAT_VERSION, SessionManager, make_audit_step, normalise_audit_steps
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from app.tests.test_filter_defects import LABELS, RULE, _num
 from blueprint_arch.t3_translator import UntranslatableNode, translate_plot_steps, translate_t3_node
@@ -131,7 +131,7 @@ def _write_old_ghost(root, sm):
     from app.modules.cache_keys import canonical_hash
     by_plot_ = {"subtab_p": [OLD_NODE]}
     ghost = {"session_key": "k:k", "data_analysis_recipe_id": "r", "data_analysis_recipe_sha256": "a", "data_batch_hash": "b",
-             "saved_at": "2026-11-01T10:00:00", "label": "", "schema_version": 3,
+             "saved_at": "2026-11-01T10:00:00", "label": "", "schema_version": SESSION_FORMAT_VERSION,
              "t3_audit_steps": [OLD_NODE], "t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {},
              "notification_log": [], "t3_audit_steps_sha256": canonical_hash({"t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {}})}
     (sm.session_dir("k:k") / "t3_20261101T100000000000.json").write_text(json.dumps(ghost))

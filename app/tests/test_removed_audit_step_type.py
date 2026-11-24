@@ -27,7 +27,7 @@ import pytest
 import yaml
 
 from app.modules.bundle_importer import BundleImportError, import_bundle
-from app.modules.session_manager import LegacySessionError, SessionManager
+from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
 from app.modules.t3_audit_engine import AuditStepError, audited_frame
 
 REMOVED = "developer_" + "raw_yaml"
@@ -75,8 +75,8 @@ def _session(tmp_path, steps_by_plot=None, flat=None):
     sm = SessionManager(tmp_path)
     key = "abc123def456:0123456789ab"
     folder = sm.session_dir(key)
-    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": 3}))
-    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": 3,
+    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": SESSION_FORMAT_VERSION}))
+    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": SESSION_FORMAT_VERSION,
              "t3_audit_steps_by_plot": steps_by_plot or {}, "t3_audit_steps": flat or []}
     (folder / "t3_20261115_100000.json").write_text(json.dumps(ghost))
     return sm, key

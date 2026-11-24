@@ -2707,6 +2707,7 @@ def define_server(input, output, session, *,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,
+        audited_plot_table=_audited_t3_lf,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

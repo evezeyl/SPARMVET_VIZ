@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from app.modules.session_manager import (
+    SESSION_FORMAT_VERSION,
     SessionManager,
     make_audit_step,
     node_blocks_apply,
@@ -283,7 +284,7 @@ def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_p
     d.mkdir(parents=True, exist_ok=True)
     legacy = {
         "session_key": key, "data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64,
-        "saved_at": "2026-01-01T00:00:00", "label": "", "schema_version": 3,
+        "saved_at": "2026-01-01T00:00:00", "label": "", "schema_version": SESSION_FORMAT_VERSION,
         "t3_audit_steps": [], "t3_audit_steps_by_plot": {"subtab_p": []}, "t3_plot_overrides": {},
     }
     (d / "t3_20260101_000000.json").write_text(json.dumps(legacy))

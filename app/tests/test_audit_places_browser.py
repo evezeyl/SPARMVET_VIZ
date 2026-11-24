@@ -169,3 +169,71 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     page.locator("[id^='subtabs_'] .nav-link:has-text('MLST Bar')").first.click()
     _wait_shiny(page)
     wait_preview_rows(page, mlst_rows, timeout=30_000)
+
+
+def _stage_and_apply_step_at_resfinder(page: Page) -> None:
+    _send_filter(page)
+    page.locator("#propagation_choice input[value=place]").check(force=True)
+    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
+    _tick(page, "T1:ResFinder")
+    page.locator("#propagation_confirm").click()
+    _wait_shiny(page)
+    box = page.locator('input[id^="t3_reason_"]').first
+    expect(box).to_be_visible(timeout=15_000)
+    box.fill(REASON)
+    box.press("Tab")
+    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
+    page.locator("#btn_apply").first.click()
+    _wait_shiny(page)
+
+
+def test_the_export_holds_the_audited_table_the_step_with_its_place_and_a_recipe_that_builds_it(ready: Page, expected):
+    """Demo step 4: the exported data file of the plot is the audited table of HOME (same rows), t3_steps.yaml, README and report say where the step is written and why, the
+    other plot has no T3 file, and the reproducibility recipe holds the step as a plain step at the end of the tier 1 of ResFinder."""
+    import io
+    import zipfile
+    from pathlib import Path
+    import yaml
+    page = ready
+    _amr_plot(page)
+    set_view(page, "T3")
+    _stage_and_apply_step_at_resfinder(page)
+    wait_preview_rows(page, expected["amr_after"], timeout=60_000)
+    try:
+        if not page.locator("#export_bundle_download").is_visible():
+            page.locator("#nav_accordion .accordion-button", has_text="Export").first.click()   # not get_by_text: the reminder of the Filters panel says "exported" too
+            _wait_shiny(page)
+        page.locator("#export_include_reproducibility").check(force=True)
+        _wait_shiny(page)
+        page.locator("#export_user_name").fill("autotest")
+        with page.expect_download(timeout=180_000) as info:
+            page.locator("#export_bundle_download").click()
+        z = zipfile.ZipFile(io.BytesIO(Path(info.value.path()).read_bytes()))
+        names = z.namelist()
+        assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
+        errors = {n: z.read(n).decode() for n in names if n.endswith("_ERROR.txt")}
+        assert not errors, errors
+        table = next(z.read(n).decode() for n in names if n.endswith("/T3_data_amr_heatmap.tsv"))
+        assert len(table.strip().splitlines()) - 1 == expected["amr_after"], "the data file of the plot is the audited table of HOME"
+        assert not any(n.endswith("/T3_data_mlst_bar.tsv") for n in names), "a plot beside the place has no T3 file"
+        original = next(z.read(n).decode() for n in names if n.endswith("/ResFinder/T1_data.tsv"))
+        assert len(original.strip().splitlines()) - 1 == expected["amr_before"], "the T1 file of the table is the table as the recipe builds it"
+        steps = yaml.safe_load(next(z.read(n).decode() for n in names if n.endswith("/t3_steps.yaml")))
+        (record,) = steps["audit_steps_at_tables"]
+        assert record["written_at"] == "T1:ResFinder" and record["written_at_words"] == "Table ResFinder (tier 1)" and record["reason"] == REASON
+        assert record["column"] == "identity" and "amr_heatmap" in record["plots_built_from_it"] and "mlst_bar" not in record["plots_built_from_it"]
+        readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
+        assert "Audit steps written at a table" in readme and "Table ResFinder (tier 1)" in readme and REASON in readme
+        qmd = next(z.read(n).decode() for n in names if n.endswith("report.qmd"))
+        assert "## Audit steps written at a table" in qmd and "Table ResFinder (tier 1)" in qmd and "it applies to every plot built from there" in qmd
+        recipe = yaml.safe_load(next(z.read(n).decode() for n in names if "data_analysis_recipes_reproducibility/" in n and n.endswith(".yaml")))
+        last = recipe["data_schemas"]["ResFinder"]["tier1"]["steps"][-1]
+        assert last["action"] == "modif_filter" and last["column"] == "identity" and last["op"] == "lt"
+        run = yaml.safe_load(next(z.read(n).decode() for n in names if n.endswith("effective_run.yaml")))
+        assert len(run["t3_audit_steps_sha256"]) == 64
+    finally:
+        _amr_plot(page)
+        if page.locator("[id^='t3_delete_']").count():
+            page.locator("[id^='t3_delete_']").first.click()
+            _wait_shiny(page)
+            wait_preview_rows(page, expected["amr_before"], timeout=60_000)

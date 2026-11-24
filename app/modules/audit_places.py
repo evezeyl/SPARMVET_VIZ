@@ -27,7 +27,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:place_nodes, function:audit_copy_for, function:nodes_signature, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_lines, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -35,12 +35,14 @@ Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from blueprint_arch.t3_translator import translate_t3_node
+from utils import recipe_tiers
 from utils.audit_copy import AuditCopy, add_step, start_audit
 from utils.plan_book import Plan, PlanBook
 from utils.recipe_graph import RecipeGraph
@@ -177,3 +179,52 @@ def audit_copy_for(original_raw: dict, nodes: Iterable[dict], plans: Optional[Pl
         for step in translate_t3_node(node):
             add_step(audit, node["place"], step, node.get("reason") or "", plans)
     return audit
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# What the export says and writes of these steps (demo step 4)
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def place_words(place: str) -> str:
+    """A place in plain words: `T1:ResFinder` is "Table ResFinder (tier 1)"."""
+    tier, _, table = (place or "").partition(":")
+    return f"Table {table} (tier {tier[1:]})" if tier in ("T1", "T2") and table else str(place)
+
+
+def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[str, Any]]:
+    """One record per committed node written at a place, in commit order, for `t3_steps.yaml`, the README and the report: id, place (as a node id and in words), the plot it was
+    started from, the action it is (`node_type`) with its parameters, the reason, the date and the plots built from the place (`plots`). A place the graph does not have lists no plot."""
+    records: List[Dict[str, Any]] = []
+    for node in nodes:
+        place = node.get("place") or ""
+        records.append({
+            "id": node.get("id"), "place": place, "place_words": place_words(place), "started_from": (node.get("started_from") or "").removeprefix("subtab_"),
+            "action": node.get("node_type", "unknown"), "params": dict(node.get("params") or {}), "reason": node.get("reason", ""),
+            "committed_at": node.get("created_at", ""),
+            "plots": plots_below(graph, [place]) if graph.has_node(place) else [],
+        })
+    return records
+
+
+def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
+    """A deep copy of the recipe in which each node written at a place is a plain step at the END of that tier (`tier1.steps` or `tier2.steps` of its table), so that the recipe
+    alone, run by the engine with no audit machinery, builds the audited tables (the reproducibility part of the export). The table says so in its `comment`, with the ids of the
+    audit steps (the reasons are in `t3_steps.yaml`). The argument is not changed. Raises `UntranslatableNode` for a node with no registered action and `KeyError` for a table
+    the recipe does not have."""
+    baked = copy.deepcopy(raw)
+    written: Dict[Tuple[str, str], List[str]] = {}
+    for node in nodes:
+        tier, table = (node.get("place") or "").split(":", 1)
+        tier_key = {"T1": "tier1", "T2": "tier2"}[tier]
+        body = recipe_tiers.collection_body(baked, table)
+        if not isinstance(body, dict):
+            raise KeyError(f"the recipe has no table or join '{table}'")
+        held = body.get(tier_key) if isinstance(body.get(tier_key), dict) else {}
+        body[tier_key] = {**held, "steps": list(held.get("steps") or []) + translate_t3_node(node)}
+        written.setdefault((table, tier_key), []).append(str(node.get("id")))
+    for (table, tier_key), ids in written.items():
+        body = recipe_tiers.collection_body(baked, table)
+        note = f"Written by the export: the audit steps {', '.join(ids)} are added at the end of {tier_key}."
+        body["comment"] = f"{body['comment']} {note}" if body.get("comment") else note
+    return baked
