@@ -10,7 +10,7 @@ two or more datasets that have a sample id:
 1. the common set is the ids of one table: `metadata_schema`, or the table named in COMMON_SET_TABLE;
 2. every id of every other table is in that set (the metadata's own lines without an id are the one allowed exception:
    the demo recipe has a visible step that removes them, D-0167); ALLOWED_OUTSIDE names, with a reason, ids that a recipe
-   keeps outside the set on purpose (`left_join_lesson`, the recipe that teaches a left join);
+   keeps outside the set on purpose (none today);
 3. a table that is meant to have one row per sample, or per sample and scheme, has no repeat (UNIQUE_BY); the table of
    the common set has one row per sample. A long table (ResFinder, PlasmidFinder, VirulenceFinder) may repeat an id.
 
@@ -40,14 +40,8 @@ NO_ID = {"", "-", '""'}
 COMMON_SET_TABLE = {"figshare_integration": "fg_metadata"}
 
 # Ids a recipe keeps outside the set on purpose: {(recipe, table): (ids, reason)}.
-ALLOWED_OUTSIDE = {
-    ("left_join_lesson", "sequenced"): (
-        {"ACC0001", "ACC0002"},
-        "the lesson recipe that teaches a left join: its two tables have ids that do not match on purpose "
-        "(config/data_analysis_recipes/templates/left_join_lesson.yaml, app/tests/test_left_join_lesson.py); "
-        "the id column is the one the recipe declares with is_entity_id (Accession and ID), not a name guess",
-    ),
-}
+# Empty since the template `left_join_lesson` was deleted (D-0625); a new exception is named here with its reason.
+ALLOWED_OUTSIDE = {}
 
 # Tables meant to have one row per sample (and scheme): {(recipe, table): key columns of the file}.
 UNIQUE_BY = {
@@ -63,7 +57,7 @@ UNIQUE_BY = {
 
 EXPECTED_CHECKED = {
     "demo_abromics", "1_test_data_ST22_dummy", "2_test_data_ST22_dummy", "1_Abromics_general_pipeline",
-    "figshare_integration", "complex_template", "left_join_lesson",
+    "figshare_integration", "complex_template",
 }
 
 
@@ -255,18 +249,6 @@ def test_an_unreadable_set_table_is_reported_not_skipped():
     assert found and "COMMON_SET_TABLE" in found[0]
 
 
-def test_the_lesson_exception_is_narrow_and_read_from_the_declared_id_column():
-    """Exactly the two named ids are allowed in the lesson; a third foreign id fails, and the id column is the declared one."""
-    tables = CHECKED["left_join_lesson"]
-    assert problems_of("left_join_lesson", tables, "metadata_schema") == []
-    assert tables["sequenced"][1] == "Accession" and tables["metadata_schema"][1] == "ID", "the declared is_entity_id columns"
-    found = problems_of("left_join_lesson", tables, "metadata_schema",
-                        allowed_outside={("left_join_lesson", "sequenced"): ({"ACC0001"}, "x")})
-    assert any("ACC0002" in p and "ACC0001" not in p for p in found), found
-    assert any("ACC0001" in p for p in problems_of("left_join_lesson", tables, "metadata_schema", allowed_outside={})), \
-        "without the declared exception the lesson fails: the exception is the only thing that lets it pass"
-
-
-def test_the_only_declared_exception_is_the_left_join_lesson():
-    assert set(ALLOWED_OUTSIDE) == {("left_join_lesson", "sequenced")}
+def test_no_exception_is_declared_since_the_left_join_lesson_was_deleted():
+    assert ALLOWED_OUTSIDE == {}
     assert problems_of("complex_template", CHECKED["complex_template"], "metadata_schema", allowed_outside={}) == []

@@ -4,6 +4,12 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - Four small decisions (branch `task/small-decisions`; D-0623, D-0624, D-0625, D-0626)
+
+- ⚠️ **The template `left_join_lesson` is deleted** (D-0625) with its two data files (`assets/test_data/left_join_lesson/`), its data script (`make_left_join_lesson_data.py`) and its test (`test_left_join_lesson.py`). The declared exception of `test_recipe_data_one_set_of_ids.py` (`ALLOWED_OUTSIDE`) is now empty; its tests were adapted. No other recipe or test read the deleted data files.
+
+---
+
 ## [2026-11-24] - HOME audit dialog: the places along the path and the derived places (branch `task/audit-dialog-path`; D-0553, D-0346, D-0613)
 
 - The places of the choice "At a table this plot is built from" are listed as the path of the lineage (original tables first, indented by depth, the plot's own tier 3 last). Ticking a place greys the places below it ("~ follows from the place chosen above") and disables the places above it; untick frees them (`app/src/www/audit_places_path.js`, `audit_places.path_rows`, `config/ui/theme.css` section 28). The words are PROVISIONAL.

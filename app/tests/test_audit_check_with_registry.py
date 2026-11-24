@@ -219,7 +219,6 @@ SHIPPED_JOIN_KEYS = {
     "pipelines/figshare_integration.yaml": ["sample_id"],
     "templates/complex_template.yaml": ["sample_id"],
     "templates/e_coli.yaml": ["sample_id"],
-    "templates/left_join_lesson.yaml": ["sample_id"],
     "templates/simple_template.yaml": ["sample_id"],
 }
 
