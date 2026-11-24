@@ -22,6 +22,7 @@ from __future__ import annotations
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
 
+import json
 import logging
 
 from shiny import reactive, render, ui
@@ -34,7 +35,7 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, place_lines, plots_below, reach_sentence
+from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, path_rows, place_lines, plots_below, reach_sentence
 from app.modules.audit_view import AUDIT_ERRORS
 from utils import key_drop
 from utils.recipe_graph import RecipeGraphError, build_graph
@@ -1121,17 +1122,22 @@ def define_filter_audit_server(input, output, session, *,
         }
         if place_lines_offered:
             radio_choices["place"] = "At a table this plot is built from"
+        path = json.dumps({"rows": {r.place: {"depth": r.depth, "derived": list(r.derived), "blocked": list(r.blocked)}
+                                    for r in path_rows(offered[0], place_lines_offered, own_place)}}) if place_lines_offered else ""
         places_block = ui.div(
             ui.input_checkbox_group(
                 "propagation_places",
-                label=ui.tags.small("The step is written at the table you choose, and every table and plot built from it is built again. "
-                                    "Choose one table, or the first table of several original tables.", class_="text-muted"),
+                label=ui.tags.small("The places read as the path of the lineage, from the original tables down to this plot. The step is written at the place you choose, and every table "
+                                    "and plot built from it is built again; the places below it follow from it. Choose one place, or the first place of several original tables.",
+                                    class_="text-muted"),
                 choices={**{line.place: f"{line_label(line)}: {reach_sentence(line)}" for line in place_lines_offered},
                          own_place: own_place_line(active_subtab.removeprefix("subtab_"))},
                 selected=[],
             ),
             id="propagation_places_wrapper",
+            class_="spv-places-path",
             style="display:none;",
+            **{"data-path": path},
         ) if place_lines_offered else ui.span()
 
         m = ui.modal(

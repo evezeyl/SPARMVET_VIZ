@@ -246,3 +246,63 @@ def test_a_step_at_a_plot_is_baked_into_the_tier3_of_that_plot_and_nowhere_else_
     assert baked["data_schemas"]["A"]["tier1"]["steps"][-1]["action"] == "modif_filter", "the step at the table is still baked at the table"
     with pytest.raises(KeyError, match="no plot 'nope'"):
         bake_place_steps(raw, [_node("T3:nope")])
+
+
+# ------------------------------------------------------------------ the places along the path and the derived places (D-0553: one place on a path, the rest derived)
+from app.modules.audit_places import path_rows
+
+
+def test_the_lines_read_as_the_path_two_original_tables_each_start_a_path_and_the_plot_comes_last():
+    graph = build_graph(small())
+    found = place_lines(graph, book(graph, all_have_id), "P", ["id"])
+    assert [(l.place, l.depth) for l in found.lines] == [("T1:A", 0), ("T1:B", 0), ("T1:J", 1), ("T2:J", 2)]
+    rows = path_rows(graph, found.lines, own_plot_place("P"))
+    assert [(r.place, r.depth) for r in rows] == [("T1:A", 0), ("T1:B", 0), ("T1:J", 1), ("T2:J", 2), ("T3:P", 3)], "the plot's own line is last and deepest"
+    assert [line_label(l) for l in found.lines][0] == "Table A (tier 1)", "the tier is in plain words"
+
+
+def test_an_empty_tier2_is_still_not_a_line_in_the_path():
+    raw = small()
+    raw["joins"]["J"]["tier2"] = {"steps": []}
+    graph = build_graph(raw)
+    found = place_lines(graph, book(graph, all_have_id), "P", ["id"])
+    assert [l.place for l in found.lines] == ["T1:A", "T1:B", "T1:J"]
+    assert [(r.place, r.depth) for r in path_rows(graph, found.lines, "T3:P")][-1] == ("T3:P", 2)
+
+
+def test_what_each_single_tick_derives_and_blocks_on_the_small_recipe():
+    graph = build_graph(small())
+    found = place_lines(graph, book(graph, all_have_id), "P", ["id"])
+    rows = {r.place: r for r in path_rows(graph, found.lines, "T3:P")}
+    assert rows["T1:A"].derived == ("T1:J", "T2:J", "T3:P") and rows["T1:A"].blocked == ()
+    assert rows["T1:B"].derived == ("T1:J", "T2:J", "T3:P") and rows["T1:B"].blocked == ()
+    assert rows["T1:J"].derived == ("T2:J", "T3:P") and set(rows["T1:J"].blocked) == {"T1:A", "T1:B"}
+    assert rows["T2:J"].derived == ("T3:P",) and set(rows["T2:J"].blocked) == {"T1:A", "T1:B", "T1:J"}
+    assert rows["T3:P"].derived == () and set(rows["T3:P"].blocked) == {"T1:A", "T1:B", "T1:J", "T2:J"}
+    # the two original tables do not block each other: they stay tickable together
+    assert "T1:B" not in rows["T1:A"].derived + rows["T1:A"].blocked
+    assert choice_problem(graph, found.lines, ["T1:A", "T1:B"], ["T3:P"]) is None
+
+
+def test_the_derived_and_blocked_sets_agree_with_the_rule_for_every_pair_of_places():
+    """The script combines the single ticks; this is the one rule the server asks at confirm: a pair is allowed exactly when neither is derived or blocked by the other."""
+    graph = build_graph(small())
+    found = place_lines(graph, book(graph, all_have_id), "P", ["id"])
+    rows = {r.place: r for r in path_rows(graph, found.lines, "T3:P")}
+    for a in rows:
+        for b in rows:
+            if a == b:
+                continue
+            shown_conflict = b in rows[a].derived or b in rows[a].blocked
+            rule_conflict = choice_problem(graph, found.lines, [a, b], ["T3:P"]) is not None
+            assert shown_conflict == rule_conflict, (a, b)
+
+
+def test_demo_the_path_of_the_amr_heatmap(demo):
+    graph, plans = demo
+    found = place_lines(graph, plans, "amr_heatmap", ["sample_id"])
+    rows = path_rows(graph, found.lines, own_plot_place("amr_heatmap"))
+    assert [(r.place, r.depth) for r in rows] == [("T1:ResFinder", 0), ("T2:ResFinder", 1), ("T3:amr_heatmap", 2)]
+    assert rows[0].derived == ("T2:ResFinder", "T3:amr_heatmap") and rows[0].blocked == ()
+    assert rows[1].derived == ("T3:amr_heatmap",) and rows[1].blocked == ("T1:ResFinder",)
+    assert rows[2].derived == () and rows[2].blocked == ("T1:ResFinder", "T2:ResFinder")

@@ -114,7 +114,11 @@ def test_the_dialog_offers_the_tables_the_plot_is_built_from_and_refuses_a_neste
     _close_notices(page)
     # the tier 1 and the tier 2 of one table: one below the other, refused in one line, the dialog stays
     _tick(page, "T1:ResFinder")
-    _tick(page, "T2:ResFinder")
+    expect(page.locator("#propagation_places input[value='T2:ResFinder']")).to_be_disabled()   # the dialog already shows it as derived
+    # the server's refusal is the safety net: force the second tick past the disabled box and confirm
+    page.evaluate("() => { const i = document.querySelector(\"#propagation_places input[value='T2:ResFinder']\"); i.disabled = false; i.checked = true; "
+                  "i.dispatchEvent(new Event('change', {bubbles: true})); }")
+    page.wait_for_timeout(300)
     page.locator("#propagation_confirm").click()
     expect(page.locator(NOTICE)).to_contain_text("lies below", timeout=10_000)
     expect(page.locator("#propagation_confirm")).to_be_visible()

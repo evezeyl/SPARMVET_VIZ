@@ -27,7 +27,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:own_place_line, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -67,6 +67,7 @@ class PlaceLine:
     other_tables: Tuple[str, ...]
     plots: Tuple[str, ...]
     types: Tuple[str, ...]
+    depth: int = 0
 
 
 @dataclass(frozen=True)
@@ -110,7 +111,44 @@ def place_lines(graph: RecipeGraph, plans: PlanBook, plot_id: str, columns: Iter
         other_tables = tuple(graph.node(n).name for n in below if graph.node(n).kind == "T1")
         plots = tuple(graph.node(n).name for n in below if graph.node(n).kind == "T3")
         lines.append(PlaceLine(nid, node.name, node.kind, "original" if node.collection_kind == "schema" else "joined", other_tables, plots, types))
+    # the lines read as the path of the lineage: from the original tables down (graph order is parents first), each at its depth on the path
+    order = {nid: k for k, nid in enumerate(graph.nodes())}
+    lines.sort(key=lambda line: order[line.place])
+    offered = {line.place for line in lines}
+    depth: Dict[str, int] = {}
+    for line in lines:
+        above = [depth[a] for a in graph.lineage_back(line.place) if a in offered]
+        depth[line.place] = 1 + max(above) if above else 0
+    lines = [PlaceLine(l.place, l.table, l.tier, l.kind, l.other_tables, l.plots, l.types, depth[l.place]) for l in lines]
     return PlaceLines(tuple(lines), tuple(unknown))
+
+
+@dataclass(frozen=True)
+class PathRow:
+    """One row of the dialog's path: `place` (a node id), `depth` (indent), `derived` (the offered places below it: they follow if it is chosen) and `blocked`
+    (the offered places above it: one place on a path, so they cannot be chosen with it)."""
+    place: str
+    depth: int
+    derived: Tuple[str, ...]
+    blocked: Tuple[str, ...]
+
+
+def path_rows(graph: RecipeGraph, lines: Sequence[PlaceLine], own_place: str = "") -> List[PathRow]:
+    """The rows of the path, in order, the plot's own place (`own_place`, if given) last; for each row what ticking it derives and blocks. Both come from
+    `RecipeGraph.derived_places` and `lineage_back` (one rule, `chosen_places_problem`); the dialog's script only combines them for several ticks
+    (the first places of several original tables stay tickable together). Pure; PROVISIONAL name."""
+    ids = [l.place for l in lines] + ([own_place] if own_place else [])
+    offered = set(ids)
+    depth = {l.place: l.depth for l in lines}
+    if own_place:
+        above = [depth[a] for a in graph.lineage_back(own_place) if a in depth]
+        depth[own_place] = 1 + max(above) if above else 0
+    rows = []
+    for nid in ids:
+        derived = tuple(p for p in graph.derived_places([nid]) if p in offered)
+        blocked = tuple(p for p in graph.lineage_back(nid) if p in offered)
+        rows.append(PathRow(nid, depth[nid], derived, blocked))
+    return rows
 
 
 def plots_below(graph: RecipeGraph, places: Iterable[str]) -> List[str]:
