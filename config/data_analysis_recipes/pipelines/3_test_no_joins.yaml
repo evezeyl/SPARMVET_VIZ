@@ -25,8 +25,8 @@ data_schemas:
     null_values: []
     strip: true
     completion:
-      marker: not_in_original_data
-      meaning: no result for this entity
+      marker: MLST_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 

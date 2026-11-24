@@ -19,8 +19,8 @@ data_schemas:
     null_values: []
     strip: true
     completion:
-      marker: not_in_original_data
-      meaning: no result for this entity
+      marker: submission_logs_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       lab_id:
         original_name: lab_id

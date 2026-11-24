@@ -112,11 +112,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "0003bd220820979189b68eea3d08b5ef7e8703331732b98c899b38541166e4e4"
+     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
     },
     "phenotype_genome_length_fragmentation": {
      "columns": [
@@ -153,11 +153,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "1359d05947a5f6c2fbeadfd3d22490546da169a60dddc3ee09816ff4bab95a36"
+     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
     },
     "qa_fanout_rows_per_sample": {
      "columns": [
@@ -199,11 +199,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "1359d05947a5f6c2fbeadfd3d22490546da169a60dddc3ee09816ff4bab95a36"
+     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
     },
     "qc_reads_horizontal_barplot": {
      "columns": [
@@ -223,10 +223,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "0b201c8fffa6f8fae032167556c7189b17f953f11a6a5e42e838a1e7e30dc9b0"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "virulence_bar": {
      "columns": [
@@ -272,11 +272,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "0003bd220820979189b68eea3d08b5ef7e8703331732b98c899b38541166e4e4"
+     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
     }
    },
    "t1": {
@@ -303,10 +303,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "601fa12a8cd177546aa4e6b0fd0e61809624831fa9acaec560f2679f8487bca2"
+     "sha256": "e02e5b7928e352bb162405e74c3a2b152466204b5b5c58d42744c79cbc44f3e0"
     },
     "FastP_with_metadata": {
      "columns": [
@@ -318,10 +318,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "f2102b912dc58e7c389d6509037d7fc948f0be246f3ecd1215e5ad5d36652488"
+     "sha256": "099ae8798a32a178817c4021500beabfb86f15dcdc74f88789c22be51422b101"
     },
     "MLST_with_metadata": {
      "columns": [
@@ -331,10 +331,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "222629f5c3b33d11789af4ec0d187d485685c576792a018f932cf043961e7f53"
+     "sha256": "9d74602837db47a68f6e9d4c643640b08ac439207cf4977f051136edacea7b9c"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -370,11 +370,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "1359d05947a5f6c2fbeadfd3d22490546da169a60dddc3ee09816ff4bab95a36"
+     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
     },
     "QA_fanout_exhibit": {
      "columns": [
@@ -401,11 +401,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "1359d05947a5f6c2fbeadfd3d22490546da169a60dddc3ee09816ff4bab95a36"
+     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -425,10 +425,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "0b201c8fffa6f8fae032167556c7189b17f953f11a6a5e42e838a1e7e30dc9b0"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "Quast_with_metadata": {
      "columns": [
@@ -466,10 +466,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 74,
-     "sha256": "23d8222a4d21066e94a2b55a33a9cd6918ce3883303846ed5696fbbf3dbccbba"
+     "sha256": "a0dc45c78d1458fd2ef085b9ae2dfa793db5f27d1d64325146c7067c9f5e781e"
     },
     "ST22_Anchor": {
      "columns": [
@@ -524,10 +524,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "601fa12a8cd177546aa4e6b0fd0e61809624831fa9acaec560f2679f8487bca2"
+     "sha256": "e02e5b7928e352bb162405e74c3a2b152466204b5b5c58d42744c79cbc44f3e0"
     },
     "FastP_with_metadata": {
      "columns": [
@@ -539,10 +539,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "f2102b912dc58e7c389d6509037d7fc948f0be246f3ecd1215e5ad5d36652488"
+     "sha256": "099ae8798a32a178817c4021500beabfb86f15dcdc74f88789c22be51422b101"
     },
     "MLST_with_metadata": {
      "columns": [
@@ -552,11 +552,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "0003bd220820979189b68eea3d08b5ef7e8703331732b98c899b38541166e4e4"
+     "sha256": "75716014f1dfce7f1ce86464b58f584de5ae766acfbeed5046d13ce14491466f"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -616,11 +616,11 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean",
+      "metadata_schema_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "1359d05947a5f6c2fbeadfd3d22490546da169a60dddc3ee09816ff4bab95a36"
+     "sha256": "2e58bd936400809515c83cbc2496d996ad1ebbb52704ed867c9015adbcabb2ab"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -640,10 +640,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "0b201c8fffa6f8fae032167556c7189b17f953f11a6a5e42e838a1e7e30dc9b0"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "Quast_with_metadata": {
      "columns": [
@@ -682,10 +682,10 @@
       "source:String",
       "year:Float64",
       "country:String",
-      "not_in_metadata:Boolean"
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 74,
-     "sha256": "23d8222a4d21066e94a2b55a33a9cd6918ce3883303846ed5696fbbf3dbccbba"
+     "sha256": "a0dc45c78d1458fd2ef085b9ae2dfa793db5f27d1d64325146c7067c9f5e781e"
     },
     "ST22_Anchor": {
      "columns": [
@@ -1011,10 +1011,10 @@
       "collection_date:Categorical",
       "amr_class:String",
       "value:Float64",
-      "not_in_original_data:Boolean"
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "e5bb9c11e08d2c2fdc059cfc19f6d83863736e838bd6b74d188ba2ab3fc3b8a7"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    },
    "t1": {
@@ -1025,10 +1025,10 @@
       "collection_date:Categorical",
       "amr_class:String",
       "value:Float64",
-      "not_in_original_data:Boolean"
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "e5bb9c11e08d2c2fdc059cfc19f6d83863736e838bd6b74d188ba2ab3fc3b8a7"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    },
    "t2": {
@@ -1039,10 +1039,10 @@
       "collection_date:Categorical",
       "amr_class:String",
       "value:Float64",
-      "not_in_original_data:Boolean"
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "e5bb9c11e08d2c2fdc059cfc19f6d83863736e838bd6b74d188ba2ab3fc3b8a7"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    }
   }

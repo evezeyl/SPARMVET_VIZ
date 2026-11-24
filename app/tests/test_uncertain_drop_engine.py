@@ -423,7 +423,7 @@ def test_the_places_of_the_shipped_recipes_that_the_walk_cannot_follow_without_t
 # the unpivot and change nothing after it; three are the marker columns of the completion of the ids, which flow on to the tables the joins publish and are gone there, D-0613), nine are
 # named by an unpivot or a later step and stop the build (PLAIN). The marker columns were not there before the completion of the ids: they are the three places added to the fifteen.
 INTENDED_UNPIVOT = {("T1:Summary_quality", c) for c in ("quality_module", "taxon", "genotype", "phenotype", "cge_phenotype", "plasmid")}
-MARKER_PLACES = {("T1:Summary_quality", "Summary_quality_not_in_original_data"), ("T1:Quast", "Quast_not_in_original_data"), ("T1:metadata_schema", "not_in_metadata")}
+MARKER_PLACES = {("T1:Summary_quality", "Summary_quality_not_in_original_data"), ("T1:Quast", "Quast_not_in_original_data"), ("T1:metadata_schema", "metadata_schema_not_in_original_data")}
 INTENDED = INTENDED_UNPIVOT | MARKER_PLACES
 
 

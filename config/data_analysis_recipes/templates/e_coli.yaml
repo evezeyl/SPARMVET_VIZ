@@ -18,8 +18,8 @@ data_schemas:
     null_values: []
     strip: true
     completion:
-      marker: not_in_original_data
-      meaning: no result for this entity
+      marker: amr_results_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       sample_id:
         original_name: sample_id
@@ -55,8 +55,8 @@ metadata_schema:
   null_values: []
   strip: true
   completion:
-    marker: not_in_metadata
-    meaning: no metadata for this entity
+    marker: metadata_schema_not_in_original_data
+    meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
   input_fields:
     sample_id:
       original_name: isolate_id

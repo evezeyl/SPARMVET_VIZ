@@ -20,8 +20,8 @@ data_schemas:
     null_values: []
     strip: true
     completion:
-      marker: not_in_original_data
-      meaning: no result for this entity
+      marker: Variants_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
       variant: {original_name: variant, type: String, ui_label: Variant}
