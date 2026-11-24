@@ -93,6 +93,6 @@ def test_the_rule_holds_on_every_shipped_recipe(path):
 
 def test_the_demo_counts_against_the_study():
     graph = build_graph(_load(str(DEMO)))
-    assert len(graph.nodes()) == 85
+    assert len(graph.nodes()) == 87   # 85 before the one big move: the two QA tables made data schemas add their source nodes (D-0610)
     # the study counts 58 places by its definition (T1 of 28 tables, T2 of the 13 read by a plot, T3 of 17 plots) and 55 where the engine accepts a step
     assert len(graph.places()) == 58
