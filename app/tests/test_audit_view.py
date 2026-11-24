@@ -269,6 +269,19 @@ def test_inside_a_tier_the_steps_run_in_the_order_written_and_a_step_on_a_column
     assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet")), "a refused run leaves nothing it built"
 
 
+def test_an_audit_filter_at_tier3_of_amr_heatmap_offers_and_uses_not_detected_and_runs_after_the_recipes_own_tier3_step(world):
+    """D-0623: the recipe's own tier-3 step of amr_heatmap fills the empty gene with NOT DETECTED. The value is offered by the dialog's list at that place (the table the plot reads)
+    and an audit filter on it keeps exactly those rows: the audit step runs AFTER the recipe's own step (before it, the gene is empty and the filter would keep nothing)."""
+    from app.modules.t3_audit_engine import value_choices
+    original = world.original_table("amr_heatmap")
+    assert original["gene"].null_count() == 0 and "NOT DETECTED" in original["gene"].to_list(), "the recipe's own step ran: no empty gene"
+    assert "NOT DETECTED" in value_choices(original.lazy(), "gene"), "the dialog's list offers the value"
+    node = world.node(place="T3:amr_heatmap", params={"column": "gene", "op": "in", "value": ["NOT DETECTED"], "dtype": "String", "na": "remove"})
+    got = world.audit().plot_lazy(RECIPE_ID, "amr_heatmap", [node], world.plans).collect()
+    assert got.height == original.filter(pl.col("gene") == "NOT DETECTED").height > 0
+    assert set(got["gene"].to_list()) == {"NOT DETECTED"}
+
+
 def test_a_tier3_step_a_key_drop_and_a_missing_plot_are_judged_like_any_other_place(world):
     audit = world.audit()
     with pytest.raises(AuditCopyError, match="no plot 'no_such_plot'"):

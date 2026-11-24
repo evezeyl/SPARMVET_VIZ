@@ -42,7 +42,7 @@ from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, between_prose
 from app.modules.audit_view import AUDIT_ERRORS
-from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
+from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
@@ -2004,7 +2004,7 @@ def define_export_server(input, output, session, *,
                 "|------|------------|",
                 "| **T1 — Raw data** | The original assembled dataset exactly as it came out of the analysis pipeline. Nothing has been changed. This is what you find in the `data/` folder. |",
                 "| **T2 — Result** | T1 with the processing steps of the data analysis recipe (tier 2) applied. The figures show the Result. A T2 file is included only when the dataset has tier 2 steps; without them T2 equals T1. |",
-                "| **T3 — Audited data** | The Result with the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The audited data of a plot is saved as `T3_data_<plot>.tsv` and its steps are listed under *T3 Audit Trail*. |",
+                "| **T3 — The table of a plot** | The table a plot is drawn from: the Result (T2) plus the plot's own tier-3 steps of the recipe, when it has some, plus the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The table of a plot is saved as `T3_data_<plot>.tsv`; the sentence under each plot says whether it holds the recipe's own steps, the audit steps or both, and the audit steps are listed under *T3 Audit Trail*. |",
                 "",
             ]
             if _id_sentences:
@@ -2080,8 +2080,9 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"[Audited result data (T2)]({_data_folder}/T2_data_audited.tsv)")
                 for _plot in plot_list:
                     if (_data_key, _plot) in _t3_written:
-                        _t3_label = "Analyst-filtered data (T3)" if _plot in audited_plots else "Data of the plot (T3)"
-                        qmd_lines.append(f"[{_t3_label} of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)")
+                        _t3_label = "Data of the plot after the audit steps (T3)" if _plot in audited_plots else "Data of the plot (T3)"
+                        qmd_lines.append(f"[{_t3_label} of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)  ")
+                        qmd_lines.append(f"*{_qp(t3_file_sentence(_data_folder, _plot, _plot in audited_plots, bool(tier3_steps(cfg.raw_config, _plot))))}*  ")
                 qmd_lines.append("")
 
             # Tables that no plot reads (D-0457). PROVISIONAL wording (not decided).
@@ -2317,6 +2318,9 @@ def define_export_server(input, output, session, *,
                     + ([f"T3_data_{_p}.tsv" for _p in plot_list if _p in t3_table_plots])
                 mapping_block.append(f"    data : {', '.join(tier_files)}")
                 mapping_block.append(f"    plots: {', '.join(plot_list)}")
+                for _p in plot_list:
+                    if _p in t3_table_plots:
+                        mapping_block.append("    " + t3_file_sentence(safe_ds, _p, _p in audited_plots, bool(tier3_steps(cfg.raw_config, _p))))
 
             # Decision hashes block for README
             _dh = prov.get("decision_hashes", {})
@@ -2420,8 +2424,9 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
                 *(["  <dataset>/T1_data_audited.tsv, T2_data_audited.tsv — the same tables with the audit steps applied (only in an export made in Audit mode, only for a",
                    "                     table an audit step changes; the original file beside it is unchanged)"] if _audited_written else []),
-                "  <dataset>/T3_data_<plot>.tsv — the table of each plot with its audited steps (T3, when exported): T2 (T1 when there",
-                "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
+                "  <dataset>/T3_data_<plot>.tsv — the table a plot is drawn from (T3), written for a plot that has tier3 steps of the recipe or audit steps: T2 (T1 when",
+                "                     there are no tier2 steps) plus that plot's own tier3 steps of the recipe plus the audit steps that reach it; the line of each plot under",
+                "                     'Dataset -> Plots' says which of these it holds (the recipe's own steps are not audit steps)",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 *([id_log_line] if id_log_line else []),
                 *([f"      {_s}" for _s in _id_sentences]),
@@ -2451,10 +2456,12 @@ def define_export_server(input, output, session, *,
                 "  T1 = raw assembled data, unchanged from the pipeline output.",
                 "  T2 = T1 with pipeline processing steps applied (range filters,",
                 "       derived columns, etc.). Exported when T2 steps are defined.",
-                "  T3 = T2 (or T1 without tier2 steps) with the steps the analyst sent to audit",
-                "       (rows/columns removed, each with a reason). Only audited steps are",
-                "       exported; exploration filters never are. One file per plot with",
-                "       audited steps: T3_data_<plot>.tsv.",
+                "  T3 = the table a plot is drawn from: T2 (or T1 without tier2 steps) with the",
+                "       plot's own tier3 steps of the recipe, if it has some, and with the steps the",
+                "       analyst sent to audit (rows/columns removed, each with a reason). Only audited",
+                "       steps are exported; exploration filters never are. One file per plot that has",
+                "       tier3 steps in the recipe or audit steps: T3_data_<plot>.tsv; each is named in",
+                "       'Dataset -> Plots' as after the recipe's own steps, after the audit steps, or both.",
             ]
             zf.writestr(f"{bundle_dir}/README.txt", "\n".join(readme_lines))
 

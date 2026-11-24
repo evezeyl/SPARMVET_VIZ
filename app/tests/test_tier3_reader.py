@@ -404,6 +404,12 @@ def test_the_export_draws_each_plot_from_its_table_writes_the_t3_data_and_record
     table = pl.read_csv(io.BytesIO(bundle.read(t3_files[0])), separator="\t")
     assert sorted(table["sample_id"].to_list()) == ["s3", "s4", "s5"] and table.columns == ["sample_id", "score", "T_not_in_original_data"]
     readme = bundle.read(next(n for n in names if n.endswith("/README.txt"))).decode()
+    # the file equals the table HOME reads for the plot (the one read, `materialize_tier3`) and the README says what it is: the recipe's own steps, never "audit"
+    home_table = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys()).collect()
+    assert table.columns == home_table.columns and table["sample_id"].to_list() == home_table["sample_id"].to_list() and table["score"].to_list() == home_table["score"].to_list()
+    sentence = next(l for l in readme.splitlines() if "T3_data_p_steps.tsv:" in l)
+    assert "after its own steps of the recipe" in sentence and "no audit step reaches this plot" in sentence and "after the audit steps" not in sentence
+    assert not any("T3_data_p_plain" in l and "tsv:" in l for l in readme.splitlines()), "a plot with no steps has no T3 file and no sentence"
     assert f"plot p_steps: tier3_key={view.plot_key_of('p_steps')}" in readme
     assert "p_plain: tier3_key" not in readme, "the plot's key is recorded only when its tier 3 is not empty"
     assert "C: tier2_key=none (T2 equals T1)" in readme, "the record keeps its words for a table with no tier-2 steps"
@@ -447,6 +453,8 @@ def test_the_export_applies_the_audited_steps_on_top_of_the_recipes_tier3(tmp_pa
     assert drawn["p_steps"] == ["s3", "s4"] and drawn["p_plain"] == ["s1", "s2", "s3", "s4", "s5"]
     t3_file = next(n for n in bundle.namelist() if n.endswith("T3_data_p_steps.tsv"))
     assert sorted(pl.read_csv(io.BytesIO(bundle.read(t3_file)), separator="\t")["sample_id"].to_list()) == ["s3", "s4"]
+    readme = bundle.read(next(n for n in bundle.namelist() if n.endswith("/README.txt"))).decode()
+    assert "after its own steps of the recipe and after the audit steps" in next(l for l in readme.splitlines() if "T3_data_p_steps.tsv:" in l)
 
 
 def test_an_export_of_a_plot_whose_tier3_cannot_be_applied_loses_nothing_silently(tmp_path, monkeypatch):

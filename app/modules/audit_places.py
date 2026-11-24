@@ -275,6 +275,19 @@ def place_words(place: str) -> str:
     return f"Plot {name} (tier 3)" if tier == "T3" and name else str(place)
 
 
+def t3_file_sentence(folder: str, plot_id: str, audited: bool, recipe_steps: bool) -> str:
+    """One plain sentence for a `T3_data_<plot>.tsv` file of the export: which table it is. A plot is drawn from this table, so it is part of the Result; a recipe's own tier-3 steps are
+    never called audit steps (PROVISIONAL words). `audited`: an audit step reaches the plot; `recipe_steps`: the recipe writes tier-3 steps of its own for the plot."""
+    path = f"{folder}/T3_data_{plot_id}.tsv"
+    if audited and recipe_steps:
+        what = "the table of this plot after its own steps of the recipe and after the audit steps"
+    elif audited:
+        what = "the table of this plot after the audit steps (the recipe writes no tier-3 step of its own for this plot)"
+    else:
+        what = "the table of this plot after its own steps of the recipe (no audit step reaches this plot; this is the Result, not audited content)"
+    return f"{path}: {what}."
+
+
 def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[str, Any]]:
     """One record per committed node written at a place, in commit order, for `t3_steps.yaml`, the README and the report: id, place (as a node id and in words), the plot it was
     started from, the action it is (`node_type`) with its parameters, the reason, the date and the plots built from the place (`plots`). A place the graph does not have lists no plot."""
