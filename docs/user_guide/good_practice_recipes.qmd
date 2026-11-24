@@ -40,6 +40,27 @@ The user may not be the author. Without a declaration, the app has no way to tel
 
 The recipe checker refuses a key declared as a number (check E03). Declare it as `String` (or `Categorical`). A number as an id loses leading zeros and turns `001`, `1` and `1.0` into one entity. It also gives join and type problems. The checker advises the same when a join key is a floating-point number (J13).
 
+### Say what a line added for a missing id means (the `completion` block)
+
+The app makes the ids equal before anything else, when it reads your files. Your pipeline is meant to give the same entities in every result file and in the metadata. When it does not, the app adds, to each table, a line for every entity id the table lacks. This is what it does and what it does not do.
+
+- **What is made equal.** The set of ids is the union of the ids of the metadata and of the ids of every table of `data_schemas` that declares an entity id. Each of these tables gets a line for every id of the union it does not have. The tables of `additional_datasets_schemas` (look-ups, databases) are never completed.
+- **What an added line holds.** The id, every other value missing, and a yes/no column that is true on the added lines and false on the others. A result table gets a marker such as `not_in_original_data` (the entity is in another table or in the metadata, and this result file has no line for it). The metadata gets `not_in_metadata` (the entity has results and no metadata line). You write the name of the column in the `completion` block of the table. Two tables never share a marker name (a join of three of them would hold two columns of one name): when a recipe has several result tables, write the table into the name, for example `ResFinder_not_in_original_data` (check E06). Nothing is removed or changed in your data: only lines are added.
+- **A marked line is not a zero.** It carries no value. What a count, a sum or a label of your recipe does with it is your choice, so the recipe must say what such a line means. In every table that declares an entity id write, next to `strip`:
+
+```yaml
+completion:
+  marker: not_in_original_data     # the name of the yes/no column the app adds
+  meaning: no result for this entity   # one of: no result for this entity, not analysed, unknown
+```
+
+  For the metadata the words are `no metadata for this entity`, `not described` or `unknown`, and the usual marker is `not_in_metadata`. The checker refuses a table that declares an entity id and has no such block (E04), a block with a wrong key, word or name (E05, E06), and a block where nothing is completed (E07). The recipe never records how many lines were added.
+- **Keep the marker column.** A `polars_select` that lists a fixed set of columns drops the marker: add it to the list if the results need it, or treat the missing values before that step and drop the marker on purpose. The count of rows of a table that was completed includes the added lines.
+- **A line with no usable id** (an id that is missing, empty or only spaces) is not an id. It stays where it is, it is not completed and it is listed in the log. The app does not remove or repair it: you remove it with a visible step of the recipe.
+- **Nothing blocks.** The app compares the ids and tells you: which ids of a result table are not in the metadata, which ids of the metadata are not in a result table, and, after the completion, that every table holds the same ids (a difference there is a bug of the app). These are warnings. They never refuse or hide a recipe.
+- **The app does no data cleaning in HOME.** If the ids are written differently by the programs of a pipeline (for example `program1-ID1` and `program2-ID1`), the data must be cleaned before it enters the app, in your own tools or in the Test Lab where it is switched on. The log of the ids shows the mismatch; it does not repair it.
+- **Read the log.** What the checks found is written automatically to the log of the ids (in the user folder, and in every export as `id_log.yaml`). The person who uses the results must read it. In a deployment with no panel and no user (a static deployment), nobody is there to answer a warning: **only a person who reads the logs of that deployment can act on a mismatch of the ids.** This must be organised by the people who run it.
+
 ### Joins go in tier 1
 
 A join step is allowed in tier 1 only. The checker refuses a join (also an as-of join and a join on a condition) written in tier 2 or tier 3 (check ST05). So the join of a table with its metadata is a tier-1 step of the joined table, and the raw data files stay unchanged.

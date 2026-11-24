@@ -330,3 +330,17 @@ the expected, normal state while building one.
 ## 12. The `id:` key equals the file name (ADR-092)
 
 The file name without `.yaml` is the data analysis recipe id (selector, cache keys, sessions, export). The top-level `id:` key of the file marks the root of a data analysis recipe and is shown in the Pipeline Audit panel, so it MUST equal the file name. `validate_data_analysis_recipe()` reports a difference; `app/tests/test_data_analysis_recipe_validator.py` checks every shipped data analysis recipe and template. There is no top-level `type:` key (removed, issue evezeyl/SPARMVET_VIZ#29); describe the data analysis recipe under `info:`.
+
+---
+
+## 13. The completion of the ids and its `completion` block (D-0572 to D-0599, D-0613; built 2026-11-24, PROVISIONAL form)
+
+Before anything else the app makes the ids equal. When it reads the files of a recipe, before the steps of tier 1, every table that takes part gets a line for each entity id of the union that it lacks, and a yes/no marker column (true on an added line). Code: `libs/utils/src/utils/id_completion.py`; the reading is `DataOrchestrator._read_source`; the plan of every place, the data check and the build read the same function.
+
+- **Who takes part:** the table `metadata_schema` and every table of `data_schemas` that declares an `is_entity_id` (the first one written). A table of `additional_datasets_schemas` (look-ups, databases: "not the ones concerning our results", D-0610) never takes part. The union is the set of the usable ids of these tables as read from their files (strip, missing-value words and declared type applied, no step). With no metadata the data tables complete each other.
+- **The block (required, E04 to E07):** every table that takes part states `completion: {marker: <column name>, meaning: <one word of the list>}` (D-0574, D-0586: "A : required meaning"). The recipe never records how many lines were added. The marker is not a zero: a count, a sum or a stamp of the recipe sees an added line, so the recipe says what it means; the marker column is kept (D-0586), and a `polars_select` that lists a fixed set of columns drops it unless it lists it.
+- **What is never done:** nothing is removed or changed in the data (D-0597); a line with no usable id (missing, empty, only spaces) stays, is not completed and is listed; the app does no data cleaning in HOME (D-0593 to D-0596): the meaning of "-" and the trimming are the recipe's (`null_values`, `strip`, a visible step); Data Import is unchanged.
+- **Nothing blocks (D-0581).** The three checks (ids of a result table not in the metadata, ids of the metadata not in a result table, equality of all the sets after the completion) are warnings, written to the log of the ids (`<user_data>/_id_logs/<recipe id>.id_log.yaml`, automatic, "automatic, no user") and to the `id_log.yaml` of every export. A static deployment needs a person who reads those logs (D-0585). A difference at check 3 is a bug of the app.
+- **Recipes do not start from the metadata (D-0586):** the data table first, a left join on the metadata. Not yet true of every shipped recipe (the one big move of the demo recipes is a later step).
+- **The cache key** of a table that reads a table that takes part holds the id declarations and the data files of ALL of them (`app/modules/cache_keys.py`); the cache version did not change.
+
