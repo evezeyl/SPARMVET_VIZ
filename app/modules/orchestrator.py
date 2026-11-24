@@ -1,26 +1,27 @@
 # engine: python-polars (runs the tiers through the engine entry, types tables as LazyFrame and catches Polars errors)
 # @deps
-# provides: method:id_report (the three checks of the ids, D-0581, D-0590), method:_completed (the completion of the ids at the read, D-0613), function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads), method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
+# provides: method:_ids_of (the ids of a table as read, kept by the bytes of its file and its declarations), constant:IDS_MEMO_LIMIT, method:id_report (the three checks of the ids, D-0581, D-0590), method:_completed (the completion of the ids at the read, D-0613), function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads), method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/utils/src/utils/id_completion.py (participants, complete_table, read_ids, build_report), app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
+# consumes: libs/utils/src/utils/id_completion.py (participants, complete_table, read_ids, build_report, plan_material), app/modules/cache_keys.py (canonical_hash: the key of the ids memo), app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/modules/plan_composer.py (ingredient_parts, join_parts, tier2_parts, tier3_parts, tier3_frames: the plan of every place composed from the build's own functions, LBFB step 0b), app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import contextlib
 import copy
+import hashlib
 import io
 import polars as pl
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError, SPARMVET_Error, TransformationError
-from utils.id_completion import IdReport, Participant, TableIds, build_report, complete_table, participant_of, participants, read_ids, union_of
+from utils.id_completion import IdReport, Participant, TableIds, build_report, complete_table, participant_of, participants, plan_material, read_ids, union_of
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
 from app.modules.build_failure import computed_failure, first_failing_step, step_failure_error, table_failure_error
 from utils.recipe_tiers import audit_step_places, collection_body, plot_entry
-from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
+from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, canonical_hash, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
                                     data_analysis_recipe_keys, dataset_file_hashes, load_data_analysis_recipe, plot_tier3_key, tier2_engine, tier2_steps, tier3_steps)
 
 # Parquet metadata key holding the Tier 1 key of the table (ADR-089, ADR-101: a key per table).
@@ -46,6 +47,9 @@ def tier3_path_for(folder: Path, target: str, plot_id: str) -> Path:
 # data_lookup (deployment file): where the data of a dataset is found.
 #   data_analysis_recipe_paths: the source.path written in the data analysis recipe (development default)
 #   by_dataset_id:  a file named after the dataset id in the raw_data location (a pipeline delivers it)
+# How many sets of ids `DataOrchestrator._ids_of` keeps in memory (the oldest goes first). PROVISIONAL.
+IDS_MEMO_LIMIT = 512
+
 DATA_LOOKUP_CHOICES = ("data_analysis_recipe_paths", "by_dataset_id")
 
 # The sub-folder of one import (<imports_dir>/<recipe id>/) that holds its data files.
@@ -165,6 +169,8 @@ class DataOrchestrator:
         # <imports_dir>/<recipe id>/data/<dataset id>.tsv. Its existence for a recipe id is the record of the import.
         self.imports_dir = Path(imports_dir) if imports_dir else None
         self.ingestor = DataIngestor(data_dir=str(raw_data_dir))
+        # The ids of a table as read, kept by what decides them (the bytes of its file and its declarations of the ids): see `_ids_of`. In memory only.
+        self._ids_memo: dict[tuple, TableIds] = {}
 
     def import_data_dir(self, data_analysis_recipe_id: str | None) -> Path | None:
         """The data folder of a recipe that was imported from a bundle, or None for any other recipe."""
@@ -279,6 +285,37 @@ class DataOrchestrator:
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
         return lf, ds_schema
 
+    def _ids_memo_key(self, recipe_id: str | None, recipe: dict, p: Participant, schema: dict) -> tuple | None:
+        """What decides the ids of a table as read: the bytes of its file and the declarations that shape the read (`utils.id_completion.plan_material`: the id column
+        and its type, `strip`, `null_values`, the source). None when the table has no file to hash (then nothing is kept: the table is read every time)."""
+        located = self.locate_dataset_file(recipe_id, p.table, schema)
+        if located is None or not located.is_file():
+            return None
+        material = plan_material(recipe).get(p.table)
+        if material is None:
+            return None
+        return (p.table, p.kind, p.id_column, hashlib.sha256(located.read_bytes()).hexdigest(), canonical_hash(material))
+
+    def _ids_of(self, recipe_id: str | None, recipe: dict, p: Participant, schema: dict, lf: pl.LazyFrame | None = None) -> TableIds:
+        """The ids of one table as read from its file. WHY a memo: an opening builds every table, and the completion of each one reads the ids of ALL the tables that
+        take part, so without it the same files are read and checked again and again (the demo recipe: about four times slower to open). The key is the content of the
+        file and the declarations that shape the read, so a changed file or a changed declaration is read again and the same bytes never give another set of ids; a
+        read that fails is never kept. `lf` is a table already read, so that it is not read twice."""
+        key = self._ids_memo_key(recipe_id, recipe, p, schema)
+        if key is not None and key in self._ids_memo:
+            return self._ids_memo[key]
+        if lf is None:
+            # WHY: the ingestion prints a line for every file column the recipe does not declare. A table read here for its ids has already told it (or tells it
+            # when it is built); printing it again for every table that is built would bury the console in repeats.
+            with contextlib.redirect_stdout(io.StringIO()):
+                lf = self._read_plain(p.table, schema, recipe_id)[0]
+        found = read_ids(lf, p)
+        if key is not None:
+            if len(self._ids_memo) >= IDS_MEMO_LIMIT:
+                self._ids_memo.pop(next(iter(self._ids_memo)))   # the oldest goes first
+            self._ids_memo[key] = found
+        return found
+
     def _read_ids(self, recipe_id: str | None, recipe: dict, parts: list[Participant], own: tuple[str, pl.LazyFrame] | None = None) -> list[TableIds]:
         """The ids of every table that takes part, each table as read from its file (before any completion). `own` is a table already read, so that it is not
         read twice. A table that cannot be read stops the completion of the others with the plain reason, which names it."""
@@ -286,14 +323,7 @@ class DataOrchestrator:
         read = []
         for p in parts:
             try:
-                if own is not None and own[0] == p.table:
-                    lf = own[1]
-                else:
-                    # WHY: the ingestion prints a line for every file column the recipe does not declare. A table read here for its ids has already told it (or tells it
-                    # when it is built); printing it again for every table that is built would bury the console in repeats.
-                    with contextlib.redirect_stdout(io.StringIO()):
-                        lf = self._read_plain(p.table, schemas[p.table], recipe_id)[0]
-                read.append(read_ids(lf, p))
+                read.append(self._ids_of(recipe_id, recipe, p, schemas[p.table], own[1] if own is not None and own[0] == p.table else None))
             except Exception as exc:
                 raise IngestionError(
                     f"The ids of the table '{p.table}' could not be read, so the ids of the tables cannot be made equal: {exc}",

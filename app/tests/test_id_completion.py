@@ -101,7 +101,7 @@ def test_a_table_that_is_complete_gets_the_marker_column_all_false_and_no_line()
 def test_the_metadata_table_is_completed_with_its_own_marker_and_here_nothing_is_added():
     orchestrator, raw = demo()
     done = quiet(orchestrator._read_source, "metadata_schema", raw["metadata_schema"], DEMO, raw)[0].collect()
-    assert "not_in_metadata" in done.columns and done["not_in_metadata"].sum() == 0
+    assert "metadata_schema_not_in_original_data" in done.columns and done["metadata_schema_not_in_original_data"].sum() == 0
 
 
 def test_a_look_up_table_is_read_as_it_is():
@@ -190,7 +190,7 @@ def world(tmp_path, tables, metadata=None, additional=None, blocks=True):
 
     def table(name, ids, entity=True, meta=False):
         (data / f"{name}.tsv").write_text("sample_id\tv\n" + "".join(f"{i if i is not None else ''}\t{k}\n" for k, i in enumerate(ids)))
-        out = minimal_schema(str(data / f"{name}.tsv"), {"sample_id": "String", "v": "Float64"}, entity_key="sample_id" if entity else None, metadata=meta)
+        out = minimal_schema(str(data / f"{name}.tsv"), {"sample_id": "String", "v": "Float64"}, entity_key="sample_id" if entity else None, table_id="metadata_schema" if meta else None)
         if not blocks:
             out.pop("completion", None)
         return out
@@ -213,7 +213,7 @@ def table_of(orchestrator, recipe, name):
 def test_both_ways_the_metadata_gets_the_ids_of_the_data_and_the_data_get_the_ids_of_the_metadata(tmp_path):
     orchestrator, recipe = world(tmp_path, {"A": ["s1", "s2"], "B": ["s2", "s9"]}, metadata=["s1", "s2", "s3"])
     meta, a, b = (table_of(orchestrator, recipe, n) for n in ("metadata_schema", "A", "B"))
-    assert meta["sample_id"].to_list()[3:] == ["s9"] and meta["not_in_metadata"].to_list() == [False, False, False, True]
+    assert meta["sample_id"].to_list()[3:] == ["s9"] and meta["metadata_schema_not_in_original_data"].to_list() == [False, False, False, True]
     assert a["sample_id"].to_list()[2:] == ["s3", "s9"] and b["sample_id"].to_list()[2:] == ["s1", "s3"]
     report = quiet(orchestrator.id_report, "w", recipe)
     by = {t.table: t for t in report.tables}
@@ -239,14 +239,14 @@ def test_a_line_with_no_usable_id_stays_is_listed_and_is_given_to_no_other_table
 def test_a_look_up_table_with_ids_is_not_completed_and_does_not_widen_the_union(tmp_path):
     orchestrator, recipe = world(tmp_path, {"A": ["s1"]}, metadata=["s1"], additional=["zz1", "zz2"])
     done = quiet(orchestrator._read_source, "L", recipe["additional_datasets_schemas"]["L"], "w", recipe)[0].collect()
-    assert done["sample_id"].to_list() == ["zz1", "zz2"] and "not_in_original_data" not in done.columns
+    assert done["sample_id"].to_list() == ["zz1", "zz2"] and not [c for c in done.columns if c.endswith("not_in_original_data")]
     assert quiet(orchestrator.id_report, "w", recipe).union_count == 1
 
 
 def test_an_empty_data_table_is_completed_to_the_whole_union(tmp_path):
     orchestrator, recipe = world(tmp_path, {"A": []}, metadata=["s1", "s2"])
     done = table_of(orchestrator, recipe, "A")
-    assert done["sample_id"].to_list() == ["s1", "s2"] and done["not_in_original_data"].to_list() == [True, True]
+    assert done["sample_id"].to_list() == ["s1", "s2"] and done["A_not_in_original_data"].to_list() == [True, True]
 
 
 def test_a_recipe_with_no_entity_id_is_read_as_before_and_has_no_report(tmp_path):
@@ -277,7 +277,7 @@ def test_a_table_that_cannot_be_read_stops_the_completion_of_the_others_and_name
 
 def test_the_marker_column_is_a_normal_column_that_the_steps_of_tier_1_can_read(tmp_path):
     orchestrator, recipe = world(tmp_path, {"A": ["s1"]}, metadata=["s1", "s2"])
-    recipe["data_schemas"]["A"]["tier1"] = {"steps": [{"action": "polars_with_columns", "named_exprs": {"flag": "pl.col('not_in_original_data')"}}]}
+    recipe["data_schemas"]["A"]["tier1"] = {"steps": [{"action": "polars_with_columns", "named_exprs": {"flag": "pl.col('A_not_in_original_data')"}}]}
     table = quiet(orchestrator.prepare_ingredient, "A", recipe["data_schemas"]["A"], "w", recipe).collect()
     assert table["sample_id"].to_list() == ["s1", "s2"] and table["flag"].to_list() == [False, True]
 

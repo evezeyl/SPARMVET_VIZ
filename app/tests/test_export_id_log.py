@@ -32,8 +32,11 @@ def test_the_bundle_holds_the_log_of_the_ids_and_the_readme_names_it(tmp_path, m
     tables = {t["table"]: t for t in entry["ids"]["tables"]}
     assert set(tables) == {"T", "U", "V"} and tables["U"]["ids_added"]["count"] > 0
     assert tables["U"]["marker"] == "U_not_in_original_data" and tables["U"]["meaning"] == "no result for this entity"
+    # the app's own fixed words for an added line, beside the sentence of the recipe maker (the owner, 2026-11-24)
+    assert tables["U"]["added_line_words"] == "missing in original table"
     readme = members["README.txt"].decode()
     assert "  id_log.yaml       — the log of the ids" in readme and "read it before you rely on the results" in readme
+    assert '"missing in original table"' in readme and "sentence of the recipe maker" in readme
 
 
 def test_the_entry_of_the_export_carries_the_fingerprints_of_the_export(tmp_path, monkeypatch):

@@ -59,12 +59,14 @@ def run_id_checks(orchestrator, recipe_id: str, raw: dict, keys: Any, user_data:
     way to report a table that cannot be read). `keys` are the keys of the opening (`recipe sha256` and `data batch hash` are the fingerprints of the entry)."""
     try:
         report = orchestrator.id_report(recipe_id, raw)
-    except Exception as exc:   # warnings only: what stops the checks is said, never raised
+        if report is None:
+            return IdCheckRun(None, (), None)
+        entry = build_entry(report, recipe_id, keys.data_analysis_recipe_sha256, keys.data_batch_hash, when=when)
+        lines = tuple(report_lines(report))
+        # `write_entry` never raises (a folder that cannot be written is returned in the outcome), so the opening cannot be stopped from here
+        return IdCheckRun(report, lines, write_entry(id_log_folder(user_data), entry) if write else None)
+    except Exception as exc:   # warnings only: what stops the checks is said, never raised (the recipe, the keys and the data may be anything at this point)
         return IdCheckRun(None, (), None, f"the checks of the ids could not be made: {exc}")
-    if report is None:
-        return IdCheckRun(None, (), None)
-    entry = build_entry(report, recipe_id, keys.data_analysis_recipe_sha256, keys.data_batch_hash, when=when)
-    return IdCheckRun(report, tuple(report_lines(report)), write_entry(id_log_folder(user_data), entry) if write else None)
 
 
 def export_log_text(user_data: Path, recipe_id: str, run: IdCheckRun, recipe_sha256: str, data_batch_hash: str, when: Optional[str] = None) -> Optional[str]:

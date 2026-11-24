@@ -37,6 +37,7 @@ from app.modules.plot_issue_reporter import plot_warning_text
 from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
 from app.modules.id_check_run import export_log_text, run_id_checks
+from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from utils.engines import plot_engine_slot
@@ -2186,7 +2187,8 @@ def define_export_server(input, output, session, *,
             _id_log = export_log_text(_user_data, data_analysis_recipe_id, _id_run, export_keys.data_analysis_recipe_sha256, export_keys.data_batch_hash)
             if _id_log is not None:
                 zf.writestr(f"{bundle_dir}/id_log.yaml", _id_log)
-                id_log_line = ("  id_log.yaml       — the log of the ids: the ids that tables lack, the lines added for them and the lines with no usable id; "
+                id_log_line = ("  id_log.yaml       — the log of the ids: the ids that tables lack, the lines added for them (the app's words for such a line: "
+                               f"\"{added_line_words()}\"; what it means for each table is the sentence of the recipe maker, given beside) and the lines with no usable id; "
                                "read it before you rely on the results" + (" (the ids are equal in every table)" if not _id_run.lines else ""))
             elif _id_run.error:
                 zf.writestr(f"{bundle_dir}/id_log_ERROR.txt", _id_run.error)
