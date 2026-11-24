@@ -27,7 +27,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -192,6 +192,17 @@ def nodes_reaching_plot(graph: RecipeGraph, nodes: Iterable[dict], plot_id: str)
     return found
 
 
+def nodes_reaching_node(graph: RecipeGraph, nodes: Iterable[dict], node_id: str) -> List[dict]:
+    """The audit nodes whose place the node `node_id` (a table's `T1:<table>` or `T2:<table>`) is built from: the place itself or a place above it. In the order given; a node
+    whose place the graph does not have reaches nothing. HOME's T1 and T2 views ask it, so a step that cannot run elsewhere is not the error of a table it does not reach."""
+    found: List[dict] = []
+    for node in nodes:
+        place = node.get("place") or ""
+        if place == node_id or (graph.has_node(place) and node_id in graph.below(place)):
+            found.append(node)
+    return found
+
+
 def line_label(line: PlaceLine) -> str:
     """The name of a line: the table and its tier in plain words ("Table ResFinder (tier 1)")."""
     return f"Table {line.table} (tier {line.tier[1]})"
@@ -318,7 +329,9 @@ def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
         tier_key = {"T1": "tier1", "T2": "tier2", "T3": "tier3"}[tier]
         body = _body_of(baked, tier, name)
         held = body.get(tier_key) if isinstance(body.get(tier_key), dict) else {}
-        body[tier_key] = {**held, "steps": list(held.get("steps") or []) + translate_t3_node(node)}
+        # each audit step stays visible in the recipe at its place with its reason (D-0622: the recipe is the audit recipe): the reason, the id and the date as the step's own `comment`
+        note = _step_comment(node)
+        body[tier_key] = {**held, "steps": list(held.get("steps") or []) + [{**step, "comment": note} for step in translate_t3_node(node)]}
         written.setdefault((f"{tier}:{name}", tier_key), []).append(str(node.get("id")))
     for (place, tier_key), ids in written.items():
         tier, name = place.split(":", 1)
@@ -326,6 +339,34 @@ def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
         note = f"Written by the export: the audit steps {', '.join(ids)} are added at the end of {tier_key}."
         body["comment"] = f"{body['comment']} {note}" if body.get("comment") else note
     return baked
+
+
+def _step_comment(node: dict) -> str:
+    """What a written audit step says of itself in the recipe: the reason, the id of the audit step and the day it was committed (PROVISIONAL words)."""
+    when = str(node.get("created_at") or "")[:10]
+    return f"Audit step {node.get('id')}" + (f", {when}" if when else "") + f": {node.get('reason', '')}"
+
+
+def audit_recipe_of(raw: dict, nodes: Iterable[dict], original_id: str, made_on: str) -> dict:
+    """The AUDIT RECIPE of an export made in Audit mode (D-0622; PROVISIONAL form): the original recipe with every audit step at its place (`bake_place_steps`, each step carrying its
+    reason), under the id `<original id>_audited` (the id equals the file name, ADR-092) and an `info` that says in plain words that it is the audit recipe of the original. It is an
+    ordinary recipe of format 1: the app opens it and runs it like any recipe, with the same data references as the original, and running it gives the audited tables and plots.
+    The argument is not changed. Raises what `bake_place_steps` raises."""
+    audit = bake_place_steps(raw, nodes)
+    audit["id"] = f"{original_id}_audited"
+    info = dict(audit.get("info") or {})
+    label = str(info.get("ui_label") or original_id)
+    info["ui_label"] = f"{label} (audited)"
+    said = f"This is the audit recipe of '{original_id}', made on {made_on}: the original recipe with the audit steps written at their places, each with its reason in its own comment. Running it gives the audited tables and plots of the export it came with."
+    info["description"] = f"{said} {info['description']}" if info.get("description") else said
+    audit["info"] = info
+    return audit
+
+
+def audit_recipe_sentence(path: str, original_id: str) -> str:
+    """One plain sentence for the README and the report: which folder holds the audit recipe, that the app opens it like any recipe and that running it gives the audited results (PROVISIONAL words)."""
+    return (f"{path} is the audit recipe of '{original_id}': the original recipe with every audit step written at its place, each with its reason in its own comment. It is a recipe like any "
+            f"other: the app opens it (put the file in the recipes folder, with the data it reads: its data references are the original's) and running it gives the audited tables and plots of this export.")
 
 
 def _body_of(recipe: dict, tier: str, name: str) -> dict:

@@ -59,7 +59,7 @@ from app.modules.orchestrator import InputsChanged, plot_read_error_text
 from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
-from app.modules.audit_places import nodes_reaching_plot, own_plot_place, place_nodes
+from app.modules.audit_places import nodes_reaching_plot, nodes_signature, own_plot_place, place_nodes
 from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
 from app.handlers.id_warning_handlers import define_server as define_id_warning_server
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
@@ -540,6 +540,25 @@ def define_server(input, output, session, *,
                 told(InputsChanged(text))
         return run
 
+    def _audited_view_lf(target_ds: str | None, tier: str):
+        """The audited table of `target_ds` at `tier` ("T1" or "T2") for HOME's T1 and T2 views in Audit mode (D-0622): the table of the audit copy, lazy, the same one the export
+        writes as `T<n>_data_audited.tsv`. None when it is not Audit mode, no step reaches this table at this tier, or the copy leaves the table as it is: the view then shows the
+        original. Raises what the run raises (an audit step that cannot run: the preview shows it in the table's place, as for T3), only for a table a step reaches."""
+        if not target_ds or not _in_audit():
+            return None
+        nodes = _committed_place_nodes()
+        return _the_place_audit().table_lazy(_open_recipe_id(), target_ds, tier, nodes, _recipe_plans() if nodes else None, _tell_inputs_changed)
+
+    def _audit_view_state(spec: dict | None, view: str) -> bool | None:
+        """For the badge: in Audit mode on T1 or T2, True when the view shows the audited table and False when it shows the original (no audit step changes it); None for every
+        other view, in Exploration, or when the table cannot be built (the table's place shows why)."""
+        if view not in ("T1", "T2") or not _in_audit() or not (spec or {}).get("target_dataset"):
+            return None
+        try:
+            return _audited_view_lf(spec["target_dataset"], view) is not None
+        except Exception:
+            return None
+
     def _plot_table_changed(plot_id: str) -> bool | None:
         """Whether the audit steps (at any tier) changed the CONTENT of the table of `plot_id` (a step that removes nothing moves a key and no row, ADR-101 point 6);
         None when it cannot be told (the run fails: the plot itself shows why)."""
@@ -568,6 +587,11 @@ def define_server(input, output, session, *,
         chosen = tier or data_view.get()
         if chosen == "SRC":
             return _read_source_lf(spec)
+        if chosen in ("T1", "T2") and not original:
+            # D-0622: in Audit mode the T1 and T2 views show the AUDITED tables (the audit copy's, the same the export writes) when an audit step changes them
+            audited = _audited_view_lf((spec or {}).get("target_dataset"), chosen)
+            if audited is not None:
+                return audited
         if chosen in ("T2", "T3") and (spec or {}).get("target_dataset"):
             target_ds = spec["target_dataset"]
             if data_refresh_trigger is not None:
@@ -1702,7 +1726,14 @@ def define_server(input, output, session, *,
         audit_t3 = _in_audit() and view == "T3"
         # the columns the audit steps drop from this table: the chooser is built again when they change (a filter does not change its columns)
         drops = ",".join(sorted(_dropped_columns(p_id))) if audit_t3 else ""
-        return "|".join((recipe_part, str(p_id), view, str(table), "audit" if audit_t3 else "view", drops))
+        # in Audit mode the T1 and T2 views are the audit copy's tables: another set of audit steps is another table (and another list of columns)
+        audited_view = ""
+        if _in_audit() and view in ("T1", "T2"):
+            try:
+                audited_view = repr(nodes_signature(_committed_place_nodes()))
+            except Exception:
+                audited_view = "?"
+        return "|".join((recipe_part, str(p_id), view, str(table), "audit" if audit_t3 else "view", drops, audited_view))
 
     @output
     @render.ui
@@ -1749,7 +1780,7 @@ def define_server(input, output, session, *,
         return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),
                                    mode="audit" if _in_audit() else "exploration", audited_steps=_audited_step_count(subtab),
                                    source_table=table, total_rows=total_rows, all_rows=bool(safe_input(input, "preview_all_rows", False)),
-                                   hidden_columns=hidden))
+                                   hidden_columns=hidden, audit_view=_audit_view_state(spec, view)))
 
     @output
     @render.text

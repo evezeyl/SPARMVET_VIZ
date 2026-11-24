@@ -23,7 +23,7 @@ equality (PROVISIONAL words, the owner reads them):
   T3 = T2 = T1 plus this plot's own steps of the recipe     (it has none)
 
 Exploration filters change the table only, never a plot (D-0311, ADR-098): the data badge and the plot badge both say so when filters are
-on. In Audit mode T3 is the audited table (the plot's table plus its audited steps); T1, T2 and Source stay the original tables.
+on. In Audit mode T3, T1 and T2 are the audited tables when an audit step changes them (D-0622; the same tables the export writes); a table no step changes, and Source (the file as read), stay the original.
 
 The badge is HTML next to the plot, never part of the image, so it is never exported.
 """
@@ -37,6 +37,9 @@ PLOT_STEPS_NOTE = "T3 = T2 plus this plot's own steps of the recipe"
 PLOT_STEPS_NOTE_NO_TIER2 = "T3 = T2 = T1 plus this plot's own steps of the recipe"
 # PROVISIONAL words (slice B, P-B7): the Source view and the audited table
 SOURCE_NOTE = "as read from its file, before any recipe step"
+# PROVISIONAL words (D-0622): the T1 and T2 views in Audit mode
+AUDITED_VIEW_NOTE = "the table after the audit steps that reach it; the original is unchanged"
+ORIGINAL_VIEW_NOTE = "no audit step changes this table: this is the original"
 AUDITED_TABLE_NOTE = "the table the audited plot is drawn from: T3 plus {n} audited step(s)"
 
 # D-0488: one number for the cut of the preview, its title and its sentence. PROVISIONAL words below (the owner reads them).
@@ -93,7 +96,7 @@ def has_plot_steps(raw_config: dict, plot_id: Optional[str]) -> bool:
 
 def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters: int = 0, *, mode: str = "exploration",
                audited_steps: int = 0, source_table: Optional[str] = None, total_rows: Optional[int] = None, all_rows: bool = False,
-               hidden_columns: int = 0) -> ViewBadge:
+               hidden_columns: int = 0, audit_view: Optional[bool] = None) -> ViewBadge:
     """The badge of the data table.
 
     view            "SRC" (Source), "T1", "T2" or "T3"
@@ -105,11 +108,16 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
     source_table    the id of the source table shown (view "SRC")
     total_rows      rows of exactly the table the grid is cut from (None: unknown, no sentence); all_rows: the "All rows" switch (D-0488)
     hidden_columns  columns the column chooser hides from the grid (D-0488)
+    audit_view      T1 or T2 in Audit mode (D-0622): True when the view shows the AUDITED table, False when it shows the original because no audit step changes this table; None otherwise
     """
     audited_mode_t3 = mode == "audit" and view == "T3"
     audited = audited_mode_t3 and audited_steps > 0
     label = f"Viewing: {SOURCE_LABELS.get(view, view)}" + (" (audited)" if audited else "")
     notes: list[str] = []
+    audited_table = view in ("T1", "T2") and audit_view is True
+    if view in ("T1", "T2") and audit_view is not None:
+        label = f"Viewing: {view}, " + ("audited" if audit_view else "original")
+        notes.append(AUDITED_VIEW_NOTE if audit_view else ORIGINAL_VIEW_NOTE)
     if view == "SRC":
         if source_table:
             notes.append(f"table '{source_table}'")
@@ -131,7 +139,7 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
     for extra in (row_count_note(total_rows, all_rows), hidden_columns_note(hidden_columns, audited_mode_t3)):
         if extra:
             notes.append(extra)
-    return ViewBadge(view=view, label=label, notes=tuple(notes), tone="audited" if audited else "plain")
+    return ViewBadge(view=view, label=label, notes=tuple(notes), tone="audited" if (audited or audited_table) else "plain")
 
 
 def plot_badge(mode: str, plot_has_steps: bool, has_tier2: bool, preview_filters: int = 0, audited_steps: int = 0, upstream_steps: int = 0, table_changed: Optional[bool] = None) -> ViewBadge:

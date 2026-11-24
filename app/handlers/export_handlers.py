@@ -42,7 +42,7 @@ from utils.id_completion import added_line_words
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, between_prose
 from app.modules.audit_view import AUDIT_ERRORS
-from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
+from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
@@ -1633,6 +1633,26 @@ def define_export_server(input, output, session, *,
                         _lost("t3_steps.yaml (the audit steps with their reasons)", e)
                         zf.writestr(f"{bundle_dir}/t3_steps_ERROR.txt", str(e))
 
+            # ── The AUDIT RECIPE (D-0622, D-0535; PROVISIONAL form): an export made in Audit mode holds the original recipe with every audit step at its place and its reason, as an ordinary
+            # recipe that the app opens and runs on its own (`audit_recipe/<id>_audited.yaml`, one file with the includes resolved, the same data references as the original). Written with no tick,
+            # as the audited table files are (D-0619). A step that cannot be written as an action stops this part with a notice and an ERROR.txt, never left out.
+            audit_recipe_file = ""
+            audit_recipe_failed = False
+            if _audit_now and _place_nodes_all:
+                try:
+                    import yaml as _yaml_audit
+                    _audit_recipe = audit_recipe_of(cfg.raw_config, _place_nodes_all, data_analysis_recipe_id, now.strftime("%Y-%m-%d"))
+                    _audit_recipe = bake_plot_seeds(_audit_recipe, _plot_seeds)
+                    audit_recipe_file = f"audit_recipe/{_audit_recipe['id']}.yaml"
+                    zf.writestr(f"{bundle_dir}/{audit_recipe_file}", _yaml_audit.safe_dump(_audit_recipe, sort_keys=False, allow_unicode=True))
+                except Exception as e:
+                    audit_recipe_failed = True
+                    zf.writestr(f"{bundle_dir}/audit_recipe/ERROR.txt", str(e))
+                    _lost("the audit recipe (the recipe with the audit steps at their places)", e)
+                    _later("⚠️ " + notice(
+                        "The audit recipe of this export could not be written, so the bundle holds no recipe that gives the audited tables again (its reason is in audit_recipe/ERROR.txt)",
+                        "the rest of the bundle is complete; fix the cause and export again", e), duration=15)
+
             # ── Mode 2 add-on: the heavy, Mode-2-exclusive content (ADR-097, #45) ──
             # Recipe + actual data files. Additive to everything above, never a
             # replacement — Mode 1's content is unchanged regardless of this checkbox.
@@ -2118,6 +2138,10 @@ def define_export_server(input, output, session, *,
                 else:
                     qmd_lines += ["The table files `T1_data.tsv` and `T2_data.tsv` are the tables as the recipe builds them, without these steps; "
                                   + ("this export was made in Exploration mode." if not _audit_now else "no step changes a table here, steps at a plot change only the T3 files and the plot."), ""]
+                if audit_recipe_file:
+                    qmd_lines += [_qp(audit_recipe_sentence(audit_recipe_file, data_analysis_recipe_id)), ""]
+                elif audit_recipe_failed:
+                    qmd_lines += ["The audit recipe could not be written: see `audit_recipe/ERROR.txt`.", ""]
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
@@ -2416,12 +2440,16 @@ def define_export_server(input, output, session, *,
                      if _audited_written else
                      ["  The T1 and T2 files of every table are the tables as the recipe builds them, without these steps: "
                       + ("this export was made in Exploration mode, where the table files are not audited."
-                         if not _audit_now else "no audit step changes a table here (steps at a plot change only the T3 files and the plot).")])] if _place_records else []),
+                         if not _audit_now else "no audit step changes a table here (steps at a plot change only the T3 files and the plot).")]),
+                   *([f"  {audit_recipe_sentence(audit_recipe_file, data_analysis_recipe_id)}"] if audit_recipe_file else
+                     (["  The audit recipe could not be written: see audit_recipe/ERROR.txt."] if audit_recipe_failed else []))] if _place_records else []),
                 "",
                 "Contents:",
                 "  <dataset>/plots/  — rendered figures, grouped by source dataset",
                 "  <dataset>/T1_data.tsv — raw assembled data (T1)",
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
+                *(["  audit_recipe/<id>_audited.yaml — the audit recipe: the original recipe with every audit step at its place and its reason (only in an export made in Audit mode)"]
+                  if audit_recipe_file else []),
                 *(["  <dataset>/T1_data_audited.tsv, T2_data_audited.tsv — the same tables with the audit steps applied (only in an export made in Audit mode, only for a",
                    "                     table an audit step changes; the original file beside it is unchanged)"] if _audited_written else []),
                 "  <dataset>/T3_data_<plot>.tsv — the table a plot is drawn from (T3), written for a plot that has tier3 steps of the recipe or audit steps: T2 (T1 when",
