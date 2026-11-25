@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   ui_label: E. coli Comprehensive Analysis
   category: AMR Analysis
-  description: 'Template for E. coli data: AMR genes, MLST, serotype, and growth phenotype.'
+  description: 'Template for E. coli data: AMR genes, MLST, serotype, and growth phenotype. The data beside it (assets/pipeline_output/ecoli_*.tsv) is made-up example data; EC09 is in the metadata only, so the completion of the ids adds a line for it.'
   version: '1.0'
 data_schemas:
   amr_results:

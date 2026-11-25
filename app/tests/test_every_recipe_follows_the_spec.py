@@ -1,12 +1,13 @@
-"""One test walks every recipe that ships (pipelines, retest, templates, experimental, the folders the deployments name, the
+"""One test walks every recipe that ships (pipelines, retest, templates, the folders the deployments name, the
 Gallery examples) against the checker. The rules are read from the one place the checker uses; this file holds no copy of them.
 
 What it guarantees: a recipe, fragment or Gallery example added to any recipe folder is checked without anyone editing this
 file. Every recipe file (a top-level YAML of a recipe folder, the rule of `find_data_analysis_recipes` and of the bootloader)
 gets the recipe check, the full validate and the data check; every folder a deployment names, and the Gallery, gets the set
 check (code X5: a plot id is unique over the recipes shipped together). An empty or unreadable YAML file inside a recipe folder
-fails. Known exceptions are in ONE table (EXCUSES): an excused check that starts to pass, or an excuse that names a file that is
-gone, fails the test, so the table cannot rot.
+fails. A recipe that exists to be refused is declared in the EXPECTED_REFUSALS.yml of its folder: the walk asserts the refusal (the
+check, the place, the words) and fails when it stops or changes reason. Known exceptions are in ONE table (EXCUSES, empty today): an
+excused check that starts to pass, or an excuse that names a file that is gone, fails the test, so the table cannot rot.
 
 The Gallery examples' own data is read through the ingestion and compared with the file by
 `app/tests/test_gallery_app_path.py` (all examples), so this file does not repeat it.
@@ -37,29 +38,14 @@ DEFAULT_RAW = ROOT / yaml.safe_load((DEPLOYMENTS / "local" / "local.yaml").read_
 CHECKS = ("not_empty", "recipe_check", "validate", "data_check")
 
 # Known exceptions: (file relative to the project, the checks it is excused from, plain reason, what removes the entry).
-# SETS holds the same for the set check of a folder. The test fails when an excused check passes and when a file is gone.
-EXCUSES = [
-    ("config/data_analysis_recipes/retest/retest_bad_select_column.yaml", ("data_check",),
-     "exists to show the refusal of a select that names a missing column (the data check must fail)",
-     "never: the refusal is tested in app/tests/test_retest_data_analysis_recipes.py"),
-    ("config/data_analysis_recipes/retest/retest_broken_header.yaml", ("data_check",),
-     "exists to show the refusal of a data file with a broken header (the data check must fail)",
-     "never: the refusal is tested in app/tests/test_retest_data_analysis_recipes.py"),
-    ("config/data_analysis_recipes/templates/audit.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/templates/e_coli.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/templates/simple_template.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/experimental/test_logic.yaml", CHECKS,
-     "an empty leftover file (0 bytes); waits for the owner: delete or fill it", "the owner's choice on this file"),
-]
-SET_EXCUSES = [
-    ("config/data_analysis_recipes/retest", "retest recipes reuse plot ids between them (genes_bar)",
-     "task REVIEWS-D0534-TO-REDO (the plot id work of D-0534); the ids are not renamed here"),
-]
+# There are none: a recipe that exists to be refused is not an exception, it is declared with its expected refusal in the file
+# EXPECTED_REFUSALS.yml of its own folder (see `declared_refusals`). The table stays so that an exception can be written down with
+# a reason that is a rule; the test fails when an excused check passes and when a file is gone.
+EXCUSES = []
+SET_EXCUSES = []
 EXCUSED = {(file, check) for file, checks, _, _ in EXCUSES for check in checks}
 SET_EXCUSED = {folder for folder, _, _ in SET_EXCUSES}
+REFUSALS_FILE = "EXPECTED_REFUSALS.yml"
 
 
 def rel(path: Path) -> str:
@@ -134,6 +120,29 @@ def set_check_problems(files):
     return [p.text("recipes") for p in check_recipe_set(recipes)]
 
 
+def declared_refusals(folders=None):
+    """{(recipe file, check): entry} read from the EXPECTED_REFUSALS.yml of each recipe folder: the recipes that exist to be refused,
+    with where and why the check must refuse them. The rule lives with the recipes; this file holds no recipe name."""
+    found = {}
+    for folder in (recipe_folders() if folders is None else folders):
+        declaration = Path(folder) / REFUSALS_FILE
+        if declaration.is_file():
+            for entry in (yaml.safe_load(declaration.read_text()) or {}).get("refusals", []):
+                found[(Path(folder) / f"{entry['recipe']}.yaml", entry["check"])] = entry
+    return found
+
+
+def refusal_verdict(errors, entry, recipe_name: str):
+    """None when the check refused the recipe at the declared place for the declared reason; else the plain message."""
+    if not errors:
+        return "this recipe is declared as refused and the check now accepts it: it no longer shows the refusal it exists for"
+    place = f"{recipe_name}: {entry['location']}:"
+    wrong = [e for e in errors if not e.startswith(place) or not all(word in e for word in entry["contains"])]
+    if wrong:
+        return "refused for another reason than the declared one (location " + entry["location"] + ", words " + str(entry["contains"]) + "):\n" + "\n".join(wrong)
+    return None
+
+
 def run_check(check: str, path: Path):
     """The errors of one check of one recipe file, as plain messages (an empty list: it passes)."""
     path = Path(path)
@@ -161,6 +170,7 @@ def excuse_verdict(errors, excused: bool):
 FOLDERS = recipe_folders()
 RECIPE_FILES = [p for folder in FOLDERS for p in find_data_analysis_recipes(folder)]
 CASES = [(p, check) for p in RECIPE_FILES for check in CHECKS]
+REFUSALS = declared_refusals()
 GALLERY_RECIPES = sorted(GALLERY.glob(f"*/{GALLERY_RECIPE}"))
 
 
@@ -191,7 +201,9 @@ def test_no_yaml_file_of_a_recipe_folder_is_empty_or_unreadable(folder):
 @pytest.mark.parametrize("case", CASES, ids=_case_id)
 def test_the_recipe_follows_the_spec(case):
     path, check = case
-    verdict = excuse_verdict(run_check(check, path), (rel(path), check) in EXCUSED)
+    errors = run_check(check, path)
+    entry = REFUSALS.get((path, check))
+    verdict = refusal_verdict(errors, entry, path.name) if entry else excuse_verdict(errors, (rel(path), check) in EXCUSED)
     assert verdict is None, f"{rel(path)}: {check}: {verdict}"
 
 
@@ -200,6 +212,12 @@ def test_a_plot_id_is_unique_over_the_recipes_of_a_deployment_folder(folder):
     errors = set_check_problems(find_data_analysis_recipes(folder))
     verdict = excuse_verdict(errors, rel(folder) in SET_EXCUSED)
     assert verdict is None, f"{rel(folder)}: {verdict}"
+
+
+def test_a_plot_id_is_unique_over_every_recipe_folder_shipped_together():
+    """A recipe copied from one folder into another (a template into a deployment) must not clash: all the folders under the recipes folder are checked as one set."""
+    errors = set_check_problems([p for folder in sorted(d for d in RECIPES_ROOT.iterdir() if d.is_dir()) for p in find_data_analysis_recipes(folder)])
+    assert errors == [], "\n".join(errors)
 
 
 def test_gallery_examples_pass_the_recipe_check_and_the_set_check():
@@ -215,6 +233,13 @@ def test_each_gallery_example_has_no_error_in_the_gallery_profile(path):
     result = check_recipe_file(path, "gallery", file_stem=path.parent.name, catalogs=checker_catalogs())
     assert {"structure", "actions", "components"} <= result.coverage
     assert [p.text(path.parent.name) for p in result.errors] == []
+
+
+def test_every_declared_refusal_names_a_recipe_that_exists_and_says_why():
+    assert len(REFUSALS) >= 2
+    for (path, check), entry in REFUSALS.items():
+        assert path in RECIPE_FILES, f"{REFUSALS_FILE} names {path.name}, which is no recipe of its folder: remove the entry"
+        assert check in CHECKS and entry["location"] and entry["contains"] and entry["why"], entry
 
 
 def test_the_table_of_known_exceptions_names_only_files_that_exist():
@@ -268,6 +293,21 @@ def test_an_empty_yaml_file_in_a_recipe_folder_is_reported(tmp_path):
     messages = discovery_problems(folder)
     assert len(messages) == 2 and all("empty" in m for m in messages)
     assert run_check("not_empty", folder / "leftover.yaml") != []
+
+
+def test_a_recipe_declared_as_refused_that_is_accepted_makes_the_guard_fail(tmp_path):
+    target = _copy_pipelines(tmp_path) / "3_test_no_joins.yaml"
+    entry = {"recipe": target.stem, "check": "recipe_check", "location": "data_schemas.X", "contains": ["word"], "why": "w"}
+    assert "now accepts it" in refusal_verdict(run_check("recipe_check", target), entry, target.name)
+
+
+def test_a_declared_refusal_for_another_reason_makes_the_guard_fail():
+    entry = REFUSALS[(RECIPES_ROOT / "retest" / "retest_broken_header.yaml", "data_check")]
+    errors = run_check("data_check", RECIPES_ROOT / "retest" / "retest_broken_header.yaml")
+    assert refusal_verdict(errors, entry, "retest_broken_header.yaml") is None
+    assert "another reason" in refusal_verdict(errors, {**entry, "location": "data_schemas.Other"}, "retest_broken_header.yaml")
+    assert "another reason" in refusal_verdict(errors, {**entry, "contains": ["a word that is not there"]}, "retest_broken_header.yaml")
+    assert "another reason" in refusal_verdict(["retest_broken_header.yaml: data_schemas.Genes: a disk error"], entry, "retest_broken_header.yaml")
 
 
 def test_an_excused_check_that_passes_makes_the_guard_fail(tmp_path):

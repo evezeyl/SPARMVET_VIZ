@@ -48,7 +48,7 @@ analysis_groups:
   retest:
     ui_label: "Retest"
     plots:
-      genes_bar:
+      broken_header_genes_bar:
         ui_label: "Genes"
         target_dataset: Genes_joined
         mapping: {x: gene}

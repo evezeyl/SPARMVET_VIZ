@@ -508,7 +508,7 @@ def test_a_single_table_recipe():
 
 def _shipped():
     base = ROOT / "config" / "data_analysis_recipes"
-    return sorted(p for folder in ("pipelines", "templates", "retest", "experimental") for p in (base / folder).glob("*.yaml"))
+    return sorted(p for folder in ("pipelines", "templates", "retest") for p in (base / folder).glob("*.yaml"))
 
 
 @pytest.mark.parametrize("path", _shipped(), ids=lambda p: f"{p.parent.name}/{p.name}")

@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   ui_label: Simple Demo
   description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,
-    1 plot.'
+    1 plot. The data beside it (assets/test_data/simple_*.tsv) is made-up example data; S09 is in the metadata only, so the completion of the ids adds a line for it.'
   version: '1.0'
 data_schemas:
   primary_data:
@@ -81,7 +81,7 @@ analysis_groups:
     ui_label: "📊 Summary overview"
     description: 📊 Summary overview
     plots:
-      value_by_group:
+      simple_value_by_group:
         ui_label: "Value By Group"
         description: "Distribution of measurement values per group."
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Beginner"}

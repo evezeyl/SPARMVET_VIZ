@@ -373,7 +373,7 @@ def test_the_place_follows_the_orchestrator_for_every_dataset(world):
 def _shipped_datasets():
     found = []
     for recipe in sorted(RECIPES_ROOT.rglob("*.yaml")):
-        if recipe.parent.name not in ("pipelines", "templates", "retest", "experimental"):
+        if recipe.parent.name not in ("pipelines", "templates", "retest"):
             continue
         found.append(recipe)
     return found

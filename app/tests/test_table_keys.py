@@ -380,9 +380,7 @@ def with_leaf_changed(raw: dict, path: tuple) -> dict:
 
 
 def load_raw(path):
-    """The resolved recipe as the app reads it; None for a file that holds no recipe (`experimental/test_logic.yaml` is empty)."""
-    if not [line for line in Path(path).read_text().splitlines() if line.strip() and not line.strip().startswith("#")]:
-        return None
+    """The resolved recipe as the app reads it. Every shipped file holds a recipe (an empty file fails `test_every_recipe_follows_the_spec.py`)."""
     return ConfigManager(path).raw_config
 
 
@@ -423,8 +421,7 @@ def test_a_changed_input_changes_the_key_of_every_table_that_depends_on_it_and_n
     in turn; the key of that table and of every table built from it moves, the key of every other table does not. A value in a
     tier 2 or under a downstream section moves no tier-1 key. MUTATION M1, M2, M3."""
     raw = load_raw(path)
-    if not raw:
-        pytest.skip("the file holds no recipe")
+    assert raw, f"{path} holds no recipe"
     files = {ds: f"hash-{ds}" for ds in collection_bodies(raw)}
     base = t1_keys(raw, files)
     assert base, "a recipe has tables"
@@ -470,8 +467,7 @@ def test_a_changed_input_changes_the_key_of_every_table_that_depends_on_it_and_n
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
 def test_a_data_file_moves_the_key_of_the_tables_that_read_it_and_no_other_on_every_shipped_recipe(path):
     raw = load_raw(path)
-    if not raw:
-        pytest.skip("the file holds no recipe")
+    assert raw, f"{path} holds no recipe"
     graph = build_graph(raw)
     files = {ds: f"hash-{ds}" for ds in collection_bodies(raw)}
     base = t1_keys(raw, files)
@@ -486,8 +482,7 @@ def test_a_data_file_moves_the_key_of_the_tables_that_read_it_and_no_other_on_ev
 def test_the_keys_of_every_shipped_recipe_are_narrow_and_well_formed(path):
     """Which tables fall back to a coarse key on shipped recipes: none (the graph draws every one of them)."""
     raw = load_raw(path)
-    if not raw:
-        pytest.skip("the file holds no recipe")
+    assert raw, f"{path} holds no recipe"
     parts, coarse = table_key_parts(raw)
     assert set(parts) == set(collection_bodies(raw))
     assert not any(p.coarse for p in parts.values()), [t for t, p in parts.items() if p.coarse]
