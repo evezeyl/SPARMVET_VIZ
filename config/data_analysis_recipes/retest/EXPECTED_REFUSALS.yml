@@ -1,0 +1,15 @@
+# Recipes of this folder that exist to be REFUSED (the retest deployment lists them as unavailable, .claude/workflows/retest_procedure.md RT-30, RT-31).
+# `app/tests/test_every_recipe_follows_the_spec.py` reads this file: for each entry the named check must refuse the recipe at
+# `location`, with a message that holds every word of `contains`. The test fails when the recipe stops being refused and when
+# it is refused for another reason. The extension is .yml on purpose: the app reads every *.yaml of this folder as a recipe.
+refusals:
+  - recipe: retest_broken_header
+    check: data_check
+    location: data_schemas.Genes
+    contains: ["predicted_phenotype", "not found in the source file"]
+    why: the data file has a renamed header (phenotype_renamed); the declared column is not found (RT-30)
+  - recipe: retest_bad_select_column
+    check: data_check
+    location: data_schemas.Genes
+    contains: ['unable to find column "phenotype"', "predicted_phenotype"]
+    why: a select step names a column that does not exist; the message lists the columns that do (RT-31)
