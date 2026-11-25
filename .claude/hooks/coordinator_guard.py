@@ -56,6 +56,9 @@ WORKERS = {
     "panel-scientist", "panel-architect", "panel-developer", "panel-user",
 }
 CHEAP_MODELS = {"haiku", "sonnet"}
+# Panel viewpoints may run on opus when the call names it (Eve, 2026-11-25: sonnet is the default from the agent
+# file; opus only when explicitly asked). fable is never allowed for any agent.
+OPUS_ALLOWED = {"panel-scientist", "panel-architect", "panel-developer", "panel-user"}
 # Agents that need no Decisions block (D-0156): read-only search, the records, and the panel viewpoints (they only
 # recommend). Every other agent that may run, general ones included, must quote decisions. A panel name is listed one
 # by one: a name that only starts with "panel-" is not exempt.
@@ -375,8 +378,12 @@ def main() -> int:
         # generic or built-in one) takes the coordinator's model, Fable, unless the call
         # names a cheap model. A fork always runs on the caller's model.
         # A named worker may be given haiku or sonnet in the call (haiku for a mechanical
-        # edit); opus only comes from the builder-opus definition, never from a parameter.
-        if kind != "fork" and (model in CHEAP_MODELS or (kind in WORKERS and model == "")):
+        # edit); opus comes from the builder-opus definition, or from a call that names it for a panel-* viewpoint.
+        if kind != "fork" and (
+            model in CHEAP_MODELS
+            or (kind in WORKERS and model == "")
+            or (kind in OPUS_ALLOWED and model == "opus")
+        ):
             if kind not in DECISION_EXEMPT:
                 problem = brief_problem(str(tool_input.get("prompt") or ""), project)
                 who = kind or "this agent"

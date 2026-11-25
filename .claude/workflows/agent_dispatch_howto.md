@@ -1,4 +1,4 @@
-# Agent dispatch: how to (short)
++# Agent dispatch: how to (short)
 
 Rules: `CLAUDE.md` section 2.1. Agents: `.claude/agents/`. Guard: `.claude/hooks/coordinator_guard.py` (registered in `.claude/settings.json`). Eve, 2026-11-14.
 
@@ -94,3 +94,30 @@ Flag first, even if all viewpoints like the option: anything that changes a resu
 - **`NONE-CHECKED: <path>`.** The line says that no decision applies and none is needed (wording of the review session, M158, not Eve's words); the path is the saved report of the scout that checked (a regular file inside the project, saved by the coordinator or a scribe under `tmpAI/`, `D-0155`). Her addition (`D-0165`): "no decisions that to be reported when one needed". So, **where no decision exists and one is needed, that is an open point: it goes to the numbered list for her and is not hidden behind `NONE-CHECKED`.**
 - **Who checks what.** The hook checks the form; the reviewer checks the content (rule E, checkpoint 3 of `decision_compliance.md`).
 - **When the hook refuses.** The refusal names the number and says what to add; it shows the start of the ledger line. The ledger is read first: a missing or unreadable ledger refuses the call, also with a valid `NONE-CHECKED` line (`D-0158`).
+
+## 8. New session or compact? (written 2026-11-25 for Eve; a rule of thumb from practice, not measured)
+
+In VS Code the model and effort of the session are the ones chosen in the drop-down. The `model` and `effort` in `.claude/agents/coordinator.md` apply only to `claude --agent coordinator` on the command line. Any model can coordinate: type `-coordinate` once at the start of a session (only a Fable session does it by itself). No worker is ever Fable.
+
+| Situation | Choice | Why |
+|---|---|---|
+| Same goal, context less than about half full | keep going | nothing to gain |
+| Same goal, context crowded, state files current (see below) | compact | the plan survives in the files |
+| A phase ended (a batch of merges, a round of decisions) | new session | cheapest and cleanest restart |
+| You want another model (Fable for detail, Opus for the overview) | new session | the model is per session |
+| The coordinator repeats questions, forgets decisions or makes records errors | new session | the context is too long |
+| One long research or design question | independent agent in its own session; its result goes in a file | the coordinator does not carry it |
+
+Before ending or compacting, a scribe brings these up to date (the standing rules of CLAUDE.md section 2.1 and section 7 already require it):
+1. `.claude/logs/handoffs/handoff_active.md`: the open state at the TOP, done items removed or archived the same day.
+2. `.claude/tasks/tasks.md`: the status of the tasks.
+3. `tmpAI/coordinator/progress_<date>.md`: one screen: done, running (worktree and branch), next.
+4. `tmpAI/agent_channel.md`: your row of "Working on now" and the messages you handled.
+5. Big picture: `.claude/design/studies/whole_picture_2026-11/WHOLE_PICTURE.md`.
+
+A new session starts by reading, in this order: CLAUDE.md section 3.1 files, the top of the handoff, the progress note, the channel. Do not read the whole handoff: it is very large (316 KB on 2026-11-25), which makes a fresh session expensive; cleaning it is the owner's job (CLAUDE.md, trigger `-handoff`).
+
+### Panel viewpoints on Opus, and measuring (Eve, 2026-11-25)
+- The `panel-*` agents run on Sonnet by default and have web search. A call may name `model: opus` for them (the guard allows it for these four only); Opus is an explicit choice of Eve, so when a brief does not name the model, the coordinator asks. Never Fable.
+- Research without a coordinator: type `-researcher <persona>` (CLAUDE.md section 4.3) in a session on the model you want.
+- Per coordinated week, a scribe adds one line to the handoff: coordinator model, quota percentage at start and end, work done, mistakes the checks caught.

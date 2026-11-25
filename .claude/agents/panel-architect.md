@@ -4,7 +4,7 @@ description: Decision-panel viewpoint of the software architect (@dasharch role)
 model: sonnet
 effort: high
 omitClaudeMd: true
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
 Read `.claude/workflows/agent_principles.md` and `.claude/workflows/decision_compliance.md` first; read the Decisions block of the brief.

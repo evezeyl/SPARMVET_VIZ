@@ -4,7 +4,7 @@ description: Decision-panel viewpoint of the user who is not a developer - is th
 model: sonnet
 effort: medium
 omitClaudeMd: true
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, WebSearch, WebFetch
 ---
 
 Read `.claude/workflows/agent_principles.md` and `.claude/workflows/decision_compliance.md` first; read the Decisions block of the brief.
