@@ -5,7 +5,30 @@
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
 ## OPEN STATE 2026-11-21, afternoon (time not read from the clock by the writer)
-- 2026-11-23 EVENING (NEWEST; RESTART FROM HERE): dev head `8e276fd6`, NOT pushed. The ledger runs to D-0562.
+- 2026-11-25: after the build for the demo (NEWEST; RESTART FROM HERE): dev head `80443853`, NOT pushed (the owner pushes). The ledger runs to D-0628 (commit `f3b9298e`).
+  A. Merged 2026-11-24/25 (merge `80443853`). Review: non-browser app suite 5775 passed; 4 browser files 20 passed. The builder's run: libs 8780; all 52 browser files 528 passed.
+  - Typed values trimmed (D-0626).
+  - The category NOT DETECTED in `amr_heatmap`, as a tier-3 step of the plot (D-0623).
+  - The three lines with no usable id removed from the metadata of `demo_abromics` (D-0624).
+  - The template `left_join_lesson`, its data and its test deleted (D-0625).
+  - In Audit mode the T1 and T2 views show the audited tables (D-0622).
+  - An export made in Audit mode writes `audit_recipe/<id>_audited.yaml`: the original recipe with every audit step at its place and its reason in the step's comment; it runs on its own (D-0622).
+  - A plot whose recipe has its own tier-3 steps gets its `T3_data_<plot>.tsv` in every export. README and report say whether a file is after the recipe's own steps or after the audit steps (D-0623).
+  B. RESEARCH DONE, waiting for the owner: the complete lineage in HOME, to choose the scope of an audit step. Files in `tmpAI/panel/lineage_scope/`: `01_architect.md`, `02_data_scientist.md` (its headline is withdrawn by `05_review_of_test_logic.md`), `03_user.md`, `04_possibilities.md` (package survey; licences and sizes NOT verified online), `05_review_of_test_logic.md`, `TABLE_FOR_THE_OWNER.md`. Eight clickable mock-ups: `tmp/2026-11-24/lineage_mockups/index.html`. She looks at the mock-ups and chooses the skeleton. Nothing is built. These files are scratch: they move to `.claude/design/studies/lineage_scope_2026-11/` when she has chosen.
+  C. Findings of `05_review_of_test_logic.md` that stay open: (1) the library option "remove from all the data" (`libs/utils/src/utils/remove_from_all.py`), run without the engine's plan, reaches only 17 places and misses MLST, VirulenceFinder, Summary and Detailed_summary; its own list breaks the rule of places; it is on no screen today. (2) The lineage must show each parent's role in a join (starting table, right-hand side, look-up); the graph does not hold it. (3) After a removal at ResFinder, a figure that left-joins ResFinder shows the entity with an empty status, while a completed entity shows "Not Found".
+  D. WAITING for her choice of the lineage: an audit step at a result table with no plot (D-0627).
+  E. For the owner (provisional choices of this merge, her decision):
+    1. the NOT DETECTED tiles are grey, with a legend entry "nan" (the fill is the predicted phenotype, empty for them);
+    2. the audit recipe is one file, `<id>_audited`, written only in an export made in Audit mode;
+    3. a step that removes nothing still makes its table count as audited in the view badge;
+    4. the reason typed in the audit panel is not trimmed;
+    5. no notice yet when a step removes no row or every row;
+    6. "fill empty values" is not added to the closed list of step readings (D-0351): her choice;
+    7. dropping `<id>_audited.yaml` beside the original in the recipes folder gives two recipes with the same plot ids, and the app does not warn (the rule file says plot ids are unique across recipes);
+    8. a failing tier-3 step shows its error also in the T1 and T2 views of the plot's table.
+  F. Not built, decided earlier: the original recipe beside the audit recipe in the bundle; the audit log beside it (D-0478); the hash of the audit recipe in the run file.
+  G. Worktrees merged and removable: `../SPARMVET_VIZ_wt_names`, `wt_entity_id`, `wt_ids`, `wt_warn`, `wt_audit_places`, `wt_dialog_path`, `wt_small`. Held, not used: `wt_audit_s1`.
+- 2026-11-23 EVENING (earlier; superseded by the 2026-11-25 bullet above): dev head `8e276fd6`, NOT pushed. The ledger runs to D-0562.
   A. Her orders of 2026-11-23, each a ledger line: D-0534 (BLUEPRINT: a duplicate plot id must be fixed; plot ids unique across recipes enforced); D-0535 to D-0537 (the first audit build: audit steps at each tier at the places chosen; effects measured and kept in the audit log); D-0538 to D-0550 (her notes in `WHOLE_PICTURE.md` and her answers); D-0551 (the recipe structure and the lineage with its audit scope are designed together; end-to-end testing delayed); D-0552 (an Opus and a Sonnet design agent work together and agree before anything is written); D-0553 (Q1 = at most one chosen place on a path; the original parents may all be chosen; a directed graph); D-0554 (sequence: paths and derived; how to build recipes; the demo recipe only where necessary, one dry run shown first); D-0555 to D-0557 (a parent reused in another graph: investigate; scratch tests allowed); D-0558, D-0559 (nothing may rest on the old lineage code; agents stopped and restarted); D-0560 (everything after a change is recalculated; no stale table); D-0561 (a run states beforehand what it tests and what the design expects; principle 12 of `agent_principles.md`); D-0562 (`is_entity_key` becomes `is_entity_id` in the one big move; open topic: joins that are not metadata).
   B. Committed study files in `.claude/design/studies/whole_picture_2026-11/`: `DESIGN_AGREED_AND_QUESTIONS.md` (`14f78599`, note `effabc22`) and `PATHS_AND_DERIVED_AGREED.md` (`8e276fd6`). Both are signed by both design agents; the second holds the recheck of the first (36 rows) and seven questions for her (Q1 a parent reused in another graph; Q2 "each T1 coming from the parent"; Q3 the recipe form; Q4 the default where her rule is silent; Q5 what "remove from all the data" writes; Q6 "can remain here" before Apply; Q7 Remove step, the metadata's side, the entity id). `WHOLE_PICTURE.md` is her file, uncommitted in the main tree: do not touch it.
   C. Evidence (scratch, not in git): `tmpAI/coordinator/design_dialogue/` (positions, rounds, `RUN_REGISTER_opus.md`, `RUN_REGISTER_sonnet.md`, scripts and outputs); `tmpAI/coordinator/whole_picture/RETEST_her_scope.md`; `tmpAI/coordinator/STATE_2026-11-23_evening.md`.
