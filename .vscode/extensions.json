@@ -21,6 +21,7 @@
         "janisdd.vscode-edit-csv",
         "anthropic.claude-code",
         "growthjack.claude-code-usage",
-        "digitarald.paste-as-markdown"
+        "digitarald.paste-as-markdown",
+        "daanrosendal.pinboard"
     ]
 }
