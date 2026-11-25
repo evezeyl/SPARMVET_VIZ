@@ -345,8 +345,9 @@ def test_on_every_shipped_recipe_a_step_moves_the_keys_after_it_and_no_other(pat
         pytest.skip("the file holds no recipe")
     files = {ds: f"hash-{ds}" for ds in collection_bodies(raw)}
     base = all_keys(raw, files)
-    places = [f"T1:{t}" for t in collection_bodies(raw)]
-    places += [f"T2:{t}" for t in sorted(plot_targets(raw)) if t in collection_bodies(raw)]
+    # D-0632: the metadata table is not an audit place, so it is left out of the places walked
+    places = [f"T1:{t}" for t in collection_bodies(raw) if t != "metadata_schema"]
+    places += [f"T2:{t}" for t in sorted(plot_targets(raw)) if t in collection_bodies(raw) and t != "metadata_schema"]
     places += [f"T3:{p}" for p in plot_entries(raw)]
     for place in places:
         audit = start_audit(raw, AUD)

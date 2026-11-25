@@ -83,6 +83,8 @@ UNKNOWN_PLACE = "unknown_place"                       # the place asked is not a
 COLUMN_NOT_AT_PLACE = "column_not_at_place"           # the place has no such column (or the engine could not give its columns)
 NOT_OFFERED_CODES = (NO_ENTITY_KEY_DECLARED, NOT_THE_ENTITY_KEY, RECIPE_CANNOT_BE_DRAWN, UNKNOWN_PLACE, COLUMN_NOT_AT_PLACE)
 
+METADATA_LEFT_ALONE_SENTENCE = ("The metadata table is left alone: it is not a place for an audit step. The tables built from the data tables start from them with a left join, "
+                                "so removing the entity from the data tables is enough.")
 # Why a table is not reached: a closed list. `UNSURE_CODES` are the doubts (the app could not tell); the others are information.
 KEY_GONE_AT_TIER1 = "key_gone_at_tier1"               # the table is built from one that holds the key and the key is certainly not in it at the end of its tier 1
 SAME_NAME_NOT_LINKED = "same_name_not_linked"         # the table holds a column of the same name that no declaration and no join links to the key (D-0355)
@@ -90,7 +92,8 @@ PLAN_FAILED = "plan_failed"                           # the engine could not giv
 NOT_FOLLOWED = "not_followed"                         # a step the app cannot read lies between the key and this table (the reason is the walk's)
 UNCERTAIN_LINK = "uncertain_link"                     # the key is linked to a column of this table only by a link the walk cannot prove
 SEVERAL_COLUMNS = "several_columns"                   # the key is in this table more than once (a table joined with itself)
-NOT_REACHED_CODES = (KEY_GONE_AT_TIER1, SAME_NAME_NOT_LINKED, PLAN_FAILED, NOT_FOLLOWED, UNCERTAIN_LINK, SEVERAL_COLUMNS)
+METADATA_LEFT_ALONE = "metadata_left_alone"           # the metadata table is not an audit place (D-0632): nothing is written there; information, never a doubt
+NOT_REACHED_CODES = (KEY_GONE_AT_TIER1, SAME_NAME_NOT_LINKED, PLAN_FAILED, NOT_FOLLOWED, UNCERTAIN_LINK, SEVERAL_COLUMNS, METADATA_LEFT_ALONE)
 # The doubts: a table where the logic cannot say the key is there to be removed from. `KEY_GONE_AT_TIER1` is one (review of 2026-11-21, F1): a table built from one that holds the key
 # and that no longer has it at the end of its tier 1 (copied under another name, grouped away, dropped) is a fact of the walk, not a claim about the entity. `SAME_NAME_NOT_LINKED` is not one
 # here: whether a same-named column with no declaration and no join is "the key" is the owner's question (P7), so it stays information.
@@ -246,6 +249,10 @@ def describe(recipe: Any, column: str, *, plans: Optional[PlanBook] = None, plac
     left: List[NotReached] = []
     for table in tables:
         t1 = f"T1:{table}"
+        if table == recipe_tiers.METADATA_SCHEMA:
+            # D-0632, D-0633: the metadata is not an audit place; the joined tables start from the data table with a left join, so a removal in the data tables is enough.
+            left.append(NotReached(table, t1, METADATA_LEFT_ALONE, Reason(METADATA_LEFT_ALONE, (("sentence", METADATA_LEFT_ALONE_SENTENCE),))))
+            continue
         node, k = index.end(t1)
         plan = index.plan_end(t1)
         if isinstance(plan, PlanFailure):

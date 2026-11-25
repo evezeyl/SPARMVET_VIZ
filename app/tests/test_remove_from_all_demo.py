@@ -71,8 +71,9 @@ def demo(tmp_path_factory):
 def test_the_option_is_offered_and_reaches_every_table_that_holds_the_key_among_them_tables_no_plot_reads(demo):
     option, tables = demo.option, demo.graph.collections()
     assert option.offered and option.default_on is False and option.warning == rfa.WARNING
-    assert [p.table for p in option.places] == [t for t in tables if t != NO_KEY_TABLE], "27 of 28 tables, in graph order"
-    assert option.not_reached == (), "the table with no sample column is not mentioned: it has nothing to do with the key"
+    assert [p.table for p in option.places] == [t for t in tables if t not in (NO_KEY_TABLE, "metadata_schema")], "26 of 28 tables, in graph order (the metadata is not an audit place, D-0632)"
+    assert [(n.table, n.code) for n in option.not_reached] == [("metadata_schema", rfa.METADATA_LEFT_ALONE)], "only the metadata is named, as left alone; the table with no sample column is not mentioned"
+    assert "left alone" in option.not_reached[0].reason.get("sentence") and "left join" in option.not_reached[0].reason.get("sentence")
     assert option.types == ("String",) and all(p.column == "sample_id" and p.tier == "T1" for p in option.places)
     no_plot = {p.table for p in option.places if not p.plots}
     assert {"Quality_metrics", "Detailed_summary", "FastP_with_metadata", "Bracken_with_metadata", "ResFinder_with_metadata", "AR1_MLST_Serotype_Virulence"} <= no_plot
@@ -82,7 +83,7 @@ def test_the_option_is_offered_and_reaches_every_table_that_holds_the_key_among_
 def test_places_that_the_key_reaches_through_steps_the_app_cannot_read_or_groups_say_so_in_notes(demo):
     notes = {p.table: [n.code for n in p.notes] for p in demo.option.places if p.notes}
     assert set(notes["Summary"]) == {"unread_step_passed"} and notes["Summary_quality"][-1] == "one_row_per_group_after_this_step"
-    assert all(not p.notes for p in demo.option.places if p.table in ("Quality_metrics", "FastP", "metadata_schema"))
+    assert all(not p.notes for p in demo.option.places if p.table in ("Quality_metrics", "FastP"))
 
 
 def test_apply_without_a_list_writes_at_every_reached_place_as_before_and_the_library_says_nothing_about_other_tables(demo):
@@ -169,7 +170,7 @@ def test_describing_the_option_builds_nothing_and_applies_nothing(demo, tmp_path
 # ---- without a measured effect per result the user cannot see which places to untick.
 
 ENTITY = "10668076"
-QUALITY_PLACES_TO_UNTICK = ["QC_Reads_Anchor", "Quast_with_metadata", "FastP", "Quast", "Bracken", "metadata_schema"]
+QUALITY_PLACES_TO_UNTICK = ["QC_Reads_Anchor", "Quast_with_metadata", "FastP", "Quast", "Bracken"]   # the metadata is no longer a place (D-0632)
 
 
 def _entity_rows_per_plot(demo, audit_recipe, out_dir):
@@ -192,7 +193,7 @@ def _entity_rows_per_plot(demo, audit_recipe, out_dir):
 
 def test_the_owners_case_the_entity_stays_in_exactly_the_three_quality_plots_only_when_six_places_are_unticked_measured(demo, tmp_path):
     places = [p.place for p in demo.option.places]
-    assert len(places) == 27 and all(f"T1:{t}" in places for t in QUALITY_PLACES_TO_UNTICK)
+    assert len(places) == 26 and all(f"T1:{t}" in places for t in QUALITY_PLACES_TO_UNTICK)
     _, before = _entity_rows_per_plot(demo, start_audit(demo.loaded.raw, AUD).recipe, tmp_path / "none")
     assert sorted(k for k, n in before.items() if n == 0) == ["qa_aggregated_no_key"], "the entity is in 16 of the 17 plots (the 17th groups it away) before any removal: a test of nothing otherwise"
 
@@ -210,3 +211,21 @@ def test_the_owners_case_the_entity_stays_in_exactly_the_three_quality_plots_onl
     stays = sorted(k for k, n in six.items() if n > 0)
     print("MEASURED six unticked: entity stays in", stays, "affected plots:", len(run6.affected_plots))
     assert len(stays) == 3 and len(run6.affected_plots) == 14
+
+
+def test_after_the_removal_the_entity_is_left_in_the_metadata_only_and_in_no_table_or_plot_built_from_the_data_tables_measured(demo, tmp_path):
+    """D-0632, D-0633: the removal is not written at the metadata (not an audit place; the tables that bring it in start from the data table with a left join), so the entity must
+    be gone from every other table at tier 1 and tier 2 and from every plot. MEASURED on the demo recipe: the metadata table keeps the entity (it is left alone and the library
+    says so, `METADATA_LEFT_ALONE`); any other table that still holds it would be a table the walk did not reach, and the test fails naming it."""
+    still = []
+    for table in demo.graph.collections():
+        for tier, frame in demo.tables(demo.run, table).items():
+            if frame is not None and "sample_id" in frame.columns and set(demo.victims) & set(frame["sample_id"].to_list()):
+                still.append((table, tier))
+    print("MEASURED the entity still appears in", still)
+    assert {t for t, _ in still} == {"metadata_schema"}, still
+    assert any(n.table == "metadata_schema" and n.code == rfa.METADATA_LEFT_ALONE for n in demo.option.not_reached)
+    audit = start_audit(demo.loaded.raw, AUD)
+    rfa.apply(audit, demo.option, [ENTITY], "removed from all the data", plans=demo.plans)
+    _, counts = _entity_rows_per_plot(demo, audit.recipe, tmp_path / "all")
+    assert {k: n for k, n in counts.items() if n} == {}, "the entity is in no plot after the removal at the data tables (the metadata is left alone)"
