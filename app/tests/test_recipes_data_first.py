@@ -138,7 +138,7 @@ def test_virulencefinder_is_a_data_schema_with_a_completion_block(recipe):
 
 
 @pytest.mark.parametrize("recipe,tables", [("2_test_data_ST22_dummy", ["metadata_schema", "amr_data", "plasmid_data"]),
-                                           ("figshare_integration", ["fg_metadata", "fg_phenotypes", "fg_genotypes"])])
+                                           ("figshare_integration", ["metadata_schema", "fg_phenotypes", "fg_genotypes"])])
 def test_the_entity_id_is_declared_and_each_table_has_its_marker(recipe, tables):
     orchestrator = DataOrchestrator(PIPELINES, ROOT)
     raw = raw_of(PIPELINES / f"{recipe}.yaml")

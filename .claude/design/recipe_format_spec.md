@@ -681,6 +681,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | S07 | E | `tier2` on a schema that is only an ingredient | move it to a join, or plot the schema |
 | S08 | E | `input_fields` not a mapping | |
 | S09 | E | `null_values` missing or not a list of texts, or `strip` missing or not a boolean (also as a field override) | the two keys and their forms; the documentation on missing values |
+| S10 | E | a recipe declares `metadata_schema` and has no table under `data_schemas` (D-0636; built 2026-11-25; PROVISIONAL: a recipe with the metadata and only look-up tables of `additional_datasets_schemas` is refused too; the wording is PROVISIONAL). The check cannot recognise an ordinary data table that is really the metadata: that half is a rule for the recipe maker | a recipe with a single table declares it under `data_schemas`; declare the metadata only when the recipe has another table of data |
 | FD01 | E | unknown field property | replacement |
 | FD02 | E | `type` missing, or not a Polars dtype that a text file can hold; an old name (`numeric`, `utf8`, `integer`, `string`, ...) | the allowed dtypes; `categorical`: "this was String" |
 | FD03 | E | `is_primary_key`; `is_entity_key` (renamed 2026-11-23, D-0562) | `is_entity_id` |

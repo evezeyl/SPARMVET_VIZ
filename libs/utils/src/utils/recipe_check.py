@@ -379,6 +379,11 @@ class _Check:
                 self.schema_bodies[sid] = schema
                 self.schema(schema, path, sid in unapplied)
         if "metadata_schema" in raw:
+            if not self.data_schema_ids:
+                # S10 (D-0636): the metadata is the table that describes the samples of the other tables; declared alone it describes nothing. PROVISIONAL: a recipe with the
+                # metadata and only look-up tables (`additional_datasets_schemas`) is refused too, because a look-up is not a table of results (the owner has not said).
+                self.add("S10", "metadata_schema", "the recipe declares a metadata table and no table under data_schemas: a recipe with a single table declares it as a data table, "
+                         "the metadata is declared only when the recipe has another table of data", "move it to data_schemas under its own id, or add the data table it describes")
             self.schema_ids.add("metadata_schema")
             self.schema_bodies["metadata_schema"] = raw["metadata_schema"]
             self.schema(raw["metadata_schema"], "metadata_schema", "metadata_schema" in unapplied)
