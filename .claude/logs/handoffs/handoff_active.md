@@ -1,8 +1,6 @@
-# Handoff — Active State (2026-05-10 continued session)
+# Handoff: active state (last update 2026-11-25)
 
-**Branch:** dev  
-**Working tree:** clean (all changes committed)  
-**Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
+Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE below; one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
 
 ## OPEN STATE 2026-11-25, at the close of coordinator session sparmvet-viz-98 (3ce2c163) — READ THIS FIRST
 
@@ -25,6 +23,29 @@
    - BLUEPRINT held; Test Lab left alone (D-0637).
    - Incident: one builder ran `pkill -f "shiny run app/src/main.py"` once; it may have stopped another session's app; no file affected. Briefs must forbid `pkill -f` and `pgrep -f`.
    - Test state at close: app headless 5959 passed, 0 failed; browser run before the last three commits 534 passed, 3 failed (two load-sensitive, passing alone; one fixed in `25b5116c`), not rerun in full. `audit_uml_model.py` FAILS (5 stale tags). `audit_old_words.py --check` fails since before.
+
+## EVERYTHING STILL OPEN at the close of 2026-11-25 (one list; each item says where its detail lives)
+
+1. The owner's manual test of HOME: the panel "Path of the data" (Audit mode). Screenshots: `tmp/2026-11-25/lineage_view_G/`; mock-ups: `tmp/2026-11-24/lineage_mockups/`.
+2. The owner's push of `dev` (agents never push).
+3. Four tasks that say they wait for the owner while a ledger line names them (detail: `tmpAI/records/possible_contradictions.md`). Each: decided by a ledger line; task to close or reword; the owner to confirm. Only the titles were read, nothing more is judged:
+   - DATA-IMPORT-OVERWRITE: decided by ledger lines D-0432 (HOME Data Import: replacing a data file, option B) and D-0434 (same subject, "decided"); task to close or reword; the owner to confirm.
+   - TESTLAB-REVIEW-1: decided by ledger line D-0396 (TEST_LAB: a review to plan its rebuild); task to close or reword; the owner to confirm. Note: D-0637 says Test Lab is left alone.
+   - BLUEPRINT-REMOVED-BUTTON-AND-HINT-1: decided by ledger line D-0305 (the button "Add plot wrangling" points to tier 3); task to close or reword; the owner to confirm. Note: BLUEPRINT is held (D-0636).
+   - AUDIT-REMOVE-FROM-ALL-DATA: decided by ledger lines D-0498 to D-0501 (HOME audit, "remove from all the data": the table with a column of the key's name, untick and responsibility, what counts as the key, no warnings about natural consequences); task to close or reword; the owner to confirm.
+4. 80 items marked done whose own text says something is open: `tmpAI/records/done_but_not_finished.md`.
+5. 44 open tasks without a model/effort tag: `tmpAI/records/open_items.md` (lines marked `tag=NO`).
+6. Eleven parked branches, to keep or delete (the owner decides; not checked which are still wanted): study/whole-picture-goals, task/audit-slice1-effects-log, task/blueprint-duplicate-id, task/one-python, task/plot-id-across-recipes, task/remove-from-all-ticked, trial/axis-text, trial/default-ticks, trial/formula-d, trial/path-check, trial/stat-function-polars. Worktrees (`git worktree list`, 2026-11-25): `.claude/worktrees/formula-d`, `.claude/worktrees/one-python`, `.claude/worktrees/path-check` (inside the main tree); beside it `../SPARMVET_VIZ_wt_audit_s1`, `../SPARMVET_VIZ_wt_bp_dup`, `../SPARMVET_VIZ_wt_goals`, `../SPARMVET_VIZ_wt_id_across`, `../SPARMVET_VIZ_wt_remove_ticked`, `../SPARMVET_VIZ_wt_ticks_trial`; and `/home/evezeyl/work/SPARMVET_VIZ_retest` (detached HEAD e509c330). Another session may be cleaning branches (order M690).
+7. Two failing audits: `assets/scripts/audit_uml_model.py --project-root .` (5 stale tags: 3 cite ADR-098; `_clear_filters_on_recipe_change`; `test_audited_rows_and_drops_are_exported`) and `assets/scripts/audit_old_words.py --check` (fails since before merge 578d69d2).
+8. The table `figshare_triple_join` of `figshare_integration`: same content, other column and row order after D-0636 (golden records renewed, commit f47d52bc in merge 578d69d2); accepted by the coordinator; the owner to confirm.
+9. The lineage tasks in `tasks.md`: LINEAGE-OLD-SESSION-META-STEP, LINEAGE-STEP-AT-TABLE-NO-PLOT-LISTING, LINEAGE-SMALL-FORM-TYPES, LINEAGE-INCOMPARABLE-PLACES, LINEAGE-UML-SYNC, HOME-MODE-SWITCH-SCROLL, METADATA-NO-JOIN-LISTS-IT, EQUALITY-DIRTY-DATA-GENERATOR; the words and the three tier colours of the panel are PROVISIONAL.
+10. Files changed by the owner, not committed, hers to decide: `CLAUDE.md`, `.claude/hooks/coordinator_guard.py`, `.claude/agents/panel-*.md`, `.claude/workflows/agent_dispatch_howto.md`, `.vscode/extensions.json`.
+11. Older open tasks (in `tasks.md`): HOME-TABS-DRAWN-TWICE, AUDIT-ONE-FAILING-STEP-BREAKS-ALL-PLOTS, REMOVE-FROM-ALL-MISSES-TABLES, AUDIT-RECIPE-BESIDE-ORIGINAL, DATA-IMPORT-OVERWRITE.
+12. The scratch sort of 2026-11-25: `tmpAI/trash_2026-11-25/TRASH_LIST.md` (the owner empties the trash), `tmpAI/KEEP_LIST.md` (what stays and what is unclear).
+13. The handoff archive folder is git-ignored (`.gitignore` line 71): to track it or not is the owner's choice.
+14. One test failed once while agents changed files in the tree: `app/tests/test_migrate_display_names.py::test_the_dry_run_on_the_real_tree_changes_no_file`; a reviewer reruns it on the quiet tree at the end of this round (the result is in the coordinator's closing message).
+15. `tasks.md` is about 494 KB with 483 open items: a full pass needs a session with the owner (task RECORDS-TASKS-FULL-PASS).
+
 
 **Weekly line (coordinator, week of 2026-11-23):** coordinator model Fable; quota at start and end: not known. Work: merges `80443853` and `578d69d2`, and the records. Mistakes the checks caught: golden records not renewed after a recipe change (caught by the reviewer's full run); a browser test that compared a screenshot cut by the scroll position (caught by the browser run); 28 failing tests after the metadata stopped being a place (caught by the first review); a headless run that ignored too many files (caught, rerun after the merge).
 
