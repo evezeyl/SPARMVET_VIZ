@@ -4,6 +4,14 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-24] - T1 and T2 views in Audit mode show the audited tables; the audit recipe of the export (branch `task/small-decisions`; D-0622, D-0619, D-0535, D-0623)
+
+- In Audit mode HOME's T1 and T2 views show the audited table where an audit step changes it (`PlaceAudit.table_lazy`, `AuditRun.audited_table_lazy`: the same tables the export writes as `T1_data_audited.tsv` and `T2_data_audited.tsv`); a table no step changes shows the original; the badge says "Viewing: T1, audited" or "Viewing: T1, original" with "no audit step changes this table" (PROVISIONAL words). Exploration and Source are unchanged. The two browser tests that pinned "T1 and T2 show the original in Audit mode" now pin the audited tables.
+- ⚠️ An export made in Audit mode holds `audit_recipe/<id>_audited.yaml`, a runnable recipe (id equals file name, `info` says it is the audit recipe of the original) with every audit step at its place and its reason in the step's `comment` (`audit_places.audit_recipe_of`). `bake_place_steps` now also writes that comment on every baked step, so the reproducibility recipe carries the reasons too.
+- ⚠️ The table of a plot whose recipe writes its own tier-3 steps (`amr_heatmap`) is part of the Result: its `T3_data_<plot>.tsv` is in every export, and README and report say per file whether it holds the recipe's own steps, the audit steps or both (`audit_places.t3_file_sentence`). Pinned count of the blind key-drop gate on the demo: `unsure_blind` 136 (the 7 columns of the tier 2 of ResFinder read the tier-3 step `polars_fill_null`, which is outside the closed list of readings of D-0351).
+
+---
+
 ## [2026-11-24] - Four small decisions (branch `task/small-decisions`; D-0623, D-0624, D-0625, D-0626)
 
 - **Trimming of typed values** (D-0626): `trim_typed` (`app/modules/t3_audit_engine.py`) removes leading and trailing spaces from what the user types in the filter dialog (a typed text, a typed number or date text, each end of `between`, each item of a typed list) before it is stored or compared, in `dialog_value` and `typed_operand`; inner spaces are untouched; a value PICKED from the list of the column is never trimmed. PROVISIONAL: no message to the user; a typed value that is only spaces is treated as no value and refused like an empty box. The reasons typed in the audit panel are not trimmed (not a value compared). Not built: a notice when a filter sent to audit removes no row or every row at the plot's table (no such count is at hand without a new build).
