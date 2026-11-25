@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-17. Source: tmpAI/panel/engines/REPORT_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-17. Source: .claude/design/studies/scratch_records_2026-11/panel/engines/REPORT_for_eve.md. Copied here on 2026-11-17.
 
 Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 

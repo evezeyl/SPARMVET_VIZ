@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/blueprint_step4/BRIEF.md (not in git), written 2026-11-21 night by the coordinator for step 4 of the BLUEPRINT review; the brief the four viewpoints answered, not a decision -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/BRIEF.md (not in git), written 2026-11-21 night by the coordinator for step 4 of the BLUEPRINT review; the brief the four viewpoints answered, not a decision -->
 # Panel: how the wrangling engine, the plotting engine and the lineage can help a user write recipes in BLUEPRINT (step 4 of the BLUEPRINT review; coordinator, 2026-11-21 night)
 
 ## The owner's order (her words, `.claude/design/blueprint_revision/ORDER.md`: READ IT FIRST)
@@ -14,7 +14,7 @@ This review builds nothing and decides nothing. No question goes to her now: an 
 4. `02_planned_vs_existing.md` section I (facts on the engines and the lineage as helpers) and section L (contradictions between sources: listed, not resolved).
 5. `03_parked_items_and_known_gaps.md` (column pickers that follow the lineage, the warning when values are cast to integer, undeclared file columns).
 Only if needed: `07_ai_agent_planned_vs_existing.md` (the AI agent is NOT the subject of this panel, except where it touches the same helpers), `prior_work/`.
-Do not redo the reading of the code recorded there. A small read-only check is allowed where your proposal depends on a fact (give file:line or the command). Never read `tmp.md`. Do not edit the repository; scratch only under `tmpAI/panel/blueprint_step4/`.
+Do not redo the reading of the code recorded there. A small read-only check is allowed where your proposal depends on a fact (give file:line or the command). Never read `tmp.md`. Do not edit the repository; scratch only under `.claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/`.
 
 ## DECIDED (do not reopen; flag a proposal that reconsiders one). Check the ledger line before you rely on a number.
 The recipe format 1 (unknown keys refused; tiers as own keys; the published columns are the last select; prefixed action names; `ui_label`); HOME is the only place that writes an audit, BLUEPRINT never does; user spaces are independent, hand-offs are files; science is transparent and reproducible, nothing changes a result silently; the tool informs and the user chooses; lineage questions use the plan of the engine as the authority for what exists and its type (the walk built for HOME's audit: `app/modules/plan_composer.py`); the engine of a component is a field of its registry entry and an engine without its library is refused.
@@ -37,4 +37,4 @@ Then recommend ONE approach or combination, say why, and say what you could not 
 - User who is not a developer: is the information needed to choose shown in plain words at the moment of the choice; what frightens or misleads; the words on screen; what a beginner needs against a recipe maintainer.
 
 ## What to return
-Save your full text as `tmpAI/panel/blueprint_step4/<viewpoint>.md` if you can write there (a shell redirect), else return it in full. Plain short sentences, tables for comparisons, as long as needed to be clear, no padding. Start with a 6-line summary; end with "To decide first (ranked)" and "Not verified". Name BLUEPRINT and the part concerned in every finding.
+Save your full text as `.claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/<viewpoint>.md` if you can write there (a shell redirect), else return it in full. Plain short sentences, tables for comparisons, as long as needed to be clear, no padding. Start with a 6-line summary; end with "To decide first (ranked)" and "Not verified". Name BLUEPRINT and the part concerned in every finding.

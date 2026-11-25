@@ -1,8 +1,8 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GLOBAL_PICTURE_sources.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GLOBAL_PICTURE_sources.md (not in git); a record of an earlier study, not a decision -->
 # Sources of GLOBAL_PICTURE.md (for a reviewer)
 
 Roots. DEV = the main folder `SPARMVET_VIZ/`. BRANCH = `.claude/worktrees/engine-keys/` (task/engine-keys). Design files, ADRs and the ledger are read in DEV; `recipe_format_spec.md` and `recipe_spec.yaml` are read on the BRANCH (as the brief asked).
-Short names: GAP1..GAP4 = `GAP_REPORT_full_part1.md` .. `_part4.md` (this folder; "part 5" of the brief is at the end of GAP4). PROOF = `tmpAI/engine_keys/BLUEPRINT_T1_T2_PROOF.md`. T3F = `tmpAI/engine_keys/TIER3_facts_2026-11-18.md`. ADR = `.claude/knowledge/architecture_decisions.md`. LEDGER = `.claude/knowledge/decision_ledger.md`. UX = `.claude/knowledge/blueprint_architect_ux_spec.md`. BP = `.claude/design/spaces/BLUEPRINT.md`. DW = `.claude/design/developer_workflow.md`. SPEC = BRANCH `.claude/design/recipe_format_spec.md`. RSPEC = BRANCH `libs/utils/src/utils/recipe_spec.yaml`. PICS = `tmpAI/engine_keys/bp_proof/`.
+Short names: GAP1..GAP4 = `GAP_REPORT_full_part1.md` .. `_part4.md` (this folder; "part 5" of the brief is at the end of GAP4). PROOF = `.claude/design/studies/scratch_records_2026-11/engine_keys/BLUEPRINT_T1_T2_PROOF.md`. T3F = `.claude/design/studies/scratch_records_2026-11/engine_keys/TIER3_facts_2026-11-18.md`. ADR = `.claude/knowledge/architecture_decisions.md`. LEDGER = `.claude/knowledge/decision_ledger.md`. UX = `.claude/knowledge/blueprint_architect_ux_spec.md`. BP = `.claude/design/spaces/BLUEPRINT.md`. DW = `.claude/design/developer_workflow.md`. SPEC = BRANCH `.claude/design/recipe_format_spec.md`. RSPEC = BRANCH `libs/utils/src/utils/recipe_spec.yaml`. PICS = `tmpAI/engine_keys/bp_proof/`.
 Code lines are quoted from the gap report and the proof run; I did not re-read the code (the brief: no code reading beyond the sources).
 
 ## A

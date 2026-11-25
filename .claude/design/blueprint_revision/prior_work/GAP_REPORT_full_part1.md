@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GAP_REPORT_full_part1.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GAP_REPORT_full_part1.md (not in git); a record of an earlier study, not a decision -->
 BLUEPRINT GAP REPORT (read-only survey, no build, no option chosen by me). Date of the code read: the BRANCH and DEV working trees as they are today (2026-11-18).
 
 ROOTS. BRANCH = <home>/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/worktrees/engine-keys/ . DEV = <home>/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/ . Every code path below is on the BRANCH unless it says DEV. Design files, ADRs, rules and the ledger are read in DEV (the main folder). The format spec is read on the BRANCH (.claude/design/recipe_format_spec.md) and the recipe element list in libs/utils/src/utils/recipe_spec.yaml (BRANCH). Files are cited as root-relative paths with line numbers; the root is the one named above.

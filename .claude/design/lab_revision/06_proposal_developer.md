@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/lab_step4/developer.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/lab_step4/developer.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
 # Test Lab step 4: DEVELOPER viewpoint (2026-11-21)
 
 Reads: BRIEF, ORDER, `04` (sections 2, 4, 6, To decide), `05` (section 5, To decide), `02` K and M, `agent_principles.md`, `decision_compliance.md`. Checks run now (read-only): line counts, `def test` counts, grep of `test_lab_enabled`, `aqua_synthesizer.py` RNG calls, `data_import_handlers.py:265-340`, `recipe_factory.py` function list. Labels: verified (file:line or command), reasoned, assumed.

@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: tmpAI/panel/steps_position_help/PROPOSAL_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: .claude/design/studies/scratch_records_2026-11/panel/steps_position_help/PROPOSAL_for_eve.md. Copied here on 2026-11-17.
 
 Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 
@@ -78,6 +78,6 @@ Option 1 (one sentence, always visible) plus option 2 (a "?" for the longer text
 2. The checker refuses an audit step that is not at the end of its list?
 3. Help: one sentence always visible, plus a "?" for the longer text?
 
-The draft of the help text is in `tmpAI/panel/audit_docs/intent_text_draft.md`.
+The draft of the help text is in `.claude/design/studies/scratch_records_2026-11/panel/audit_docs/intent_text_draft.md`.
 
 Not checked: the claim about deduplication is reasoned, not run. The time to compute a table after a step in the middle was not measured.

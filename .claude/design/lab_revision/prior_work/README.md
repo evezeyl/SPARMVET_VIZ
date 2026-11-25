@@ -4,7 +4,7 @@ These files are sources, not decisions. They were in git-ignored scratch folders
 
 | File | Source | Date | What it is |
 |---|---|---|---|
-| `step4c_report.md` | main tree `tmpAI/engine_keys/step4c_report.md` | 2026-11-18 | The (partial) report of step 4c of the big recipe change, which rewrote the Test Lab writers (bootstrapper, scaffolder) for recipe format 1; lists its provisional choices (choice 7 keeps an absolute data path that the checker refuses) and what it did not fix (`anonymiser.build_deanon_steps` still writes the old action name `join`) |
+| `step4c_report.md` | main tree `.claude/design/studies/scratch_records_2026-11/engine_keys/step4c_report.md` | 2026-11-18 | The (partial) report of step 4c of the big recipe change, which rewrote the Test Lab writers (bootstrapper, scaffolder) for recipe format 1; lists its provisional choices (choice 7 keeps an absolute data path that the checker refuses) and what it did not fix (`anonymiser.build_deanon_steps` still writes the old action name `join`) |
 | `test_lab_review_2026-11-18/run1.py` | main tree `tmpAI/panel/test_lab_review/run1.py` | 2026-11-18 | The scaffold run of the earlier review (`../../exploration/2026-11-18_test_lab_review.md`): two uploads named as Shiny names them, ids `007...`, join key `sample_id` and `Sample ID`. It writes its own input files |
 | `test_lab_review_2026-11-18/run2.py` | main tree `tmpAI/panel/test_lab_review/run2.py` | 2026-11-18 | The checker run on the two scaffolds of `run1.py` (profile `run`) |
 | `probes_2026-11-21/probe.py` | worktree `.claude/worktrees/lab-review/tmpAI/run/probe.py` | 2026-11-21 | Step 1 probe of this review, cases A to F (`../02_planned_vs_existing.md`, "The runs") |

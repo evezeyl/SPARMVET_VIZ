@@ -3,7 +3,7 @@
 Prepared 2026-11-14 by the coordinator with a state survey, an impact survey, three viewpoints and a verification run. **Nothing here is decided.** Eve decides; the review session records.
 
 Evidence classes: RUN (proved by running code), READ (read in a file), INFERRED (reasoning, not checked).
-Evidence files: `tmpAI/panel/viz/survey_state.md` (what the library has today, 15 concepts against the data side, numbers, 10 bad plot specs with the messages a user reads), `tmpAI/panel/viz/survey_impact.md` (who depends on it), `tmpAI/panel/viz/verify/results.md` (what the options would break), `tmpAI/panel/viz/brief_viz_standard.md` (the questions as asked).
+Evidence files: `.claude/design/studies/scratch_records_2026-11/panel/viz/survey_state.md` (what the library has today, 15 concepts against the data side, numbers, 10 bad plot specs with the messages a user reads), `.claude/design/studies/scratch_records_2026-11/panel/viz/survey_impact.md` (who depends on it), `.claude/design/studies/scratch_records_2026-11/panel/viz/verify/results.md` (what the options would break), `.claude/design/studies/scratch_records_2026-11/panel/viz/brief_viz_standard.md` (the questions as asked).
 Viewpoints: S = scientist and data scientist, A = architect (also effort), U = a recipe maker who is not a developer.
 
 ## 1. The goal

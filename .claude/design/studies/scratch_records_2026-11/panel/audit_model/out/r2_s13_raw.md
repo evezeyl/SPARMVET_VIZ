@@ -1,0 +1,62 @@
+## S13 raw trace: every step that changes a column (name added/removed, type changed), for all 28 tables
+- Summary T1:1 polars_unpivot: +category:String; +value:String; -quality_module; -taxon; -genotype; -phenotype; -cge_phenotype; -plasmid; -genome_length; -N50; -contigs_sup300bp
+- Summary T1:2 polars_with_columns: value: String -> List(String)
+- Summary T1:3 polars_explode: value: List(String) -> String
+- Detailed_summary T1:1 polars_str_splitn: +_split_parts:Struct({'field_0': String, 'field_1': String})
+- Detailed_summary T1:2 polars_unnest: +field_0:String; +field_1:String; -_split_parts
+- Detailed_summary T1:3 polars_rename: +hsp_len:String; +total_len:String; -field_0; -field_1
+- Detailed_summary T1:5 polars_with_columns: +length_ratio:Float64
+- Detailed_summary T1:9 polars_drop: -hsp_len; -total_len
+- ResFinder T1:1 polars_with_columns: +status:String
+- ResFinder T2:1 polars_with_columns: +total_gene_count:UInt32
+- MLST T1:1 polars_select: -locus_1; -locus_2; -locus_3; -locus_4; -locus_5; -locus_6; -locus_7
+- VirulenceFinder T1:2 polars_with_columns: virulence_raw: String -> List(String)
+- VirulenceFinder T1:3 polars_explode: virulence_raw: List(String) -> String
+- VirulenceFinder T1:5 polars_str_splitn: +_split_parts:Struct({'field_0': String, 'field_1': String})
+- VirulenceFinder T1:6 polars_unnest: +field_0:String; +field_1:String; -_split_parts
+- VirulenceFinder T1:7 polars_rename: +VF_gene:String; +VF_protein:String; -field_0; -field_1
+- VirulenceFinder T1:8 polars_drop: -virulence_raw
+- FastP_with_metadata T1:1 polars_join: +source:String; +year:Float64; +country:String
+- Quast_with_metadata T1:1 polars_join: +source:String; +year:Float64; +country:String
+- Quast_with_metadata T1:2 polars_unpivot: +metric:String; +value:Float64; -n50; -total_length; -largest_contig; -L50; -year
+- Bracken_with_metadata T1:1 polars_join: +source:String; +year:Float64; +country:String
+- ResFinder_with_metadata T1:1 polars_join: +source:String; +year:Float64; +country:String
+- MLST_with_metadata T1:1 polars_join: +source:String; +year:Float64; +country:String
+- MLST_with_metadata T2:1 polars_with_columns: +era:String
+- QC_Reads_Anchor T1:1 polars_join: +n50:Float64; +total_length:Float64; +largest_contig:Float64; +L50:Float64
+- QC_Reads_Anchor T1:2 polars_join: +taxon_1:String; +proportion_1:Float64
+- QC_Reads_Anchor T1:3 polars_join: +source:String; +year:Float64; +country:String
+- Summary_phenotype_length_fragmentation T1:2 polars_with_columns: +resistance_points:Int32
+- Summary_phenotype_length_fragmentation T1:3 polars_group_by: +phenotype_count:Int32; -category; -value; -resistance_points
+- Summary_phenotype_length_fragmentation T1:4 polars_join: +quality_module:String; +taxon:String; +genotype:String; +phenotype:String; +cge_phenotype:String; +plasmid:String; +ST_right:String; +genome_length:Float64; +N50:Float64; +contigs_sup300bp:Float64
+- Summary_phenotype_length_fragmentation T1:5 polars_unpivot: +quality_metric:String; +quality_value:Float64; -quality_module; -taxon; -genotype; -phenotype; -cge_phenotype; -plasmid; -ST_right; -genome_length; -N50; -contigs_sup300bp
+- ST22_Anchor T1:1 polars_join: +total_reads:Float64; +q30_rate:Float64; +gc_content:Float64
+- ST22_Anchor T1:2 polars_join: +gene:String; +predicted_phenotype:String; +identity:Float64; +overlap:Float64; +status:String
+- ST22_Anchor T1:3 polars_join: +scheme:String; +sequence_type:String
+- ST22_Anchor T1:4 polars_join: +serotype:String; +VF_gene:String; +VF_protein:String
+- ST22_Anchor T1:5 polars_join: +Location:String; +Name_plasmid:String; +VirulenceFinder:String
+- ST22_Anchor T1:6 polars_rename: +Selected_Virulence_Genes:String; -VF_gene
+- ST22_Anchor T1:7 polars_rename: +phenotype:String; -predicted_phenotype
+- ST22_Anchor T1:8 polars_select: -total_reads; -q30_rate; -gc_content; -identity; -overlap; -scheme; -Location; -Name_plasmid; -VirulenceFinder
+- ST22_Anchor T2:1 polars_with_columns: +virulence_count:UInt32
+- AR1_MLST_Serotype_Virulence T1:1 polars_join: +source:String; +year:Float64; +country:String
+- AR1_MLST_Serotype_Virulence T1:2 polars_join: +serotype:String; +VF_gene:String; +VF_protein:String
+- AR1_MLST_Serotype_Virulence T1:3 polars_join: +Location:String; +Name_plasmid:String; +VirulenceFinder:String
+- AR1_MLST_Serotype_Virulence T1:4 polars_rename: +selected_virulence_genes:String; +vf_protein:String; -VF_gene; -VF_protein
+- AR1_MLST_Serotype_Virulence T1:5 polars_select: -scheme; -Location; -Name_plasmid; -VirulenceFinder
+- QA_AMR_per_sample T1:1 polars_join: +gene:String; +predicted_phenotype:String; +identity:Float64; +overlap:Float64; +status:String
+- QA_AMR_per_sample T1:2 polars_select: -identity; -overlap; -status
+- QA_AMR_per_sample T2:1 polars_group_by: +n_amr_genes:UInt32; -source; -year; -gene; -predicted_phenotype
+- QA_ST_with_NA T1:1 polars_select: -quality_module; -taxon; -genotype; -phenotype; -cge_phenotype; -plasmid; -genome_length; -N50; -contigs_sup300bp
+- QA_year_types T1:1 polars_with_columns: +year_label:String
+- QA_L50_integer T1:1 polars_select: -n50; -total_length; -largest_contig
+- QA_L50_integer T1:2 polars_cast: L50: Float64 -> Int64
+- QA_fanout_exhibit T1:1 polars_join: +gene:String; +predicted_phenotype:String; +identity:Float64; +overlap:Float64; +status:String
+- QA_fanout_exhibit T1:2 polars_join: +serotype:String; +VF_gene:String; +VF_protein:String
+- QA_fanout_exhibit T1:3 polars_select: -source; -year; -predicted_phenotype; -identity; -overlap; -status; -serotype; -VF_protein
+- QA_fanout_exhibit T2:1 polars_group_by: +rows_per_sample:UInt32; -country; -gene; -VF_gene
+- QA_aggregated_no_key T1:1 polars_with_columns: +year_label:String
+- QA_aggregated_no_key T2:1 polars_group_by: +n_samples:UInt32; -sample_id; -source; -year
+- QA_population_zscore T1:1 polars_join: +n50:Float64; +total_length:Float64; +largest_contig:Float64; +L50:Float64
+- QA_population_zscore T1:2 polars_select: -source; -year; -total_length; -largest_contig; -L50
+- QA_population_zscore T2:1 polars_with_columns: +n50_zscore:Float64

@@ -1,8 +1,8 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/blueprint_step4/architect.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/architect.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
 # BLUEPRINT review, step 4: the architect's proposal (how the engines and the lineage can help write a recipe)
 
 Viewpoint: software architect (boundaries, one source of truth, testability, long-term cost, ADRs). One round. It proposes; Eve decides. Tags: DECIDED / CONFIRM / OPEN / MINE. Evidence labels: verified (read at file:line or run), reasoned, assumed.
-Scratch checks are in `tmpAI/panel/blueprint_step4/` (`arch_check.py`, `ctx_check.py`, `join_check.py`). Nothing in the repository was edited.
+Scratch checks are in `.claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/` (`arch_check.py`, `ctx_check.py`, `join_check.py`). Nothing in the repository was edited.
 
 ## Summary (6 lines)
 

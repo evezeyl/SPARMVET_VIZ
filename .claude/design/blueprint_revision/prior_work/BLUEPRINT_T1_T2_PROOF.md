@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/engine_keys/BLUEPRINT_T1_T2_PROOF.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/engine_keys/BLUEPRINT_T1_T2_PROOF.md (not in git); a record of an earlier study, not a decision -->
 # Can Blueprint still build tier 1 and tier 2 on the branch? Proof by a run (2026-11-18)
 
 Reviewer run. "ran" = I ran it in a real browser (Chromium headless); "read" = I read the code. BRANCH = `task/engine-keys` head `64d99e3f`, DEV = `dev` in the main folder.

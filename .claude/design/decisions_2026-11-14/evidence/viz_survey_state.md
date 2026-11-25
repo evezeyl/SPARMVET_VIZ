@@ -1,5 +1,5 @@
 # Survey: libs/viz_factory (plotnine) against the data side standard (2026-11-14, branch feat/recipe-format-1)
-Labels: RUN = I ran it; READ = I read the code. Scripts: `tmpAI/panel/viz/{count,count2,badspecs,recipes}.py`. No recommendation here.
+Labels: RUN = I ran it; READ = I read the code. Scripts: `.claude/design/studies/scratch_records_2026-11/panel/viz/{count,count2,badspecs,recipes}.py`. No recommendation here.
 
 ## 1. The table (concept | data side | visualisation side today | gap)
 | # | Concept | Data side (file:line) | Visualisation side today | Gap |

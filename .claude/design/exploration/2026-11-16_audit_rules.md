@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: tmpAI/panel/audit_rules/PROPOSALS_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: .claude/design/studies/scratch_records_2026-11/panel/audit_rules/PROPOSALS_for_eve.md. Copied here on 2026-11-17.
 
 Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 
@@ -9,7 +9,7 @@ Paths inside the body that point to tmpAI/ working files are local (not in git) 
 Written 2026-11-16 by the coordinator from three viewpoints (data scientist, architect, user). These are proposals. Nothing is decided and nothing is built.
 
 The viewpoints worked from two runs of your mental model on recipe `1_test_data_ST22_dummy` with the real engine:
-`tmpAI/panel/audit_model/scenarios_report.md` and `tmpAI/panel/audit_model/scenarios_report_round2.md`.
+`.claude/design/studies/scratch_records_2026-11/panel/audit_model/scenarios_report.md` and `.claude/design/studies/scratch_records_2026-11/panel/audit_model/scenarios_report_round2.md`.
 
 None of the recommendations reopens a decision of yours (ledger D-0194 to D-0203).
 

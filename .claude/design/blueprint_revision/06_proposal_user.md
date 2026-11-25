@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/blueprint_step4/user.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/user.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
 # BLUEPRINT recipe help, step 4: viewpoint of the user who is not a developer (panel-user, 2026-11-21 night; filed by the coordinator from its report; read from the review files, nothing seen on a screen)
 
 References: `H` = `app/handlers/blueprint_handlers.py`, `W` = `app/modules/wrangle_studio.py`, `02`/`03`/`04`/`05` = the files of `.claude/design/blueprint_revision/`.

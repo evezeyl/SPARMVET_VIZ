@@ -4,7 +4,7 @@ Note 2026-11-24: this file still holds quotations of the owner's words from the 
 
 **What this file is.** The points that the two design agents (one Opus, one Sonnet) agreed on before anything of the design is written, as the owner ordered (ledger D-0551 and D-0552). It also holds the eight questions that only the owner can answer. Nothing here is decided by the agents. The design documents are written after her answers.
 **Date:** 2026-11-23.
-**Where the evidence lives:** the positions, the rounds and the scripts of the runs are in `tmpAI/coordinator/design_dialogue/` (scratch folder, not in git; copies of the retest outputs are in `tmpAI/coordinator/design_dialogue/retest_copy/`); the retest with her scope is `tmpAI/coordinator/whole_picture/RETEST_her_scope.md`.
+**Where the evidence lives:** the positions, the rounds and the scripts of the runs are in `.claude/design/studies/whole_picture_2026-11/sources/design_dialogue/` (scratch folder, not in git; copies of the retest outputs are in `tmpAI/coordinator/design_dialogue/retest_copy/`); the retest with her scope is `.claude/design/studies/whole_picture_2026-11/sources/whole_picture/RETEST_her_scope.md`.
 **Signed by both agents:** Sonnet (this file) and Opus (`OPUS_signs_v2.md` with its replacements, `OPUS_signs_v3.md`).
 **Order:** the half page for her; the eight questions; the agreed points with their evidence; the facts still to run.
 

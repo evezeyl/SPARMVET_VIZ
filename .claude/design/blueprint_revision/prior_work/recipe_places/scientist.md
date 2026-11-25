@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/recipe_places/scientist.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/recipe_places/scientist.md (not in git); a record of an earlier study, not a decision -->
 # Recipe places: scientist and data scientist (2026-11-20)
 Labels: READ (file:line), RAN (`tmpAI/panel/recipe_places/scientist/h.py`), REASONED. No repository file edited.
 

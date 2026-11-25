@@ -1,8 +1,8 @@
 # Panel brief: bringing the visualisation library to the recipe standard (2026-11-14)
 
-Eve's goal: the visualisation library (`libs/viz_factory`, plotnine) follows the same standard as the data side (Polars actions, recipe format 1): transparency, reproducibility, reuse later. You recommend; Eve decides. Principles: `.claude/workflows/agent_principles.md`. Scratch checks only under `tmpAI/panel/viz/`.
+Eve's goal: the visualisation library (`libs/viz_factory`, plotnine) follows the same standard as the data side (Polars actions, recipe format 1): transparency, reproducibility, reuse later. You recommend; Eve decides. Principles: `.claude/workflows/agent_principles.md`. Scratch checks only under `.claude/design/studies/scratch_records_2026-11/panel/viz/`.
 
-Read first: `tmpAI/panel/viz/survey_state.md` (what exists, by running; 15 concepts, numbers, 10 bad specs with the messages a user reads) and `tmpAI/panel/viz/survey_impact.md` (who depends on the library; what is already decided).
+Read first: `.claude/design/studies/scratch_records_2026-11/panel/viz/survey_state.md` (what exists, by running; 15 concepts, numbers, 10 bad specs with the messages a user reads) and `.claude/design/studies/scratch_records_2026-11/panel/viz/survey_impact.md` (who depends on the library; what is already decided).
 Already DECIDED for plots (recipe_format_spec.md, 2026-11-13): `plot_engine: python-plotnine` is required (DEC05); plot arguments are checked (DEC09); the tier-3 container sits on the plot entry (DEC17); `modif_filter` replaces the VizFactory filter vocabulary, after its behaviour is verified (DEC39, not verified yet). ADR-036 and `rules_viz_factory.md` section 1: 1:1 parity with plotnine "MUST". ADR-090: the same data and recipe give the same picture.
 
 ## The questions

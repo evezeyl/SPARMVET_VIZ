@@ -1,6 +1,6 @@
 # Panel brief: the HOME view and the export disagree (2026-11-14)
 
-Read first (facts proved by running): `tmpAI/panel/export_value/findings.md` and `tmpAI/panel/step_order/findings.md`.
+Read first (facts proved by running): `.claude/design/studies/scratch_records_2026-11/panel/export_value/findings.md` and `.claude/design/studies/scratch_records_2026-11/panel/step_order/findings.md`.
 You recommend; Eve decides. Principles: `.claude/workflows/agent_principles.md`. Scratch checks only under `tmpAI/panel/`.
 
 ## Q1. A filter value stored as text (N10, with N9 and N11)

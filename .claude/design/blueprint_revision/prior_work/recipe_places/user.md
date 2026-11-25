@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/recipe_places/user.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/recipe_places/user.md (not in git); a record of an earlier study, not a decision -->
 # Recipe places: the USER viewpoint (panel-user, 2026-11-20 night; condensed by the coordinator from its report; read from the brief, not re-checked in code)
 
 People: A uses HOME with the lab's recipes; B also writes recipes in BLUEPRINT; C looks after the common recipes.

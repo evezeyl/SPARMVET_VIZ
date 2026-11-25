@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GAP_REPORT_full_part3.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GAP_REPORT_full_part3.md (not in git); a record of an earlier study, not a decision -->
 (i) plot_defaults
 - Form: bp_plot_defaults_form_ui (blueprint_handlers.py:1718-1748; read only when no node is selected, :1721-1726). Fields: Palette (bp_pd_palette, free text), Theme (bp_pd_theme, select from _KNOWN_THEMES: theme_light, theme_bw, theme_minimal, theme_classic, theme_dashboard, plus the current value; app/modules/plot_defaults_form.py:22, :34-40), button "Apply to session" (bp_pd_apply, :1741).
 - Apply: _bp_apply_plot_defaults (:1751-1772) changes cfg.raw_config in memory and calls merged_plot_defaults (plot_defaults_form.py:43-59), which keeps every other key (seed, layers). The help text on screen says "Changes are session-only. Edit YAML directly to persist." (:1743-1746). Nothing writes the master file in that handler (read). So plot_defaults is persisted only by hand.

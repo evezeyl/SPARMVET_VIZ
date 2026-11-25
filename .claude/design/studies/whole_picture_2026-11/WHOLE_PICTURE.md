@@ -25,7 +25,7 @@ Status words: current / historical / superseded by <file> / "status to settle".
 | The lineage and the graph | `PATHS_AND_DERIVED_AGREED.md` (points G1 to G22) and the code `libs/utils/src/utils/recipe_graph.py` | `DIFFERENCES.md` and `PARTS_TABLES.md` (the comparison of 2026-11-22): removed 2026-11-24, see git history |
 | The export | no study file holds it: the ledger lines D-0490 to D-0492, D-0324, D-0333, D-0478, D-0575 and `ui_implementation_contract.md` section 7.2; this file, section 2.6 | none |
 | The demo's oddities | `.claude/knowledge/demo_deliberate_oddities.md` (outside this folder) | `OVERLAP_AND_POPULATION.md` holds the id counts it cites |
-| The dry run of the big move | `assets/scripts/dry_run_big_move.py` (built) and its report `tmp/2026-11-23/dry_run_big_move_report.md` (scratch: `tmp/` is not permanent, D-0419; run the script again to rewrite it) | none |
+| The dry run of the big move | `assets/scripts/dry_run_big_move.py` (built) and its report `.claude/design/studies/whole_picture_2026-11/sources/tmp_2026-11-23/dry_run_big_move_report.md` (scratch: `tmp/` is not permanent, D-0419; run the script again to rewrite it) | none |
 | What is built | this file, section 6 | none |
 
 ## 1. The big line, in six sentences
@@ -151,7 +151,7 @@ The small questions are kept apart, for after the big line (D-0599): see the lis
 - With T0 dropped nothing is added to the form for a step list before the author's steps. Question 1 is settled (D-0613); no hold.
 
 ### Question 4. Line 4 of the dry run of the big move: the 20 steps that keep a fixed list of columns
-The dry run changes nothing; it lists what each change would do (`tmp/2026-11-23/dry_run_big_move_report.md`; numbers are the report's). Lines 1, 2, 3 and 5 to 8 are answered; only line 4 is still open. The answered lines:
+The dry run changes nothing; it lists what each change would do (`.claude/design/studies/whole_picture_2026-11/sources/tmp_2026-11-23/dry_run_big_move_report.md`; numbers are the report's). Lines 1, 2, 3 and 5 to 8 are answered; only line 4 is still open. The answered lines:
 - **Line 1, answered.** The three id-less lines of `demo_abromics` stay in the shipped file, as a lesson (D-0604; the review session's reading); the maintainers' record is `demo_deliberate_oddities.md`.
 - **Line 2, answered.** Two joined tables are made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`); they break no rule, but as there is no real metadata nor join they move to the data schemas [D-0608] (reading of the review session: "they" are these two tables). Done in the big move; what remains is listed in the handoff.
 - **Line 3, answered** [D-0608]. Five joined tables started from the metadata (four of the main demo recipe: `ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`; and `demo_join` of `demo_abromics`). They were rewritten by hand, data first (D-0586; done in the big move).
@@ -162,7 +162,7 @@ The dry run changes nothing; it lists what each change would do (`tmp/2026-11-23
 - Mechanical, no decision: the names pass (524 changes) and the rename to `is_entity_id` (225 lines); both done.
 
 **Line 4, still open.** 20 steps keep only a fixed list of columns and would drop the marker column (3 first in their stage, 10 last, 3 elsewhere or alone, 4 group-by; the dry run's counts). Her decision (D-0608): the data must be examined table by table, and the fix is made as early as possible, starting at the original data; she asked whether all the recipes with those tables have the metadata as a left join in tier 1. The two ways of D-0587 stay as the two options for each table: the fixed column list is increased by the column that keeps the markers, or the missing data is processed before tier 1 and the marker column is explicitly dropped.
-- **The scan's answer to her question** (read only, fact-checked by another agent; the table-by-table page is `tmp/2026-11-23/scan_metadata_joins_and_fixed_lists.md`): not all are left joins: the recipe `2_test_data_ST22_dummy` brings the metadata in by a join that keeps only the rows found on both sides. Of the 20 steps, 3 sit in original data tables: `MLST`, `VirulenceFinder`, and `Genes` of a test recipe (`retest_bad_select_column.yaml`).
+- **The scan's answer to her question** (read only, fact-checked by another agent; the table-by-table page is `.claude/design/studies/whole_picture_2026-11/sources/tmp_2026-11-23/scan_metadata_joins_and_fixed_lists.md`): not all are left joins: the recipe `2_test_data_ST22_dummy` brings the metadata in by a join that keeps only the rows found on both sides. Of the 20 steps, 3 sit in original data tables: `MLST`, `VirulenceFinder`, and `Genes` of a test recipe (`retest_bad_select_column.yaml`).
 
 ### Question 5. Where does the record go when the log's folder cannot be written?
 - Today a folder that cannot be written warns and does not stop the start (section 6). A static deployment could lose its only record [D-0581, D-0585]. The agents' proposal, not decided (`CAUSE_AND_SOLUTIONS_ZEROS.md`, closing text (b) 3): the record goes into the export and the console, and the red warning says that the log could not be written (as built, the text is printed to the console and returned, and every export holds `id_log.yaml`). Neither: say what you meant.

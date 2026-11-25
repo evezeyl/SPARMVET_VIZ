@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/recipe_places/architect.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/recipe_places/architect.md (not in git); a record of an earlier study, not a decision -->
 # Where recipes live: architect and developer viewpoint (2026-11-20)
 
 Labels: VERIFIED (run or read at file:line), REASONED, EXTERNAL-UNCHECKED (platform facts I could not test). Tags: DECIDED / CONFIRM / OPEN / MINE. I recommend; Eve decides. Nothing in the repository was edited. Scratch: `tmpAI/panel/recipe_places/architect_scratch/` (recipes, `deployment.yaml`, `run_hyphen.py`, `run_hyphen2.py`, `newest.py`). The load stayed under 7; no process of mine is left.

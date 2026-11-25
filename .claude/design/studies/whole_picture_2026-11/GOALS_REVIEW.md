@@ -7,7 +7,7 @@ A study, not a decision: nothing is built from it before you answer (D-0507, D-0
 **How to read it.**
 - Your words are between quotation marks, exactly as you typed them, with the ledger number.
 - "My reading" and "mine" mark what is not yours. "Suggestion:" comes before a remedy.
-- Evidence: [read] = read in the code at file:line on 22 November; [run] = a run of this study or of its reviews, named; [inventory] = taken from `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` or the two collected files of the main tree (`tmpAI/coordinator/whole_picture/BUILT_audit_lineage.md`, `BUILT_format_export_names.md`), not re-read; [fact check] = the independent check of the first pass (`tmpAI/coordinator/whole_picture/GOALS_CHECK_facts.md`, main tree).
+- Evidence: [read] = read in the code at file:line on 22 November; [run] = a run of this study or of its reviews, named; [inventory] = taken from `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` or the two collected files of the main tree (`.claude/design/studies/whole_picture_2026-11/sources/whole_picture/BUILT_audit_lineage.md`, `BUILT_format_export_names.md`), not re-read; [fact check] = the independent check of the first pass (`.claude/design/studies/whole_picture_2026-11/sources/whole_picture/GOALS_CHECK_facts.md`, main tree).
 - The app is data agnostic: "the entity" and "the entity key"; on the demo recipe the entity is a sample and the key is `sample_id`. "Observations" is your word: I read it as the rows of a table (my reading).
 
 **What changed in this second pass, and why.** The first pass proposed that you choose the results and that the app choose the places where a step is written. Your words of the same evening rule that out: "I am monitoring and i already think the reviewer might miss the point the context is so depend for the user that is much choose the scope adapted to its case. We cannot choose for him..the app cannot decide the scope. The reviewer should understand the lineage and the user the effects of its choices" (D-0531). In your earlier words the scope IS the places: "That is the choice of the user - because the user decide the scope - the steps are added at the end of one Tier so the steps applies in the Tier where the steps are added" (D-0355). An independent check also found cases that a choice of results cannot write (section 8). So the path now keeps every place yours, and keeps from the first pass only what serves your choice: the effect on each result, measured before you confirm. Where I still think you may be missing something, I argue it, as you asked: "So if i miss something i want a good argumentation of why and how .." (D-0532). The fixes of the two independent checks are mapped in section 10. A third pass answers the independent review you ordered (D-0533), finding by finding, in section 11.
@@ -75,7 +75,7 @@ For each goal: the conditions that must be true, whether the design as decided m
 **G1. Audits that are clear, correct, reproducible and transparent.**
 1. Each correction is written once, in a copy of the recipe, with its reason; the original never changes. Decided: **yes** (D-0102, D-0143, D-0332). Today: **no**: one step lives in three forms (`DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` A11).
 2. Before confirming, the user sees what the correction does to each result. Decided: **partly**: the rows at each place, and "table changed" and "picture changed" per plot (D-0316, D-0318); the count at the plot was removed (D-0501). Today: **no**.
-3. What is shown is true. Decided: **partly**. Two reviews wrote sentences about tables where no step is written; each kind was false somewhere [run, `tmpAI/coordinator/whole_picture/EVIDENCE_untick_branch_reviews.md`, main tree]. Only a run of the audit recipe tells the effect at a result.
+3. What is shown is true. Decided: **partly**. Two reviews wrote sentences about tables where no step is written; each kind was false somewhere [run, `.claude/design/studies/whole_picture_2026-11/sources/whole_picture/EVIDENCE_untick_branch_reviews.md`, main tree]. Only a run of the audit recipe tells the effect at a result.
 4. The step sits where the user intends. Decided: **yes**, the user ticks the places (D-0093, D-0355, D-0531). With the default read as "tier 1 of each original table", three runs on the demo, one entity each, with places listed by hand, left the entity in 7 plots: in 4 because their tables never meet MLST or the metadata, and in 3 with its metadata emptied (source and country; in one also the year) [run, `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` C1]. The default is question 1. Today: **no** (tier 3 of one plot only).
 5. Anyone can re-run it and get the same result. Decided: **yes** (two parts, D-0490, D-0492; the record, D-0333). Today: **no** (A17).
 
@@ -112,7 +112,7 @@ For each goal: the conditions that must be true, whether the design as decided m
 
 **E3. Every recipe.** A measured effect works on any recipe; a rule read from the recipe works only where the rule holds. Decided: **partly**.
 
-**E4. The author and the user.** The author is helped to make a well-made recipe (key declared; one column name for one meaning), and BLUEPRINT never damages one. Decided: **yes** (D-0495, D-0498, D-0500). Today: **no**: BLUEPRINT drops parameters on Apply and loses comments on Save (`tmpAI/coordinator/blueprint_verify/REPORT.md` section 2, main tree) [inventory].
+**E4. The author and the user.** The author is helped to make a well-made recipe (key declared; one column name for one meaning), and BLUEPRINT never damages one. Decided: **yes** (D-0495, D-0498, D-0500). Today: **no**: BLUEPRINT drops parameters on Apply and loses comments on Save (`.claude/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, main tree) [inventory].
 
 **E5. The story.** Any table and its stages can be looked at. Decided: **yes** (D-0457, D-0508). Today: **no** (V2, V3 of `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`).
 
@@ -206,7 +206,7 @@ For the user's choice (not for the defence), the lineage shown as a propagation 
 
 ### 4.8 BLUEPRINT and the author (place 3 of D-0529)
 
-- The seven-point check found that BLUEPRINT can damage a recipe silently today: Apply drops a parameter the form does not show; a number becomes text; Save writes with no check and loses the comments; the preview drops a failing step (`tmpAI/coordinator/blueprint_verify/REPORT.md` section 2, items 1 to 4, main tree) [inventory]. A recipe damaged by its author gives wrong results to every user: this goes against G1 and E4 before any audit.
+- The seven-point check found that BLUEPRINT can damage a recipe silently today: Apply drops a parameter the form does not show; a number becomes text; Save writes with no check and loses the comments; the preview drops a failing step (`.claude/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, items 1 to 4, main tree) [inventory]. A recipe damaged by its author gives wrong results to every user: this goes against G1 and E4 before any audit.
 - The coordinator's build plan already moves "a save keeps the comments" and "Save never replaces a recipe by mistake" into its slice 1, after your D-0495 (`BUILD_PLAN.md` of the same folder) [inventory].
 - What the goals add (mine): the advice to declare the entity key (BUILD_PLAN item 5; D-0500); the advice from your words of D-0498; one lineage function shared with HOME's dialog (D-0065; `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` A10).
 - When: you put BLUEPRINT after HOME and the Gallery ("we do changes to blueprint and lab after - we focus on home and gallery", D-0271). It is not needed for the demo of HOME and the Gallery; its safety slice is needed before anyone writes recipes with it.
@@ -458,7 +458,7 @@ After 28 and 1: 3, 5 to 8. Not needed under 28 (a) or (b): 9. My reading of your
 
 ## 10. Where each fix of the two independent checks is answered
 
-**The fact check** (`tmpAI/coordinator/whole_picture/GOALS_CHECK_facts.md`):
+**The fact check** (`.claude/design/studies/whole_picture_2026-11/sources/whole_picture/GOALS_CHECK_facts.md`):
 1. The place is the scope: path and question 28 rewritten (part 0.3, part 8 question 28; sections 4, 6, 8 here); "Reopens" completed (D-0022, D-0053, D-0194, D-0415, D-0451 named, with what each option reopens or not).
 2. "Called only by tests": named one by one, live callers listed (5.2).
 3. "3 plots": now "7 plots, 3 with emptied metadata; in two of the three only source and country" (section 3, G1 point 4; part 0).
@@ -470,7 +470,7 @@ After 28 and 1: 3, 5 to 8. Not needed under 28 (a) or (b): 9. My reading of your
 9. Quote labels: "this result only" and "one name, one meaning" no longer quoted as yours; the D-0423 screen text marked as the option's text (4.7, 4.9).
 10. The report template's two other places named (5.2).
 
-**The reader in your place** (`tmpAI/coordinator/whole_picture/GOALS_CHECK_reader.md`):
+**The reader in your place** (`.claude/design/studies/whole_picture_2026-11/sources/whole_picture/GOALS_CHECK_reader.md`):
 1. A table "is each goal reached", today and as decided: part 0.2.
 2. The route of the work as ordered steps, each with what you can then do on the demo: part 0.4.
 3. The code list in what you see, with how each verdict was checked: part 0.5 (ii).

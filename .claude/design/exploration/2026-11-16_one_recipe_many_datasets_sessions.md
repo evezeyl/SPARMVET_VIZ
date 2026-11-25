@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: tmpAI/panel/sessions/PROPOSALS_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Nothing is decided and nothing is built (as written in the report). Written: 2026-11-16. Source: .claude/design/studies/scratch_records_2026-11/panel/sessions/PROPOSALS_for_eve.md. Copied here on 2026-11-17.
 
 Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 
@@ -8,7 +8,7 @@ Paths inside the body that point to tmpAI/ working files are local (not in git) 
 
 Written 2026-11-16 by the coordinator from three viewpoints (data scientist, architect, user). These are proposals. Nothing is decided and nothing is built. Your request is message M175 of the channel.
 
-The facts the viewpoints started from are in `tmpAI/panel/sessions/scout_what_is_decided.md`.
+The facts the viewpoints started from are in `.claude/design/studies/scratch_records_2026-11/panel/sessions/scout_what_is_decided.md`.
 
 ## Read this first: four things that are wrong or silent today
 

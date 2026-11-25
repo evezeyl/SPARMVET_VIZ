@@ -1,11 +1,11 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GAP_DIGEST_for_eve.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GAP_DIGEST_for_eve.md (not in git); a record of an earlier study, not a decision -->
 # Blueprint gap: digest (phone version)
 
 This page is a short version of the Blueprint gap report. It shows what Blueprint can build today, what is decided, and what is still open.
 
 Nothing was run. Every statement is "read" (seen in the code or the records at a line) or "reasoned" (my own step from lines I read). A separate browser run is testing tier 1 and tier 2 today.
 
-Full report: `tmpAI/panel/blueprint_gap/GAP_REPORT_full_part1.md`, `_part2.md`, `_part3.md`, `_part4.md` (same folder, in order).
+Full report: `.claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GAP_REPORT_full_part1.md`, `_part2.md`, `_part3.md`, `_part4.md` (same folder, in order).
 
 ## 2. What Blueprint can build today, part by part
 

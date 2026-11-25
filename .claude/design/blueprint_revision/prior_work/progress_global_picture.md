@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/progress_global_picture.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/progress_global_picture.md (not in git); a record of an earlier study, not a decision -->
 # Progress: global picture of Blueprint (D-0309, step 2)
 
 Done: GLOBAL_PICTURE.md (186 lines), GLOBAL_PICTURE.svg (68 lines, valid XML, rendered once with Inkscape to check), GLOBAL_PICTURE_sources.md (64 lines). No tracked file changed (git status empty).

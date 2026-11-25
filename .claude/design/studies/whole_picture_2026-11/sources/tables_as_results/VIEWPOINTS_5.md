@@ -1,0 +1,39 @@
+# Round 5: the three viewpoints, as given (2026-11-22; headings removed, lightly shortened)
+
+## Scientist (data science)
+Verdict: option 3, a split. Reading 2 as written, and reading 1 as written, each merge two different things under the name "tier 3": (a) a reusable derived table (for example "reads summary", the numbers a bar plot and its table must both show): data with one definition and several readers; (b) a result's private finishing steps: a filter, a rename or an ordering for ONE figure. Pipeline practice (workflow targets, tidy intermediate tables, one table one definition) puts (a) in the data part as a named table before the results, and (b) with the result, because nothing else reads it.
+Recommendation: (a) is a table in the data part, as in 3c: its own tier 1 and tier 2, and a result reads exactly one table. (b) stays an entry key, as in reading 1: true to "tier 3 is plot-specific" (D-0063, D-0306), but not a reusable stage. [reasoned]
+Same numbers: under a shared table, plot and table are the same table by construction. Under reading 1 each entry carries its own steps; two copies can drift; an `!include` only helps if both include the same file. [reasoned]
+Audit: a step written at a shared stage changes every reader: right for "all results that read this stage". "This result only" is then lost, unless the entry can still carry private steps. The split keeps both. [reasoned]
+Provenance: a named stage gives one name for one table. The result must still record the chain "table, then its own steps". The key must hold what the table reads plus the definition (D-0025). [reasoned]
+Against my own choice: two places for "last steps" means a rule is needed to tell them apart, and the user may not know which to use.
+Demo: no plot entry has `tier3` (grep returns nothing). Tier 2 sits on the tables (`1_test_data_ST22_dummy.yaml:39, 108, 203...`). Today's `tier3` is the plot entry's own (`recipe_spec.yaml:34-57`; `recipe_tiers.py:131-179`). The stored table is keyed by the entry (`cache_keys.py:452-469`). [verified]
+Other readings: reading 2 alone gives sharing and a definition before use, but no "this result only", and needs a "derived from" table kind. Reading 1 alone has no drift guard.
+Cost (information only): not weighed. Reopens: D-0485 to D-0487 (the result is the last stage of its entry); D-0343 (the fall back).
+Flags: reading 2: an audit step on a shared stage silently changes a second result. Reading 1: duplicated steps drift silently. Both: the result's export and lineage must list every step from table to figure, with the stage name and the entry's private steps shown apart.
+
+## Architect
+Verdict: option 3c, with one open point. Tier 3 is not a stage the data part defines. A result reads exactly one table, and the data part defines tables only, each with tier 1 and tier 2.
+Evidence (verified): today `T3:<plot>` is the node "the table this result shows": one per entry, always there, named by the entry id (`recipe_graph.py:14-17, 505-506`). The demo has no `tier3` anywhere; only `templates/left_join_lesson.yaml` and the README have it. A join reads the tier 1 of its ingredients (`recipe_graph.py:16`).
+Reading 2 as written: a named stage plus a result entry gives two nodes for one table: "the table a result shows" then has two definitions; "tier3" becomes a third id space next to tables and joins (X1, `recipe_check.py:830`); it needs a new edge "reads T2"; a stage is not exactly a join with one ingredient, because a join reads T1.
+3c: a derived table is a table with its own tier 1 and tier 2. The word "tier 3" leaves the data part. "The result's table" has one definition, `table:`. Data graph and results stay orthogonal. A third result kind only needs another `result:` value. Audit places are only tiers of tables. "This result only" is the lowest place whose readers number one; `graph.plots_reading` (`recipe_graph.py:228`) already gives that; under 3c the dialog must compute the readers.
+Open point: a derived table must read the T2 of its source, or the T1 plus copied steps: a new key such as `from`. A join with one ingredient would read T1 and lose the shared T2.
+Entry's own steps: forbidden. A third private kind of step is a second way to do one thing.
+Hierarchy for the demo: `data_schemas: FastP {tier1, tier2?}` (definition); `joins: FastP_with_metadata {ingredients, tier1, tier2?}` (definition); `FastP_reads_summary {from: FastP_with_metadata, tier1: steps}` (definition, derived); `analysis_groups: quality: results: reads_barplot {table: FastP_with_metadata, result: plot, mapping, layers}` (use); `reads_summary {table: FastP_reads_summary, result: table}` (use).
+Strongest argument against: one extra named table for each result that needs private steps; it reconsiders the "data specific to one plot" meaning of tier 3 and the T3 lineage level.
+Reading 1: one node and one id, one T3 per result; fails her wish for definition before use and for T3 described like T1 and T2; copied steps can drift silently.
+Cost (information only): large (the T3 node, `audit_copy` places, `cache_keys`, key names, lineage levels, the checker).
+Reopens: D-0063, D-0306, D-0250, D-0343 wording, D-0355 levels, the D-0485 point "result = tier 3".
+Flags: a shared stage means an audit step silently changes two results: the dialog must list the readers. A rule of YAML order only (3a) is cosmetic, because the loader merges `!include` into a dict. Plot ids are flattened across groups in `recipe_tiers.plot_entries`; only the cross-recipe check X5 was found (`recipe_check.py:1288`), no within-recipe check; not run.
+
+## Recipe maker (user)
+Verdict: the third form, with one rule. Every table that more than one result reads, or that anyone would want to see, is a named table in the data part. A result may carry a few private last steps only when nothing else reads them.
+Evidence: no entry in the demo `plots/` folder has a `tier3`. For `qc_reads_horizontal_barplot`: the plots block (`yaml:313`); the plot file with `target_dataset: QC_Reads_Anchor`; the join block (`yaml:205-213`); its tier1 file; four ingredient blocks, each with its own wrangling file: about 5 places at minimum, about 10 files in all.
+Reading 1 adds nothing for "which data, after which steps?": the last steps sit in the plot file, where nobody else sees them. Reading 2 adds one block, found by name. For "if I change this step, which results change?", reading 2 is better: one searches for one table name; under reading 1 one opens every plot file.
+"Every data step lives in the data part; a result only says show this table as a plot or a table" is clear. "Some last steps are in the result" leaves the author asking which place to use.
+For the documentation: "A table is defined once in the data part, and every result reads a table by name. A result may add private last steps for its own figure only if no other result reads them." Risk: an author puts a filter in the private place and forgets that it is not in the shared table; the plot and its table then show different rows. The screen must say "This result adds N steps of its own."
+Words: "derived tables", with `from:` for the source table. "Tier 3" confuses under reading 2 and the third form, because it is then just another table; under reading 1 it still helps, as "this figure's own steps".
+"Table to view": T3 should show the table the result reads; with no steps of its own, the label says "same as T2".
+Strongest argument against my choice: two kinds of last steps mean two places to look. Reading 2 alone is simpler to explain.
+Cost (information only): not assessed.
+Flags: a shared derived table changes both results when edited: the author must be warned. Under reading 1 the same steps copied into two plot files can drift. A private step is hidden from the data preview unless T3 is shown. The code was not read.

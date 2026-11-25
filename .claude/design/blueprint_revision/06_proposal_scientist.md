@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/blueprint_step4/scientist.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/scientist.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
 # Panel BLUEPRINT step 4: viewpoint of the scientist and the data scientist (2026-11-21)
 
 I recommend. I decide nothing. Evidence labels: **read** (file:line), **ran** (scratch script `tmpAI/panel/blueprint_step4/scientist_scratch/t.py`, main venv, Polars), **document**, **reasoned**.

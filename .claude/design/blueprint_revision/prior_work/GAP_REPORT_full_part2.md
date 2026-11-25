@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GAP_REPORT_full_part2.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GAP_REPORT_full_part2.md (not in git); a record of an earlier study, not a decision -->
 =====================================================================
 PART 2. WHAT THE APP DOES TODAY (BRANCH), PART BY PART
 =====================================================================

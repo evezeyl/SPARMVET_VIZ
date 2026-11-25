@@ -1,0 +1,14 @@
+# Questions raised by the build of LBFB steps 0a, 0c, 1 (builder's report, 2026-11-20; saved by the coordinator)
+
+The owner's order (channel M404): a question on how the lineage works goes FIRST to the agents that evaluate the lineage; they bring a proposed answer with pros and cons; it comes to her only then, one at a time, when she asks. Nothing here is put to her now.
+Her words that already bear on several of them (ledger D-0355, and channel M402): "we have all_raw data, all T1, All T2, All T3 ... so we need to have a way to choose"; "The offer depends on the scope used by the user"; "please think of the logic of the Tier fall back when a tier is empty"; "the steps are added at the end of one Tier so the steps applies in the Tier where the steps are added".
+
+1. Source level: a source file has no step list (D-0332: audit steps sit beside the steps of a tier). What is a line at the level "source"? Built: returned grey with the reason "no step list". To study: is "all raw data" the tier 1 of each source table (its own steps), not the file?
+2. An empty tier 3 and the line "only this plot" (D-0346): the fall-back rule says an empty tier is no line; D-0346 says each plot has a line "only this plot". Built: the plot line is always offered at level T3. To study with the fall-back rule: a step "only this plot" on a plot without tier 3 steps CREATES the plot's tier 3: is that the meaning of the line?
+3. Level T2 chosen and the join has no tier 2 steps: built: the tier 1 line is returned because it covers T2. Same study as 2 (does a step at T2 create the tier 2?).
+4. Groups: "above and below the chosen place" and "linked by a join on the key" (from `mlst_bar`, `sample_id`: 13 plots and 15 plots). After D-0355 the offer follows the levels the user picks; is the second group still needed, or does the choice of levels replace it?
+5. Recomputed, cast and aggregated columns: decided "same column, with a note", ticked (D-0353, D-0337). Built: grey "change not followed" until the note step is built. Which other actions join the readings (on the demo only unpivot still greys: 267 lines)?
+6. Joins other than left and inner: grey with a reason until a recipe needs one (none shipped)?
+7. A column written under its own name from ANOTHER column's values (`x = pl.col('y')`): D-0353 read literally says "same column". To study: a note that names the other column?
+
+Demo figures of the built walk (recipe `1_test_data_ST22_dummy`, all four levels, 523 columns walked, 0 failures, plan 0.16 s, all walks 0.69 s): in the group "above and below": 5317 lines, 4476 can be ticked, 841 grey. Grey by reason (group "linked by a join"): 741 source level (no step list), 267 a step not read (all unpivot), 171 a change not followed yet (102 rename, 24 cast, 21 recompute, 24 key under another name).

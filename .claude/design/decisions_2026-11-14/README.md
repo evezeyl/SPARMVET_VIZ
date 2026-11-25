@@ -7,4 +7,4 @@ Copies of the working documents in `tmpAI/panel/` (which is not in git), taken o
 - `briefs/`: the questions as they were put to the viewpoints.
 - `evidence/`: the findings behind the proposals (root causes proved by running, surveys, verification runs, the records check).
 
-Paths inside the documents that start with `tmpAI/panel/` point to the working copies; the same file is in this folder under `briefs/` or `evidence/` (for example `tmpAI/panel/step_order/findings.md` is `evidence/step_order_findings.md`).
+Paths inside the documents that start with `tmpAI/panel/` point to the working copies; the same file is in this folder under `briefs/` or `evidence/` (for example `.claude/design/studies/scratch_records_2026-11/panel/step_order/findings.md` is `evidence/step_order_findings.md`).

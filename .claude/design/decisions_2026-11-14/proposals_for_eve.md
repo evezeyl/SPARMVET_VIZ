@@ -7,7 +7,7 @@ Viewpoints: S = scientist and data scientist, A = architect (also effort and ris
 
 ## Batch 1 (2026-11-14): the HOME view and the export disagree
 
-Findings (root cause, by running): `tmpAI/panel/export_value/findings.md`, `tmpAI/panel/step_order/findings.md`. Brief: `tmpAI/panel/brief_view_vs_export.md`.
+Findings (root cause, by running): `.claude/design/studies/scratch_records_2026-11/panel/export_value/findings.md`, `.claude/design/studies/scratch_records_2026-11/panel/step_order/findings.md`. Brief: `.claude/design/studies/scratch_records_2026-11/panel/brief_view_vs_export.md`.
 
 ### Flags first
 1. **Silent, in the app today (RUN):** with a filter and a drop on the same column in one audit, the PLOT ignores the filter without a message. Shipped plot `QA_population_zscore`, filter `n50 >= 324189`, then drop `n50`: table 21 rows, plot 42 rows. The results bundle then holds a TSV of 21 rows and a plot of 42 rows.
@@ -31,7 +31,7 @@ Findings (root cause, by running): `tmpAI/panel/export_value/findings.md`, `tmpA
 Recommended by the viewpoints: S = E first, plus the N9 fix now; C only after your decision. A = C, then E later; N9 with FILTER-DTYPES-1. U = C plus E; N9 now. All three: `between` (N11) stays refused with a clear sentence.
 
 **Coordinator's recommendation.** The real question is yours and is FILTER-UNIFY-1: **does the engine convert a filter value to the column's type, or refuse it?**
-- I recommend **convert (C)**, with a plain error that names the step, the column and the value when it cannot be converted. Reasons: one place; it repairs exports already written and hand-written recipes; the conversion follows a type that the recipe declares, so the result stays determined by what is recorded. Checked by running (`tmpAI/panel/verify/results.md`, a matrix of column types, value forms and operators): with the conversion as it exists today (`coerce_filter_value`, number columns only), no case that RUNS today gives different rows; only cases that stop with an error today start to run. A value of 90.5 on an integer column is compared as a number today and after (never cut). NOT covered: a conversion for Date, Boolean or text columns would be new code and needs its own check. The matrix becomes a test before any merge.
+- I recommend **convert (C)**, with a plain error that names the step, the column and the value when it cannot be converted. Reasons: one place; it repairs exports already written and hand-written recipes; the conversion follows a type that the recipe declares, so the result stays determined by what is recorded. Checked by running (`.claude/design/studies/scratch_records_2026-11/panel/verify/results.md`, a matrix of column types, value forms and operators): with the conversion as it exists today (`coerce_filter_value`, number columns only), no case that RUNS today gives different rows; only cases that stop with an error today start to run. A value of 90.5 on an integer column is compared as a number today and after (never cut). NOT covered: a conversion for Date, Boolean or text columns would be new code and needs its own check. The matrix becomes a test before any merge.
 - **Fix N9 now** (two of three viewpoints): it is silent, small, and 4 strict xfail tests are ready. Consequence: plots with a numeric `in` filter change, towards agreeing with the table.
 - **E later**, as a task: a check at export that the written recipe can run. It needs the checker to know the declared types.
 - **Not B, not D:** they do not repair what exists.
@@ -64,7 +64,7 @@ Recommended by the viewpoints: S = B + C, E as a safety net. A = B + E now, C le
 
 **Coordinator's recommendation.**
 1. **Now: B** (build what the design already says).
-2. **Now: the plot agrees with the table, and nothing is skipped silently.** Caution, checked by running (`tmpAI/panel/verify/results.md`): removing the skip alone would turn the valid order "filter, then drop" into an error on the plot, because the plot path removes the column before VizFactory applies the filters (`home_theater.py` about 528-533), so the column is absent when the filter runs. So the plot path must apply the audited filters before the drops, as the table does, and show an error only for a step that cannot run.
+2. **Now: the plot agrees with the table, and nothing is skipped silently.** Caution, checked by running (`.claude/design/studies/scratch_records_2026-11/panel/verify/results.md`): removing the skip alone would turn the valid order "filter, then drop" into an error on the plot, because the plot path removes the column before VizFactory applies the filters (`home_theater.py` about 528-533), so the column is absent when the filter runs. So the plot path must apply the audited filters before the drops, as the table does, and show an error only for a step that cannot run.
 3. **Now or next: E**, so that an old session with "drop, then filter" gets a plain message at export and not a failing recipe. `export_handlers.py` is frozen: your yes is needed.
 4. **C (one recorded order for every view) with P5**, after you confirm or change the stage-2 spec. With B and point 2 in place, every stack a user can record gives the same rows in the table, the plot, the TSV and the re-run.
 5. **Not D.**
@@ -88,7 +88,7 @@ Proposed messages (U). B: "Column 'n50' was dropped in step 2, so it cannot be f
 
 ## Batch 2 (2026-11-14): joins and gallery
 
-Brief with the options and what is already decided: `tmpAI/panel/brief_joins_gallery.md`. Viewpoints: S and A on all seven points; U on the gallery points and J-c.
+Brief with the options and what is already decided: `.claude/design/studies/scratch_records_2026-11/panel/brief_joins_gallery.md`. Viewpoints: S and A on all seven points; U on the gallery points and J-c.
 
 ### Flags first
 1. **Silent row multiplication with a float join key (RUN, S; and RUN through the real ingestion with the type declared in `input_fields`, now a test in `libs/transformer/tests/test_join_key_types.py`: "001", "1", "1.0" are accepted without a message and a join gives 9 rows for 3 samples):** read as Float64, the identifiers "001", "1" and "1.0" all become 1.0, and "S1" becomes missing. A join on such a key returned 4 rows from 2. The shipped `complex_template` declares `sample_id` as Float64 on both sides, and users copy templates. The decided rule "a join keeps the declared types" keeps the type, not the identity of the sample.
@@ -148,7 +148,7 @@ These are small technical or record choices; a panel would cost more than the ch
 
 ## NA rule, after the decision of 2026-11-14 (channel M65): what is built now, and five questions
 
-Gap between the decision and the code, proved by running: `tmpAI/panel/na_rule/gap.md`.
+Gap between the decision and the code, proved by running: `.claude/design/studies/scratch_records_2026-11/panel/na_rule/gap.md`.
 - **The engine, the HOME table and the plot already follow the decided rule** (RUN: all nine operators, on a float and a text column with an empty cell and NaN, give the same rows in the three places; an empty cell is removed, NaN is a number).
 - **The real gap is "keep":** the HOME filter row has no `na` field, no tick, no count; "keep" exists only in the engine step `modif_filter`.
 - **Flag:** the export translator (frozen) always writes `na: remove` (`t3_translator.py:127`). A "keep" chosen in a HOME dialog would be exported as "remove": a silent change of a result. So the dialog tick and the translator change must ship together.
@@ -167,7 +167,7 @@ Gap between the decision and the code, proved by running: `tmpAI/panel/na_rule/g
 
 ## Records check (2026-11-14, late): what batch 3a looked like after reading the records and the commits since 2026-11-04
 
-Full result with file:line and commit for each: `tmpAI/panel/records/corrections.md` (READ and git history; the code was not run against the corrected records). 14 stale records are being corrected by a scribe; rule files and ADR text are not touched.
+Full result with file:line and commit for each: `.claude/design/studies/scratch_records_2026-11/panel/records/corrections.md` (READ and git history; the code was not run against the corrected records). 14 stale records are being corrected by a scribe; rule files and ADR text are not touched.
 
 **Settled from the records (no question left for you):**
 - C3, C4, C6: of HOME-DESIGN-REVIEW-1 only one point is open (SC4, question R1 below). SC1 was withdrawn; AR4, AR1, AR2 are closed; SC2 and SC5 are decided.
@@ -229,7 +229,7 @@ A scout read the records (READ, file:line below; nothing run). **Main finding: s
 
 ## Batch 3b (2026-11-14): the default for missing values (C2) and formulas (C12)
 
-Brief: `tmpAI/panel/brief_na_default_formulas.md`. Viewpoints: S and A on both; U on missing values.
+Brief: `.claude/design/studies/scratch_records_2026-11/panel/brief_na_default_formulas.md`. Viewpoints: S and A on both; U on missing values.
 
 ### Flags first
 1. **An empty cell and NaN are not the same in the engine (RUN, S):** on the values 1, empty, NaN, 3: every comparison drops the row with the empty cell; NaN counts as larger than every number, so `> 1` KEEPS the NaN row and `< 1` drops it. The design file says "NaN follows the same rule" (`home_audit_steps.md:590`); the code says the `na` choice does not touch NaN (`transformer/actions/modified.py:51`). Today this is invisible to the user.
@@ -254,7 +254,7 @@ Proposed wording (U). Choice: "Some rows have no value in this column. Keep them
 ### Proposal 4 (C12): formulas in recipes (FORMULA-SAFETY-1)
 
 State (READ, A): the three places that evaluate a formula now pass through a check. Two (`polars_calls.py:205`, `id_reconciliation/core.py:254`) call `evaluate_formula`: the formula is checked as a syntax tree, then run with no builtins. The plot function (`viz_factory/geoms/core.py:1330`) allows only a one-argument function over numbers with numpy maths. A recipe from an untrusted source cannot import, read or write files, or call arbitrary functions. It can still use up processor time or memory (written in the module's docstring). Not proven: that every Polars method which takes a function is on the denial list (the list is read from signatures).
-The viewpoints disagreed on one fact (S: the plot function "has no restriction at all"; A: it is restricted). Settled by running (`tmpAI/panel/verify/results.md`): it IS restricted today. `lambda x: x**2` is evaluated; an import, an attribute walk through `__class__` and a call to `open` are each refused with a message. Not audited: the allow-list itself for other ways around it.
+The viewpoints disagreed on one fact (S: the plot function "has no restriction at all"; A: it is restricted). Settled by running (`.claude/design/studies/scratch_records_2026-11/panel/verify/results.md`): it IS restricted today. `lambda x: x**2` is evaluated; an import, an attribute walk through `__class__` and a call to `open` are each refused with a message. Not audited: the allow-list itself for other ways around it.
 
 | Option | S | A |
 |---|---|---|

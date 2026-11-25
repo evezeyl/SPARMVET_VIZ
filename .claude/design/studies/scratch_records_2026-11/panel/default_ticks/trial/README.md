@@ -1,0 +1,12 @@
+One line per script. Run each with `trial/run.sh trial/<script>.py` (output: trial/out/<script>.raw = everything, .txt = without the engine's noise; the lines that matter start with RESULT).
+- common.py: harness. Builds the recipe like app/tests/test_remove_from_all_demo.py, runs an audit for values and ticked places (utils.remove_from_all.apply + app.modules.audit_run.run_audit), collects T1, T2 and every plot's table.
+- run.sh: runs a script with PYTHONPATH on the worktree's libs/*/src (proved: utils.remove_from_all, utils.lineage_walk and app.modules.audit_run come from the worktree) and the main repo's venv python.
+- q0_places.py: the 27 lines of the option on the demo, which are sources (A) and which joins, notes, may_stay, not_reached.
+- q1_equal.py: A against B on the demo for one and two samples: every frame (73) compared with DataFrame.equals; rows still holding the sample; N under A and B.
+- q1b_more_samples.py: the same for the sample present in the fewest tables, a low one, a mid one and a set of 5 mixed samples.
+- q3_leftjoin_demo.py: the left-join case on the demo with 7 tick sets.
+- q4_n.py: N_total, N_local, N_alone for every ticked place under A and B (about 130 audit runs, 7 minutes).
+- q4c_n_total_right_key.py: N_total, rows holding the sample and N_local on the right-key left join and on the recompute case.
+- q5a_synth.py, q5b_synth.py, q5c_right_key.py, q5d_more.py, q5e_a_not_enough.py, q5f_zscore_detail.py: synthetic variants (recipes written by synth.py into ../synth/<name>/): copy-drop, lowercase, cast, rewritten copy, z-score, anti/full/semi join, read twice, join rewrites the key, key created by a step, other column name, renamed key, key only in the right table, recompute from a non-place column.
+- q6_facts.py: facts for the user (lines, ticked, notes, may_stay, may_differ, stays_by_choice, true alarms) on the demo for A and B, and N=0 for a sample that is legitimately absent from a source.
+- synth.py, variant.py: builders of the synthetic recipes and the runner of one variant.

@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/lab_step4/user.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/lab_step4/user.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
 # Test Lab after its rebuild, step 4: viewpoint of the user who is not a developer (panel-user, 2026-11-21 night; filed by the coordinator from its report; read from the review files, nothing seen on a screen)
 
 References: `04` = `.claude/design/lab_revision/04_what_test_lab_must_be.md`; `H` = `app/handlers/test_lab_handlers.py`; J1 to J5 = the five journeys of `04`.

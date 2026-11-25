@@ -1,0 +1,188 @@
+# SPARMVET_VIZ: AMR Visualization Architecture 🔬📊
+
+SPARMVET (SP-Analytical AMR Visualization Engine) is a modular, declarative framework for building high-integrity visualizations from genomic and AMR surveillance data.
+
+> [!IMPORTANT]
+> **AI-assisted development, not yet manually code-reviewed.** This project is built with Claude
+> Code. Automated rules, audits and tests govern every change (see below), but **no human has
+> manually read and verified the generated source code line by line**. Treat this as a research
+> prototype under active development, not production-audited software, until a manual code-review
+> pass has been completed (planned: one module at a time, before any deployment handling real data).
+
+## 🤖 How This Project Is Built
+
+An AI coding agent (Claude Code) does the implementation; the project owner directs the work,
+reviews the agent's plans and findings, and makes every product/scope decision. An earlier design
+phase (through February 2026) used Gemini — see
+[AI usage during the development process](./docs/appendix/AI_and_development_process.qmd) for that
+history. All current development is Claude Code.
+
+- **Rules:** `CLAUDE.md` is the entry point; `.claude/rules/*.md` govern architecture, path
+  authority, the UI contract, naming, deprecation handling and more. The agent reads them every
+  session and is expected to follow them without exception, or stop and ask.
+- **Architecture decisions:** every significant design choice is logged as a dated, numbered ADR
+  in `.claude/knowledge/architecture_decisions.md` — the single source of truth for *why* the code
+  looks the way it does, not just *what* it does.
+- **Automated audits:** scheduled scripts (`scripts/audit_*.py`, see
+  `.claude/workflows/audit_routine_registry.md`) check things a human reviewer would otherwise have
+  to catch by hand — dependency health, documentation-vs-code drift, task-vs-code drift, config
+  consistency, UML-model-vs-code consistency, and more. Reports land in `.claude/logs/audits/` and
+  are triaged (fixed or explicitly accepted) before being marked processed — nothing is left
+  silently unresolved.
+- **Tests:** a headless suite (`pytest`, ~1,500 tests) and a browser suite (Playwright, driving the
+  real running app) are run before any fix is considered done. New fixes get a new regression test,
+  and that test is **mutation-tested** — the fix is temporarily reverted to confirm the new test
+  actually fails without it, then restored — so a test that would never have caught the bug isn't
+  mistaken for coverage.
+- **Documentation:** a Quarto book (`docs/`) is the human-facing reference, kept in sync with the
+  code deliberately (not automatically) — doc-vs-code drift is itself an audited, tracked category
+  of bug, not an afterthought.
+- **Issues and commits:** real bugs and gaps are filed as GitHub issues (not just fixed silently)
+  and closed with the evidence once resolved, so there's a trace. Commits follow
+  [Conventional Commits](https://www.conventionalcommits.org/).
+- **What's still manual:** scope and priority decisions, product direction, and — not yet done —
+  a line-by-line human code review before this is treated as audited, production-ready software.
+
+## 🚀 Core Philosophy
+
+1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a data analysis recipe.
+2. **3-Tier Data Lifecycle (ADR-024)**:
+    - **Tier 1 (The Trunk)**: Foundations. Cleaning, joining, and relational tidy-up.
+    - **Tier 2 (The Branch)**: Specifics. Reshaping and aggregation for a particular plot.
+    - **Tier 3 (The Leaf)**: Transient. Reactive filtering in the UI via Predicate Pushdown.
+3. **Electronic Artist Pillar (VizFactory)**: A declarative Plotnine/ggplot abstraction that decouples "what to plot" from "how to plot."
+
+## 📜 Declarative Data Analysis Recipe Syntax
+
+Wrangling logic is separated into logical tiers to promote reuse and clarity:
+
+```yaml
+wrangling:
+  tier1: # Relational Foundations
+    - action: polars_rename
+      mapping: { old: new }
+
+  tier2: # Plot-Ready Reshaping (Optional)
+    - action: polars_group_by
+      by: [sample_id]
+      maintain_order: true
+      named_aggs:
+        counts: "pl.col('gene').count()"
+```
+
+A join is written in the `joins` block (`steps: {tier1: [polars_join, ..., polars_select]}`). Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the data analysis recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
+
+> [!NOTE]
+> If `tier2` is omitted, the system invokes **Identity Logic (ADR-014)**, passing the refined Tier 1 data directly to the visualization engine.
+
+## 🛠️ Library Ecosystem
+
+Each library is independently installable and usable without the UI layer. If you want to use only the wrangling engine in a script, install `libs/transformer/` + `libs/utils/` — nothing else required. `app/` is the only layer that wires libraries together.
+
+**Dependency model:** `libs/utils/` is the base layer (shared utilities; no cross-lib deps of its own). All other domain libraries must not import from each other — only from `libs/utils/` (declared explicitly in their `pyproject.toml`). See [Library Dependency Model](./docs/foundations/core_architecture_code.qmd#library-dependency-model) for details.
+
+- [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization, MetadataValidator gatekeeper.
+- [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
+- [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
+- [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, example governance.
+- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, data analysis recipe bootstrapping, and reconciliation.
+- [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
+- [**connector**](./libs/connector/): Deployment resolution and data-source adapters (ADR-048, Phase 23).
+- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, data analysis recipe navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
+
+## 🚀 Deployment Configuration
+
+SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. What the user may do is set by the **app features** (a named set of feature flags, one file per set in `config/app_features/`); where the app runs, which folders it uses and which data analysis recipe opens are set by the **deployment** (`config/deployment/`).
+
+### User functionalities
+
+| Functionality | What users can do |
+|---|---|
+| **View** | Browse visualisations (always available) |
+| **Passive filter** | Explore data ephemerally — no audit trail |
+| **T3 audit** | Justify and commit data decisions — creates permanent audit branch |
+| **Export** | Download reproducible bundle with full provenance |
+| **Import** | Upload metadata or full data mapped to the data analysis recipe |
+| **Gallery** | Browse chart example templates |
+| **Blueprint Architect** | Inspect and design data analysis recipe lineage |
+| **Test Lab** | Generate synthetic data and scaffold data analysis recipes |
+
+### Non-negotiable rule: full audit trail in every export
+
+Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling steps hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [App features guide](./docs/workflows/ui_app_features.qmd).
+
+### Quick start
+
+```bash
+SPARMVET_APP_FEATURES=pipeline-exploration-simple SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy .venv/bin/python -m shiny run app/src/main.py
+```
+
+Available app features: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `standalone`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom app features files can be created in `config/app_features/`. A static page (`pipeline-static`, `pipeline-exploration-simple`) hides the data analysis recipe selector, so it must name its data analysis recipe: `SPARMVET_DATA_ANALYSIS_RECIPE=<name>` or `default_data_analysis_recipe` in the deployment.
+
+**Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
+
+**institutional (deployment) color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
+- The BLUEPRINT IDE color widget ("Deployment palette" source), and
+- Data analysis recipe `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
+
+The built-in `sparmvet_brand` palette is always available even without this file. See [Data analysis recipe Structure Appendix](./docs/appendix/data_analysis_recipe_structure.yaml) for the format and resolution rules (ADR-081).
+
+**Validate app features configs before deploying:**
+```bash
+.venv/bin/python scripts/validate_app_features_config.py --all --strict
+```
+
+See [App features](./docs/workflows/ui_app_features.qmd) for the feature flags and their dependency rules, and the [Deployment guide](./docs/deployment/deployment_guide.qmd) for deployments.
+
+### Posit Connect deployment
+
+Posit Connect cannot install editable source packages (`-e ./libs/...`). Use the bundler script instead:
+
+```bash
+# 1. Build wheels for all local libs into pkgs/
+bash assets/scripts/bundle_connect.sh
+
+# 2. Fill in config/deployment/connect/connect_template.yaml
+
+# 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
+bash assets/scripts/bundle_connect.sh --deploy
+```
+
+Entry point: `app/src/main:app`. See [config/deployment/README.md](./config/deployment/README.md) for required env vars and full instructions.
+
+---
+
+## 📖 Documentation
+
+Detailed technical guides are in the [docs/](./docs/) directory:
+
+- [Developer Preface & Architecture](./docs/index.qmd): Vision, integrity status, and filter message flow.
+- [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
+- [App features](./docs/workflows/ui_app_features.qmd): user functionalities, dependency rules and the available app features files.
+- [Deployment guide](./docs/deployment/deployment_guide.qmd): deployments for Galaxy, IRIDA, servers and a local machine.
+- [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
+- [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment file schema reference.
+
+## 🔧 Developer Scripts
+
+### `scripts/` — setup helpers
+
+| Script | Purpose |
+|---|---|
+| `scripts/install_libs.sh` | Install all 8 editable libs in one command (`VENV=.my_venv ./scripts/install_libs.sh`) |
+
+### `assets/scripts/` — data analysis recipe and deployment authoring
+
+| Script | Purpose |
+|---|---|
+| `create_data_analysis_recipe.py` | Scaffold a new pipeline data analysis recipe from a dataset |
+| `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
+| `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
+| `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |
+| `bundle_connect.sh` | Build wheels for all local libs and optionally deploy to Posit Connect (DEPLOY-CONNECT-1) |
+
+> Note: `debug_viz_factory_audit.py` was relocated to `libs/viz_factory/tests/` (ADR-032 — library-internal debug runners belong in their own `libs/<x>/tests/`).
+
+## ⚖️ Standards & Governance
+
+This project follows the **Violet Law** (Component naming convention) and the **@verify Protocol** (Mandatory evidence-based testing).

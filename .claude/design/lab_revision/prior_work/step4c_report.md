@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/engine_keys/step4c_report.md of the main tree (not in git; file dated 2026-11-18); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/engine_keys/step4c_report.md of the main tree (not in git; file dated 2026-11-18); a record of an earlier study, not a decision -->
 # Step 4c of the big recipe change: PARTIAL (saved by the coordinator from the builder's last message; the builder ran out of time before saving it)
 
 Worktree `.claude/worktrees/engine-keys`, branch `task/engine-keys`. Nothing uncommitted except git-ignored files under `tmpAI/`. No push, no merge of `dev`.

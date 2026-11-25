@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Report for your choice. Nothing is decided and nothing is built (as written in the report). Written: 2026-11-17. Source: tmpAI/panel/recipe_arguments/REPORT_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Report for your choice. Nothing is decided and nothing is built (as written in the report). Written: 2026-11-17. Source: .claude/design/studies/scratch_records_2026-11/panel/recipe_arguments/REPORT_for_eve.md. Copied here on 2026-11-17.
 
 Paragraphs below are copied unchanged. Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 
@@ -13,7 +13,7 @@ This is a report for your choice. Nothing is decided and nothing is built.
 
 Your question (2026-11-17): how can a recipe use those arguments and constructions, without running whatever code, so that the plotnine and Polars decorators can use them? You asked for proposals before answering. These are the proposals.
 
-Files behind this report, all in this folder: `scout_what_exists.md`, `viewpoint_scientist.md`, `viewpoint_architect_security.md`, `viewpoint_developer.md`, `viewpoint_user.md`. The earlier facts on the 15 objects are in `tmpAI/panel/viz_rename/q6_the_15_objects.md`.
+Files behind this report, all in this folder: `scout_what_exists.md`, `viewpoint_scientist.md`, `viewpoint_architect_security.md`, `viewpoint_developer.md`, `viewpoint_user.md`. The earlier facts on the 15 objects are in `.claude/design/studies/scratch_records_2026-11/panel/viz_rename/q6_the_15_objects.md`.
 
 Labels used for evidence: "run" = an agent ran it here. "read" = an agent read it in code or in the installed library. "memory" = from knowledge, not checked. "reasoned" = inferred. "estimate" = a guess of effort.
 
@@ -496,7 +496,7 @@ One numbered list. The fewest questions that let the work continue, most importa
 
 ## Added 2026-11-17 (night): how others keep user-written formulas safe
 
-Added chapter for `tmpAI/panel/recipe_arguments/REPORT_for_eve.md`. Date: 2026-11-17. Nothing was edited, built or decided.
+Added chapter for `.claude/design/studies/scratch_records_2026-11/panel/recipe_arguments/REPORT_for_eve.md`. Date: 2026-11-17. Nothing was edited, built or decided.
 
 Labels: **run** means I ran it here. **read** means I read it in a file. **web** means a search result read on 2026-11-17. **memory** means not checked.
 
@@ -766,11 +766,11 @@ What needs your word, because no decision exists: (1) require a seed for `shuffl
 - Whether `scout`, panel or reviewer reports contradict the 2026-11-17 `inspect` fix. I did not read them.
 - Polars version: 1.40.1 only. Python 3.14 per the earlier report; I did not check.
 
-Files used (all read-only except my scratch in `tmpAI/panel/formula_safety/`):
+Files used (all read-only except my scratch in `.claude/design/studies/scratch_records_2026-11/panel/formula_safety/`):
 - `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/utils/src/utils/formula_check.py`
 - `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/utils/tests/test_formula_reads_no_outside_data.py`
 - `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/design/recipe_format_spec.md`
-- `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/tmpAI/panel/recipe_arguments/REPORT_for_eve.md`
+- `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/design/studies/scratch_records_2026-11/panel/recipe_arguments/REPORT_for_eve.md`
 - Scratch scripts: `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/tmpAI/panel/formula_safety/introspect.py` and `.../hostile.py`
 
 Since this chapter was written: `pl.Object` is refused in formulas (D-0230) and `pl.element()` / `pl.field()` are allowed after a security review (D-0231); three more types that crash the JSON-decoding member are asked of Eve.

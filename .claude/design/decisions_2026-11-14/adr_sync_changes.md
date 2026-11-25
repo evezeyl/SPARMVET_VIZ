@@ -147,7 +147,7 @@ Knowledge and documentation:
 
 ## 6. Corrections after the review (2026-11-14, second commit series)
 
-The reviewer's list: `tmpAI/panel/adr/review_corrections.md` (main tree). Every change keeps the old words (struck through, or under a dated marker).
+The reviewer's list: `.claude/design/studies/scratch_records_2026-11/panel/adr/review_corrections.md` (main tree). Every change keeps the old words (struck through, or under a dated marker).
 
 1. ADR-103: Q-NA3 to Q-NA6 written as DECIDED (points 7 to 10; Eve 2026-11-14, relayed in M70, recommendations of `proposals_for_eve.md` lines 161-164, M77 pt 2).
 2. D1 decided (Eve 2026-11-14, "Q9 Option 1", M76, M77 pt 2): ADR-104 point 7; stale "open" text marked in ADR-104 (header, OPEN list), ADR-098 (banner, inline marker at pt 4), ADR-106 V6.

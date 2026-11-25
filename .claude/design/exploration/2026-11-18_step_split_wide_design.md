@@ -9,7 +9,7 @@ How to read the labels:
 - **EXTERNAL**: a library's own documentation, read on 2026-11-18.
 - **REASONED**: my reasoning from the facts above it; not run.
 
-The prototype scripts and their outputs are in `tmpAI/panel/wide_split/` (git-ignored):
+The prototype scripts and their outputs are in `.claude/design/studies/scratch_records_2026-11/panel/wide_split/` (git-ignored):
 
 | Script | What it shows | Output |
 |---|---|---|
@@ -23,7 +23,7 @@ The prototype scripts and their outputs are in `tmpAI/panel/wide_split/` (git-ig
 | `07_tidyr_choices_in_polars.py` | Which tidyverse choices can be written with pure Polars | `07_tidyr_choices_in_polars.out` |
 | `08_top_n_other_chain.py` | The existing `step_top_n_other` against an explicit chain | `08_top_n_other_chain.out` |
 
-Run them from the project folder, for example `PYTHONPATH=tmpAI/panel/wide_split ./.venv/bin/python tmpAI/panel/wide_split/03_equality_real_data.py`. Polars 1.40.1.
+Run them from the project folder, for example `PYTHONPATH=.claude/design/studies/scratch_records_2026-11/panel/wide_split ./.venv/bin/python tmpAI/panel/wide_split/03_equality_real_data.py`. Polars 1.40.1.
 
 ## The decisions this note works from
 

@@ -77,11 +77,11 @@ So the dispatch exists for running a tier and drawing a plot. What crosses is st
 
 ## 5. The ten hardest places
 
-From the scout facts and the developer's study (tmpAI/panel/engine_boundary/FACTS.md and developer.md; scratch, not in git).
+From the scout facts and the developer's study (.claude/design/studies/scratch_records_2026-11/panel/engine_boundary/FACTS.md and developer.md; scratch, not in git).
 
 | # | Place | Owner engine | Why hard | Stage that moves it |
 |---|---|---|---|---|
-| 1 | `app/modules/orchestrator.py` | python-polars | Runs Polars steps, types tables as LazyFrame, catches Polars errors, picks the entry | not decided (the owner's choices of tmpAI/panel/engine_boundary/TABLE_FOR_THE_OWNER.md) |
+| 1 | `app/modules/orchestrator.py` | python-polars | Runs Polars steps, types tables as LazyFrame, catches Polars errors, picks the entry | not decided (the owner's choices of .claude/design/studies/scratch_records_2026-11/panel/engine_boundary/TABLE_FOR_THE_OWNER.md) |
 | 2 | `libs/viz_factory/src/viz_factory/viz_factory.py` | python-plotnine (takes Polars) | Converts a Polars table to pandas and draws with plotnine; palettes | not decided (same) |
 | 3 | `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | python-plotnine (pandas) | Pandas type checks inside the settings cascade that should be neutral | not decided (same) |
 | 4 | `libs/utils/src/utils/formula_check.py` with `libs/viz_factory/src/viz_factory/checked_plot.py` | python-polars; python-plotnine | The Polars expression grammar and the plotnine function grammar | not decided (same) |
@@ -95,7 +95,7 @@ From the scout facts and the developer's study (tmpAI/panel/engine_boundary/FACT
 ## 6. Not built and not decided
 
 Not built, and not decided by this page:
-- The target boundary (what is neutral, what the engine owns), and an interface for an engine. The owner's choices are in tmpAI/panel/engine_boundary/TABLE_FOR_THE_OWNER.md.
+- The target boundary (what is neutral, what the engine owns), and an interface for an engine. The owner's choices are in .claude/design/studies/scratch_records_2026-11/panel/engine_boundary/TABLE_FOR_THE_OWNER.md.
 - Polars in two roles (the data engine, and the app's own table library). The kind `table-library` only records that both uses exist today; whether Polars keeps the second role is open.
 - The stages after stage 0 and their order. The demo comes first (D-0458).
 - Whether neutral files get a mark too. Today only files that use an engine have one.
@@ -114,7 +114,7 @@ New code: a source file that imports polars, plotnine, matplotlib, pandas or miz
 
 ## 8. What this page rests on, and the citations that moved
 
-**Study files are scratch.** This page rests on the study files under `tmpAI/panel/engine_boundary/` (FACTS.md, developer.md, TABLE_FOR_THE_OWNER.md and others). They are scratch and not in git. They are to be moved to `.claude/design/studies/` with the other studies (ledger `D-0419`: "no document that is permanent should be left in tmp"; `D-0421`). Nothing is moved before the owner has read the list of documents, so nothing is moved yet.
+**Study files are scratch.** This page rests on the study files under `.claude/design/studies/scratch_records_2026-11/panel/engine_boundary/` (FACTS.md, developer.md, TABLE_FOR_THE_OWNER.md and others). They are scratch and not in git. They are to be moved to `.claude/design/studies/` with the other studies (ledger `D-0419`: "no document that is permanent should be left in tmp"; `D-0421`). Nothing is moved before the owner has read the list of documents, so nothing is moved yet.
 
 **Citations that are now one line too low.** The mark is the first line of each marked file (the second when the file starts with a shebang), so a `file:line` citation that points into a marked file is one line too low since stage 0, and again since the follow-up that marked four more files. Counted by script on 2026-11-21 over the Markdown, Quarto, YAML and text files of each folder (the ledger is left out), for the marked files only, as `path:NNN` written with the full path, or with a bare or partial file name when the file name is unique in the repository (a name shared by several files, such as `base.py`, `core.py` or `registry.py`, is counted only with its full path, so these numbers are a minimum):
 

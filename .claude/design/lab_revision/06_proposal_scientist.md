@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/lab_step4/scientist.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/lab_step4/scientist.md of the main tree (not in git; written 2026-11-21 night, step 4 of TESTLAB-REVIEW-1); a viewpoint's proposal: it recommends, it decides nothing -->
 # Test Lab step 4: Scientist and data scientist viewpoint
 
 Written 2026-11-21. Planning only. I recommend, I decide nothing. Labels: **ran** (my small runs, scripts in `tmpAI/panel/lab_step4/sci_probe.py`, `sci_probe2.py`, `sci_probe3.py`), **read** (file:line), **reasoned**, **assumed**. Test suite not run.

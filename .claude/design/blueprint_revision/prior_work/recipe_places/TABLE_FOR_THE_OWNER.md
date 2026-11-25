@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/recipe_places/TABLE_FOR_THE_OWNER.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/recipe_places/TABLE_FOR_THE_OWNER.md (not in git); a record of an earlier study, not a decision -->
 # Where recipes live, who may write, names with a date: one table for the owner (coordinator, 2026-11-20 night)
 
 Her order: D-0393, D-0394 (and her words: "I think you can have part b and d also checked by the coordinator agents to be sure"). Sources in this folder: `BRIEF.md` (what is decided, the facts), `architect.md` (ran a recipe with a dated hyphenated name through the checker, the load gate and the build), `scientist.md` (ran the fingerprint of a recipe under two names), `user.md`. Nothing is built or changed. The panel recommends; she decides.

@@ -1,0 +1,12 @@
+# Opus signs `PATHS_AND_DERIVED_AGREED.md` (v2)
+
+**11 is right.** My C7 counted `qa_aggregated_no_key` among the plots that lose the entity, but it never held it: in the original, 16 of the 17 plot tables hold the entity (`opus2_runA.out`: "entity rows in the original plot tables", `qa_aggregated_no_key`: 0). It stays in 5 of them (Sonnet D3, `paths2/run2.out`), so it leaves 11: the 4 plots whose every incoming path holds a chosen place, and 7 of the 12 flagged plots that hold it. G14 as written in the file is right.
+
+Read once more as the text she will read: the half page, Q1 to Q7, the open section. Four sentences still need a replacement: one factual error, three precisions.
+
+1. **Q6, "What the two agents think" (factual error).** Replace "\"1 of 2\" alone does not tell the entity's fate: after the same step the entity is gone from `MLST_with_metadata` (the covered table is its first table) and stays in `QA_AMR_per_sample` (the uncovered metadata is its first table)." with "\"1 of 2\" alone does not tell the entity's fate: with the first place of every original except the metadata chosen, `MLST_with_metadata` and `QA_AMR_per_sample` both show 1 of 2; the entity is gone from the first (the covered table is its first table) and stays in the second (the uncovered metadata is its first table)." Reason: the sentence follows the MLST example, but after a step at the first place of MLST alone `QA_AMR_per_sample` does not lie below it; both show "1 of 2" only under that set of places. [ENGINE RUN: Sonnet D3; Opus R5]
+2. **Q5, first line of the options.** Replace "**Options, from our runs (two entities).**" with "**Options, from our runs (two entities; the valid form of (c): one entity).**" Reason: the valid defaults with `T2:ResFinder` were run by Sonnet D2 with one entity.
+3. **Q3, "What the two agents think".** Replace "Both: the rule does not depend on this choice; (a) with documentation" with "Both: the rule does not depend on this choice; as a lean, (a) with documentation". Reason: that (a) is enough is a lean, and the text must say so.
+4. **Q3, "The situation".** Replace "A join reads original tables only (decided: \"revisit if needed\")." with "A join reads original tables only (decided, D-0344: \"revisit if needed\")." Reason: her words are exact ("Yes, revisit if needed", D-0344), and the ledger number makes them traceable at the place they are quoted.
+
+**I sign `PATHS_AND_DERIVED_AGREED.md` with these 4 replacements; with them, nothing is open between the two agents.**

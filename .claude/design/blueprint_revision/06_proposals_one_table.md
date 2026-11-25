@@ -101,7 +101,7 @@ Reading of this review, not decided: the four recommendations are one combinatio
 
 ## Not verified (by this worker)
 
-- Nothing was run here; no browser. The runs named above are the viewpoints' own (`tmpAI/panel/blueprint_step4/`, git-ignored).
+- Nothing was run here; no browser. The runs named above are the viewpoints' own (`.claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/`, git-ignored).
 - Point 3 of the flags (a double application in the glimpse): read, not traced.
 - The refusal of the `outer` join step by the step check: not re-run.
 - The rows labelled "as reported" in the flags.

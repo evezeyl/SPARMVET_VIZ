@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/engine_keys/step4_REVIEW.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/engine_keys/step4_REVIEW.md (not in git); a record of an earlier study, not a decision -->
 # Review of step 4 (4a, 4b, 4c) of the big recipe change
 Branch `task/engine-keys`, head `cd06d0454202e0f952578d231ab7aab1cec226e0` (cd06d045). Nothing tracked changed. Scratch: worktree `tmpAI/review4/` (probes, dev copy, scratch project roots, run logs) and the saved reports here.
 

@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-21 from tmpAI/panel/blueprint_step4/developer.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
+<!-- copied unchanged on 2026-11-21 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_step4/developer.md (not in git), written 2026-11-21 night in step 4 of the BLUEPRINT review; a viewpoint's proposal: it recommends, it decides nothing -->
 # BLUEPRINT review step 4: DEVELOPER viewpoint (effort, risk, tests, build order)
 
 Written 2026-11-21. Proposes; decides nothing. Effort and risk are facts for ordering, not reasons. Labels: verified (read at file:line), reasoned, assumed. Nothing was run except greps and `wc`; no test suite.

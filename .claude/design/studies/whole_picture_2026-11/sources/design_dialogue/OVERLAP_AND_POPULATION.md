@@ -1,0 +1,145 @@
+# The overlap of the ids with the metadata, the data check, and the declared population (2026-11-23, scratch; the Opus agent checks it before it goes to her)
+
+Orders: D-0568 (her contract on the metadata and the data check; block M622). D-0565 and D-0566 stand: no engine run, no build, nothing through the lineage code. What was done is a COUNT OF THE DATA FILES by a read-only script, a reading of the code, and reasoning.
+
+Tags: [HER WORDS D-n] / [DATA FILE COUNT, script] (`overlap/sonnet_O1.py`, output `overlap/O1.out`, registered first in `RUN_REGISTER_sonnet_overlap.md`) / [RECIPE FILE] / [CODE READ file:line] / [REASONED, not run].
+
+---
+
+## HALF PAGE FOR HER
+
+**Does your contract hold on the demo files?** Your contract: "the metadata is supposed to cover all the ids of the result files" [HER WORDS D-0568]. It is one-directional: the ids of each result file are in the metadata. **Yes, it holds on every result file of the demo recipe**, with no exception. [DATA FILE COUNT]
+- Every result file has 0 ids that are absent from the metadata. The metadata has 42 ids.
+- The other direction is as you expect: `ResFinder` has lines for 38 of the 42 ids, so 4 metadata ids have no line there (the 4 entities with 0 genes). Every other result file has all 42.
+- The form of the ids is not a problem: the counts on the raw text, after the strip the recipe declares, and after strip and lower case are the same in every file. No id is empty.
+- So the datasets are not incorrect on the demo: there is no id in a result file without a row in the metadata. (The review session's correction of its own earlier sentence stands.)
+
+**Beyond the demo** (the other recipes whose data is in the repository):
+- `demo_abromics`: its metadata file has 30 rows: 28 real ids, one row with a missing id (null) and one row with an empty id. Its MLST file has 15 ids, all in the metadata (13 of the 28 real metadata ids have no line there). The two rows with no id are a data problem the check should report. [DATA FILE COUNT]
+- `templates/left_join_lesson`: 2 ids of the `sequenced` file are not in the metadata (`ACC0001`, `ACC0002`). This lesson is written on purpose to show what a left join does when ids do not match (its description says so).
+- `2_test_data_ST22_dummy` and `figshare_integration` declare no entity id. Read by the column name `sample_id` (not declared), their result files are all inside the metadata too.
+- Two templates (`e_coli`, `simple_template`) have no data file in the repository; the other recipes have no metadata table.
+- All counts are on the FILES, before the recipe's tier-1 steps; a tier-1 step that removes rows can change the ids of a table.
+
+**The data check you approved** ("yes the app check could be good - to identify those that have no metadata - good idea"). The data check that exists already reads each table, but only one table at a time; it never compares two tables. A new part would list, for each result file, the ids that have no row in the metadata, with their count and the ids, and name your two remedies: upload the complete metadata again, or remove those ids from the data tables by an audit step. What it needs from the recipe: the entity id declared in both tables, and the metadata table. Your choices: does a violation refuse the recipe or only inform; where it is shown. Options are in section 2. Nothing is chosen.
+
+**Is the declared population a lever for the zeros? Partly.** Today the recipe's `entity.population` is read by the check only (the id exists, and the table has an entity id); the app does nothing with it, and no demo recipe declares it. If the population is a table of the entities that were ANALYSED (for example a result file with one row per analysed entity), it can be the base of the join that keeps the zeros: then "analysed, zero hits" and "never analysed" are different, which the metadata cannot say. It does not remove the false zero at the data table's place. Section 3.
+
+---
+
+## 1. TASK 1, the overlap on the demo files
+
+Registered first: `RUN_REGISTER_sonnet_overlap.md`, O1, with its three points. The script reads the source files with a plain reader (polars) and the recipe's own declarations (the field marked `is_entity_key`, its `original_name`, the file path, `strip`, the type) from my own YAML parse. No engine, no lineage code, no stored table. Load 3.3. The result agrees with the expectation. [DATA FILE COUNT]
+
+**The demo recipe `1_test_data_ST22_dummy`.** The metadata file `test_metadata_20260307_105756.tsv`: id column `sample_id`, 42 rows, 42 distinct ids, strip on, type String, no empty id.
+
+| Table (block) | File | Rows | Distinct ids | Ids NOT in the metadata (raw / strip / strip + lower case) | Metadata ids NOT in the file |
+|---|---|---|---|---|---|
+| `Summary` (data) | `test_data_Summary_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `Summary_quality` (data; the same file as `Summary`) | the same | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `Quality_metrics` (data) | `test_data_Quality_metrics_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `Detailed_summary` (data) | `test_data_Detailed_Summary_...tsv` | 280 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `FastP` (data) | `test_data_FastP_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `Quast` (data) | `test_data_Quast_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `Bracken` (data) | `test_data_Bracken_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `ResFinder` (data) | `test_data_ResFinder_...tsv` | 70 | 38 | 0 / 0 / 0 | **4 of 42** |
+| `MLST` (data) | `test_data_MLST_results_...tsv` | 42 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `VirulenceFinder` (additional) | `2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_...tsv` | 1315 | 42 | 0 / 0 / 0 | 0 of 42 |
+| `APEC_STEC_virulence_genes` (additional) | `Virulence_genes_APEC.tsv` | (a reference list) | no declared entity id | not checked | not applicable |
+
+**Per file: does the contract hold? Yes, for the ten files with a declared entity id.** The only table with no declared entity id is the reference list of virulence genes, which holds no entities.
+**The form of the ids:** raw, stripped and lower-cased counts are equal in every file, so no mismatch comes from spaces, case or empty values. A number read as a number is not tested: every id column is declared `String`, and the demo ids are numbers written as text (for example `10668076`); a declared number type for these ids would remove leading zeros, and the recipe check refuses a number type on an entity id (E03). [DATA FILE COUNT; RECIPE FILE]
+**Not counted here:** the ids after the recipe's tier-1 steps (these need the engine). The data check of section 2 would read them after tier 1.
+
+**The other recipes** [DATA FILE COUNT, `overlap/O1.out`]:
+
+| Recipe | What was found |
+|---|---|
+| `1_Abromics_general_pipeline` | metadata and `MLST` and `VirulenceFinder`: 0 ids outside the metadata; the reference list has no entity id |
+| `demo_abromics` | metadata 30 rows: 28 real ids, **1 null id and 1 empty id**; `MLST` 15 ids, all in the metadata; 13 of the 28 real metadata ids have no line in `MLST` |
+| `templates/complex_template` | `genomics` (id column `Accession`) against the metadata (id column `ID`): 0 outside, 0 absent |
+| `templates/left_join_lesson` | `sequenced` (`Accession`): **2 ids not in the metadata** (`ACC0001`, `ACC0002`), 2 of the 10 metadata ids not in the file; by design of the lesson |
+| `2_test_data_ST22_dummy` (no declared id; by the column `sample_id`) | `amr_data` 70 rows, 38 ids, 0 outside, 4 metadata ids with no line; `plasmid_data` 163 rows, 41 ids, 0 outside, 1 metadata id with no line |
+| `figshare_integration` (no declared id; by `sample_id`) | `fg_phenotypes` and `fg_genotypes` 980 ids each, 0 outside `fg_metadata`, 0 absent (its metadata is a data schema, not a `metadata_schema`) |
+| `templates/e_coli`, `templates/simple_template` | the data file is not in the repository |
+| the other recipes (gallery bundles, retest, equality, stress test) | no `metadata_schema`; the gallery bundles are one table with no entity id |
+
+**Tables with no declared entity id:** `APEC_STEC_virulence_genes` (demo, `1_Abromics_general_pipeline`), all three tables of `2_test_data_ST22_dummy`, all three of `figshare_integration`, and the one table of each of the 34 gallery bundles. [DATA FILE COUNT]
+**A finding of the count, apart from the contract:** a null or empty id in the metadata (`demo_abromics`: two rows) is invisible to the left join (it matches no entity) and is not an id of any result file. Her contract does not cover it; a check on the metadata itself (no empty id) would. [REASONED]
+
+---
+
+## 2. TASK 2, the data check she approves
+
+**What exists today** [CODE READ]:
+- `validate_data_analysis_recipe_data` (`app/modules/data_analysis_recipe_validator.py:485`) builds each table of the recipe on its own (`prepare_ingredient`: the file, the input contract, the tier-1 steps) and reports a dataset that cannot be loaded or a step that cannot run (lines 520-545). It never puts two tables side by side: no id is compared with another table.
+- The HOME load gate (`app/src/bootloader.py:431-451`) runs the structure check, then this data check. A problem from either rejects the recipe: it goes to HOME's refused list with its contact. "Advices never reject a recipe; HOME lists them" (lines 432-436, 444-449), but the advices come from the recipe check only (`checker_advices`), which reads no data. So today the data check has no way to inform without refusing.
+- BLUEPRINT's Validate runs the same two checks (`app/handlers/blueprint_handlers.py:2850, 2892`) and only reports.
+- The Data Import panel checks a candidate file (`app/modules/data_import_check.py`, `ingest_file`, lines 178-231): the ingestion's own read of the candidate for its dataset; all files or none. It compares no ids with the metadata.
+
+**Where a check that reads the data could list the ids with no metadata** (a reading, nothing built) [REASONED]:
+1. In the data check, after each table is built: for every table that declares the entity id, the set of its ids minus the metadata's ids. The tables are read after their tier-1 steps (`prepare_ingredient`), the same tables the joins read. This differs from the files (my count): a tier-1 step that removes rows or changes the id can change the result.
+2. In the Data Import panel: when a file replaces a data file, compare its ids with the current metadata; when the metadata file is replaced (the case "upload the complete metadata again"), compare the ids of every result table with the new metadata.
+3. In BLUEPRINT's Validate: the same function as the gate.
+
+**What it needs from the recipe:** (a) the entity id declared in both tables (her renamed `is_entity_id`): two shipped recipes declare no entity id at all (`2_test_data_ST22_dummy`, `figshare_integration`), so the check could not run there and should say so plainly; (b) which table is the metadata: the `metadata_schema` block (optional in the recipe format: `recipe_spec.yaml:24`), or the table that `entity.population` names. [CODE READ]
+
+**What it would say** (a plain line; the words are not decided): "In the table `ResFinder`, 3 ids have no row in the metadata: <the ids, up to 20>. Either upload the complete metadata again, or remove these ids from the tables where they have no metadata by an audit step." For the demo it would say nothing: no violation. [REASONED; DATA FILE COUNT]
+It informs and does not choose: the two remedies are named; the user picks.
+
+**Options that are hers** (nothing chosen):
+- **Does a violation refuse the recipe or only inform?**
+  - (a) Refuse at the load gate: the recipe goes to HOME's refused list with the line above and its contact. She would SEE the recipe missing from the selector with the reason. Today this is the only mode of the data check.
+  - (b) Only inform: HOME lists the line as an advice and the recipe opens; the left join (data first, metadata second) shows the entities with empty metadata columns, as she described. Needs a new channel for data advices (today advices come only from the recipe check).
+  - (c) Refuse in the Data Import panel (a file that breaks the contract is not written) and only inform at the gate. She would SEE the panel refuse the replacement with the line.
+  - (d) Neither: say what you meant.
+- **Where it is shown** (not exclusive): HOME's refused list or advices list; the Data Import panel after a replace; BLUEPRINT's Validate.
+**Lean (as a lean):** inform at the gate and in Validate, refuse nothing, and refuse in the Data Import panel only a metadata replacement that would make a result file's ids fall outside it. Reason: an inner join would hide the violation and a refusal would hide a recipe that otherwise runs; her contract says the user chooses the remedy. [REASONED]
+
+---
+
+## 3. TASK 3, is `entity.population` the lever for the zeros?
+
+**What the recipe declares today** [RECIPE FILE; CODE READ]:
+- The format: `entity: {noun, plural, population}`, optional; `population` is "the id of the table with one row per unit" (`recipe_format_spec.md:378`; `recipe_spec.yaml:29-31`). The example in the specification reads `population: Anchor` (line 35): it is an example in the text, not a declaration of the demo. **No demo recipe declares an `entity` block.** The only shipped recipe that does is the template `left_join_lesson`: `noun: sample`, `plural: samples`, `population: sequenced`, and `sequenced` is the DATA table (the left table of the lesson), not the metadata.
+- The check: E01 (an unknown or missing key of `entity`), E02 (`population` is not a table of the recipe, or its table has no entity id) (`recipe_check.py:333-348`).
+- The app: nothing else. A search of `libs/` and `app/` for `population`, `noun`, `plural` and the `entity` block finds only that check. The words of the screens are not taken from it today.
+
+**Could a completion of the zeros come from the declared population instead of the metadata?** [REASONED, not run]
+- **What it would be.** The recipe names a table of the entities that were ANALYSED as the population. A per-entity result (zeros) is completed from that table: an entity in the population with no row in a result file shows 0. This is candidate (c) of `CAUSE_AND_SOLUTIONS_ZEROS.md` with the population in place of the metadata, and the table of analysed entities of (f2).
+- **What it needs.**
+  1. A population table that lists the entities that were analysed. That can be a result file with one row per analysed entity (on the demo `Summary`, `FastP`, `Quast`, `Quality_metrics` each have 42), a manifest of the pipeline, or a table of its own. Who writes it: the pipeline that produced the results, or the recipe maker who chooses the file. The metadata is not it when the metadata holds entities that were never analysed.
+  2. When the metadata holds more entities than were analysed, the metadata cannot tell "analysed, zero hits" from "never analysed": both are 0 when the metadata is the base. With the population as the base, an entity of the metadata that is not in the population does not appear, and an entity in the population with no ResFinder row shows 0 and means "analysed, zero hits". This is the real gain over the metadata.
+  3. The recipe says which table is the population: that already exists as `entity.population`, read by the check only. The completion step itself does not exist (candidate (c) of the catalogue).
+- **Does it keep her direction (the data first, the metadata second)?** If the population is a result file, the join starts from a DATA table: population (a data table) first, the counts of ResFinder next (left), the metadata second (left). Her words "the join should not start with the metadata" are then followed to the letter, and her contract (every result file is inside the metadata) keeps the metadata second from adding entities. Written today, with no new key: the base is a result table that has one row per analysed entity. [REASONED from her contract and the join semantics; the base table is the choice of the author]
+- **How the audit treats a removal.** At the population table's own first place: the entity leaves the base and everything below (the join, the plot): gone. At the data table's first place (ResFinder): the entity is still in the population, so the table shows it with a filled 0: the false zero remains, as in every candidate with zeros. At the join place or with "Remove from all the data": gone. Paths covered at the ResFinder place: 1 of 3 (population, ResFinder, metadata). [REASONED; ESTABLISHED: PATHS G8]
+- **What the check could verify.** (1) The population table exists and has an entity id (E02, today). (2) By the data check: every id of every result file is in the population. This is checkable in one direction: an entity that has a line in a result file was analysed, so it must be in the population; an id in a result file but not in the population means the population is incomplete. The other direction (population ids with no line in a file) is normal. (3) By the data check: the population's ids are in the metadata (her contract). It cannot verify that the population is the set of analysed entities: a population that misses an analysed entity loses its zero without a message. [REASONED; CODE READ for what exists]
+- **What cannot be judged without a run** (after her choice; each registered first):
+  1. Requirement: build a per-entity result with the population (a result file) as the base, ResFinder counts left, metadata second, on a scratch copy of the chain of `qa_amr_genes_per_sample`. Expected: 42 entities with 4 at 0; a removal at `T1:ResFinder`: false zero; at the base's first place: gone; at the join place: gone. Independence: a scratch recipe from the demo's own schemas, hand-written steps, each table rebuilt in its own empty folder, no lineage code.
+  2. Requirement: a completion step that reads `entity.population` after tier 2 (candidate (c)). Expected: not buildable today, since tier 2 receives its table and not the population; to be confirmed. Same independence.
+- **Answer: partly.** Yes as a pattern that works today with no new key: the table of analysed entities as the base of the per-entity join (it keeps her direction and separates "analysed, zero hits" from "never analysed"). No as a lever of the app: nothing reads `population` today, a completion from it is candidate (c) and does not exist, and the false zero at the data table's place stays.
+
+**The answer in five lines**
+1. `entity.population` is read by the recipe check only (the table exists and has an entity id); the app does nothing with it, and no demo recipe declares it (the specification's `Anchor` is an example).
+2. A table of the entities that were analysed, named as the population, can be the base of the per-entity join: the zeros then mean "analysed, zero hits", and entities of the metadata that were never analysed do not appear.
+3. If that table is a result file, the join starts from a data table and the metadata comes second, which follows her direction today; no new key is needed.
+4. The false zero at the data table's place remains; the join place, the population's own place and "Remove from all the data" remove the entity.
+5. What cannot be judged without a run: whether a completion from the declared population can be built in tier 2; and the retest above, with its three points, after her choice.
+
+---
+
+## Addendum of 2026-11-23: the declared population as the source of the zeros (for `CAUSE_AND_SOLUTIONS_ZEROS.md`, to be added after the Opus agent's check)
+
+**(c2) The declared population as the base or the source of the completion.** Author writes (a fragment, not run):
+```yaml
+entity: {noun: sample, plural: samples, population: FastP}     # the table with one row per ANALYSED sample
+joins:
+  AMR_per_entity:
+    ingredients: [{dataset_id: FastP}, {dataset_id: ResFinder_per_entity}, {dataset_id: metadata_schema}]   # a data table first, the metadata last
+    tier1:
+      steps:
+        - {action: polars_join, right_ingredient: ResFinder_per_entity, 'on': [sample_id], how: left, maintain_order: left_right}
+        - {action: polars_join, right_ingredient: metadata_schema, 'on': [sample_id], how: left, maintain_order: left_right}
+        - {action: polars_fill_null, columns: [n_amr_genes], value: 0}
+```
+**What the audit does:** default place the join place (gone); first place of ResFinder: false zero (1 of 3 paths); first place of the population table: gone. **Prevents:** the metadata's never-analysed entities appearing as zeros; the join starting from the metadata. **Does not prevent:** the false zero. **Today:** accepted by the check and the engine (a data table first, left joins, a fill); the `entity` block is checked (E02) and used for nothing else. **Zero distinction:** "analysed, zero hits" against "never analysed": yes, by the population; against "removed at the data table": no. **Judged without a run?** The pattern: yes by the established runs for the parts; the combination: no (retest 1 above). A completion step reading the population: not judged (retest 2).

@@ -1,4 +1,4 @@
-Exploration report. Nothing in it is decided unless a ledger number is given. Status: Proposal. Nothing is built, you decide (as written in the report). Written: 2026-11-17. Source: tmpAI/panel/engines/PLAN_engine_fields_for_eve.md. Copied here on 2026-11-17.
+Exploration report. Nothing in it is decided unless a ledger number is given. Status: Proposal. Nothing is built, you decide (as written in the report). Written: 2026-11-17. Source: .claude/design/studies/scratch_records_2026-11/panel/engines/PLAN_engine_fields_for_eve.md. Copied here on 2026-11-17.
 
 Paragraphs below are copied unchanged. Paths inside the body that point to tmpAI/ working files are local (not in git) and stay as written.
 

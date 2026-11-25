@@ -1,0 +1,7 @@
+# flaky test_shiny_apply_blocked report
+Cause: test_shiny_apply_blocked.py:36 (old) chose #fb_op "gt" with no wait. My first fix (wait for the option, new helper _choose_fb_op in test_shiny_smoke.py) still failed 1 of 11 runs: the wait timed out because the form had put the first column (sample_id) back after a late re-render (known "FORM RESET" app defect, seen again with -s). Real fix: reuse _choose_column_firmly (test_filters_cleared_on_recipe_change.py:60) for the column, then _choose_fb_op.
+Flags (qa.yaml): interactivity_enabled true, t3_sandbox_enabled true, ghost_save enabled false. Nothing checked depends on a flag qa does not set.
+Five final runs: 5 passed (one printed FORM RESET and recovered).
+Same unguarded pattern repaired with the option wait (_choose_fb_op or inline wait_for_function): test_shiny_smoke.py (3 sites), test_shiny_session_restore.py:166, test_export_inputs_survive_plot_tab.py:133, test_export_download.py:167. Not repaired, same pattern (op chosen right after column, no wait): test_shiny_step_order.py:202, test_shiny_filter_types.py:134/140, test_shiny_na_tick.py:51/56, smoke ~938-988. Those and the others still lack the column-reset guard.
+Runs once after change: smoke (4 affected tests) 4 passed; session_restore 1 passed; export_inputs_survive 3 passed; export_download 9 passed.
+App defect to report: the filter form resets the column box to the first column after a late re-render.

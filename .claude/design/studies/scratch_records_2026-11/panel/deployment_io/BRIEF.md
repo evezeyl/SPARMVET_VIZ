@@ -1,0 +1,34 @@
+# Panel brief: one system for reading and writing recipes and data in every deployment use case (coordinator, 2026-11-21)
+
+You recommend; the owner decides. Build nothing. Read-only in the repository; scratch only under `tmpAI/panel/deployment_io/<viewpoint>_scratch/`. Never read `tmp.md`. No word limit: as long as needed to be clear and complete, no padding. Plain short sentences; tables for comparisons.
+
+## Read first, in this order
+1. `tmpAI/panel/deployment_io/ORDER.md`: the owner's words and her use cases. Her wish: "Would be nice to have one system that allows all the cases - and determine by the deployment configuration file how its done (so each person in charge of deployment can adapt what is done to its needs via the deployment configuration file)." The app ships in a container in some cases, from the GitHub repository in others, later perhaps from PyPI.
+2. `tmpAI/panel/deployment_io/FACTS.md`: what the code does today (do not redo this reading; a small read-only check is allowed where your proposal depends on a fact: give file:line).
+3. `tmpAI/panel/recipe_places/TABLE_FOR_THE_OWNER.md` (P1 to P11) and `M418_owner_answers_and_study_order.md`; `tmpAI/panel/recipe_versions/M417_owner_decisions_and_open_points.md`. This study replaces the recipe places table: its points must be answered inside your proposal.
+4. The ledger lines named in FACTS.md section 5 (`.claude/knowledge/decision_ledger.md`): read each line before you rely on it.
+
+## DECIDED (do not reopen; flag clearly any proposal that would reconsider one)
+Read the ledger lines. In short: the audit recipe and its record live in an audit folder inside the session's folder, in the user's own directory of the deployment (D-0333, D-0340, D-0319); a recipe file name is `name_date`, an upload is refused when the name exists, and an overwrite control exists only in the user's own place (D-0390 to D-0394); full recipe edit exists only in BLUEPRINT (D-0102); the Python that runs the app is the only interpreter (D-0263); user spaces are independent and hand-offs are files; science is transparent and reproducible: nothing changes a result silently, every place a figure depends on is recorded; the tool informs and the user chooses; no secrets in source; no CDN.
+OPEN (FACTS.md section 5): the selector showing the newest per name; where the user's own place is; the Data Import overwrite; names of bundle-imported recipes. The owner said that decisions on paths, Data Import and the overwrite may be revised by this study.
+
+## The question
+Design ONE system by which a deployment file says, for recipes AND for data (and for sessions, the audit, stored tables, imports, uploads): which places exist, who may read each, who may write each, and how each is reached (a folder, a mounted volume, a path handed by a pipeline, a connector such as Galaxy or IRIDA, an API). It must cover every use case of ORDER.md and the ones she did not list (at least: several users on one server without login; a read-only container with one writable volume; a container with nothing writable; a pipeline that hands the data by API or by job folder; offline use; Posit Connect; a place that changes while the app runs; a consortium place updated by someone else).
+
+Propose 2 to 3 distinct designs of the whole (not a list of features), for example: (A) named places with roles: the deployment file lists places, each with a kind (recipes, data, user), an access (read-only or read-write), a provider (folder, connector, API) and a search order; (B) two fixed layers, "shared" and "own", each with recipes and data, plus providers; (C) keep today's five location keys and add only what is missing. For each design say, from your viewpoint:
+1. What the deployment file would look like for five of her cases: consortium read-only recipes plus the user's own directory; the static web page; the static pipeline on Galaxy; the local install with a user and a common directory; recipe and data given by an API. A short YAML sketch each.
+2. Per use case, one row: who reads what from where; who may write what where; what the user sees when a place is read-only or missing; what breaks today (FACTS.md).
+3. How a name is resolved when the same recipe name or table exists in two places (search order, `name_date`, newest per name), and how the user SEES which place a recipe or a data file came from. How this is recorded in an export so that a figure is reproducible.
+4. Identity: what "the user's own directory" means when the app has no login (one user per process as in Galaxy interactive tools and local use; several users on one server). Do not invent an authentication system unless you say plainly that the design needs one.
+5. What happens to: Data Import and its overwrite; a bundle import; sessions and the audit folder; stored tables when nothing is writable; BLUEPRINT's fixed folder; the Gallery index.
+6. Pitfalls; what would change a result silently or hide a step; what must be decided first (ranked); what can wait.
+Then recommend ONE design or a combination, say why, and say what you could not verify.
+
+## Each viewpoint's own weight
+- Architect: one source of truth for places (`bootloader.get_location`, `connector.resolve_paths`), the connector boundary (`libs/connector/`, no Shiny in libs), every hard-coded path of FACTS.md, packaging (what must be package data for PyPI and for a container), validation at start (fail fast with a plain message), which ADRs and rules each design amends (ADR-048, ADR-071, ADR-091, ADR-097), testability, migration of the seven shipped deployment files.
+- Scientist and data scientist: reproducibility (which recipe, from which place, with which data, is recorded and can be verified later; data that changes under the app; a consortium recipe updated between two sessions); sensitive metadata that must stay in the user's place and never be copied to a shared one; hashes; what a methods section can state; the risk of two files with the same name in two places.
+- User who is not a developer: what a person sees and must understand: "shared recipes (you cannot change these)" against "my recipes"; where my file went; why I cannot save here; what the person who deploys must tell users; words on screen.
+- Developer: effort and risk as facts for ordering (the owner's rule: build time is no argument against an option, delay is fine); the smallest steps that each leave a working app; what of today's code stays; test cost (how to test read-only places, two users, a container, without Galaxy); what can run in parallel; what must not be built before a decision.
+
+## What to return
+Start with a 6-line summary. End with "To decide first (ranked)" and "Not verified". Name the user space or the deployment case in every finding. If you have a shell, save your full text as `tmpAI/panel/deployment_io/<viewpoint>.md` with a redirect and return the path plus the 6-line summary; if you cannot write, return the full text.

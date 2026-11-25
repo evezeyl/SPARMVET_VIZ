@@ -1,4 +1,4 @@
-# Verification results (all RUN; scripts in tmpAI/panel/verify/)
+# Verification results (all RUN; scripts in .claude/design/studies/scratch_records_2026-11/panel/verify/)
 
 ## 1. Plot path, filter then drop (v1.py) - TRUE (with a number correction)
 RUN v1.py: 100 rows, column n50 dropped on the frame, then VizFactory.render with filter n50 < 42.

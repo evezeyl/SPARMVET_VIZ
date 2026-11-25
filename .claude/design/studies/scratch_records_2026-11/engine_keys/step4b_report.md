@@ -1,0 +1,83 @@
+# ENGINE-KEYS step 4b: report (worktree `.claude/worktrees/engine-keys`, branch `task/engine-keys`)
+
+Status: step 4b is DONE and committed. Nothing uncommitted. No push, no merge into dev. No background process of mine is running.
+
+## 1. Merge of dev
+`git merge dev` (dev = 32e09107) gave NO conflict (commit 4944f923). The recipe-switch fix (filters cleared, one notice) came in with its files (`filter_and_audit_handlers.py`, `t3_audit_engine.py`, the new browser test); `home_theater.py` had nothing new to merge. Both intents are kept. `libs/utils/tests` after the merge: 2098 passed.
+
+## 2. Commits (after bda106c6, step 4a)
+- 4944f923 merge dev
+- 6fb43093 the readers of HOME, the audit panel, the export, the sessions and the seeds read the new shape (+ tests, data file)
+- 42de8171 docstring of the HOME plot slots
+- e0ed4655 the join keys of a session come from the shared join-key rule (a test of the repository forbade a spelled action name; found in the libs run)
+
+## 3. What was done (read the code at these places)
+- `app/handlers/home_theater.py`: every `entry.get("spec")` is the entry itself (`_collect_all_group_plot_ids`, `_resolve_active_spec`, the two plot handlers). Three small pure functions (testable): `group_tab_label` (ui_label, then description, then the group id), `plot_tab_label` (ui_label, then the plot id in title case), `plot_list_label` (ui_label, then the id: the lists of the audit dialogs, `_plot_label`). The plot's engine goes through `plot_engine_slot(entry, recipe)`.
+- `app/handlers/audit_stack.py`: new pure `plot_target_dataset(raw_config, p_id)` reads `target_dataset` from the entry.
+- `app/handlers/export_handlers.py`: new `export_plot_entries(raw_config)` (the plots an export draws are the entries); new `plot_report_name(entry, p_id)` = `ui_title`, else `ui_label`, else the id in title case; used for the headings, captions, the audit prose (two places) and the T3 heading. The synthetic recipe handed to the plot library carries the plot's engine (it carried none before).
+- `utils.engines.plot_engine_slot(entry, recipe)` (new, in `libs/utils/src/utils/engines.py`): the entry's `plot_engine`, else the recipe's, else nothing. The library already reads `plot_engine` of the recipe dictionary it is given, so no new interface; HOME (two places) and the export put the effective value in that slot.
+- `app/modules/plot_seeds.py` (`bake_plot_seeds`): the layers are in the entry.
+- `app/modules/session_manager.py` (`extract_primary_keys`): reads `joins.*.tier1.steps` and `tier2.steps`, only join steps (`utils.join_keys.JOIN_ACTIONS`), key columns by `utils.join_keys.key_columns`. See "needs a decision" 1.
+- `libs/blueprint_arch/.../t3_translator.py` (`build_mode2_recipe`, the fork of an export): reads the entry, writes the audit steps to `tier2.steps` of the forked join (keeps `data_engine`). This is the Export's reproducibility fork, so I did it here (the 4a report had put it in 4c).
+- `libs/blueprint_arch/.../data_analysis_recipe_navigator.py`, only `build_plot_lineage` (the function the export calls for the lineage graph): reads the entry (also when the whole entry is in its own file), `ui_label`, `tier2` for the note, and the `rel` of a table or join step is now the file that holds its `tier1`. The rest of the navigator is Blueprint (4c).
+- Tier 3: nothing in HOME, Export, audit or sessions reads a plot's `tier3` (checked by grep: only the checker and the writer in `libs/viz_gallery` know it). The checker still refuses a non-empty one.
+- Not renamed, as ordered: `info.label` (HOME banner), table and join `label`, input column `label`, the `label` of a session and of an audit step.
+
+## 4. What the user sees (checked by running, not by reading)
+HOME on the rewritten demo recipe `1_test_data_ST22_dummy`: the 5 group tabs and the 17 plot tabs show THE SAME TEXTS as on dev (compared one by one against `git show dev:`: 0 differences). Examples: group "📊 Quality Control", "🐱 Cat"; plot "QC Reads Horizontal Barplot", "Miaou 🐈". The browser test `test_shiny_smoke.py` (HOME opens, tabs, plots draw, filters, sessions) passes.
+
+Export report, demo recipe: the 17 plots keep their old report names (the old `title:` text is now `ui_title`), for example "Reads Quality & Taxonomy Proportion", "🐱 Miaou — Assembly Metric Distributions by Source". Pinned by `app/tests/test_export_report_names.py`, which reads a table of the names BEFORE the change that I made from `git show dev:<file>` (`app/tests/data/report_names_before_engine_keys.yaml`, 40 plots of 16 recipes), so the test does not need git.
+
+CHANGED (decided: D-0253, "ui_label for those that had none"): 14 plots of other shipped recipes had no title; the report showed their id in title case, it now shows their `ui_label`. Examples: `abromics_st_by_country` "Abromics St By Country" -> "Sequence Types by Country"; `stress_species_amr` "Stress Species Amr" -> "Species x AMR Distribution"; `samples_by_country` (left_join_lesson) "Samples By Country" -> "Samples by country"; `variants_bar` (retest_top_n_other) "Variants Bar" -> "Rows per grouped variant". All 14 are listed in the data file (`old_report` against the new rule).
+
+The report and the lineage file: the lineage graph of an export is the same as on dev for every one of the 40 plots (compared with the lineage of dev: only the `rel` text of 9 plots differs, and it now names the real file: `.../ResFinder_wrangling_tier1.yaml` where dev named `ResFinder_wrangling.yaml`, a file that the rewrite split in two).
+
+## 5. THE PROOF (command of the step 1 report, from the worktree root)
+- Pictures: `identical: 51`, `PICTURES IDENTICAL` (output `tmpAI/engine_keys/picture_check_step4b_output.txt`, pictures `picture_check_step4b/`), run at the last commit with `PYTHONHASHSEED=0`.
+- `golden_baseline.py --check app/tests/golden/baseline.json`: `result-identical`.
+- `gallery_previews.py` (output `tmpAI/scratch/previews_4b` in the worktree): `identical: 34; size only: 0; differs: 0; new: 0; error: 0` (run before the last two small commits; those commits change no picture path).
+
+## 6. Tests and counts (all ran)
+- Browser (qa), one process at a time: `test_shiny_smoke.py` 37 passed, 3 skipped; `test_filters_cleared_on_recipe_change.py` 13 passed; `test_export_download.py` 8 passed, 1 failed (the seed test, below).
+- The seed test `test_the_export_records_the_seed_the_recipe_writes_...`: alone 3 times: fail, fail, pass. I found why with a scratch copy that printed the zip (removed again): in a failing run the zip is named `..._user` (not `..._autotest`) and holds no reproducibility folder: the typed name and the ticked box had not reached the server when the download was clicked. That is the known timing defect, not this change; the same test passed 3 of 3 more times with the scratch print.
+- `app/tests` without the browser files above: `15 failed, 3390 passed, 4 skipped, 2 xfailed` (run at commit 42de8171; after it only `session_manager.py` and one test file changed, and the two files I changed were run again: 52 passed). The 15 red are all step 4c (section 8). Before my work the same run had 30 red.
+- libs: utils 2101 passed; transformer 2256 passed (one test failed in my run, `test_action_names`, found my spelled `polars_join`; fixed in e0ed4655 and the test passes); viz_factory 2266 passed, 27 xfailed; viz_gallery 70 passed, 1 skipped; ingestion 59; connector 27; id_reconciliation 81 + 3 xfailed; test_lab 103; blueprint_arch 9 failed 391 passed (was 17 failed; the 9 are Blueprint, section 8).
+- New tests: `app/tests/test_home_reads_the_plot_entry.py` (7), `app/tests/test_export_report_names.py` (23 with the 16 parametrized recipes), 3 in `libs/utils/tests/test_engines.py`, 1 in `libs/blueprint_arch/tests/test_t3_translator.py`, 3 in `libs/blueprint_arch/tests/test_lineage_nav.py`. Adapted (never deleted or skipped): `test_export_report_texts.py`, `test_plot_seeds.py`, `test_old_session_typed_values.py`, `test_plot_engine_reaches_the_factory.py` (the export is listed now; the engine may come through `plot_engine_slot`), `test_writers_emit_format_one.py` (one line, the fork), `test_t3_translator.py` (the hand-written recipes).
+- BREAK ONCE (`tmpAI/breakonce4b.py` in the worktree, output `tmpAI/breakonce4b_out.txt`): 17 breakages, 17 caught, files restored. They are: group tab reads `label` again; plot tab reads `label`; audit list reads `label`; HOME slots hand over `spec`; audit panel reads `spec`; join keys read the old `steps`; join keys take every step (an unpivot's `on`); report name reads `title`; report ignores `ui_title`; export entries read `spec`; engine slot ignores the entry; export drops the engine; fork writes `tier2` at the old place; fork reads `spec`; lineage label old key; lineage ignores the entry file; lineage `rel` is the id.
+
+## 7. Decisions table
+| decision | how the code complies | where | test |
+|---|---|---|---|
+| D-0255 "the build can start" | one branch, the same migration; the browser files named and the proof run | this branch | the proof, section 5 |
+| D-0237 "a plot entry has no `spec:` key: its content is written in the entry or in an included file whose root is the entry's own content" | HOME, audit panel, export, seeds, fork, lineage read the entry | `home_theater.py` (`_collect_all_group_plot_ids`, `_resolve_active_spec`, two handlers), `audit_stack.py:plot_target_dataset`, `export_handlers.py:export_plot_entries`, `plot_seeds.py:bake_plot_seeds`, `t3_translator.py:_find_plot_spec`, navigator `build_plot_lineage` | `test_home_reads_the_plot_entry`, `test_export_report_names`, `test_plot_seeds`, `test_t3_translator`, `test_lineage_nav` |
+| D-0250 "Tier container is B: a tier is written as its key (`tier1:`), then the optional `data_engine:`, then `steps:`" | the join keys and the fork read `tierN.steps`; the fork keeps `data_engine`; tier 3 is read nowhere in these areas | `session_manager.py:extract_primary_keys`, `t3_translator.py` (tier2) | `test_the_join_keys_come_from_the_tier_steps...`, `test_the_engine_written_in_the_tier2_of_the_join_is_kept_in_the_fork` |
+| D-0253 "labs stays plotnine and the others stay ui" | tabs and lists read `ui_label`; the report reads `ui_title` else `ui_label`, never a `title` | `home_theater.py` three label functions, `export_handlers.py:plot_report_name` | `test_a_group_tab_reads...`, `test_the_name_is_ui_title_then_ui_label...`, `test_a_shipped_recipe_reports_the_same_names_as_before` (16), `test_the_demo_recipe_has_the_same_report_names...` |
+| D-0271 "we do changes to blueprint and lab after" | Blueprint handlers, `wrangle_studio`, Test Lab and the scaffold scripts not touched; only the Export's fork and lineage function in the library were done, because the Export calls them | list in section 8 | - |
+| D-0050 "No silent error that is the rule." | the plot's engine now reaches the library from the export too (before it did not: an engine the app does not build would have been drawn with plotnine); a plot written the old way has no content in the export and the checker names it | `export_handlers.py` | `test_every_recipe_dictionary_built_for_the_factory_carries_the_plot_engine` (export added), `test_a_plot_written_the_old_way_has_no_content_in_the_export` |
+| D-0165 "Where no decision exists and one is needed, that must be reported to her." | section 9 | - | - |
+
+Question named by the brief, "what happens to the plot's own engine after this change": a plot with `plot_engine: python-other` at its entry is handed to the library in HOME and the export as the recipe dictionary's `plot_engine`, so the library refuses it with its message (verified by the test of the slot and the dictionary test; the refusal itself is the library's own code, unchanged).
+
+## 8. What is still red, and the starting points for step 4c
+The 15 red of `app/tests` (without the browser files) and why:
+- `test_writers_emit_format_one.py` 11 red: 3 Blueprint branch tests (`libs/blueprint_arch` `generate_branch_plan`), 1 join branch test, and 7 scaffold-script tests (`assets/scripts/create_data_analysis_recipe.py:166,187` writes group `label` and `wrangling`).
+- `test_scripts_need_the_app_path.py` 1 (same scaffold script).
+- `test_wrangler_upload_step_numbering.py` 1: the validator's `_fragment_report` and the Blueprint upload read a `wrangling` fragment (old shape): `app/modules/data_analysis_recipe_validator.py:162-166`.
+- `test_shiny_gate_gap.py` 1 (a browser file that my ignore list did not name, runs with the others): it saves a step in Blueprint; Blueprint's save writes the old shape.
+`libs/blueprint_arch`: 9 red: `test_agent_tools` 1, `test_branch_plan` 8.
+Starting points for 4c: `libs/blueprint_arch`: `data_analysis_recipe_navigator.py` (everything except `build_plot_lineage`: `build_sibling_map` 120-215 reads `wrangling`/`steps`/`spec`; 270-335; 434-500; `generate_branch_plan` 875-1090), `blueprint_mapper.py`, `group_plot_manager.py`, `agent_tools.py:330`; `app/handlers/blueprint_handlers.py`; `app/modules/wrangle_studio.py:572,685`; `libs/test_lab/.../bootstrapper.py`, `scaffolder.py`; `assets/scripts/create_data_analysis_recipe.py`, `SF_create_data_analysis_recipe.py`, `debug_bootstrap_viz_yamls.py`; the validator fragment report above. Not run (as ordered): `test_shiny_smoke_blueprint.py`, `test_every_app_features_starts.py`.
+For the lineage (`build_sibling_map` is Blueprint's): it registers a table or join by its id when its steps are inline or in a tier file; 4c should make it register the `tier1` and `tier2` include files, then the `_tier1_rel` helper of `build_plot_lineage` can read it.
+
+## 9. Needs a decision (D-0165)
+1. **The primary-key rule was dead since the recipe format 1 and is now alive.** `extract_primary_keys` read `join.steps` as a list; a join's steps were a mapping, so it returned an empty list for every shipped recipe (checked on dev: `[]` for the demo, `complex_template`, `1_Abromics`). So HOME never stamped the "primary key" warning on a filter of a join key, and never blocked dropping a join key (ADR-049, `ui_implementation_contract.md` 12g.3). Now it returns the real keys (demo: `Gene_name`, `VF_gene`, `sample_id`). Options: (a) keep it alive (what I built); (b) leave it off until you decide; (c) change what counts as a key. I did (a) because the code and the contract say it is the intended behaviour and "no silent error" (D-0050); it is PROVISIONAL and visible to the user: a drop of `sample_id` in the audit is now refused with a message, and a filter on it carries the warning banner. It uses the shared join-key rule (as-of `by` groups count too). No browser test covers it.
+2. In a failing run of a browser export the report says nothing wrong; the flaky test is the timing defect the brief named (not chased).
+3. The refusal text of the plot library says "recipe key plot_engine" even when the value came from a plot entry; step 5 should say which one.
+4. The lineage lists only the `tier1` file of a table or join; a table with a `tier2` file shows no second node. Whether the lineage graph should show the tier 2 is a design point (it used to show one file for both tiers).
+5. From 4a, still open: the flat keys `labels:` and `guides:` of a plot (D-0253 says figure text only in `labs`); the `PYTHONHASHSEED` finding; other built-in defaults (`coord_cartesian`, `facet_null`, the automatic axis text rotation); the 165 old test-data YAML files of `libs/viz_factory/tests/test_data`.
+6. The library `utils.engines.plot_engine_slot` is in `libs/utils` (a rule file says nothing against it).
+
+## 10. PROVISIONAL choices (mine)
+`plot_engine_slot`, `plot_report_name`, `export_plot_entries`, `plot_target_dataset`, `group_tab_label`, `plot_tab_label`, `plot_list_label` (names and places); the 3-step fallback of the report name (`ui_title`, `ui_label`, id in title case) where the last step is only a net for a recipe the checker already refused; the `rel` of the lineage = the `tier1` file; the data file of the old report names; reviving the join-key rule (point 1); `plot_list_label` keeps the dead `name` fallback of the old code (not a recipe key; I did not touch it).
+
+## 11. Files
+`app/handlers/{home_theater,audit_stack,export_handlers}.py`, `app/modules/{plot_seeds,session_manager}.py`, `libs/utils/src/utils/engines.py`, `libs/blueprint_arch/src/blueprint_arch/{t3_translator,data_analysis_recipe_navigator}.py`; tests listed in section 6; `app/tests/data/report_names_before_engine_keys.yaml`. Scratch in the worktree (not committed, git-ignored): `tmpAI/breakonce4b.py`, `tmpAI/breakonce4b_out.txt`, `tmpAI/progress.md`. In the main folder: `tmpAI/engine_keys/lineage_dev.json` (the lineage of dev for 40 plots), `picture_check_step4b*`.

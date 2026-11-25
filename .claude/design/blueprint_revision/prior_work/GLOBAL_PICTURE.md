@@ -1,4 +1,4 @@
-<!-- copied unchanged on 2026-11-20 from tmpAI/panel/blueprint_gap/GLOBAL_PICTURE.md (not in git); a record of an earlier study, not a decision -->
+<!-- copied unchanged on 2026-11-20 from .claude/design/studies/scratch_records_2026-11/panel/blueprint_gap/GLOBAL_PICTURE.md (not in git); a record of an earlier study, not a decision -->
 # Blueprint: the global picture (how it must work as a whole)
 
 Picture: `GLOBAL_PICTURE.svg` (same folder). Sources line by line: `GLOBAL_PICTURE_sources.md`.
