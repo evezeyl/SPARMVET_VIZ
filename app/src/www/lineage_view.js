@@ -71,8 +71,10 @@
     root.appendChild(actions);
 
     // ---- the list, grouped by independent graph
+    var heads = [];
     data.groups.forEach(function (g) {
       var head = el("div", "spv-lin-group");
+      heads.push({ el: head, nodes: g.nodes });
       head.appendChild(el("span", "spv-lin-group-title", "Independent graph " + (g.id + 1) + " (" + g.nodes.length + (g.nodes.length === 1 ? " node)" : " nodes)")));
       var all = el("button", "spv-lin-all", "All original tables of this group");
       all.type = "button";
@@ -214,6 +216,9 @@
         }
         var mk = lastMarks[n.id];
         r.mark.textContent = mk ? ("audit step" + (mk > 1 ? "s: " + mk : "")) : "";
+      });
+      heads.forEach(function (h) {
+        h.el.style.display = h.nodes.some(function (i) { return visible[i]; }) ? "" : "none";
       });
       edgeEls.forEach(function (e) {
         var on = visible[e.from] && visible[e.to];

@@ -195,6 +195,8 @@ def test_around_my_selection_keeps_fewer_dots_and_whole_recipe_brings_them_back(
     visible = page.eval_on_selector_all("#lineage_root .spv-lin-dot", "els => els.filter(e => e.style.display !== 'none').length")
     visible_lines = page.eval_on_selector_all("#lineage_root .spv-lin-line", "els => els.filter(e => e.style.display !== 'none').length")
     assert 3 < visible < N_NODES and visible == visible_lines
+    heads = page.eval_on_selector_all("#lineage_root .spv-lin-group", "els => els.filter(e => e.style.display !== 'none').length")
+    assert heads == 1, "a group with no node shown has no header"
     page.locator("#lineage_root .spv-lin-switch", has_text="Whole recipe").click()
     assert page.eval_on_selector_all("#lineage_root .spv-lin-dot", "els => els.filter(e => e.style.display !== 'none').length") == N_NODES
     _clear_choice(page)
