@@ -199,7 +199,7 @@ def fragments_included_by_nothing(recipes: Path = RECIPES) -> set[str]:
     for f in files:
         for m in re.finditer(r"!include\s+['\"]?([^'\"\s#]+)", f.read_text(encoding="utf-8")):
             included.add((f.parent / m.group(1)).resolve())
-    recipe_files = {f for f in files if f.parent.parent == recipes and f.parent.name in ("pipelines", "retest", "templates", "experimental")}
+    recipe_files = {f for f in files if f.parent.parent == recipes and f.parent.name in ("pipelines", "retest", "templates")}
     return {str(f.relative_to(recipes)) for f in files if f not in recipe_files and f.resolve() not in included}
 
 

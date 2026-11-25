@@ -1,4 +1,4 @@
-"""One test walks every recipe that ships (pipelines, retest, templates, experimental, the folders the deployments name, the
+"""One test walks every recipe that ships (pipelines, retest, templates, the folders the deployments name, the
 Gallery examples) against the checker. The rules are read from the one place the checker uses; this file holds no copy of them.
 
 What it guarantees: a recipe, fragment or Gallery example added to any recipe folder is checked without anyone editing this
@@ -51,8 +51,6 @@ EXCUSES = [
      "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
     ("config/data_analysis_recipes/templates/simple_template.yaml", ("data_check",),
      "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/experimental/test_logic.yaml", CHECKS,
-     "an empty leftover file (0 bytes); waits for the owner: delete or fill it", "the owner's choice on this file"),
 ]
 SET_EXCUSES = [
     ("config/data_analysis_recipes/retest", "retest recipes reuse plot ids between them (genes_bar)",

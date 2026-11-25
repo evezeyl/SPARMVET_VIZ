@@ -79,7 +79,6 @@ DEFAULT_RECIPE_DIRS = [
     "config/data_analysis_recipes/pipelines",
     "config/data_analysis_recipes/templates",
     "config/data_analysis_recipes/retest",
-    "config/data_analysis_recipes/experimental",
     "app/tests/equality/recipes",
 ]
 DEFAULT_DATA_ROOT = "assets/test_data"

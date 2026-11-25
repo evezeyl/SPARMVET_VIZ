@@ -534,10 +534,7 @@ def test_there_are_shipped_recipes_to_sweep():
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
 def test_the_graph_builds_over_every_shipped_recipe_and_every_plot_reaches_a_source_table(path):
     raw, problems = load_recipe(path)
-    if not raw:
-        # `experimental/test_logic.yaml` is an empty file: the loader returns no recipe for it, so there is nothing to draw
-        assert path.endswith("experimental/test_logic.yaml"), f"{path} loads as no recipe"
-        pytest.skip("the file holds no recipe")
+    assert raw, f"{path} loads as no recipe"
     graph = build_graph(raw)
     for plot_id in graph.plots():
         assert graph.source_tables(f"T3:{plot_id}"), f"plot {plot_id} reaches no source table"
