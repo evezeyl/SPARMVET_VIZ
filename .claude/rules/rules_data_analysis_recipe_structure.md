@@ -65,7 +65,7 @@ tier1:
     - action: polars_join
       right_ingredient: metadata_schema
       'on': [sample_id]
-      how: inner
+      how: left
       maintain_order: left_right
     - action: polars_cast
       columns: [Year]
@@ -341,6 +341,6 @@ Before anything else the app makes the ids equal. When it reads the files of a r
 - **The block (required, E04 to E07):** every table that takes part states `completion: {marker: <column name>, meaning: <a sentence>}` (D-0574, D-0586: "A : required meaning"; the owner's words of 2026-11-24: one marker pattern for every table, `<table>_not_in_original_data`, the metadata included; `meaning` is a free sentence of the recipe maker about the table, refused when missing or blank (E05) and never judged; the app's own words for an added line are `missing in original table`). The recipe never records how many lines were added. The marker is not a zero: a count, a sum or a stamp of the recipe sees an added line, so the recipe says what it means; the marker column is kept (D-0586), and a `polars_select` that lists a fixed set of columns drops it unless it lists it.
 - **What is never done:** nothing is removed or changed in the data (D-0597); a line with no usable id (missing, empty, only spaces) stays, is not completed and is listed; the app does no data cleaning in HOME (D-0593 to D-0596): the meaning of "-" and the trimming are the recipe's (`null_values`, `strip`, a visible step); Data Import is unchanged.
 - **Nothing blocks (D-0581).** The three checks (ids of a result table not in the metadata, ids of the metadata not in a result table, equality of all the sets after the completion) are warnings, written to the log of the ids (`<user_data>/_id_logs/<recipe id>.id_log.yaml`, automatic, "automatic, no user") and to the `id_log.yaml` of every export. A static deployment needs a person who reads those logs (D-0585). A difference at check 3 is a bug of the app.
-- **Recipes do not start from the metadata (D-0586):** the data table first, a left join on the metadata. Not yet true of every shipped recipe (the one big move of the demo recipes is a later step).
+- **Recipes do not start from the metadata (D-0586, D-0633; built 2026-11-25, check J16, the message wording PROVISIONAL):** a joined table that brings in the metadata (`metadata_schema`) has the data table first (the first ingredient) and joins the metadata onto it with `polars_join`, `how: left`, in tier 1. The recipe check refuses (J16) a join whose first ingredient is the metadata while a data table is joined onto it, and a join step with the metadata that is not `polars_join` with `how: left` (an inner, full, right, semi, anti or cross join, no `how`, the as-of join, the join on conditions). Not affected: a look-up join (a table of `additional_datasets_schemas`) and a table made from the metadata alone or with a look-up only (no data table). A metadata join outside tier 1 is refused by ST05. The audit copy is a recipe and inherits the rule. The shipped recipes, the Gallery bundles and the templates pass it (`app/tests/test_metadata_join_rule.py`).
 - **The cache key** of a table that reads a table that takes part holds the id declarations and the data files of ALL of them (`app/modules/cache_keys.py`); the cache version did not change.
 

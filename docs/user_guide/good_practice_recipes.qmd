@@ -67,7 +67,7 @@ A join step is allowed in tier 1 only. The checker refuses a join (also an as-of
 
 ### Start a joined table from a data table, and bring the metadata in with a left join
 
-Advice only: the checker does not refuse a recipe that starts from the metadata (how this would be enforced is not decided).
+This is a rule, not advice (check J16): the recipe check refuses a joined table that starts from the metadata with a data table joined onto it, and any join with the metadata that is not a left join from the data table. The words of the refusal are provisional.
 
 - **The first ingredient of a joined table is one of your data tables** (a result of a tool), not the metadata. Then the metadata is added with `polars_join`, `how: left`, so that every line of the data stays and gets its source, year, country and so on. The app has already given every data table a line for each id of the metadata (see the `completion` block above), so a left join from a data table loses no entity.
 - **Do not use an inner join with the metadata.** It drops, without a word, the data lines whose id the metadata does not have. If you want such lines out, remove them with a visible step (`modif_filter` or `polars_drop_nulls`) and say why in a comment.

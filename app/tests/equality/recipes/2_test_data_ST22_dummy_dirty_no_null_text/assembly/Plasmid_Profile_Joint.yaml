@@ -3,7 +3,7 @@ steps:
   - action: polars_join
     right_ingredient: metadata_schema
     'on': [sample_id]
-    how: inner
+    how: left
     maintain_order: left_right
 
   # Step 2: Cast Year: float → Int64 → String for clean discrete axis

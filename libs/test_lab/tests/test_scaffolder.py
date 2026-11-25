@@ -276,6 +276,8 @@ class TestWhatTheScaffolderWritesPassesTheChecker:
         assert list(raw["joins"]["proj_joint"]) == ["ui_label", "ingredients", "tier1"]
         assert [s["right_ingredient"] for s in raw["joins"]["proj_joint"]["tier1"]["steps"]] == ["amr_results", "metadata_schema"]
         assert [i["dataset_id"] for i in raw["joins"]["proj_joint"]["ingredients"]] == ["samples", "amr_results", "metadata_schema"]
+        # the metadata is joined left from the data table (D-0633, check J16); the data tables are joined inner
+        assert {s["right_ingredient"]: s["how"] for s in raw["joins"]["proj_joint"]["tier1"]["steps"]} == {"amr_results": "inner", "metadata_schema": "left"}
 
     def test_a_table_has_a_label_and_the_steps_given_end_up_in_its_tier_1(self, samples_tsv, tmp_path):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder

@@ -9,8 +9,8 @@ What is checked, on every shipped recipe of `pipelines/` and `templates/` and on
 - MLST and VirulenceFinder keep their own marker column through their first step (the select names it);
 - every shipped recipe passes the recipe check and the data check, and the load gate keeps every one of them (nothing rejected).
 
-The check "starts from the metadata" is a function of this file, not of the checker: the rule is advice only and is not enforced by the checker (how it would be
-enforced is not decided). A test that cannot fail proves nothing, so the last tests turn a recipe back to the old form and see the function find it.
+The recipe check refuses these forms since 2026-11-25 (J16, D-0633; `app/tests/test_metadata_join_rule.py`, `libs/utils/tests/test_recipe_check_metadata_join.py`). The function of this file
+stays: it counts the joined tables by their form for the data-first measurements. A test that cannot fail proves nothing, so the last tests turn a recipe back to the old form and see the function find it.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_recipes_data_first.py -q
 

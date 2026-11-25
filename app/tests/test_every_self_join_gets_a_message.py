@@ -89,8 +89,11 @@ def test_the_checker_gives_one_advice_and_no_error(name, steps, before, after, m
     found = [p for p in result.problems if p.code == "J12"]
     assert len(found) == 1, (name, [p.code for p in result.problems])
     assert found[0].severity == "A" and found[0].fix.startswith("Suggestion:") and "Fix: Suggestion" not in found[0].text()
-    assert not [p for p in result.problems if p.code == "J15" or (p.code.startswith("J") and p.severity == "E")], name
-    assert result.ok, [p.text() for p in result.errors]
+    # J16 (D-0633): the template's second table is the metadata, and cases 12 and 14 join it with a full and an anti join, which J16 refuses; that is
+    # expected and is tested in test_recipe_check_metadata_join.py. These cases test the advice of a self join (J12), so J16 is left out here.
+    assert not [p for p in result.problems if p.code == "J15" or (p.code.startswith("J") and p.severity == "E" and p.code != "J16")], name
+    assert [p.text() for p in result.errors if p.code != "J16"] == []
+    assert {p.code for p in result.errors if p.code == "J16"} == ({"J16"} if name in ("12 anti after a full join of B", "14 anti of B after a left join of B") else set()), name
 
 
 @pytest.mark.parametrize("name,steps,before,after,missing_left,missing_right", CASES, ids=IDS)
