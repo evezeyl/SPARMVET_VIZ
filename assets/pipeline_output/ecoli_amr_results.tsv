@@ -1,0 +1,9 @@
+sample_id	serotype	ST	bla_CTX-M	growth_rate
+EC01	O25:H4	131	present	0.82
+EC02	O25:H4	131	present	0.79
+EC03	O157:H7	11	absent	0.91
+EC04	O8:H9	10	absent	0.88
+EC05	O25:H4	131	present	0.75
+EC06	O157:H7	11	absent	0.95
+EC07	O8:H9	10	absent	0.84
+EC08	O1:H7	95	absent	0.90

@@ -6,7 +6,7 @@ info:
   ui_label: Lab Submission Audit
   category: Quality Control
   description: 'Template for auditing lab submission data: TAT monitoring, throughput,
-    and status tracking.'
+    and status tracking. The data beside it (assets/audit_data/submission_logs.tsv) is made-up example data.'
   version: '1.0'
 data_schemas:
   submission_logs:

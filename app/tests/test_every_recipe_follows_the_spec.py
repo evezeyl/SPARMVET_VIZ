@@ -45,12 +45,6 @@ EXCUSES = [
     ("config/data_analysis_recipes/retest/retest_broken_header.yaml", ("data_check",),
      "exists to show the refusal of a data file with a broken header (the data check must fail)",
      "never: the refusal is tested in app/tests/test_retest_data_analysis_recipes.py"),
-    ("config/data_analysis_recipes/templates/audit.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/templates/e_coli.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
-    ("config/data_analysis_recipes/templates/simple_template.yaml", ("data_check",),
-     "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
 ]
 SET_EXCUSES = []
 EXCUSED = {(file, check) for file, checks, _, _ in EXCUSES for check in checks}

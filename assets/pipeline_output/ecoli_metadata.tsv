@@ -1,0 +1,10 @@
+isolate_id	collection_date	country_of_origin	hospital_site	patient_age	patient_outcome
+EC01	2024-03-02	Country_X	Site_1	67	recovered
+EC02	2024-03-15	Country_X	Site_1	54	recovered
+EC03	2024-04-01	Country_Y	Site_2	31	recovered
+EC04	2024-04-20	Country_Y	Site_2	45	recovered
+EC05	2024-05-11	Country_X	Site_3	72	deceased
+EC06	2024-05-30	Country_Y	Site_2	28	recovered
+EC07	2024-06-09	Country_X	Site_3	60	recovered
+EC08	2024-06-25	Country_Y	Site_2	39	recovered
+EC09	2024-07-03	Country_X	Site_1	58	recovered

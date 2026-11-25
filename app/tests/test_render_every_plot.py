@@ -22,14 +22,18 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_ANALYSIS_RECIPES_DIR = ROOT / "config" / "data_analysis_recipes" / "pipelines"
 # figshare_integration is the large one (about 200000 rows); it builds in under a second.
 DATA_ANALYSIS_RECIPE_IDS = ["1_test_data_ST22_dummy", "2_test_data_ST22_dummy", "figshare_integration"]
+# The three templates that ship with example data of their own (made-up values, assets/audit_data, assets/pipeline_output, assets/test_data/simple_*.tsv).
+TEMPLATES_DIR = ROOT / "config" / "data_analysis_recipes" / "templates"
+TEMPLATE_IDS = ["audit", "e_coli", "simple_template"]
 
 
 def _plots():
-    for data_analysis_recipe in DATA_ANALYSIS_RECIPE_IDS:
-        raw = ConfigManager(str(DATA_ANALYSIS_RECIPES_DIR / f"{data_analysis_recipe}.yaml")).raw_config
-        for group in raw.get("analysis_groups", {}).values():
-            for plot_id, entry in group.get("plots", {}).items():
-                yield pytest.param(data_analysis_recipe, plot_id, entry["target_dataset"], id=f"{data_analysis_recipe}-{plot_id}")
+    for folder, ids in ((DATA_ANALYSIS_RECIPES_DIR, DATA_ANALYSIS_RECIPE_IDS), (TEMPLATES_DIR, TEMPLATE_IDS)):
+        for data_analysis_recipe in ids:
+            raw = ConfigManager(str(folder / f"{data_analysis_recipe}.yaml")).raw_config
+            for group in raw.get("analysis_groups", {}).values():
+                for plot_id, entry in group.get("plots", {}).items():
+                    yield pytest.param(folder, data_analysis_recipe, plot_id, entry["target_dataset"], id=f"{data_analysis_recipe}-{plot_id}")
 
 
 @pytest.fixture(scope="module")
@@ -37,11 +41,11 @@ def anchors(tmp_path_factory):
     return tmp_path_factory.mktemp("anchors")
 
 
-@pytest.mark.parametrize("data_analysis_recipe,plot_id,target", list(_plots()))
-def test_plot_renders(anchors, data_analysis_recipe, plot_id, target):
+@pytest.mark.parametrize("folder,data_analysis_recipe,plot_id,target", list(_plots()))
+def test_plot_renders(anchors, folder, data_analysis_recipe, plot_id, target):
     clear_data_analysis_recipe_cache()
-    raw = ConfigManager(str(DATA_ANALYSIS_RECIPES_DIR / f"{data_analysis_recipe}.yaml")).raw_config
-    orchestrator = DataOrchestrator(DATA_ANALYSIS_RECIPES_DIR, ROOT / "assets" / "test_data")
+    raw = ConfigManager(str(folder / f"{data_analysis_recipe}.yaml")).raw_config
+    orchestrator = DataOrchestrator(folder, ROOT / "assets" / "test_data")
     # The data HOME and the export show: the stored Tier 2 (equal to Tier 1 without tier2 steps).
     # Read twice: the first call writes the file, the second reads it back, so a stored file that
     # cannot be read again fails here (found by the export download test, 2026-11-06).
