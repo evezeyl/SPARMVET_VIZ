@@ -29,7 +29,7 @@ def test_emptied_table_is_really_empty():
 
 
 def test_the_dirty_data_exercises_what_the_clean_data_does_not():
-    """The dirty data must change the result: filters remove rows, keys are lost, values are missing."""
+    """The dirty data must change the result: filters remove rows, keys have no match, values are missing."""
     clean = lambda name: scenarios.hand_table("clean", name)  # noqa: E731
     dirty = lambda name: scenarios.hand_table("dirty", name)  # noqa: E731
     assert clean("amr_data").height == 70 and clean("plasmid_data").height == 163  # the shipped filters remove nothing
@@ -38,5 +38,6 @@ def test_the_dirty_data_exercises_what_the_clean_data_does_not():
     assert dirty("metadata_schema").null_count().row(0) != (0, 0, 0, 0)  # missing values in the metadata
     assert dirty("metadata_schema").filter(pl.col("sample_id").is_not_null())["sample_id"].is_duplicated().any()
     assert dirty("amr_data").filter(pl.col("identity").is_nan()).height > 0  # a NaN is kept by a >= filter
-    assert dirty("AMR_Profile_Joint").height < dirty("amr_data").height + 1  # keys lost in the join
+    # the left join with the metadata (D-0586, D-0633) loses no row of amr_data: a key with no match stays with empty metadata, a duplicated key adds rows
+    assert dirty("AMR_Profile_Joint").height >= dirty("amr_data").height
     assert dirty("amr_data").join(dirty("metadata_schema"), on="sample_id", how="anti").height > 0

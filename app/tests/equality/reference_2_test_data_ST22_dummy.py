@@ -125,9 +125,10 @@ def amr_join(amr: pl.DataFrame, metadata: pl.DataFrame) -> pl.DataFrame:
     # Step 1: predicted_phenotype_clean = predicted_phenotype as text, stripped, lower case
     t = amr.with_columns(
         predicted_phenotype_clean=pl.col("predicted_phenotype").cast(pl.String).str.strip_chars().str.to_lowercase())
-    # Step 2: polars_join right_ingredient metadata_schema, on [sample_id], how inner, maintain_order left_right
-    #   The base table is amr_data (first ingredient). A row whose key has no match, or whose key is missing, is dropped.
-    t = t.join(metadata, on="sample_id", how="inner", maintain_order="left_right")
+    # Step 2: polars_join right_ingredient metadata_schema, on [sample_id], how left, maintain_order left_right
+    #   The base table is amr_data (first ingredient). Every row of it stays; a row whose key has no match, or whose key is
+    #   missing, keeps empty metadata columns (D-0586, D-0633: the metadata is joined left on the data).
+    t = t.join(metadata, on="sample_id", how="left", maintain_order="left_right")
     # Step 3: Year float -> Int64 -> String ("2022", not "2022.0")
     t = _year_to_text(t)
     # Step 4: is_multi_resistant_bool: "sample carries >1 distinct resistance class" (comment of the recipe;
@@ -146,8 +147,8 @@ def amr_join(amr: pl.DataFrame, metadata: pl.DataFrame) -> pl.DataFrame:
 
 def plasmid_join(plasmid: pl.DataFrame, metadata: pl.DataFrame) -> pl.DataFrame:
     """recipe: joins.Plasmid_Profile_Joint (assembly/Plasmid_Profile_Joint.yaml), tier1 steps in order."""
-    # Step 1: inner join metadata on sample_id, left rows keep their order
-    t = plasmid.join(metadata, on="sample_id", how="inner", maintain_order="left_right")
+    # Step 1: left join metadata on sample_id (D-0586, D-0633), the rows of plasmid_data keep their order
+    t = plasmid.join(metadata, on="sample_id", how="left", maintain_order="left_right")
     # Step 2: Year float -> Int64 -> String
     t = _year_to_text(t)
     # Step 3: sort Year, Source, Country (stable)

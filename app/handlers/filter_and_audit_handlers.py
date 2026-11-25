@@ -35,8 +35,9 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, path_rows, place_lines, plots_below, reach_sentence
+from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, path_rows, place_lines, place_words, plots_below, reach_sentence
 from app.modules.audit_view import AUDIT_ERRORS
+from app.modules.lineage_step import stage_nodes
 from utils import key_drop
 from utils.recipe_graph import RecipeGraphError, build_graph
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
@@ -834,6 +835,19 @@ def define_filter_audit_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.filter_send_to_audit)
     def _filter_send_to_audit():
+        _send_staged_to_audit()
+
+    @reactive.Effect
+    @reactive.event(input.lineage_create)
+    def _lineage_create():
+        """"Create an audit step here..." of the lineage panel (D-0634): the same dialog as "Send to Audit", for the filter rows staged in the Filters panel, with the places the user
+        chose in the lineage ticked. The step itself (the column, the operator, the value) is still built in the Filters panel; the lineage panel only chooses where it is written."""
+        if not _can_write_audit_step():
+            _notify("To create an audit step, view T3 and stage a filter in the Filters panel; the places you chose in the lineage are then ticked in the dialog.", type="warning", duration=8)
+            return
+        _send_staged_to_audit()
+
+    def _send_staged_to_audit():
         """Promote staged filter rows into the permanent T3 audit pipeline.
 
         Slice B: an audit step is written in Audit mode while T3 is viewed (P-B3, PROVISIONAL). filter_controls_ui only renders this
@@ -1124,6 +1138,21 @@ def define_filter_audit_server(input, output, session, *,
             radio_choices["place"] = "At a table this plot is built from"
         path = json.dumps({"rows": {r.place: {"depth": r.depth, "derived": list(r.derived), "blocked": list(r.blocked)}
                                     for r in path_rows(offered[0], place_lines_offered, own_place)}}) if place_lines_offered else ""
+        # the places the user chose in the lineage panel (D-0634): the ones this step can be written at are ticked and the dialog opens on "At a table this plot is built from"; the
+        # others are named, never dropped silently (the column may not be there, or the place may not lie upstream of the open plot)
+        chosen_in_lineage = [c for c in (safe_input(input, "lineage_chosen", []) or []) if isinstance(c, str)]
+        offered_ids = {line.place for line in place_lines_offered} | {own_place}
+        ticked = [c for c in chosen_in_lineage if c in offered_ids] if place_lines_offered else []
+        not_ticked = [c for c in chosen_in_lineage if c not in ticked]
+        lineage_note = ui.span()
+        if chosen_in_lineage:
+            words = []
+            if ticked:
+                words.append(f"Chosen in the path of the data and ticked below: {', '.join(place_words(c) for c in ticked)}.")
+            if not_ticked:
+                words.append(f"Chosen in the path of the data but not offered for this step (the column is not there, or the place is not upstream of the open plot): "
+                             f"{', '.join(place_words(c) for c in not_ticked)}.")
+            lineage_note = ui.tags.small(" ".join(words), class_="d-block mb-2 " + ("text-muted" if ticked else "text-danger"), id="propagation_lineage_note")
         places_block = ui.div(
             ui.input_checkbox_group(
                 "propagation_places",
@@ -1132,7 +1161,7 @@ def define_filter_audit_server(input, output, session, *,
                                     class_="text-muted"),
                 choices={**{line.place: f"{line_label(line)}: {reach_sentence(line)}" for line in place_lines_offered},
                          own_place: own_place_line(active_subtab.removeprefix("subtab_"))},
-                selected=[],
+                selected=ticked,
             ),
             id="propagation_places_wrapper",
             class_="spv-places-path",
@@ -1144,11 +1173,12 @@ def define_filter_audit_server(input, output, session, *,
             warn,
             propagation_preview,
             ui.tags.small(summary, class_="text-muted d-block mb-2"),
+            lineage_note,
             ui.input_radio_buttons(
                 "propagation_choice",
                 label="Apply to:",
                 choices=radio_choices,
-                selected="this",
+                selected="place" if ticked else "this",
                 inline=False,
             ),
             places_block,
@@ -1281,17 +1311,9 @@ def define_filter_audit_server(input, output, session, *,
         _notify(msg, type="message", duration=7)
 
     def _stage_nodes(state: dict, placed: list[tuple[dict, str]], active_subtab: str) -> None:
-        """Stage one pending node for each (scratch node, place): written at that place, with the id of the decision, no reason yet (Apply is locked until it has one)."""
-        from app.modules.session_manager import make_audit_step
-        pending_nodes = list(state.get("_pending_t3_nodes", []))
-        for scratch_node, place in placed:
-            pending_nodes.append(make_audit_step(
-                scratch_node["node_type"], dict(scratch_node.get("params", {})),
-                plot_scope=PLACES_BUCKET, reason="",
-                primary_key_warning=bool(scratch_node.get("primary_key_warning")),
-                node_id=scratch_node.get("id"), place=place, started_from=active_subtab,
-            ))
-        home_state.set({**state, "_pending_t3_nodes": pending_nodes})
+        """Stage one pending node for each (scratch node, place): written at that place, with the id of the decision, no reason yet (Apply is locked until it has one)
+        (`lineage_step.stage_nodes`, the one function the lineage panel's form uses too)."""
+        home_state.set(stage_nodes(state, placed, active_subtab))
         _propagation_scratch.set({"nodes": [], "kind": ""})
 
     def _confirm_places(scratch: dict, scratch_nodes: list[dict]) -> None:

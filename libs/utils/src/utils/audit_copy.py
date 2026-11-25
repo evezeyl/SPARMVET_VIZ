@@ -171,6 +171,8 @@ def _target(audit_recipe: dict, place: str) -> Tuple[str, str, dict]:
         if not isinstance(body, dict):
             raise AuditCopyError(f"The recipe has no plot '{name}', so there is no {place} to add a step to.")
         return tier, name, body
+    if name == recipe_tiers.METADATA_SCHEMA:
+        raise AuditCopyError(recipe_tiers.METADATA_NOT_A_PLACE)                # D-0632
     body = recipe_tiers.collection_body(audit_recipe, name)
     if not isinstance(body, dict):
         raise AuditCopyError(f"The recipe has no table or join '{name}', so there is no {place} to add a step to.")
@@ -364,8 +366,11 @@ def integrity_errors(audit_recipe: dict, original_recipe: dict, plans: Optional[
     for place, what in _audit_ids_in_steps(original_recipe):
         errors.append(f"The original recipe already holds {what} on a step at {place}: it is not an original recipe.")
     seen: Dict[str, str] = {}
-    for place, tier, _, body in _holders(audit_recipe):
+    for place, tier, owner, body in _holders(audit_recipe):
         held = body.get(tier)
+        if owner == recipe_tiers.METADATA_SCHEMA and tier != "tier3" and _list_in(body, tier, AUDIT_STEPS):
+            errors.append(f"The {AUDIT_STEPS} of {place}: {recipe_tiers.METADATA_NOT_A_PLACE}")
+            continue
         if isinstance(held, dict) and AUDIT_STEPS in held and not isinstance(held[AUDIT_STEPS], list):
             errors.append(f"The {AUDIT_STEPS} of {place} is not a list.")
             continue

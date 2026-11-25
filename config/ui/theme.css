@@ -29,6 +29,7 @@
  *  26. Side panel drag handle (D-0375, D-0381)
  *  27. HOME warning of the ids (D-0582)
  *  28. Audit dialog: the places as the path of the lineage (D-0553)
+ *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1241,3 +1242,54 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-places-path .spv-place-row { margin-left: calc(var(--spv-depth, 0) * 18px); padding-left: 8px; border-left: 2px solid #dee2e6; }
 .spv-places-path .spv-place-derived, .spv-places-path .spv-place-blocked { color: #6c757d; background-color: #f8f9fa; }
 .spv-places-path .spv-place-note { font-size: 0.75rem; font-weight: 400; margin-left: 20px; }
+
+/* ── 29. HOME lineage panel in Audit mode (D-0629, D-0634) ───────────────── */
+/* app/handlers/lineage_handlers.py draws the container, app/src/www/lineage_view.js builds the list and the map. One quiet colour for each kind, the same in the list and on the
+   dots; only existing tokens of rules_css_style_spec.md are used (PROVISIONAL, D-0634: the exact colours are not decided): tier 1 = surface neutral #f8f9fa with the muted text grey
+   #6c757d as its line; tier 2 = the Violet tint #eef0fb with the primary blue #345beb; results (a plot, a result table) = the teal tint #e6f7f5 with the teal #10a395. A plot is a
+   square, a table a circle (a shape, not only a colour). The chosen place is thick (dark line), what is built from it has the blue ring; a mark of an audit step is a text. */
+.spv-lin-panel .accordion-button { font-size: 0.85rem; font-weight: 700; color: #345beb; }
+.spv-lineage { font-size: 0.8rem; color: #1a1a1a; }
+.spv-lin-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.spv-lin-switch-label, .spv-lin-chosen, .spv-lin-note { font-size: 0.75rem; color: #6c757d; }
+.spv-lin-switch, .spv-lin-all, .spv-lin-clear { border: 1px solid #dee2e6; background: #ffffff; color: #345beb; border-radius: 6px; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; }
+.spv-lin-switch.active { background: #345beb; color: #ffffff; border-color: #345beb; }
+.spv-lin-all:disabled, .spv-lin-clear:disabled { color: #6c757d; }
+.spv-lin-body { display: flex; gap: 10px; align-items: flex-start; }
+.spv-lin-list { flex: 1 1 45%; min-width: 0; max-height: 360px; overflow: auto; border: 1px solid #dee2e6; border-radius: 6px; padding: 4px; background: #ffffff; }
+.spv-lin-map { flex: 1 1 55%; min-width: 0; max-height: 360px; overflow: auto; border: 1px solid #dee2e6; border-radius: 6px; background: #ffffff; }
+.spv-lin-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 2px 0; }
+.spv-lin-group-title { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: none; }
+.spv-lin-line { display: flex; align-items: center; gap: 6px; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+.spv-lin-line:hover, .spv-lin-line:focus, .spv-lin-line.hot { background: #f8f9fa; border-color: #dee2e6; outline: none; }
+.spv-lin-line:focus-visible { outline: 2px solid #345beb; }
+.spv-lin-line.not-choosable { color: #6c757d; cursor: default; }
+.spv-lin-line.chosen { font-weight: 700; border-color: #1a1a1a; background: #eef0fb; }
+.spv-lin-line.built { border-left: 3px solid #345beb; font-weight: 600; }
+.spv-lin-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid; flex: 0 0 auto; }
+.spv-lin-swatch.tier1 { background: #f8f9fa; border-color: #6c757d; }
+.spv-lin-swatch.tier2 { background: #eef0fb; border-color: #345beb; }
+.spv-lin-swatch.result { background: #e6f7f5; border-color: #10a395; }
+.spv-lin-tag, .spv-lin-mark { font-size: 0.65rem; color: #6c757d; border: 1px solid #dee2e6; border-radius: 3px; padding: 0 4px; }
+.spv-lin-mark:empty { display: none; }
+.spv-lin-mark { color: #0b6358; background: #d5efec; border-color: #10a395; }
+.spv-lin-svg { display: block; }
+.spv-lin-edge { stroke: #6c757d; stroke-width: 1; }
+.spv-lin-edge.built { stroke: #345beb; stroke-width: 1.5; }
+.spv-lin-arrowhead { fill: #6c757d; }
+.spv-lin-dot { stroke-width: 2; cursor: pointer; }
+.spv-lin-dot.tier1 { fill: #f8f9fa; stroke: #6c757d; }
+.spv-lin-dot.tier2 { fill: #eef0fb; stroke: #345beb; }
+.spv-lin-dot.result { fill: #e6f7f5; stroke: #10a395; }
+.spv-lin-dot.built, .spv-lin-dot.built-hint { stroke: #345beb; stroke-width: 3; }
+.spv-lin-dot.hot { stroke: #1a1a1a; stroke-width: 3; }
+.spv-lin-dot.chosen { stroke: #1a1a1a; stroke-width: 5; }
+.spv-lin-dot:focus { outline: none; stroke: #1a1a1a; stroke-width: 4; }
+.spv-lin-dotmark { font-size: 12px; font-weight: 700; fill: #0b6358; pointer-events: none; }
+.spv-lin-text { margin-top: 6px; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; max-height: 190px; overflow: auto; }
+.spv-lin-text-head { font-size: 0.8rem; font-weight: 700; margin-bottom: 2px; }
+.spv-lin-text-line { font-size: 0.75rem; margin-bottom: 2px; overflow-wrap: anywhere; }
+.spv-lin-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.spv-lin-create { height: 32px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; padding: 0 14px; }
+.spv-lin-form { margin-top: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #ffffff; }
+.spv-lin-error { font-size: 0.8rem; }

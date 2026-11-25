@@ -28,6 +28,10 @@ A tier file shared by several recipes is not an oddity and is not listed.
 
 The demo recipes and their data are made to show how the app behaves on difficult cases. Do not copy their patterns into a new recipe. A good recipe declares the entity id of every data table, starts a join from the data table and not from the metadata, and has a metadata with no line without an id.
 
+## Question for the owner's expected users (D-0629; documentation only, nothing is built for it)
+
+The lineage panel of HOME in Audit mode is the list with dots (mock-up G). The mock-up H (a drawn picture of the lineage with Graphviz) is kept as an option for later, not built. Question to put to the people she expects to use the app: would they prefer the drawn picture to the list with dots, to choose where an audit step is written? Whether the picture becomes a setting of a deployment is not decided (D-0629).
+
 ## How to keep this record
 
 Add a row when a deliberate oddity is added to a shipped recipe or data file; a test or a comment in the recipe must say why.

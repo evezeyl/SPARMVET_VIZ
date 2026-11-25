@@ -184,6 +184,17 @@ def seed_line(page: Page) -> str:
     return " ".join(page.locator(f"#plot_seed_{PID}").inner_text().split())
 
 
+def drawn_picture(page: Page, plot_id: str) -> str:
+    """The picture HOME drew for a plot: the image the app sent to the browser (a data URL), not a screenshot of its card.
+
+    WHY: a screenshot of the card depends on where the card sits in the window. The lineage panel above the plots
+    (Audit mode) pushes the card below the window edge, so after a change of mode the browser scrolls it into view
+    at another sub-pixel offset and its last pixel row differs (white or page grey) though the plot is the same
+    (measured 2026-11-25: image sources identical, rows 0..479 identical, only row 480 differed)."""
+    page.wait_for_selector(f"#{plot_id} img", timeout=60_000)
+    return page.locator(f"#{plot_id} img").first.get_attribute("src")
+
+
 def same_picture(a: bytes, b: bytes) -> bool:
     return ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),
                                  Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
@@ -285,30 +296,29 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_in_audit_mode(browser, tm
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=True)
-            exploration_before = page.locator(f"#plot_group_{PID}").screenshot()     # the recipe's plot, in Exploration
+            exploration_before = drawn_picture(page, f"plot_group_{PID}")     # the recipe's plot, in Exploration
             set_mode(page, "audit")
             settle(page, f"plot_group_{PID}")
             run_a, png_a, _ = export_run_and_png(page)
             assert run_a["seed_source_per_plot"][PID] == "default" and run_a["seeds_per_plot"][PID] == 0
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
-            shown = page.locator(f"#plot_group_{PID}")
-            before = shown.screenshot()
+            before = drawn_picture(page, f"plot_group_{PID}")
             btn = page.locator(f"#plot_reshuffle_btn_{PID}")
             expect(btn).to_be_visible(timeout=10_000)
             btn.click()
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
-            assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed"
+            assert drawn_picture(page, f"plot_group_{PID}") != before, "HOME ignored the pinned seed"
             # once pinned there is nothing left to reshuffle: the control disappears, and the plot shows no error
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0, timeout=8_000)
             assert page.locator(".shiny-output-error").count() == 0
             pinned_line = seed_line(page)
             assert re.fullmatch(r"seed \d+, pinned in the audit Remove the pinned seed", pinned_line), pinned_line
-            pinned_picture = shown.screenshot()
+            pinned_picture = drawn_picture(page, f"plot_group_{PID}")
             # D-0341: with the pin stored, Exploration shows the recipe's plot (no pin, no button, the recipe's seed); Audit mode shows the pin again
             set_mode(page, "exploration")
             settle(page, f"plot_group_{PID}")
-            assert same_picture(page.locator(f"#plot_group_{PID}").screenshot(), exploration_before), "Exploration drew the pinned seed"
+            assert drawn_picture(page, f"plot_group_{PID}") == exploration_before, "Exploration drew the pinned seed"
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
             set_mode(page, "audit")
@@ -320,8 +330,8 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_in_audit_mode(browser, tm
             settle(page, f"plot_group_{PID}")
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_be_visible(timeout=8_000)
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
-            assert same_picture(shown.screenshot(), before), "removing the pinned seed did not bring the plot back"
-            assert not same_picture(shown.screenshot(), pinned_picture)
+            assert drawn_picture(page, f"plot_group_{PID}") == before, "removing the pinned seed did not bring the plot back"
+            assert drawn_picture(page, f"plot_group_{PID}") != pinned_picture
             # after the way back the export holds no trace of the pin: the recipe's seed, no step, no word in the report
             run_c, png_c, z_c = export_run_and_png(page)
             assert run_c["seed_source_per_plot"][PID] == "default" and run_c["seeds_per_plot"][PID] == 0

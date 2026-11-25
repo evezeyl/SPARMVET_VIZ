@@ -168,6 +168,7 @@ class _Check:
         self.spec = spec()
         self.schema_ids: Set[str] = set()
         self.join_ids: Set[str] = set()
+        self.data_schema_ids: Set[str] = set()
         self.schema_bodies: Dict[str, Any] = {}
         self.audit_ids: Dict[str, str] = {}   # {audit id: where it stands}: an audit id is used once in the whole recipe
         self._drop_gate: Optional[key_drop.DropGate] = None   # the rule of a key drop (AU04), built on the first audit drop
@@ -372,10 +373,17 @@ class _Check:
                 if sid in seen:
                     self.add("S02", path, f"the id {sid!r} is also used in {seen[sid]}", "ids are shared by all schema sections: rename one")
                 seen[sid] = section
+                if section == "data_schemas":
+                    self.data_schema_ids.add(sid)
                 self.schema_ids.add(sid)
                 self.schema_bodies[sid] = schema
                 self.schema(schema, path, sid in unapplied)
         if "metadata_schema" in raw:
+            if not self.data_schema_ids:
+                # S10 (D-0636, D-0637): the metadata is the table that describes the samples of the other tables; declared alone it describes nothing. A recipe with the
+                # metadata and only look-up tables (`additional_datasets_schemas`) is refused too (D-0637); the words of the message are PROVISIONAL.
+                self.add("S10", "metadata_schema", "the recipe declares a metadata table and no table under data_schemas: a recipe with a single table declares it as a data table, "
+                         "the metadata is declared only when the recipe has another table of data", "move it to data_schemas under its own id, or add the data table it describes")
             self.schema_ids.add("metadata_schema")
             self.schema_bodies["metadata_schema"] = raw["metadata_schema"]
             self.schema(raw["metadata_schema"], "metadata_schema", "metadata_schema" in unapplied)
@@ -845,6 +853,8 @@ class _Check:
             ingredient_ids = self.ingredients(join.get("ingredients"), f"{path}.ingredients")
             lists = self.tiers(join, path, "J07", self.spec["elements"]["tiers"]["join"], "join")
             self.join_steps(lists, path, ingredient_ids)
+            self.metadata_join_rule(lists, path, ingredient_ids)
+            self.metadata_listed_not_joined_rule(lists, path, ingredient_ids)
             first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
             if first is not None:
                 self.filter_value_problems(lists, path, [(ingredient_ids[0], first)], joins=True, body=join)
@@ -898,6 +908,46 @@ class _Check:
                     if value is not None and not _is_column_names(value):
                         self.add("J05", f"{where}.{key_name}", f"{key_name} of a join is a column name or a list of column names; it is {value!r}",
                                  "write the column names as text: on: sample_id, or on: [sample_id, gene_id]")
+
+    def metadata_join_rule(self, lists: Dict[str, list], path: str, ingredient_ids: List[str]) -> None:
+        """J16 (D-0633, D-0586): a join that brings in the metadata has the data table first and joins the metadata onto it with `how: left` in tier 1.
+
+        Refused: a join whose first ingredient is the metadata while a data table is joined onto it, and a step that joins the metadata
+        with any other `how`, or with the as-of or the on-conditions join. Not affected: a join of look-up tables (`additional_datasets_schemas`)
+        and a join with no data table (the metadata alone, or the metadata with a look-up). A join outside tier 1 is refused by ST05.
+        The message wording is PROVISIONAL (D-0633: not decided).
+        """
+        meta = recipe_tiers.METADATA_SCHEMA
+        if meta not in ingredient_ids or not any(i in self.data_schema_ids for i in ingredient_ids):
+            return
+        fix = ("write the data table first (the first ingredient) and join the metadata onto it: "
+               f"- {{action: {action_names.JOIN}, right_ingredient: {meta}, 'on': <id column>, how: left}}")
+        if ingredient_ids[0] == meta:
+            self.add("J16", f"{path}.ingredients", f"the join starts from the metadata ({meta}) and joins a data table onto it: the metadata must come "
+                     "after the data table, as its left join (a line with no metadata then stays, marked, and no line of the data is lost)", fix)
+        for index, step in enumerate(lists.get("tier1") or [], start=1):
+            if not isinstance(step, dict) or step.get("right_ingredient") != meta:
+                continue
+            if step.get("action") != action_names.JOIN or step.get("how") != "left":
+                what = step.get("how") if step.get("action") == action_names.JOIN and "how" in step else (
+                    "no how (Polars then joins inner)" if step.get("action") == action_names.JOIN else step.get("action"))
+                self.add("J16", f"{path}.tier1.steps[{index}]", f"the metadata ({meta}) is joined with {what}: a join with the metadata is a left join "
+                         "from the data table, so that no line of the data is lost and a line with no metadata stays", fix)
+
+    def metadata_listed_not_joined_rule(self, lists: Dict[str, list], path: str, ingredient_ids: List[str]) -> None:
+        """J17 (D-0637): a joined table that lists the metadata among its ingredients but has no join step in tier 1 that joins it is refused.
+
+        The metadata that is the base of the join (the first and only table to start from) needs no join step; a join that starts from it and joins a
+        data table onto it is refused by J16. A look-up listed and not joined is not this check's business. The wording is PROVISIONAL (D-0637 gives the rule, not the words).
+        """
+        meta = recipe_tiers.METADATA_SCHEMA
+        if meta not in ingredient_ids or ingredient_ids[0] == meta:
+            return
+        if any(isinstance(step, dict) and step.get("right_ingredient") == meta for step in lists.get("tier1") or []):
+            return
+        self.add("J17", f"{path}.ingredients", f"the join lists the metadata ({meta}) among its ingredients but no step in tier 1 joins it: the metadata would not be in the table",
+                 f"join it with a left join from the data table: - {{action: {action_names.JOIN}, right_ingredient: {meta}, 'on': <id column>, how: left}}, "
+                 "or remove it from the ingredients")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
         """J12, J13 (advice, never block): a join of a table with itself; a join key declared as a float.

@@ -128,7 +128,7 @@ steps:
   - action: polars_join
     right_ingredient: metadata_schema
     'on': [sample_id]
-    how: inner
+    how: left
     maintain_order: left_right
   # Year arrives from metadata_schema — cast AFTER the join, not before
   - action: polars_cast

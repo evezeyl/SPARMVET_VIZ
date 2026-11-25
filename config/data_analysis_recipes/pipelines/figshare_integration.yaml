@@ -19,20 +19,6 @@ info:
 # ── Data Schemas ──────────────────────────────────────────────────────────────
 # Fragment files: figshare_integration/{input_fields,wrangling,output_fields}/
 data_schemas:
-  fg_metadata:
-    ui_label: "fg metadata"
-    description: "One row per animal sample with host species, specimen source, final diagnosis and infection site."
-    source:
-      type: local_tsv
-      path: ./libs/transformer/tests/data/fg_metadata.tsv
-    null_values: []
-    strip: true
-    completion:
-      marker: fg_metadata_not_in_original_data
-      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
-    input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
-    tier1: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
-
   fg_phenotypes:
     ui_label: "fg phenotypes"
     description: "One row per sample and antibiotic test (MIC id) with the breakpoint and the predicted phenotype."
@@ -61,17 +47,32 @@ data_schemas:
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
     tier1: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
 
+# The metadata of the recipe: its id is the reserved word `metadata_schema` (the recipe has other tables, D-0636).
+metadata_schema:
+  ui_label: "fg metadata"
+  description: "One row per animal sample with host species, specimen source, final diagnosis and infection site."
+  source:
+    type: local_tsv
+    path: ./libs/transformer/tests/data/fg_metadata.tsv
+  null_values: []
+  strip: true
+  completion:
+    marker: metadata_schema_not_in_original_data
+    meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
+  input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
+  tier1: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
+
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 joins:
   figshare_triple_join:
     ui_label: "figshare triple join"
-    description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes.
+    description: '3-way left join: phenotypes (data table first) -> genotypes -> metadata (a left join, D-0633).
       Phenotypes expand rows per antibiotic (MIC). Genotypes expand rows per detected
       gene. The join is intentionally "long" to enable faceted visualisation.'
     ingredients:
-    - dataset_id: fg_metadata
     - dataset_id: fg_phenotypes
     - dataset_id: fg_genotypes
+    - dataset_id: metadata_schema
     tier1: !include 'figshare_integration/wrangling/figshare_triple_join_steps.yaml'
 
 plot_defaults:

@@ -76,6 +76,8 @@ from utils import action_names, join_keys, recipe_tiers, step_effects, ui_schema
 
 ColumnsProvider = Callable[[str], Optional[Sequence[str]]]
 
+METADATA_NOT_A_PLACE = recipe_tiers.METADATA_NOT_A_PLACE
+
 
 @dataclass(frozen=True)
 class GraphProblem:
@@ -449,7 +451,13 @@ class RecipeGraph:
         """The nodes where an audit step may be written, in graph order: the tier 1 of every table, the tier 2 of a table that a plot reads
         (a tier 2 that no plot reads is run nowhere, S07, J14), and the tier 3 of every plot. A `DS:` node is never a place."""
         return [nid for nid, node in self._nodes.items()
-                if node.kind in ("T1", "T3") or (node.kind == "T2" and node.read_by_plot)]
+                if not self.is_metadata_node(nid) and (node.kind in ("T1", "T3") or (node.kind == "T2" and node.read_by_plot))]
+
+    def is_metadata_node(self, node_id: str) -> bool:
+        """True for the tier 1 and the tier 2 of the metadata table (`metadata_schema`): it is never an audit place (D-0632: no audit operation on it;
+        anonymisation is done before the data enters the app). The wording of the refusal is PROVISIONAL."""
+        node = self.node(node_id)
+        return node.kind in ("T1", "T2") and node.name == recipe_tiers.METADATA_SCHEMA and node.collection_kind == "schema"
 
     def below(self, place: str) -> List[str]:
         """Every node reached from a place downstream (a join reads the tier 1 of its ingredients, tier 2 reads tier 1, a plot reads its target's
@@ -464,6 +472,8 @@ class RecipeGraph:
         for nid in ids:
             if nid not in self._nodes:
                 return f"'{nid}' is not a place of this recipe."
+            if self.is_metadata_node(nid):
+                return METADATA_NOT_A_PLACE
             if nid not in allowed:
                 return (f"'{nid}' is not a place where a step can be written: it is the file as read, not a table after a tier." if self._nodes[nid].kind == "DS"
                         else f"'{nid}' is not a place where a step can be written: no plot reads that tier 2.")

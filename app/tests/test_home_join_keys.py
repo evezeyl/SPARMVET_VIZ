@@ -10,7 +10,7 @@ recipe had, so it always gave `[]` and nothing was ever refused. Now, for the de
 - a filter on a join key is ALLOWED; the audit step it makes carries `primary_key_warning=True` (the yellow banner in the dialog and
   the audit panel, a marker in the report); a filter on another column does not carry it.
 
-The closures `_col_drop_to_audit` and `_filter_send_to_audit` of `define_filter_audit_server` are cut out by `ast` and run with
+The closures `_col_drop_to_audit` and `_send_staged_to_audit` (the body of the "Send to Audit" button, shared with the lineage panel since D-0634) of `define_filter_audit_server` are cut out by `ast` and run with
 stand-ins for the session (as in `test_blueprint_tier_files.py`).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_home_join_keys.py -q
@@ -162,7 +162,7 @@ def test_with_no_recipe_nothing_is_judged_and_the_drop_goes_to_the_dialog():
 
 def send_filters(session, rows):
     pending = Val(rows)
-    closure("_filter_send_to_audit", **session.stand_ins(_pending_filters=pending))()
+    closure("_send_staged_to_audit", **session.stand_ins(_pending_filters=pending))()
 
 
 def test_a_filter_on_a_join_key_is_allowed_and_its_audit_step_carries_the_warning():

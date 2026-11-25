@@ -234,6 +234,8 @@ def choice_problem(graph: RecipeGraph, offered: Sequence[PlaceLine], chosen: Ite
         return "Choose at least one place."
     offered_ids = {line.place for line in offered} | set(extra_offered)
     for nid in ids:
+        if graph.has_node(nid) and graph.is_metadata_node(nid):
+            return recipe_tiers.METADATA_NOT_A_PLACE          # D-0632 (PROVISIONAL words): the metadata is never an audit place, offered or not
         if nid not in offered_ids:
             return f"'{nid}' is not one of the places offered for this step."
     return graph.chosen_places_problem(ids)

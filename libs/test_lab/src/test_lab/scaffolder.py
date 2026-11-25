@@ -182,7 +182,8 @@ class DataAnalysisRecipeScaffolder:
                 "action": action_names.JOIN,
                 "right_ingredient": ds_id,
                 "on": [self.join_key],  # yaml.dump will quote 'on' automatically
-                "how": "inner",
+                # the metadata is joined left onto the data table (D-0586, D-0633, check J16); other tables are joined inner
+                "how": "left" if ds_id == "metadata_schema" else "inner",
                 "maintain_order": "left_right",
             }
             for ds_id in right_ingredients

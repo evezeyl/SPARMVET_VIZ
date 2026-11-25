@@ -528,12 +528,13 @@ def test_on_every_shipped_recipe_the_option_is_a_list_or_not_offered_with_a_reas
 
 
 def test_the_demo_recipe_without_the_engine_reaches_what_the_names_prove_and_lists_the_rest_as_unsure():
-    """Names only (no engine plan): 17 of the 27 tables that hold the key are proved by the declared columns and the steps the walk reads; the 10 behind a step it does not
+    """Names only (no engine plan): 16 of the 27 tables that hold the key (the metadata table, 17th, is not an audit place and is listed as left alone, D-0632) are proved by the declared columns and the steps the walk reads; the 10 behind a step it does not
     read are listed as unsure with the engine's missing plan as the reason, never guessed (the engine's plan reaches all 27: `app/tests/test_remove_from_all_demo.py`).
     The 28th table (`APEC_STEC_virulence_genes`) has no sample column and is not mentioned."""
     raw, _ = load_recipe(ROOT / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml")
     option, graph = rfa.describe(raw, "sample_id"), build_graph(raw)
     assert option.offered and len(graph.collections()) == 28
-    assert len(option.places) == 17 and len(option.unsure) == 10 and {n.code for n in option.unsure} == {rfa.PLAN_FAILED}
+    assert len(option.places) == 16 and len(option.unsure) == 10 and {n.code for n in option.unsure} == {rfa.PLAN_FAILED}
+    assert [n.table for n in option.not_reached if n.code == rfa.METADATA_LEFT_ALONE] == ["metadata_schema"], "the metadata is named as left alone, with its reason"
     assert {p.table for p in option.places} | {n.table for n in option.not_reached} == set(graph.collections()) - {"APEC_STEC_virulence_genes"}
     assert not rfa.describe(raw, "Gene_name").offered and not rfa.describe(raw, "VF_gene").offered, "join columns that are not the declared key are not offered"

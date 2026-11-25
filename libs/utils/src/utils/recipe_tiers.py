@@ -33,6 +33,9 @@ from typing import Any, Dict, List, Set, Tuple
 # The sections that hold schemas. They share one id space with the joins (S02, X1).
 SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
 METADATA_SCHEMA = "metadata_schema"
+# D-0632 (PROVISIONAL words): one plain line for an audit step written at the metadata table, whatever the way it comes (the dialog, a stored session, a file).
+METADATA_NOT_A_PLACE = ("The metadata table is not a place for an audit step: no audit operation is made on it (anonymise the data before it enters the app; "
+                        "the recipe maker may tidy the metadata in its own tier 1).")
 
 
 # The second list of a tier body, in an audit recipe only (D-0332). The decided name; written here and nowhere else.

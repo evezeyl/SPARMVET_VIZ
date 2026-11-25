@@ -37,7 +37,7 @@ RECIPE_DIRS = ["pipelines", "retest", "templates"]
 NO_ID = {"", "-", '""'}
 
 # The table that holds the samples of a recipe, when it is not `metadata_schema`.
-COMMON_SET_TABLE = {"figshare_integration": "fg_metadata"}
+COMMON_SET_TABLE = {}   # figshare_integration declares its metadata as `metadata_schema` since D-0636
 
 # Ids a recipe keeps outside the set on purpose: {(recipe, table): (ids, reason)}.
 # Empty since the template `left_join_lesson` was deleted (D-0625); a new exception is named here with its reason.

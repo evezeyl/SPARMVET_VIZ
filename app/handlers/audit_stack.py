@@ -116,6 +116,12 @@ def _condition_summary(node: dict) -> str:
     return str(p)[:40]
 
 
+def _reaches_no_plot(node: dict, reach_of: dict) -> bool:
+    """True for an audit step written at a table (not a plot) that no plot is built from: the place is known to the graph and its plots list is empty."""
+    place = node.get("place") or ""
+    return bool(place) and not place.startswith("T3:") and place in reach_of and not reach_of[place]
+
+
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
     """The `target_dataset` of one plot: the plot entry holds it directly (D-0237); None when the plot or the key is absent."""
     for gspec in (raw_config.get("analysis_groups") or {}).values():
@@ -302,10 +308,20 @@ def define_server(input, output, session, *,
         audit_pending.set(False)
 
         total_nodes = sum(len(v) for v in by_plot.values())
+        # a step at a table no plot reads (D-0627): say in plain words that no figure changes, the table does (PROVISIONAL words)
+        no_plot_places: list[str] = []
+        graph = _graph_of_open_recipe()
+        if graph is not None:
+            for n in pending:
+                place = n.get("place") or ""
+                if place and not place.startswith("T3:") and graph.has_node(place) and not plots_below(graph, [place]) and place not in no_plot_places:
+                    no_plot_places.append(place)
+        extra = (f" No plot is built from {', '.join(place_words(p) for p in no_plot_places)}: no figure changes; the table changes and its audited file is in the export "
+                 f"(made in Audit mode).") if no_plot_places else ""
         _notify(
             f"✅ audit steps applied — {total_nodes} node(s) across "
-            f"{len({n.get('place') for v in by_plot.values() for n in v})} place(s).",
-            type="message", duration=4,
+            f"{len({n.get('place') for v in by_plot.values() for n in v})} place(s)." + extra,
+            type="message", duration=10 if extra else 4,
         )
 
     # ------------------------------------------------------------------
@@ -448,8 +464,10 @@ def define_server(input, output, session, *,
                 place = node.get("place") or ""
                 if place and place not in reach_of and graph.has_node(place):
                     reach_of[place] = plots_below(graph, [place])
-            committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", [])]
-            pending_here = [n for n in pending_all if open_plot in reach_of.get(n.get("place") or "", [])]
+            # a step written at a table that NO plot reads (LINEAGE-VIEW-G, D-0627) reaches no plot, so it belongs to none: it is listed with every plot's steps, with the words that no
+            # figure changes, so that its reason can be typed and the step removed (PROVISIONAL: listed on every plot)
+            committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
+            pending_here = [n for n in pending_all if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
         else:
             committed_here, pending_here = [], []
 
@@ -525,7 +543,9 @@ def define_server(input, output, session, *,
             place = node.get("place") or ""
             # a step at the plot's own tier 3 needs no word of reach (it is this plot's); a step at a table says where and how many plots are built from there
             place_banner = ui.div(
-                f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there.",
+                (f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there."
+                 if reach_of.get(place) else
+                 f"Written at {place_words(place)}: no plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode)."),
                 class_="spv-text-xxs text-muted",
             ) if place and not place.startswith("T3:") else ui.span()
 

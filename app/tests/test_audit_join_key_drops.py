@@ -252,7 +252,7 @@ def test_a_filter_on_either_column_of_a_two_name_key_carries_the_warning():
     for column, expected in (("VF_gene", True), ("Gene_name", True), ("year", False)):
         opened, notes = [], []
         closure(
-            "_filter_send_to_audit",
+            "_send_staged_to_audit",
             bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _can_write_audit_step=lambda: True,
             _pending_filters=Val([{"column": column, "op": "eq", "value": "x", "dtype": "String", "na": "remove"}]),
             active_home_subtab=Val("subtab_p1"), _notify=lambda message, **kw: notes.append(message),

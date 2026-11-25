@@ -21,7 +21,7 @@ Every case is a small recipe written to disk by `uncertain_drop_world.World` (no
 | c4 drop before an unpivot, a pivot after it (plot's own steps)            | T1:T         | yes       | PLAIN                                    | refused            |
 | d  a later formula, select, join on the column                            | T1:T         | no / yes  | PLAIN (the join: refused with the plan)  | written / refused  |
 | e  the steps the walk does not read (unpivot, str_split, explode, fill, describe, pivot) | T1:T | yes | PLAIN or INTENDED, per step              | refused            |
-| f  the shipped recipes: 8 places only blind, 18 uncertain with the plan   | T1:*         | yes       | refused with the plan / 9 INTENDED / 9 PLAIN | refused        |
+| f  the shipped recipes: 8 places only blind, 16 uncertain with the plan   | T1:*         | yes       | refused with the plan / 8 INTENDED / 8 PLAIN | refused        |
 | h  a same-named column of a join that changes meaning                    | T1:T         | yes       | MESSAGE (the refusal names it)           | refused            |
 | i  a formula that takes every column (pl.all())                          | T1:T         | yes / no  | SILENT                                   | refused / written  |
 | g  every INTENDED case: the other columns hold the same values            |              |           | asserted in each                         |                    |
@@ -381,7 +381,7 @@ def uncertain_places(recipe_id, with_plan):
     gate = key_drop.DropGate(loaded.raw, book if with_plan else None)
     found = []
     for nid in graph.nodes():
-        if graph.node(nid).kind == "DS":
+        if graph.node(nid).kind == "DS" or nid.split(":", 1)[1] == "metadata_schema":    # D-0632: the metadata table is not an audit place, so it holds no place to test
             continue
         for name in book.get(nid, len(graph.node(nid).steps)).names:
             facts = gate.facts(nid, name)
@@ -419,20 +419,21 @@ def test_the_places_of_the_shipped_recipes_that_the_walk_cannot_follow_without_t
         assert "read as a join key by" in text and f"the column {column!r} at {place}" in text and "Resolved plan" not in text and "\n" not in text, text
 
 
-# the eighteen places of `1_test_data_ST22_dummy` that stay unsure WITH the plan (the columns that flow into an unpivot the walk does not read): nine drops are INTENDED (six vanish at
-# the unpivot and change nothing after it; three are the marker columns of the completion of the ids, which flow on to the tables the joins publish and are gone there, D-0613), nine are
+# the sixteen places of `1_test_data_ST22_dummy` that stay unsure WITH the plan (the columns that flow into an unpivot the walk does not read; the two places of the metadata table are gone since it
+# is not an audit place, D-0632: they were one INTENDED and one PLAIN): eight drops are INTENDED (six vanish at
+# the unpivot and change nothing after it; two are the marker columns of the completion of the ids, which flow on to the tables the joins publish and are gone there, D-0613), eight are
 # named by an unpivot or a later step and stop the build (PLAIN). The marker columns were not there before the completion of the ids: they are the three places added to the fifteen.
 INTENDED_UNPIVOT = {("T1:Summary_quality", c) for c in ("quality_module", "taxon", "genotype", "phenotype", "cge_phenotype", "plasmid")}
-MARKER_PLACES = {("T1:Summary_quality", "Summary_quality_not_in_original_data"), ("T1:Quast", "Quast_not_in_original_data"), ("T1:metadata_schema", "metadata_schema_not_in_original_data")}
+MARKER_PLACES = {("T1:Summary_quality", "Summary_quality_not_in_original_data"), ("T1:Quast", "Quast_not_in_original_data")}   # the metadata's own marker place is gone: it is not a place (D-0632)
 INTENDED = INTENDED_UNPIVOT | MARKER_PLACES
 
 
-def test_the_eighteen_places_of_the_demo_recipe_that_stay_unsure_with_the_plan_are_all_refused_and_the_engine_would_give_nine_intended_tables_and_nine_plain_errors(tmp_path):
+def test_the_sixteen_places_of_the_demo_recipe_that_stay_unsure_with_the_plan_are_all_refused_and_the_engine_would_give_eight_intended_tables_and_eight_plain_errors(tmp_path):
     """Case f, part 2, on the shipped demo recipe and its data, read only (the stored tables of each build are in `tmp_path`). Each place is refused by `add_step` with the plan; the engine's
-    verdict on the drop, written as a step of the author in a copy of the recipe held in memory, is kept as a fact: six drops vanish at the unpivot and change nothing after it, three
-    are marker columns of the completion of the ids (gone from the tables that carry them, also from the table of a plot), nine are named by an unpivot or a later step and stop the build."""
+    verdict on the drop, written as a step of the author in a copy of the recipe held in memory, is kept as a fact: six drops vanish at the unpivot and change nothing after it, two
+    are marker columns of the completion of the ids (gone from the tables that carry them, also from the table of a plot), eight are named by an unpivot or a later step and stop the build."""
     orch, loaded, book, places = uncertain_places(DEMO, with_plan=True)
-    assert len(places) == 18 and INTENDED <= set(places)
+    assert len(places) == 16 and INTENDED <= set(places)
     before = build_all(orch, DEMO, loaded, tmp_path / "orig")
     assert not before.error
     intended, plain = [], []
@@ -453,7 +454,7 @@ def test_the_eighteen_places_of_the_demo_recipe_that_stay_unsure_with_the_plan_a
             assert not any(name.startswith("T3:") for name in changed), (place, column, changed)
         assert all(lost_and_rest(before.tables[name], after.tables[name]) == ({column}, set(), True) for name in changed), (place, column, changed)
         intended.append((place, column))
-    assert set(intended) == INTENDED and len(plain) == 9
+    assert set(intended) == INTENDED and len(plain) == 8, (len(intended), len(plain))
 
 
 def test_the_run_of_a_shipped_recipe_without_audit_steps_still_reuses_the_originals(tmp_path):
