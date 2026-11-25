@@ -252,6 +252,10 @@ The eleven readings of version 5 (10 to 12, 16, 18 to 22, 24, 25; "accept all, o
 - **Piece 6, the audit at the chosen places:** built (merge `2349ddac`). Still needed: question 2 (E) for the form of "remove from all the data"; the measure and log of effects (held).
 - **Piece 7, the red warning with "I have read this" in HOME, and the export pointing to the log:** built for the log of the ids (merges `c6d56f47`, `1f6cb913`; `id_log.yaml` in the bundle and a README line).
 - **The one big move of the shipped recipes** (data first, the entity id declared, the tables moved to the data schemas): built (merge `1f6cb913`), except what the handoff's line "For the owner at the end" lists; the exception: `figshare_triple_join` of `figshare_integration` still starts from `fg_metadata` (not rewritten).
+- **Audit views and audit recipe (D-0622, D-0618 to D-0626):** built, merge `80443853` (2026-11-25, not pushed). In Audit mode the T1 and T2 views show the audited tables; an export made in Audit mode writes the audit recipe, which runs on its own; typed values are trimmed (D-0626).
+- **The metadata is not an audit place (D-0632):** built, merge `578d69d2`. An audit operation never targets the metadata; the recipe maker may still tidy it in its tier 1.
+- **The metadata join rules (D-0633, D-0636, D-0637):** built, merge `578d69d2`, as recipe checks J16, J17 and S10 on every shipped recipe and template. A joined table that brings in the metadata starts from its data table and uses a left join in tier 1. `figshare_integration` declares `metadata_schema`. Open: a metadata that no joined table lists (not decided, D-0637).
+- **The lineage view in HOME (D-0629 to D-0631):** built, merge `578d69d2`: the data function `libs/utils/src/utils/lineage_data.py` and the panel "Path of the data" (Audit mode, collapsed; list plus dots, mock-up G, `app/modules/lineage_view.py`). Its words and three tier colours are PROVISIONAL. The Graphviz picture (mock-up H) is not built. Open: LINEAGE-UML-SYNC and the other lineage tasks in the handoff.
 
 ## 7. WHERE THE DETAIL IS, AND WHAT TO CHECK
 
