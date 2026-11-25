@@ -52,10 +52,7 @@ EXCUSES = [
     ("config/data_analysis_recipes/templates/simple_template.yaml", ("data_check",),
      "template: its data paths are placeholders, the files do not exist", "never: a template ships without data"),
 ]
-SET_EXCUSES = [
-    ("config/data_analysis_recipes/retest", "retest recipes reuse plot ids between them (genes_bar)",
-     "task REVIEWS-D0534-TO-REDO (the plot id work of D-0534); the ids are not renamed here"),
-]
+SET_EXCUSES = []
 EXCUSED = {(file, check) for file, checks, _, _ in EXCUSES for check in checks}
 SET_EXCUSED = {folder for folder, _, _ in SET_EXCUSES}
 
@@ -198,6 +195,12 @@ def test_a_plot_id_is_unique_over_the_recipes_of_a_deployment_folder(folder):
     errors = set_check_problems(find_data_analysis_recipes(folder))
     verdict = excuse_verdict(errors, rel(folder) in SET_EXCUSED)
     assert verdict is None, f"{rel(folder)}: {verdict}"
+
+
+def test_a_plot_id_is_unique_over_every_recipe_folder_shipped_together():
+    """A recipe copied from one folder into another (a template into a deployment) must not clash: all the folders under the recipes folder are checked as one set."""
+    errors = set_check_problems([p for folder in sorted(d for d in RECIPES_ROOT.iterdir() if d.is_dir()) for p in find_data_analysis_recipes(folder)])
+    assert errors == [], "\n".join(errors)
 
 
 def test_gallery_examples_pass_the_recipe_check_and_the_set_check():

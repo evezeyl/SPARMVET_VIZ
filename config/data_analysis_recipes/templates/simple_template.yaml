@@ -81,7 +81,7 @@ analysis_groups:
     ui_label: "📊 Summary overview"
     description: 📊 Summary overview
     plots:
-      value_by_group:
+      simple_value_by_group:
         ui_label: "Value By Group"
         description: "Distribution of measurement values per group."
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Beginner"}
