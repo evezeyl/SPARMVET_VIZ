@@ -73,7 +73,7 @@
     // ---- the list, grouped by independent graph
     data.groups.forEach(function (g) {
       var head = el("div", "spv-lin-group");
-      head.appendChild(el("span", "spv-lin-group-title", "Independent graph " + (g.id + 1) + " (" + g.nodes.length + " nodes)"));
+      head.appendChild(el("span", "spv-lin-group-title", "Independent graph " + (g.id + 1) + " (" + g.nodes.length + (g.nodes.length === 1 ? " node)" : " nodes)")));
       var all = el("button", "spv-lin-all", "All original tables of this group");
       all.type = "button";
       all.disabled = !g.first_places.length;

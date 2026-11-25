@@ -388,6 +388,10 @@ text: #5f5a3a | header bg: #fff3c4
 
 ID: `#gallery_guidance_accordion`
 
+### 9g. Lineage panel of HOME in Audit mode (PROVISIONAL, D-0634: the exact colours are not decided)
+
+The list and the dots of the panel "Path of the data" use existing tokens only (`theme.css` section 29): tier 1 = surface neutral `#f8f9fa` with the muted grey `#6c757d` as its line; tier 2 = the Violet tint `#eef0fb` with the primary blue `#345beb`; results (a plot, a result table no plot reads) = the teal tint `#e6f7f5` with the teal `#10a395`. The chosen place has a dark line (`#1a1a1a`, thick), what is built from it the blue ring, an audit step a text mark in the success-tint colours of section 1e (`#d5efec` on `#0b6358`). A table is a circle, a plot a square (a shape, not only a colour). Type scale: 0.85rem title, 0.8rem body, 0.75rem notes, 0.65rem tags.
+
 ---
 
 ## 10. Tab & Navigation Patterns

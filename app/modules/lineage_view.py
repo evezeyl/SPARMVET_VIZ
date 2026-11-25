@@ -123,6 +123,10 @@ def node_detail(lineage: Lineage, node: LineageNode, shown_steps: int = 6) -> Li
     and, for a node that can be chosen, what is built from it with the steps between it and each result on every path. `shown_steps`: how many steps of a path are listed before "..."."""
     names = {n.id: n for n in lineage.nodes}
     lines = [f"{node.name}: {TIER_WORDS[node.kind]}", node.what]
+    def short(i: str) -> str:
+        """A node in a path: the table or plot name, with "(tier 2)" for a tier 2 (the table's tier 1 and tier 2 have the same name)."""
+        n = names[i]
+        return f"{n.name} (tier 2)" if n.kind == "T2" else n.name
     if node.ui_label:
         lines.append(f"Name in the recipe: {node.ui_label}")
     if node.columns is not None:
@@ -141,12 +145,12 @@ def node_detail(lineage: Lineage, node: LineageNode, shown_steps: int = 6) -> Li
         label = f"{target.name} ({'plot' if target.kind == 'T3' else 'result table'})"
         paths = reach.paths.get(result, ())
         for k, path in enumerate(paths, start=1):
-            via = " -> ".join(names[n].name for n in path.nodes) if path.nodes else "itself"
+            via = " -> ".join(short(n) for n in path.nodes) if path.nodes else "itself"
             head = f"To {label}" + (f", path {k} of {len(paths)}" if len(paths) > 1 else "") + f": {via}; "
             if not path.steps:
                 lines.append(head + "no step on the way.")
             else:
-                shown = [f"{names[s.node].name} #{s.number}: {s.text}" for s in path.steps[:shown_steps]]
+                shown = [f"{short(s.node)} #{s.number}: {s.text}" for s in path.steps[:shown_steps]]
                 lines.append(head + _count(len(path.steps), "step", "steps") + ": " + "; ".join(shown) + (" ..." if len(path.steps) > shown_steps else ""))
     return lines
 
