@@ -32,7 +32,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -77,6 +77,7 @@ from app.modules.sidebar_open_panels import open_panels_after_redraw
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
+from app.handlers.lineage_handlers import define_server as define_lineage_server
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-096: same check as main.py's docs_available — duplicated here, not imported, to
@@ -1340,6 +1341,7 @@ def define_server(input, output, session, *,
             return ui.div(
                 home_title_banner,
                 theater_header,
+                ui.output_ui("lineage_panel_ui"),
                 groups_nav,
                 data_preview_section,
                 class_="theater-container-main"
@@ -1421,6 +1423,7 @@ def define_server(input, output, session, *,
         return ui.div(
             home_title_banner,
             theater_header,
+            ui.output_ui("lineage_panel_ui"),
             groups_nav,
             data_preview_section,
             class_="theater-container-main"
@@ -2753,5 +2756,17 @@ def define_server(input, output, session, *,
         notification_log=notification_log,
         recipe_raw=_recipe_raw,
         recipe_plans=_recipe_plans,
+    )
+
+    # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──
+    define_lineage_server(
+        input, output, session,
+        active_cfg=active_cfg,
+        in_audit=_in_audit,
+        recipe_plans=_recipe_plans,
+        home_state=home_state,
+        safe_input=safe_input,
+        notification_log=notification_log,
+        data_refresh_trigger=data_refresh_trigger,
     )
 
