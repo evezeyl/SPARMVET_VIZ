@@ -3,7 +3,7 @@
 Run (qa app features: every flag on, ghost save off):
     PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_lineage_view_browser.py -q
 and, for the test that the panel is absent without the audit:
-    PYTHONPATH=. SPARMVET_APP_FEATURES=pipeline-exploration-simple ./.venv/bin/python -m pytest app/tests/test_lineage_view_browser.py -q
+    PYTHONPATH=. SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy SPARMVET_APP_FEATURES=pipeline-exploration-simple ./.venv/bin/python -m pytest app/tests/test_lineage_view_browser.py -q
 
 What a person does on the demo `1_test_data_ST22_dummy`, and sees (the design expects: a list and a map with one entry for every node; a choice by click or keyboard; what is built from the
 chosen place is marked; one chosen place for each independent graph; the dialog opens with the chosen place ticked; a table no plot reads can take a step):
@@ -303,7 +303,9 @@ def test_a_step_at_a_result_table_no_plot_reads(ready: Page):
 
 @pytest.mark.skipif(LAUNCH in _INTERACTIVE_APP_FEATURES, reason="the launch has the audit")
 def test_without_the_audit_the_panel_is_never_drawn(page: Page, shiny_app: ShinyAppProc):
-    _load_data_analysis_recipe(page, shiny_app.url)
+    page.goto(shiny_app.url)                       # the recipe is named by SPARMVET_DATA_ANALYSIS_RECIPE (the app features hide the selector)
+    page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=90_000)
+    _wait_shiny(page, 60_000)
     expect(page.locator("#home_mode")).to_have_count(0)
     expect(page.locator("#acc_lineage")).to_have_count(0)
     expect(page.locator("#lineage_root")).to_have_count(0)
