@@ -79,8 +79,9 @@ def test_the_rule_holds_on_every_shipped_recipe(path):
     graph = build_graph(_load(path))
     ids = graph.places()
     assert not any(graph.node(i).kind == "DS" for i in ids)
-    originals = [f"T1:{t}" for t in graph.collections() if graph.node(f"T1:{t}").collection_kind == "schema"]
+    originals = [f"T1:{t}" for t in graph.collections() if graph.node(f"T1:{t}").collection_kind == "schema" and not graph.is_metadata_node(f"T1:{t}")]
     assert chosen_places_problem(graph, originals) is None
+    assert not any(graph.is_metadata_node(i) for i in ids)                  # D-0632: the metadata table is never a place
     for place in ids:
         under = graph.below(place)
         assert place not in under
@@ -95,4 +96,4 @@ def test_the_demo_counts_against_the_study():
     graph = build_graph(_load(str(DEMO)))
     assert len(graph.nodes()) == 87   # 85 before the one big move: the two QA tables made data schemas add their source nodes (D-0610)
     # the study counts 58 places by its definition (T1 of 28 tables, T2 of the 13 read by a plot, T3 of 17 plots) and 55 where the engine accepts a step
-    assert len(graph.places()) == 58
+    assert len(graph.places()) == 57   # 58 by the study's definition, less the metadata table (D-0632: it is not an audit place)
