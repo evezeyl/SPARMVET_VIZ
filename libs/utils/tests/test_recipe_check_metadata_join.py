@@ -108,3 +108,55 @@ def test_an_audit_copy_inherits_the_rule():
     raw["joins"]["AM"]["tier1"]["steps"][0]["how"] = "inner"
     found = [p for p in check_recipe(raw, "audit", catalogs=CATALOGS).problems if p.code == "J16"]
     assert len(found) == 1
+
+
+# J17 (D-0637): a joined table that lists the metadata but does not join it is refused. The wording is PROVISIONAL; the tests read the code, the path and the words
+# that name the table and the way out.
+
+def problems17(raw):
+    return [p for p in check_recipe(raw, "run", catalogs=CATALOGS).problems if p.code == "J17"]
+
+
+def test_j17_a_join_that_lists_the_metadata_and_joins_it_is_accepted():
+    assert problems17(base()) == []
+
+
+def test_j17_a_join_that_lists_the_metadata_and_does_not_join_it_is_refused():
+    raw = base()
+    raw["joins"]["AM"]["tier1"]["steps"] = []
+    found = problems17(raw)
+    assert len(found) == 1 and found[0].path == "joins.AM.ingredients"
+    assert META in found[0].message and "left join" in found[0].fix and "remove it" in found[0].fix
+
+
+def test_j17_a_step_that_joins_another_table_does_not_count_as_joining_the_metadata():
+    raw = base()
+    raw["joins"]["AM"]["ingredients"].append({"dataset_id": "B"})
+    raw["joins"]["AM"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]
+    assert len(problems17(raw)) == 1
+
+
+def test_j17_a_join_that_does_not_list_the_metadata_is_not_affected():
+    assert problems17(valid()) == []
+
+
+def test_j17_a_look_up_listed_and_not_joined_is_not_this_checks_business():
+    raw = base()
+    raw["additional_datasets_schemas"] = {"L": copy.deepcopy(raw["data_schemas"]["B"])}
+    raw["joins"]["AM"]["ingredients"].append({"dataset_id": "L"})
+    assert problems17(raw) == []
+
+
+def test_j17_the_metadata_as_the_first_ingredient_with_no_join_is_the_base_and_accepted():
+    raw = base()
+    raw["joins"]["AM"]["ingredients"] = [{"dataset_id": META}]
+    raw["joins"]["AM"]["tier1"]["steps"] = []
+    assert problems17(raw) == []
+
+
+def test_j17_the_metadata_first_with_a_data_table_is_left_to_j16():
+    raw = base()
+    raw["joins"]["AM"]["ingredients"] = [{"dataset_id": META}, {"dataset_id": "A"}]
+    raw["joins"]["AM"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "A", "on": "id", "how": "left"}]
+    assert problems17(raw) == []
+    assert len(problems(raw)) == 1

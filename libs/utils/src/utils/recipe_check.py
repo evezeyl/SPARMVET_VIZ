@@ -380,8 +380,8 @@ class _Check:
                 self.schema(schema, path, sid in unapplied)
         if "metadata_schema" in raw:
             if not self.data_schema_ids:
-                # S10 (D-0636): the metadata is the table that describes the samples of the other tables; declared alone it describes nothing. PROVISIONAL: a recipe with the
-                # metadata and only look-up tables (`additional_datasets_schemas`) is refused too, because a look-up is not a table of results (the owner has not said).
+                # S10 (D-0636, D-0637): the metadata is the table that describes the samples of the other tables; declared alone it describes nothing. A recipe with the
+                # metadata and only look-up tables (`additional_datasets_schemas`) is refused too (D-0637); the words of the message are PROVISIONAL.
                 self.add("S10", "metadata_schema", "the recipe declares a metadata table and no table under data_schemas: a recipe with a single table declares it as a data table, "
                          "the metadata is declared only when the recipe has another table of data", "move it to data_schemas under its own id, or add the data table it describes")
             self.schema_ids.add("metadata_schema")
@@ -854,6 +854,7 @@ class _Check:
             lists = self.tiers(join, path, "J07", self.spec["elements"]["tiers"]["join"], "join")
             self.join_steps(lists, path, ingredient_ids)
             self.metadata_join_rule(lists, path, ingredient_ids)
+            self.metadata_listed_not_joined_rule(lists, path, ingredient_ids)
             first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
             if first is not None:
                 self.filter_value_problems(lists, path, [(ingredient_ids[0], first)], joins=True, body=join)
@@ -932,6 +933,21 @@ class _Check:
                     "no how (Polars then joins inner)" if step.get("action") == action_names.JOIN else step.get("action"))
                 self.add("J16", f"{path}.tier1.steps[{index}]", f"the metadata ({meta}) is joined with {what}: a join with the metadata is a left join "
                          "from the data table, so that no line of the data is lost and a line with no metadata stays", fix)
+
+    def metadata_listed_not_joined_rule(self, lists: Dict[str, list], path: str, ingredient_ids: List[str]) -> None:
+        """J17 (D-0637): a joined table that lists the metadata among its ingredients but has no join step in tier 1 that joins it is refused.
+
+        The metadata that is the base of the join (the first and only table to start from) needs no join step; a join that starts from it and joins a
+        data table onto it is refused by J16. A look-up listed and not joined is not this check's business. The wording is PROVISIONAL (D-0637 gives the rule, not the words).
+        """
+        meta = recipe_tiers.METADATA_SCHEMA
+        if meta not in ingredient_ids or ingredient_ids[0] == meta:
+            return
+        if any(isinstance(step, dict) and step.get("right_ingredient") == meta for step in lists.get("tier1") or []):
+            return
+        self.add("J17", f"{path}.ingredients", f"the join lists the metadata ({meta}) among its ingredients but no step in tier 1 joins it: the metadata would not be in the table",
+                 f"join it with a left join from the data table: - {{action: {action_names.JOIN}, right_ingredient: {meta}, 'on': <id column>, how: left}}, "
+                 "or remove it from the ingredients")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
         """J12, J13 (advice, never block): a join of a table with itself; a join key declared as a float.

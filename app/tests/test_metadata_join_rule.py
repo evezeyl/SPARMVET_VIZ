@@ -1,4 +1,4 @@
-"""Every recipe the repository holds follows the metadata join rule (J16; D-0586, D-0633): the data table first, the metadata joined left in tier 1.
+"""Every recipe the repository holds follows the metadata join rule (J16, J17; D-0586, D-0633, D-0637): the data table first, the metadata joined left in tier 1, and a joined table that lists the metadata joins it.
 
 Scans every `.yaml` file of `config/`, `assets/` (shipped recipes, Gallery bundles, templates) and of the staged recipes of the equality check, and checks the ones that
 declare joins and a `metadata_schema` with the recipe check. A scan finds nothing when a rule is broken only if it cannot find a recipe, so the first test pins that
@@ -39,7 +39,7 @@ RECIPES = _with_metadata_joins()
 
 def _j15(path, base=None):
     result = check_recipe_file(path, "run", catalogs=CATALOGS)
-    return [p.text(path.name) for p in result.problems if p.code == "J16"]
+    return [p.text(path.name) for p in result.problems if p.code in ("J16", "J17")]
 
 
 def test_recipes_with_a_metadata_join_are_found():
@@ -66,3 +66,19 @@ def test_the_scan_can_fail_when_a_shipped_recipe_goes_back_to_an_inner_join(tmp_
     step.write_text(text.replace("how: left", "how: inner"))
     found = _j15(work / source.name)
     assert len(found) == 1 and "Plasmid_Profile_Joint" in found[0]
+
+
+def test_the_scan_can_fail_when_a_shipped_recipe_lists_the_metadata_and_does_not_join_it(tmp_path):
+    """J17 (D-0637): remove the join step of the metadata from a shipped table that lists it and the scan sees it."""
+    import shutil
+    source = ROOT / "config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml"
+    work = tmp_path / "pipelines"
+    work.mkdir()
+    shutil.copy(source, work / source.name)
+    shutil.copytree(source.with_suffix(""), work / source.stem)
+    step = work / source.stem / "assembly/Plasmid_Profile_Joint.yaml"
+    text = step.read_text()
+    assert "right_ingredient: metadata_schema" in text
+    step.write_text(text.replace("right_ingredient: metadata_schema", "right_ingredient: Plasmid_Profile"))
+    found = [p for p in check_recipe_file(work / source.name, "run", catalogs=CATALOGS).problems if p.code == "J17"]
+    assert len(found) == 1 and "Plasmid_Profile_Joint" in found[0].path
