@@ -251,7 +251,11 @@ def test_every_shipped_recipe_opens_and_its_stored_tables_are_the_golden_tables(
             assert gb.table_record(pl.read_parquet(anchors / f"{collection}__T2.parquet")) == expected["t2"][collection], f"{recipe_id} {collection} tier 2"
         else:
             assert expected["t2"][collection] == expected["t1"][collection], "T2 = T1 in the baseline too"
-    assert not list(anchors.glob("*__T3_*")), "no shipped recipe has a tier 3, so no tier 3 file"
+    # a tier 3 file exists for a plot that writes tier-3 steps and for no other, and holds the golden table of that plot (a plot without them adds no file, D-0343)
+    wanted = {f"{plot['target_dataset']}__T3_{pid}.parquet": pid for g in (raw.get("analysis_groups") or {}).values() for pid, plot in (g.get("plots") or {}).items() if plot.get("tier3", {}).get("steps")}
+    assert {p.name for p in anchors.glob("*__T3_*")} == set(wanted)
+    for name, pid in wanted.items():
+        assert gb.table_record(pl.read_parquet(anchors / name)) == expected["plots"][pid], f"{recipe_id} plot {pid} tier 3"
     # the second opening of the same recipe builds nothing
     assert stores_during(lambda: run_opening(orchestrator, recipe_id, raw, keys, anchors, draw=no_draw)) == []
 

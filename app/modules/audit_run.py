@@ -136,6 +136,21 @@ class AuditRun:
                 found[table] = frames
         return found
 
+    def audited_table_lazy(self, table: str, tier: str) -> Optional[pl.LazyFrame]:
+        """The table `table` at `tier` ("T1" or "T2") as the copy builds it, LAZY, read from the stored table of this run; None when the copy leaves it as the original's (a table
+        beside the audit steps). A table with no tier-2 steps has no tier 2 of its own: its audited T2 is its audited T1. This is the table HOME's T1 and T2 views show in Audit mode
+        and the export writes as `T1_data_audited.tsv` / `T2_data_audited.tsv` (D-0622, D-0619); the export writes no T2 file for a table whose T2 equals its T1 (it is the T1 file)."""
+        if tier not in ("T1", "T2"):
+            raise ValueError("tier is T1 or T2")
+        run = self.tables.get(table)
+        if run is None:
+            return None
+        if tier == "T2" and run.t2 not in (FROM_ORIGINAL, NONE) and run.t2_path is not None:
+            return pl.scan_parquet(run.t2_path)
+        if (tier == "T1" or run.t2 == NONE) and run.t1 != FROM_ORIGINAL:
+            return pl.scan_parquet(run.t1_path)
+        return None
+
     @property
     def built_tables(self) -> List[str]:
         """The stages built now, as `<table> T1` or `<table> T2`, in the order of the recipe."""

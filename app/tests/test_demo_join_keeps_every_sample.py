@@ -81,7 +81,7 @@ def built(tmp_path_factory):
 def test_the_expected_numbers_are_the_ones_of_the_decision():
     expected = _expected()
     assert (len(expected["samples"]), len(expected["without_mlst"]), expected["rows"]) == (27, 12, 27)
-    assert expected["no_id_lines"] == 3
+    assert expected["no_id_lines"] == 0, "the three lines with no usable id were removed from the shipped file (D-0624)"
 
 
 def test_every_sample_of_the_metadata_is_in_the_table(built):
@@ -149,7 +149,7 @@ def test_the_description_numbers_are_true(built):
     text = built["raw"]["joins"]["demo_join"]["description"]
     assert f"{len(expected['without_mlst'])} of the {len(expected['samples'])} samples have no MLST result" in text
     assert f"{expected['rows']} rows for {len(expected['samples'])} samples" in text
-    assert f"the {expected['no_id_lines']} metadata lines that have no sample id" in text
+    assert "no sample id" not in text, "no metadata line is without an id any more (D-0624)"
     assert "can appear on more than one row" not in str(built["raw"]["data_schemas"]["MLST"]["description"])
     assert "more than once" not in text
 
@@ -160,7 +160,7 @@ def test_the_recipe_description_shown_in_home_says_the_same_numbers(built):
     text = built["raw"]["info"]["description"]
     assert f"{len(expected['without_mlst'])} samples have no MLST result" in text
     assert f"{expected['rows']} rows for {len(expected['samples'])} samples" in text
-    assert f"the {expected['no_id_lines']} metadata lines that have no sample id" in text
+    assert "no sample id" not in text
     assert "several MLST results" not in text
 
 

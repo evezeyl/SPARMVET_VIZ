@@ -10,7 +10,7 @@ What a person does on the demo `1_test_data_ST22_dummy`, and sees (D-0535: "the 
 - with the tier 1 of ResFinder ticked, a reason, Apply: the audit panel says "Written at Table ResFinder (tier 1)"; the data table of the plot has fewer rows than before; the plot's badge
   says the step was written upstream and that its table changed;
 - the plot "MLST Bar" (a plot beside ResFinder) has no audited step and the same rows as before; its badge says so;
-- Compare shows the Original and the Audited pane of the AMR plot; the data table of the AMR plot in T1 shows the original (it is not audited);
+- Compare shows the Original and the Audited pane of the AMR plot; the data table of the AMR plot in T1 shows the AUDITED table (D-0622: the same filter, written at tier 1 of ResFinder) and its badge says "audited";
 - "Remove step" (the bin of the card) gives every plot its original table back.
 
 Mutation index (each seen failing): MUTATION B1 `_audited_t3_lf` returns None (HOME never reads the audited table: the rows do not drop); MUTATION B2 `choice_problem` skips the rule (the nested choice is accepted).
@@ -156,9 +156,10 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("written at a table this plot is built from", timeout=20_000)
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed")
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("plot(s) are built from there")
-    # the table views other than T3 show the originals in Audit mode
+    # D-0622: in Audit mode the T1 view of ResFinder shows the audited table (the step was written at its tier 1), and its badge says so
     set_view(page, "T1")
-    wait_preview_rows(page, rows_before, timeout=30_000)
+    wait_preview_rows(page, rows_after, timeout=30_000)
+    expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, audited", timeout=20_000)
     set_view(page, "T3")
     wait_preview_rows(page, rows_after, timeout=30_000)
     # Compare: the Original and the Audited pane
@@ -342,7 +343,7 @@ def test_a_drop_of_a_key_column_at_a_table_whose_join_reads_it_is_refused_in_the
 
 def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_and_remove_gives_it_back(ready: Page, expected):
     """Demo step T2: the same mechanism at the tier 2 of a table that a plot reads. The dialog lists the tier 2 of ResFinder (it has tier-2 steps and the AMR Heatmap reads it);
-    with it ticked, the audit card says "Table ResFinder (tier 2)", the plot and its T3 table are audited, the T1 and T2 views still show the original tables, and the bin
+    with it ticked, the audit card says "Table ResFinder (tier 2)", the plot, its T3 table and the T2 view are audited, the T1 view still shows the original table (the step is at tier 2), and the bin
     gives the original back."""
     page = ready
     _amr_plot(page)
@@ -366,9 +367,11 @@ def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_a
         wait_preview_rows(page, expected["amr_after"], timeout=60_000)
         expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)
         set_view(page, "T2")
-        wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+        wait_preview_rows(page, expected["amr_after"], timeout=30_000)       # D-0622: the T2 view shows the audited tier 2
+        expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T2, audited", timeout=20_000)
         set_view(page, "T1")
-        wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+        wait_preview_rows(page, expected["amr_before"], timeout=30_000)      # a step at tier 2 leaves tier 1 as it is
+        expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
         set_view(page, "T3")
         wait_preview_rows(page, expected["amr_after"], timeout=30_000)
     finally:

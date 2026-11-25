@@ -2,13 +2,10 @@ sample_id	Source	Year	Country
 SYN_19953992	Parent	2024	Norway
 SYN_32804061	Broiler	2024	France
 SYN_68041514	Broiler	2024	Germany
-	Parent	2024	France
--	Broiler	2024	Norway
 SYN_78540144	Broiler	2024	Norway
 SYN_10481154	Parent	2024	Germany
 SYN_42120616	Broiler	2024	France
 SYN_56337687	Layer	2024	Norway
-""	Layer	2024	Norway
 SYN_92436648	Broiler	2024	Germany
 SYN_86102363	Broiler		Norway
 SYN_57921853	Parent	2024	Norway

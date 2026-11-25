@@ -132,7 +132,9 @@ def test_the_two_tables_that_compute_across_samples_change_for_the_others_too_an
 def test_the_table_that_does_not_hold_the_key_is_what_it_was_and_the_originals_stored_tables_are_byte_identical(demo):
     assert demo.tables(demo.run, NO_KEY_TABLE)["T1"].equals(demo.tables(demo.untouched, NO_KEY_TABLE)["T1"])
     assert demo.run.tables[NO_KEY_TABLE].t1 == "original", "it is not even rebuilt"
-    assert {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(demo.anchors.glob("*.parquet"))} == demo.stored
+    now = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(demo.anchors.glob("*.parquet"))}
+    assert {n: h for n, h in now.items() if n in demo.stored} == demo.stored, "every table stored before is byte-identical"
+    assert all("__T3_" in n for n in set(now) - set(demo.stored)), "the only new files are the original's table of a plot with its own tier 3 step (the amr_heatmap, D-0623)"
 
 
 def test_the_steps_are_one_per_reached_table_at_tier_1_in_the_audit_list_and_the_originals_lists_are_untouched(demo):

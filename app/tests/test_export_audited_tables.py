@@ -146,3 +146,58 @@ def test_the_steps_of_the_three_tiers_in_one_export_the_t3_file_equals_the_table
     assert [(r["id"], r["written_at"]) for r in record["steps_by_place"]] == [(n["id"], n["place"]) for n in nodes]
     assert audited_names(members) == ["C/T1_data_audited.tsv", "C/T2_data_audited.tsv", "T/T1_data_audited.tsv"]
     assert tsv(members, "C/T2_data_audited.tsv").height == tsv(members, "C/T1_data_audited.tsv").height - 1, "the step at tier 2 of C removes s1 there and no more"
+
+
+# -------------------------------------------------------------------------------------- the audit recipe of the bundle (D-0622)
+def test_an_export_made_in_audit_mode_holds_the_audit_recipe_and_running_it_alone_gives_the_exported_tables(tmp_path, monkeypatch):
+    """The recipe in `audit_recipe/`, written to a folder of its own and run by a fresh orchestrator, builds the audited tables and the table of the plot that the bundle holds."""
+    import yaml
+    from app.modules.cache_keys import load_data_analysis_recipe
+    from app.modules.orchestrator import DataOrchestrator
+    nodes = [step("T1:T", column="group", value="A", reason="keep group A"), step("T2:C", column="sample_id", op="ne", value="s1", reason="s1 failed"),
+             step("T3:p", column="sample_id", op="ne", value="s2", reason="s2 failed")]
+    members, world = export(tmp_path / "audit", monkeypatch, nodes, in_audit=True)
+    assert [n for n in members if n.startswith("audit_recipe/")] == ["audit_recipe/tiny_audited.yaml"]
+    folder = tmp_path / "from_the_bundle"
+    folder.mkdir()
+    (folder / "tiny_audited.yaml").write_bytes(members["audit_recipe/tiny_audited.yaml"])
+    recipe = yaml.safe_load(members["audit_recipe/tiny_audited.yaml"])
+    assert recipe["id"] == "tiny_audited" and "audit recipe of 'tiny'" in recipe["info"]["description"]
+    for node, words in zip(nodes, ("keep group A", "s1 failed", "s2 failed")):
+        assert any(node["id"] in str(s.get("comment", "")) and words in str(s.get("comment", "")) for s in _all_steps(recipe)), f"the step {node['id']} is visible with its reason"
+    clear_data_analysis_recipe_cache()
+    fresh = DataOrchestrator(folder, world.data_dir)
+    anchors = tmp_path / "alone"
+    t1_c = fresh.materialize_tier1("tiny_audited", "C", anchors / "C.parquet").collect()
+    t2_c = fresh.materialize_tier2("tiny_audited", "C", anchors / "C.parquet").collect()
+    plot = fresh.materialize_tier3("tiny_audited", "p", anchors).collect()
+    as_text = lambda frame: frame.with_columns(pl.all().cast(pl.String))
+    assert as_text(t1_c).equals(tsv(members, "C/T1_data_audited.tsv")) and as_text(t2_c).equals(tsv(members, "C/T2_data_audited.tsv"))
+    assert as_text(plot).equals(tsv(members, "C/T3_data_p.tsv")), "the table of the plot, from the audit recipe alone, is the exported T3 file"
+    assert load_data_analysis_recipe(folder / "tiny_audited.yaml").raw["id"] == "tiny_audited"
+    clear_data_analysis_recipe_cache()
+
+
+def _all_steps(recipe):
+    for body in list(recipe.get("data_schemas", {}).values()) + list(recipe.get("joins", {}).values()):
+        for tier in ("tier1", "tier2"):
+            yield from (body.get(tier) or {}).get("steps", [])
+    for group in recipe.get("analysis_groups", {}).values():
+        for entry in group["plots"].values():
+            yield from (entry.get("tier3") or {}).get("steps", [])
+
+
+def test_the_readme_and_the_report_say_where_the_audit_recipe_is_and_what_running_it_gives(tmp_path, monkeypatch):
+    members, _ = export(tmp_path, monkeypatch, [step("T1:T")], in_audit=True)
+    readme, report = members["README.txt"].decode(), members["report.qmd"].decode()
+    for text in (readme, report):
+        assert "audit_recipe/tiny_audited.yaml is the audit recipe of 'tiny'" in text
+        assert "a recipe like any other" in text and "gives the audited tables and plots of this export" in text
+    assert "audit_recipe/<id>_audited.yaml" in readme.split("Contents:")[1]
+
+
+def test_no_audit_recipe_in_an_export_with_no_step_or_made_in_exploration_mode(tmp_path, monkeypatch):
+    for label, nodes, in_audit in (("nostep", [], True), ("expl", [step("T1:T")], False)):
+        members, _ = export(tmp_path / label, monkeypatch, nodes, in_audit=in_audit)
+        assert not any(n.startswith("audit_recipe/") for n in members), label
+        assert "audit_recipe" not in members["README.txt"].decode().replace("audit_recipe_", ""), label

@@ -153,10 +153,18 @@ def test_the_rerun_of_a_directly_plotted_table_equals_the_result_table_of_home(l
 
 
 def test_the_bundle_has_no_audited_content_when_no_step_was_audited(loaded):
-    """The mode starts on Exploration and the data choice on T3: no T3 files, no filter trace."""
-    names = _download(loaded).namelist()
-    assert not any("T3_data" in n for n in names)
+    """The mode starts on Exploration and the data choice on T3. The only T3 file is the table of a plot whose recipe writes its own tier-3 steps (amr_heatmap, D-0623):
+    it is the Result, said so in the README, and nothing is audited: no audited table file, no filter trace, no audit step in the record."""
+    archive = _download(loaded)
+    names = archive.namelist()
+    t3_files = sorted(n.rsplit("/", 1)[-1] for n in names if "T3_data" in n)
+    assert t3_files == ["T3_data_amr_heatmap.tsv"], t3_files
+    assert not any("_audited" in n for n in names)
     assert not any(n.endswith("FILTERS.txt") for n in names)
+    readme = archive.read(next(n for n in names if n.endswith("/README.txt"))).decode()
+    sentence = next(l for l in readme.splitlines() if "T3_data_amr_heatmap.tsv:" in l)
+    assert "after its own steps of the recipe" in sentence and "no audit step reaches this plot" in sentence
+    assert "Audit steps, each at the place it is written" not in readme
 
 
 def _plots(z: zipfile.ZipFile) -> dict:
@@ -192,7 +200,7 @@ def test_exploration_filters_are_never_exported(loaded):
         after = _download(loaded)
         names = after.namelist()
         assert not any(n.endswith("FILTERS.txt") for n in names), "exploration filters were written to the bundle"
-        assert not any("T3_data" in n for n in names), "T3 data written without an audited step"
+        assert [n.rsplit("/", 1)[-1] for n in names if "T3_data" in n] == ["T3_data_amr_heatmap.tsv"], "T3 data written without an audited step, other than the plot with its own recipe tier-3 steps"
         old, new = _plots(before), _plots(after)
         assert old.keys() == new.keys() and old
         for name in old:

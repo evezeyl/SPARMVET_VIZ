@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   ui_label: 'Demo: Abromics Pipeline (High Integrity)'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
-  description: "Synchronized test data for Phase 4/5 demonstration. The table `demo join` starts from the MLST table, in which the app has added a line for each sample of the metadata that has no MLST result: 12 samples have no MLST result and show the sequence type \"Non Determined\"; the metadata is brought in by a left join, so the table has one row per sample (27 rows for 27 samples). Not in the table, on purpose: the 3 metadata lines that have no sample id (the app lists them in its warning; they match no MLST line and stay as they are in the metadata file)."
+  description: "Synchronized test data for Phase 4/5 demonstration. The table `demo join` starts from the MLST table, in which the app has added a line for each sample of the metadata that has no MLST result: 12 samples have no MLST result and show the sequence type \"Non Determined\"; the metadata is brought in by a left join, so the table has one row per sample (27 rows for 27 samples)."
   version: '1.2'
 data_schemas:
   MLST:
@@ -23,7 +23,7 @@ data_schemas:
     tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   ui_label: "metadata"
-  description: "One row per metadata line (source, year, country). In this demo file no sample id is repeated, but three lines have no usable id (one empty, one written as a dash, one written as two quote marks); all three are read as missing."
+  description: "One row per metadata line (source, year, country). In this demo file no sample id is repeated and every line has an id (the three lines that had none were removed from the file, D-0624)."
   source:
     type: local_tsv
     path: ./assets/test_data/demo_high_integrity/test_data_test_metadata_20260307_105756.tsv
@@ -40,7 +40,7 @@ metadata_schema:
 joins:
   demo_join:
     ui_label: "demo join"
-    description: "One row per sample: the MLST table has one row per sample and scheme, and the app has added a line for each sample of the metadata that has no MLST result: in this demo data 12 of the 27 samples have no MLST result and show the sequence type \"Non Determined\" (an unknown result, not a missing value). The table starts from the MLST table (data first) and brings in the source, year and country by a left join with the metadata, so no sample is lost: 27 rows for 27 samples. Not in the table, on purpose: the 3 metadata lines that have no sample id (they match no MLST line and are not removed from the metadata file; the app lists them in its warning)."
+    description: "One row per sample: the MLST table has one row per sample and scheme, and the app has added a line for each sample of the metadata that has no MLST result: in this demo data 12 of the 27 samples have no MLST result and show the sequence type \"Non Determined\" (an unknown result, not a missing value). The table starts from the MLST table (data first) and brings in the source, year and country by a left join with the metadata, so no sample is lost: 27 rows for 27 samples."
     ingredients:
     # the data comes first: the left join keeps every line of the MLST table, which the app completed with every sample of the metadata
     - dataset_id: MLST
@@ -48,7 +48,7 @@ joins:
     labels: {sequence_type: Sequence Type, source: Source, year: Year, country: Country}
     tier1:
       steps:
-      # a left join: every line of the MLST table stays; the 3 metadata lines that have no sample id match none of them, so they are not in this table
+      # a left join: every line of the MLST table stays (the app completed it with every id of the metadata)
       - action: polars_join
         right_ingredient: metadata_schema
         'on': [sample_id]

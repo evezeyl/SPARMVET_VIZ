@@ -78,6 +78,7 @@ def world(tmp_path_factory):
 def test_a_filter_at_tier1_of_resfinder_reaches_the_plots_below_it_and_no_plot_beside_it(world):
     audit = world.audit()
     nodes = [world.node()]
+    original = world.original_table("amr_heatmap")   # read first: the heatmap has its own tier 3 step (D-0623), so reading its original stores its T3 file
     before = world.stored()
     affected = set(audit.affected_plots(RECIPE_ID, nodes, world.plans))
     assert "amr_heatmap" in affected and affected <= world.below, (affected, world.below)
@@ -85,7 +86,6 @@ def test_a_filter_at_tier1_of_resfinder_reaches_the_plots_below_it_and_no_plot_b
     assert beside and all(audit.plot_lazy(RECIPE_ID, p, nodes, world.plans) is None for p in beside), "a plot beside the place reads its original table"
     assert "mlst_bar" in beside
     audited = audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect()
-    original = world.original_table("amr_heatmap")
     assert world.victim in original["sample_id"].to_list() and world.victim not in audited["sample_id"].to_list()
     assert audited.height < original.height
     assert audited.equals(original.filter(pl.col("sample_id") != world.victim)), "the audited table is the original without the sample, nothing else changed"
@@ -267,6 +267,19 @@ def test_inside_a_tier_the_steps_run_in_the_order_written_and_a_step_on_a_column
     text = str(excinfo.value)
     assert "T3:amr_heatmap" in text and "audit_" in text and excinfo.value.place == "T3:amr_heatmap", text
     assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet")), "a refused run leaves nothing it built"
+
+
+def test_an_audit_filter_at_tier3_of_amr_heatmap_offers_and_uses_not_detected_and_runs_after_the_recipes_own_tier3_step(world):
+    """D-0623: the recipe's own tier-3 step of amr_heatmap fills the empty gene with NOT DETECTED. The value is offered by the dialog's list at that place (the table the plot reads)
+    and an audit filter on it keeps exactly those rows: the audit step runs AFTER the recipe's own step (before it, the gene is empty and the filter would keep nothing)."""
+    from app.modules.t3_audit_engine import value_choices
+    original = world.original_table("amr_heatmap")
+    assert original["gene"].null_count() == 0 and "NOT DETECTED" in original["gene"].to_list(), "the recipe's own step ran: no empty gene"
+    assert "NOT DETECTED" in value_choices(original.lazy(), "gene"), "the dialog's list offers the value"
+    node = world.node(place="T3:amr_heatmap", params={"column": "gene", "op": "in", "value": ["NOT DETECTED"], "dtype": "String", "na": "remove"})
+    got = world.audit().plot_lazy(RECIPE_ID, "amr_heatmap", [node], world.plans).collect()
+    assert got.height == original.filter(pl.col("gene") == "NOT DETECTED").height > 0
+    assert set(got["gene"].to_list()) == {"NOT DETECTED"}
 
 
 def test_a_tier3_step_a_key_drop_and_a_missing_plot_are_judged_like_any_other_place(world):

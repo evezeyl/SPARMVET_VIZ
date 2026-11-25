@@ -11,7 +11,7 @@ recipe). The Home header gives you **two choices**:
   plot, the Result; nothing is saved) or **Audit** (create audit steps; the plot becomes the
   audited plot).
 - **Table to view**: **Source** (a source table as read from its file), **T1**, **T2** or **T3**.
-  In Audit mode, T3 is the audited table.
+  In Audit mode, T1, T2 and T3 are the audited tables where an audit step changes them.
 
 **Audit mode** is where you remove bad samples, drop unused columns, and filter to the rows you
 want to publish. The audit pipeline is what records every decision you commit in Audit mode so
@@ -76,11 +76,15 @@ The three choices above write the step at the **tier 3 of each plot** (the last 
 
 A typical case: the app adds a line "missing in original table" for a sample that has no ResFinder result (its marker column `ResFinder_not_in_original_data` is true). To leave these lines out of every analysis built from ResFinder, filter on the marker at the **tier 1 of ResFinder**, with your reason. The plots that read those lines lose them; a plot that does not read them keeps its table and says so in its badge; a plot built from other tables is not touched.
 
-The audit card says where the step is written. **Compare** shows the original plot beside the audited one. The **T1** and **T2** views always show the original tables; the **T3** view is the audited table. The 🗑 of the card removes the step and every table and plot is built again without it. In the export, the data file of each plot built from the table is the audited table, `t3_steps.yaml` lists the step with its place (`steps_by_place`), the README and the report say where it is written and why, and the reproducibility recipe holds it as a plain step at the end of that tier (for a step at a plot: in the plot's own tier-3 steps).
+The audit card says where the step is written. **Compare** shows the original plot beside the audited one. In Audit mode the **T1**, **T2** and **T3** views show the **audited** tables where an audit step changes them: the badge says "Viewing: T1, audited". A table that no step changes shows the original, and the badge says "Viewing: T1, original" with "no audit step changes this table". **Source** is always the file as read, and in Exploration mode every view shows the original. The 🗑 of the card removes the step and every table and plot is built again without it. In the export, the data file of each plot built from the table is the audited table, `t3_steps.yaml` lists the step with its place (`steps_by_place`), the README and the report say where it is written and why, and the reproducibility recipe holds it as a plain step at the end of that tier (for a step at a plot: in the plot's own tier-3 steps).
 
 ### The table files of an export made in Audit mode
 
 When you export while you are in **Audit** mode, every table that an audit step changes (the table of the place and every table built from it) comes **twice** in the bundle: the original, `T1_data.tsv`, and the audited one beside it, `T1_data_audited.tsv` (and `T2_data_audited.tsv` for a tier 2). The original is unchanged. A table that no step changes has only its original, and a step written at a plot changes no table, only that plot's `T3_data_<plot>.tsv`. The README and the report tell, for each table, which file is which and which steps made the difference. When you export in **Exploration** mode the table files are the originals only, whatever audit steps exist (the plots and the plot's T3 file are always audited); the README says so.
+
+### The audit recipe of an export made in Audit mode
+
+An export made in **Audit** mode also holds the **audit recipe**, in the folder `audit_recipe/`, as `<recipe id>_audited.yaml`. It is the original recipe with every audit step written at its place (the end of the tier you wrote it at), each step with its reason, its audit id and its day in its own comment, so no step is hidden. It is a recipe like any other: put the file in the recipes folder with the data it reads (its data references are the original's, the data files are not copied) and the app opens it and runs it on its own, with no session. Running it gives the audited tables at every tier and the audited plot tables of that export. The README and the report say where it is.
 
 ### Propagation preview — read it before you confirm
 

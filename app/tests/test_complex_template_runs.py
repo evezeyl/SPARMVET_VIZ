@@ -4,7 +4,7 @@ Found 2026-11-14 (D, proposals point 5): the template named `assets/test_data/ge
 exist, so a user who copied the template could not run it. The files are small synthetic data made by
 `assets/scripts/make_complex_template_data.py` (fixed seed; no real data). The tests also check the cases the files hold
 (a missing gene list, a missing country, a tie) and that both tables hold exactly the same sample ids (Eve, 2026-11-17, D-0205: one set
-of ids for all the datasets of a recipe). The example of a left join whose ids do not match is the recipe `left_join_lesson`.
+of ids for all the datasets of a recipe).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_complex_template_runs.py -q
 """
