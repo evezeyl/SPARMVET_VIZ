@@ -1,0 +1,904 @@
+{
+ "nodes": [
+  {
+   "id": "DS:Summary",
+   "kind": "DS",
+   "name": "Summary",
+   "read": false
+  },
+  {
+   "id": "T1:Summary",
+   "kind": "T1",
+   "name": "Summary",
+   "read": false
+  },
+  {
+   "id": "T2:Summary",
+   "kind": "T2",
+   "name": "Summary",
+   "read": false
+  },
+  {
+   "id": "DS:Summary_quality",
+   "kind": "DS",
+   "name": "Summary_quality",
+   "read": false
+  },
+  {
+   "id": "T1:Summary_quality",
+   "kind": "T1",
+   "name": "Summary_quality",
+   "read": false
+  },
+  {
+   "id": "T2:Summary_quality",
+   "kind": "T2",
+   "name": "Summary_quality",
+   "read": false
+  },
+  {
+   "id": "DS:Quality_metrics",
+   "kind": "DS",
+   "name": "Quality_metrics",
+   "read": false
+  },
+  {
+   "id": "T1:Quality_metrics",
+   "kind": "T1",
+   "name": "Quality_metrics",
+   "read": false
+  },
+  {
+   "id": "T2:Quality_metrics",
+   "kind": "T2",
+   "name": "Quality_metrics",
+   "read": false
+  },
+  {
+   "id": "DS:Detailed_summary",
+   "kind": "DS",
+   "name": "Detailed_summary",
+   "read": false
+  },
+  {
+   "id": "T1:Detailed_summary",
+   "kind": "T1",
+   "name": "Detailed_summary",
+   "read": false
+  },
+  {
+   "id": "T2:Detailed_summary",
+   "kind": "T2",
+   "name": "Detailed_summary",
+   "read": false
+  },
+  {
+   "id": "DS:FastP",
+   "kind": "DS",
+   "name": "FastP",
+   "read": false
+  },
+  {
+   "id": "T1:FastP",
+   "kind": "T1",
+   "name": "FastP",
+   "read": false
+  },
+  {
+   "id": "T2:FastP",
+   "kind": "T2",
+   "name": "FastP",
+   "read": false
+  },
+  {
+   "id": "DS:Quast",
+   "kind": "DS",
+   "name": "Quast",
+   "read": false
+  },
+  {
+   "id": "T1:Quast",
+   "kind": "T1",
+   "name": "Quast",
+   "read": false
+  },
+  {
+   "id": "T2:Quast",
+   "kind": "T2",
+   "name": "Quast",
+   "read": false
+  },
+  {
+   "id": "DS:Bracken",
+   "kind": "DS",
+   "name": "Bracken",
+   "read": false
+  },
+  {
+   "id": "T1:Bracken",
+   "kind": "T1",
+   "name": "Bracken",
+   "read": false
+  },
+  {
+   "id": "T2:Bracken",
+   "kind": "T2",
+   "name": "Bracken",
+   "read": false
+  },
+  {
+   "id": "DS:ResFinder",
+   "kind": "DS",
+   "name": "ResFinder",
+   "read": false
+  },
+  {
+   "id": "T1:ResFinder",
+   "kind": "T1",
+   "name": "ResFinder",
+   "read": false
+  },
+  {
+   "id": "T2:ResFinder",
+   "kind": "T2",
+   "name": "ResFinder",
+   "read": true
+  },
+  {
+   "id": "DS:MLST",
+   "kind": "DS",
+   "name": "MLST",
+   "read": false
+  },
+  {
+   "id": "T1:MLST",
+   "kind": "T1",
+   "name": "MLST",
+   "read": false
+  },
+  {
+   "id": "T2:MLST",
+   "kind": "T2",
+   "name": "MLST",
+   "read": false
+  },
+  {
+   "id": "DS:VirulenceFinder",
+   "kind": "DS",
+   "name": "VirulenceFinder",
+   "read": false
+  },
+  {
+   "id": "T1:VirulenceFinder",
+   "kind": "T1",
+   "name": "VirulenceFinder",
+   "read": false
+  },
+  {
+   "id": "T2:VirulenceFinder",
+   "kind": "T2",
+   "name": "VirulenceFinder",
+   "read": false
+  },
+  {
+   "id": "DS:QA_year_types",
+   "kind": "DS",
+   "name": "QA_year_types",
+   "read": false
+  },
+  {
+   "id": "T1:QA_year_types",
+   "kind": "T1",
+   "name": "QA_year_types",
+   "read": false
+  },
+  {
+   "id": "T2:QA_year_types",
+   "kind": "T2",
+   "name": "QA_year_types",
+   "read": true
+  },
+  {
+   "id": "DS:QA_aggregated_no_key",
+   "kind": "DS",
+   "name": "QA_aggregated_no_key",
+   "read": false
+  },
+  {
+   "id": "T1:QA_aggregated_no_key",
+   "kind": "T1",
+   "name": "QA_aggregated_no_key",
+   "read": false
+  },
+  {
+   "id": "T2:QA_aggregated_no_key",
+   "kind": "T2",
+   "name": "QA_aggregated_no_key",
+   "read": true
+  },
+  {
+   "id": "DS:APEC_STEC_virulence_genes",
+   "kind": "DS",
+   "name": "APEC_STEC_virulence_genes",
+   "read": false
+  },
+  {
+   "id": "T1:APEC_STEC_virulence_genes",
+   "kind": "T1",
+   "name": "APEC_STEC_virulence_genes",
+   "read": false
+  },
+  {
+   "id": "T2:APEC_STEC_virulence_genes",
+   "kind": "T2",
+   "name": "APEC_STEC_virulence_genes",
+   "read": false
+  },
+  {
+   "id": "DS:metadata_schema",
+   "kind": "DS",
+   "name": "metadata_schema",
+   "read": false
+  },
+  {
+   "id": "T1:metadata_schema",
+   "kind": "T1",
+   "name": "metadata_schema",
+   "read": false
+  },
+  {
+   "id": "T2:metadata_schema",
+   "kind": "T2",
+   "name": "metadata_schema",
+   "read": false
+  },
+  {
+   "id": "T1:FastP_with_metadata",
+   "kind": "T1",
+   "name": "FastP_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T2:FastP_with_metadata",
+   "kind": "T2",
+   "name": "FastP_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T1:Quast_with_metadata",
+   "kind": "T1",
+   "name": "Quast_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T2:Quast_with_metadata",
+   "kind": "T2",
+   "name": "Quast_with_metadata",
+   "read": true
+  },
+  {
+   "id": "T1:Bracken_with_metadata",
+   "kind": "T1",
+   "name": "Bracken_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T2:Bracken_with_metadata",
+   "kind": "T2",
+   "name": "Bracken_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T1:ResFinder_with_metadata",
+   "kind": "T1",
+   "name": "ResFinder_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T2:ResFinder_with_metadata",
+   "kind": "T2",
+   "name": "ResFinder_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T1:MLST_with_metadata",
+   "kind": "T1",
+   "name": "MLST_with_metadata",
+   "read": false
+  },
+  {
+   "id": "T2:MLST_with_metadata",
+   "kind": "T2",
+   "name": "MLST_with_metadata",
+   "read": true
+  },
+  {
+   "id": "T1:QC_Reads_Anchor",
+   "kind": "T1",
+   "name": "QC_Reads_Anchor",
+   "read": false
+  },
+  {
+   "id": "T2:QC_Reads_Anchor",
+   "kind": "T2",
+   "name": "QC_Reads_Anchor",
+   "read": true
+  },
+  {
+   "id": "T1:Summary_phenotype_length_fragmentation",
+   "kind": "T1",
+   "name": "Summary_phenotype_length_fragmentation",
+   "read": false
+  },
+  {
+   "id": "T2:Summary_phenotype_length_fragmentation",
+   "kind": "T2",
+   "name": "Summary_phenotype_length_fragmentation",
+   "read": true
+  },
+  {
+   "id": "T1:ST22_Anchor",
+   "kind": "T1",
+   "name": "ST22_Anchor",
+   "read": false
+  },
+  {
+   "id": "T2:ST22_Anchor",
+   "kind": "T2",
+   "name": "ST22_Anchor",
+   "read": true
+  },
+  {
+   "id": "T1:AR1_MLST_Serotype_Virulence",
+   "kind": "T1",
+   "name": "AR1_MLST_Serotype_Virulence",
+   "read": false
+  },
+  {
+   "id": "T2:AR1_MLST_Serotype_Virulence",
+   "kind": "T2",
+   "name": "AR1_MLST_Serotype_Virulence",
+   "read": false
+  },
+  {
+   "id": "T1:QA_AMR_per_sample",
+   "kind": "T1",
+   "name": "QA_AMR_per_sample",
+   "read": false
+  },
+  {
+   "id": "T2:QA_AMR_per_sample",
+   "kind": "T2",
+   "name": "QA_AMR_per_sample",
+   "read": true
+  },
+  {
+   "id": "T1:QA_ST_with_NA",
+   "kind": "T1",
+   "name": "QA_ST_with_NA",
+   "read": false
+  },
+  {
+   "id": "T2:QA_ST_with_NA",
+   "kind": "T2",
+   "name": "QA_ST_with_NA",
+   "read": true
+  },
+  {
+   "id": "T1:QA_L50_integer",
+   "kind": "T1",
+   "name": "QA_L50_integer",
+   "read": false
+  },
+  {
+   "id": "T2:QA_L50_integer",
+   "kind": "T2",
+   "name": "QA_L50_integer",
+   "read": true
+  },
+  {
+   "id": "T1:QA_fanout_exhibit",
+   "kind": "T1",
+   "name": "QA_fanout_exhibit",
+   "read": false
+  },
+  {
+   "id": "T2:QA_fanout_exhibit",
+   "kind": "T2",
+   "name": "QA_fanout_exhibit",
+   "read": true
+  },
+  {
+   "id": "T1:QA_population_zscore",
+   "kind": "T1",
+   "name": "QA_population_zscore",
+   "read": false
+  },
+  {
+   "id": "T2:QA_population_zscore",
+   "kind": "T2",
+   "name": "QA_population_zscore",
+   "read": true
+  },
+  {
+   "id": "T3:qc_reads_horizontal_barplot",
+   "kind": "T3",
+   "name": "qc_reads_horizontal_barplot",
+   "read": false
+  },
+  {
+   "id": "T3:assembly_quality_dotplot",
+   "kind": "T3",
+   "name": "assembly_quality_dotplot",
+   "read": false
+  },
+  {
+   "id": "T3:phenotype_genome_length_fragmentation",
+   "kind": "T3",
+   "name": "phenotype_genome_length_fragmentation",
+   "read": false
+  },
+  {
+   "id": "T3:amr_heatmap",
+   "kind": "T3",
+   "name": "amr_heatmap",
+   "read": false
+  },
+  {
+   "id": "T3:virulence_bar",
+   "kind": "T3",
+   "name": "virulence_bar",
+   "read": false
+  },
+  {
+   "id": "T3:mlst_bar",
+   "kind": "T3",
+   "name": "mlst_bar",
+   "read": false
+  },
+  {
+   "id": "T3:year_distribution",
+   "kind": "T3",
+   "name": "year_distribution",
+   "read": false
+  },
+  {
+   "id": "T3:virulence_variants",
+   "kind": "T3",
+   "name": "virulence_variants",
+   "read": false
+  },
+  {
+   "id": "T3:miaou",
+   "kind": "T3",
+   "name": "miaou",
+   "read": false
+  },
+  {
+   "id": "T3:qa_amr_genes_per_sample",
+   "kind": "T3",
+   "name": "qa_amr_genes_per_sample",
+   "read": false
+  },
+  {
+   "id": "T3:qa_sequence_type_missing",
+   "kind": "T3",
+   "name": "qa_sequence_type_missing",
+   "read": false
+  },
+  {
+   "id": "T3:qa_year_label",
+   "kind": "T3",
+   "name": "qa_year_label",
+   "read": false
+  },
+  {
+   "id": "T3:qa_l50_integer",
+   "kind": "T3",
+   "name": "qa_l50_integer",
+   "read": false
+  },
+  {
+   "id": "T3:qa_facet_by_mapping",
+   "kind": "T3",
+   "name": "qa_facet_by_mapping",
+   "read": false
+  },
+  {
+   "id": "T3:qa_fanout_rows_per_sample",
+   "kind": "T3",
+   "name": "qa_fanout_rows_per_sample",
+   "read": false
+  },
+  {
+   "id": "T3:qa_aggregated_no_key",
+   "kind": "T3",
+   "name": "qa_aggregated_no_key",
+   "read": false
+  },
+  {
+   "id": "T3:qa_population_zscore",
+   "kind": "T3",
+   "name": "qa_population_zscore",
+   "read": false
+  }
+ ],
+ "edges": [
+  [
+   "DS:Summary",
+   "T1:Summary"
+  ],
+  [
+   "T1:Summary",
+   "T2:Summary"
+  ],
+  [
+   "T1:Summary",
+   "T1:Summary_phenotype_length_fragmentation"
+  ],
+  [
+   "DS:Summary_quality",
+   "T1:Summary_quality"
+  ],
+  [
+   "T1:Summary_quality",
+   "T2:Summary_quality"
+  ],
+  [
+   "T1:Summary_quality",
+   "T1:Summary_phenotype_length_fragmentation"
+  ],
+  [
+   "T1:Summary_quality",
+   "T1:QA_ST_with_NA"
+  ],
+  [
+   "DS:Quality_metrics",
+   "T1:Quality_metrics"
+  ],
+  [
+   "T1:Quality_metrics",
+   "T2:Quality_metrics"
+  ],
+  [
+   "DS:Detailed_summary",
+   "T1:Detailed_summary"
+  ],
+  [
+   "T1:Detailed_summary",
+   "T2:Detailed_summary"
+  ],
+  [
+   "DS:FastP",
+   "T1:FastP"
+  ],
+  [
+   "T1:FastP",
+   "T2:FastP"
+  ],
+  [
+   "T1:FastP",
+   "T1:FastP_with_metadata"
+  ],
+  [
+   "T1:FastP",
+   "T1:QC_Reads_Anchor"
+  ],
+  [
+   "T1:FastP",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "DS:Quast",
+   "T1:Quast"
+  ],
+  [
+   "T1:Quast",
+   "T2:Quast"
+  ],
+  [
+   "T1:Quast",
+   "T1:Quast_with_metadata"
+  ],
+  [
+   "T1:Quast",
+   "T1:QC_Reads_Anchor"
+  ],
+  [
+   "T1:Quast",
+   "T1:QA_L50_integer"
+  ],
+  [
+   "T1:Quast",
+   "T1:QA_population_zscore"
+  ],
+  [
+   "DS:Bracken",
+   "T1:Bracken"
+  ],
+  [
+   "T1:Bracken",
+   "T2:Bracken"
+  ],
+  [
+   "T1:Bracken",
+   "T1:Bracken_with_metadata"
+  ],
+  [
+   "T1:Bracken",
+   "T1:QC_Reads_Anchor"
+  ],
+  [
+   "DS:ResFinder",
+   "T1:ResFinder"
+  ],
+  [
+   "T1:ResFinder",
+   "T2:ResFinder"
+  ],
+  [
+   "T1:ResFinder",
+   "T1:ResFinder_with_metadata"
+  ],
+  [
+   "T1:ResFinder",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "T1:ResFinder",
+   "T1:QA_AMR_per_sample"
+  ],
+  [
+   "T1:ResFinder",
+   "T1:QA_fanout_exhibit"
+  ],
+  [
+   "T2:ResFinder",
+   "T3:amr_heatmap"
+  ],
+  [
+   "DS:MLST",
+   "T1:MLST"
+  ],
+  [
+   "T1:MLST",
+   "T2:MLST"
+  ],
+  [
+   "T1:MLST",
+   "T1:MLST_with_metadata"
+  ],
+  [
+   "T1:MLST",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "T1:MLST",
+   "T1:AR1_MLST_Serotype_Virulence"
+  ],
+  [
+   "DS:VirulenceFinder",
+   "T1:VirulenceFinder"
+  ],
+  [
+   "T1:VirulenceFinder",
+   "T2:VirulenceFinder"
+  ],
+  [
+   "T1:VirulenceFinder",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "T1:VirulenceFinder",
+   "T1:AR1_MLST_Serotype_Virulence"
+  ],
+  [
+   "T1:VirulenceFinder",
+   "T1:QA_fanout_exhibit"
+  ],
+  [
+   "DS:QA_year_types",
+   "T1:QA_year_types"
+  ],
+  [
+   "T1:QA_year_types",
+   "T2:QA_year_types"
+  ],
+  [
+   "T2:QA_year_types",
+   "T3:qa_year_label"
+  ],
+  [
+   "T2:QA_year_types",
+   "T3:qa_facet_by_mapping"
+  ],
+  [
+   "DS:QA_aggregated_no_key",
+   "T1:QA_aggregated_no_key"
+  ],
+  [
+   "T1:QA_aggregated_no_key",
+   "T2:QA_aggregated_no_key"
+  ],
+  [
+   "T2:QA_aggregated_no_key",
+   "T3:qa_aggregated_no_key"
+  ],
+  [
+   "DS:APEC_STEC_virulence_genes",
+   "T1:APEC_STEC_virulence_genes"
+  ],
+  [
+   "T1:APEC_STEC_virulence_genes",
+   "T2:APEC_STEC_virulence_genes"
+  ],
+  [
+   "T1:APEC_STEC_virulence_genes",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "T1:APEC_STEC_virulence_genes",
+   "T1:AR1_MLST_Serotype_Virulence"
+  ],
+  [
+   "DS:metadata_schema",
+   "T1:metadata_schema"
+  ],
+  [
+   "T1:metadata_schema",
+   "T2:metadata_schema"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:FastP_with_metadata"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:Quast_with_metadata"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:Bracken_with_metadata"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:ResFinder_with_metadata"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:MLST_with_metadata"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:QC_Reads_Anchor"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:ST22_Anchor"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:AR1_MLST_Serotype_Virulence"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:QA_AMR_per_sample"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:QA_fanout_exhibit"
+  ],
+  [
+   "T1:metadata_schema",
+   "T1:QA_population_zscore"
+  ],
+  [
+   "T1:FastP_with_metadata",
+   "T2:FastP_with_metadata"
+  ],
+  [
+   "T1:Quast_with_metadata",
+   "T2:Quast_with_metadata"
+  ],
+  [
+   "T2:Quast_with_metadata",
+   "T3:assembly_quality_dotplot"
+  ],
+  [
+   "T2:Quast_with_metadata",
+   "T3:miaou"
+  ],
+  [
+   "T1:Bracken_with_metadata",
+   "T2:Bracken_with_metadata"
+  ],
+  [
+   "T1:ResFinder_with_metadata",
+   "T2:ResFinder_with_metadata"
+  ],
+  [
+   "T1:MLST_with_metadata",
+   "T2:MLST_with_metadata"
+  ],
+  [
+   "T2:MLST_with_metadata",
+   "T3:mlst_bar"
+  ],
+  [
+   "T2:MLST_with_metadata",
+   "T3:year_distribution"
+  ],
+  [
+   "T1:QC_Reads_Anchor",
+   "T2:QC_Reads_Anchor"
+  ],
+  [
+   "T2:QC_Reads_Anchor",
+   "T3:qc_reads_horizontal_barplot"
+  ],
+  [
+   "T1:Summary_phenotype_length_fragmentation",
+   "T2:Summary_phenotype_length_fragmentation"
+  ],
+  [
+   "T2:Summary_phenotype_length_fragmentation",
+   "T3:phenotype_genome_length_fragmentation"
+  ],
+  [
+   "T1:ST22_Anchor",
+   "T2:ST22_Anchor"
+  ],
+  [
+   "T2:ST22_Anchor",
+   "T3:virulence_bar"
+  ],
+  [
+   "T2:ST22_Anchor",
+   "T3:virulence_variants"
+  ],
+  [
+   "T1:AR1_MLST_Serotype_Virulence",
+   "T2:AR1_MLST_Serotype_Virulence"
+  ],
+  [
+   "T1:QA_AMR_per_sample",
+   "T2:QA_AMR_per_sample"
+  ],
+  [
+   "T2:QA_AMR_per_sample",
+   "T3:qa_amr_genes_per_sample"
+  ],
+  [
+   "T1:QA_ST_with_NA",
+   "T2:QA_ST_with_NA"
+  ],
+  [
+   "T2:QA_ST_with_NA",
+   "T3:qa_sequence_type_missing"
+  ],
+  [
+   "T1:QA_L50_integer",
+   "T2:QA_L50_integer"
+  ],
+  [
+   "T2:QA_L50_integer",
+   "T3:qa_l50_integer"
+  ],
+  [
+   "T1:QA_fanout_exhibit",
+   "T2:QA_fanout_exhibit"
+  ],
+  [
+   "T2:QA_fanout_exhibit",
+   "T3:qa_fanout_rows_per_sample"
+  ],
+  [
+   "T1:QA_population_zscore",
+   "T2:QA_population_zscore"
+  ],
+  [
+   "T2:QA_population_zscore",
+   "T3:qa_population_zscore"
+  ]
+ ]
+}
