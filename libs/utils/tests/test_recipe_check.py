@@ -517,6 +517,14 @@ def test_set_a_bad_audit_of_gives_no_exemption_even_when_the_exemption_is_on():
         assert x5(recipes), bad
 
 
+def test_set_a_value_of_a_bad_form_gives_no_grouping_even_when_it_names_a_recipe_of_the_set():
+    """Pins `audit_original_of`: the value must have the form of a recipe id, even if a recipe of that exact name is in the set."""
+    for bad in ("orig b", "orig/x", "Orig!"):
+        recipes = make_set(**{bad: ["p"], "copy": ["p"]})
+        recipes["copy"]["info"]["audit_of"] = bad
+        assert x5(recipes), bad
+
+
 def test_set_by_default_audit_of_changes_nothing_a_forged_key_does_not_share_ids():
     """D-0534 stands: with the default, a key nothing verifies exempts nothing, for every case a to e."""
     for recipes in (copy_of(make_set(orig=["p", "q"], forged=["p", "q"]), "forged", "orig"),
