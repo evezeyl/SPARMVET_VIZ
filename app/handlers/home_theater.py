@@ -1983,7 +1983,7 @@ def define_server(input, output, session, *,
                 active_home_subtab.set(val)
             if home_state is not None:
                 cur = home_state.get()
-                if cur.get("active_plot_subtab") != val or cur.get("audit_shown_place") != shown_place:
+                if (cur.get("active_plot_subtab") or "") != val or cur.get("audit_shown_place") != shown_place:
                     home_state.set({**cur, "active_plot_subtab": val, "audit_shown_place": shown_place})
 
     # Phase 21-B/D: Track active plot sub-tab across all group navsets (Exploration only: Audit mode has no tabs, the navsets are not on the page).
