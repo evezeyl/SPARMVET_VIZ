@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -33,11 +33,12 @@ from utils import recipe_tiers
 from utils.fix_text import fix_label
 from utils.recipe_graph import RecipeGraphError, build_graph
 from app.modules.error_notice import notice
+from utils import display_names
 from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
-from app.modules.audit_places import PLACES_BUCKET, place_words, place_words_labelled, plots_below
+from app.modules.audit_places import PLACES_BUCKET, place_line, place_words, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -125,20 +126,20 @@ def _reaches_no_plot(node: dict, reach_of: dict) -> bool:
 
 
 def _place_banner(place: str, reach_of: dict, raw: dict):
-    """The line of every step card that says where the step was written, in plain words, always shown (the owner did not see it for a step on a plot, 2026-11-26): a plot's own
-    tier 3 ("Written at Plot Year Distribution (tier 3)."), or a table ("Written at Table X (tier 1): N plot(s) are built from there." or, with no plot, that no figure changes).
-    The name is the recipe's `ui_label` where there is one. PROVISIONAL words."""
+    """The line of every step card that says at which table or plot, and tier, the step was written (the owner did not see it for a step on a plot, 2026-11-26; she meant the way the
+    recipe's own steps are listed under their tier). Always shown, for a pending and a committed step: "Written at ResFinder: Table, T1" (the same text as the lineage panel, `place_line`), and
+    under it, for a table, how many plots are built from there (or that no figure changes). PROVISIONAL words."""
     if not place:
-        return ui.div("Written at: no place is recorded in this step.", class_="spv-audit-place spv-audit-place-missing")
-    words = place_words_labelled(place, raw)
+        return ui.div(ui.div("Written at: no place is recorded in this step.", class_="spv-audit-place spv-audit-place-missing"))
+    head = ui.div("Written at ", ui.tags.b(place_line(place, raw)), class_="spv-audit-place")
     if place.startswith("T3:"):
-        text = f"Written at {words}."
-    elif reach_of.get(place):
+        return ui.div(head)
+    if reach_of.get(place):
         n = len(reach_of[place])
-        text = f"Written at {words}: {n} plot{'s are' if n != 1 else ' is'} built from there."
+        more = f"{n} plot{'s are' if n != 1 else ' is'} built from there."
     else:
-        text = (f"Written at {words}: no plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode).")
-    return ui.div(text, class_="spv-audit-place")
+        more = "No plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode)."
+    return ui.div(head, ui.div(more, class_="spv-text-xxs text-muted"))
 
 
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
@@ -502,19 +503,19 @@ def define_server(input, output, session, *,
         # Orphan/legacy nodes for this session
         orphaned = list(by_plot.get("__legacy__", []))
 
+        # The section of the audit steps, below the recipe's own steps (Inherited, Tier 2) and apart from them: its heading is always shown, with the name of the open plot, in the style of
+        # the heading of a recipe tier (`#audit_sidebar h6`). The heading words "My Adjustments" are the ones the panel already used.
+        plot_name = display_names.shown_name(display_names.shown_names(active_cfg().raw_config), display_names.PLOT, open_plot) if open_plot else "plot"
         if not all_nodes and not orphaned:
             return ui.div(
-                ui.div(
-                    f"No T3 adjustments for {active_subtab.removeprefix('subtab_') or 'this plot'} yet.",
-                    class_="text-muted spv-text-sm",
-                    style="padding:4px;",
-                ),
+                ui.h6(f"My Adjustments — {plot_name}"),
+                ui.div(f"No T3 adjustments for {plot_name} yet.", class_="text-muted spv-text-sm", style="padding:4px;"),
+                class_="spv-audit-mine",
             )
 
         blocked_ids = set(gatekeeper_blocked(pending_all + [n for nodes in by_plot.values() for n in nodes]))
         adj_header = ui.div(
-            ui.h6(f"My Adjustments — {active_subtab.removeprefix('subtab_') or 'plot'}",
-                  class_="m-0 spv-flex-1"),
+            ui.h6(f"My Adjustments — {plot_name}", class_="m-0 spv-flex-1"),
             ui.span(
                 f"{len(blocked_ids)} need reason",
                 class_="text-danger spv-text-xxs",
@@ -621,7 +622,7 @@ def define_server(input, output, session, *,
                 style="padding:2px 4px;",
             ))
 
-        return ui.div(adj_header, *node_els)
+        return ui.div(adj_header, *node_els, class_="spv-audit-mine")
 
     # ------------------------------------------------------------------
     # Reason inputs are NOT eagerly synced to home_state (would re-render the

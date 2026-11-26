@@ -7,7 +7,7 @@ What a person does on the demo `1_test_data_ST22_dummy`, and sees (D-0535: "the 
 - on the plot "AMR Heatmap" (built from the ResFinder table) in Audit mode, T3: a filter `identity < 99` is sent to audit; the dialog offers, besides the three
   plot-level choices, "At a table this plot is built from", with the table ResFinder at tier 1 and tier 2 and how many tables and plots are built from each;
 - a choice that breaks the rule (the tier 1 and the tier 2 of the same table: one below the other) is refused in one plain line and the dialog stays open; no table ticked is refused;
-- with the tier 1 of ResFinder ticked, a reason, Apply: the audit panel says "Written at Table ResFinder (tier 1)"; the data table of the plot has fewer rows than before; the plot's badge
+- with the tier 1 of ResFinder ticked, a reason, Apply: the audit panel says "Written at ResFinder: Table, T1"; the data table of the plot has fewer rows than before; the plot's badge
   says the step was written upstream and that its table changed;
 - the plot "MLST Bar" (a plot beside ResFinder) has no audited step and the same rows as before; its badge says so;
 - Compare shows the Original and the Audited pane of the AMR plot; the data table of the AMR plot in T1 shows the AUDITED table (D-0622: the same filter, written at tier 1 of ResFinder) and its badge says "audited";
@@ -140,7 +140,7 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     _wait_shiny(page)
     # staged, with the place named, waiting for its reason
     expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
-    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at Table ResFinder (tier 1)", timeout=10_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at ResFinder: Table, T1", timeout=10_000)
     expect(page.locator("#btn_apply").first).to_be_disabled()
     box = page.locator('input[id^="t3_reason_"]').first
     box.fill(REASON)
@@ -357,7 +357,7 @@ def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_a
     _wait_shiny(page)
     box = page.locator('input[id^="t3_reason_"]').first
     expect(box).to_be_visible(timeout=15_000)
-    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at Table ResFinder (tier 2)", timeout=10_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at ResFinder: Table, T2", timeout=10_000)
     box.fill(REASON)
     box.press("Tab")
     expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
