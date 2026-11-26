@@ -1,5 +1,7 @@
 # Reproducible export & import — design discussion (2026-11-09)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated discussion (2026-11-09). Where it speaks of per-plot choices for a step, of a fork of the join per plot, or of the plot as the scope of an audit step, the page "what is true now", the contract (section 7.2 points 8 to 10: the audit steps are written by place and the audit recipe carries them as plain steps; the fork of a join per plot is gone) and the ledger lines D-0662 to D-0669 win; nothing below is edited.
+
 **Status:** DISCUSSION — nothing in this document is implemented yet. Written to capture a
 chat discussion that grew from issue #39 into five/six separable pieces of work, so none of
 it is lost before filing issues. Decided by Eve, with @dasharch.

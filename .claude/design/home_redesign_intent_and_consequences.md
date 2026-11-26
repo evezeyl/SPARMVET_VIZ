@@ -1,5 +1,7 @@
 # The HOME redesign: intent, succession of operations, consequences
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status after Eve's correction of the first page (2026-11-16).** Her answer is her turn Tcd L2020 (2026-11-16 10:22 UTC), relayed in CH M155; the ledger lines are `D-0143` to `D-0150` (`.claude/knowledge/decision_ledger.md`).
 - **Confirmed by Eve on 2026-11-16:** first-page points 2, 4, 5, 6, 7, 8 and 15. Her words: "2. ok. ... 4. correct. 5 correct. 6. yes (this is what we agreed - at usage we might change the default of check box but we can start with that). 7. ok. 8. yes ... 15 good." [READ: Tcd L2020]
 - **Corrected by Eve on 2026-11-16, now written in her words:** first-page points 1, 3, 9, 10, 11, 13 and 14. The list of what changed is the last section of this file. [READ: Tcd L2020]

@@ -1,5 +1,7 @@
 # HOME: Exploration (preview filters and column choices)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status:** 2026-11-11, agreed with Eve (history of the comments: git commit 5b59a4a), checked again in the full
 consistency review. Companion: `home_audit_steps.md`. Decision record: ADR-099. Since 2026-11-20 (slice B) most of this page is built; each mark says which. Marks: **[built]** = in the app today, **[to build]** = decided,
 not built.

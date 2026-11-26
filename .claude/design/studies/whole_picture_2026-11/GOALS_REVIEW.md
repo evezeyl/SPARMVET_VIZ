@@ -1,5 +1,7 @@
 # Your goals, and the path to them (2026-11-22, second pass)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a study of its day. Where it speaks of tick lines of plots or of a dialog that asks the scope by plot, of "My view", of "the plot's table" or "plot data", or of a build order that the owner has since changed (the step bar, the review before the demo, no plot tabs in Audit mode), the page "what is true now" and the ledger lines D-0638 to D-0667 win; nothing below is edited.
+
 Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
 
 A study, not a decision: nothing is built from it before you answer (D-0507, D-0528). The short version is part 0 of `WHOLE_PICTURE.md`. This file holds the detail, for you if you want it, and for the builders. The list of which decisions and builds match the goals is `MATCH_LIST.md (removed 2026-11-24 in the cleaning of the studies; see git history)` (same folder).

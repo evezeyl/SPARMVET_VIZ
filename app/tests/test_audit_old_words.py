@@ -55,3 +55,14 @@ def test_binary_file_is_skipped_not_crashed(tmp_path, monkeypatch):
     (tmp_path / "b.bin").write_bytes(b"\xff\xfe\x00persona")
     counts, _, skipped = audit.scan(["b.bin"], _rx("persona"), False)
     assert skipped == 1 and not counts
+
+
+def test_the_archive_of_outdated_files_is_excluded(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    arch = tmp_path / ".claude" / "outdated" / "design"
+    arch.mkdir(parents=True)
+    (arch / "old.md").write_text("persona\n")
+    path = ".claude/outdated/design/old.md"
+    assert audit.is_excluded(path)
+    counts, _, _ = audit.scan([path], _rx("persona"), False)
+    assert not counts

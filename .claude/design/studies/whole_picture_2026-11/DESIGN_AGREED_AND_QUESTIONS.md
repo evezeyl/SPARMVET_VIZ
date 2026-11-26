@@ -1,5 +1,7 @@
 # Design agreed by the two agents, and the questions only the owner can answer
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a study of its day. Where it speaks of tick lines of plots or of a dialog that asks the scope by plot, of "My view", of "the plot's table" or "plot data", or of a build order that the owner has since changed (the step bar, the review before the demo, no plot tabs in Audit mode), the page "what is true now" and the ledger lines D-0638 to D-0667 win; nothing below is edited.
+
 Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
 
 **What this file is.** The points that the two design agents (one Opus, one Sonnet) agreed on before anything of the design is written, as the owner ordered (ledger D-0551 and D-0552). It also holds the eight questions that only the owner can answer. Nothing here is decided by the agents. The design documents are written after her answers.

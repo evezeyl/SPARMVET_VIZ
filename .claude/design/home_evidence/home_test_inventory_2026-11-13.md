@@ -1,5 +1,7 @@
 # P0: inventory of the tests that encode superseded behaviour (2026-11-13)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve, to approve the order of the test work before any code (`TEST-ADAPT-1`, `TEST-ORDER-1`, `TEST-SHAPES-1`; package P0 of `home_stage2_mechanism_spec.md` section 5).
 **Method and evidence.** Verified by counting and reading: every test file of `app/tests/` (52 entries) and `libs/*/tests/` (42 test files) was searched for the words of the replaced model (My view, Compare, plot_view, tier_toggle, per-plot audit steps, propagation, the old filter stores, `developer_raw_yaml`, `extract_primary_keys`, `is_primary_key`, `decision_hash`, the T1/T2 keys, the filter engine, the validator); the test names of the 10 most affected files were listed and the filter tests, their fixtures and imports were read. Reasoned: the class of each test (keep, adapt, replace, remove) comes from its name and the file's purpose; an assertion-by-assertion reading is part of each package, before its code. Nothing was run or changed. The headless baseline on 2026-11-13 is 2101 passed.
 

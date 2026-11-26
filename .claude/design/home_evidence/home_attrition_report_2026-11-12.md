@@ -1,5 +1,7 @@
 # Attrition per step and the figure caption (proposal, 2026-11-12)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status: DECIDED by Eve, 2026-11-12 ("Ok proposal"); registered in `home_audit_steps.md` section 19.** Replaces the options A/B for the caption count of a plot whose table has no key (review SC2).
 **Evidence classes:** verified = run (`tmpAI/architect/attrition_demo.py`, real registered actions on the stored original stage); external = web search (standard mode, not read in full); reasoned.
 

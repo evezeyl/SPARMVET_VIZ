@@ -1,5 +1,7 @@
 # How to build recipes from the directed-graph model: what two agents agree on, and what is open for her (2026-11-23)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a study of its day. Where it speaks of tick lines of plots or of a dialog that asks the scope by plot, of "My view", of "the plot's table" or "plot data", or of a build order that the owner has since changed (the step bar, the review before the demo, no plot tabs in Audit mode), the page "what is true now" and the ledger lines D-0638 to D-0667 win; nothing below is edited.
+
 Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
 
 **What this is.** Step 2 of her sequence (ledger D-0554): "how to build the recipes from the directed-graph model". It carries her decision D-0562 (the field `is_entity_key` is renamed `is_entity_id`) and her open topic "joins that are not metadata". An Opus agent and a Sonnet agent each wrote a position without seeing the other, then compared them and agreed before this text was written (D-0552). The evidence rules D-0558 to D-0561 hold: every engine run was rebuilt from scratch in its own empty folder, nothing went through the old lineage code, every run was registered before it ran with its three points, and an equality counts only when both sides were rebuilt. NOT confirmed by her. Nothing here is built and no recipe is changed.

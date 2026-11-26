@@ -1,5 +1,1 @@
-# Progress: global picture of Blueprint (D-0309, step 2)
-
-Done: GLOBAL_PICTURE.md (186 lines), GLOBAL_PICTURE.svg (68 lines, valid XML, rendered once with Inkscape to check), GLOBAL_PICTURE_sources.md (64 lines). No tracked file changed (git status empty).
-Next: none for this task. The panel evaluation (D-0309 step 3) is the coordinator's to start.
-Findings: the run corrects the reading on 3 points (Save button hidden; plots do not open on the branch; join Apply writes `join`). New contradictions G14, G15, G17, G18; G16 comes from the tier-3 facts page.
+Moved to `.claude/outdated/design/studies/scratch_records_2026-11/panel/blueprint_gap/progress_global_picture.md` on 2026-11-26 (outdated: scratch record of a closed panel or slice; the decisions are in the ledger, the built behaviour in the code and rules). Current source: `.claude/knowledge/decision_ledger.md` and the rules. Pointer: removed when the citing file is actualised (wave 2).

@@ -1,5 +1,7 @@
 # HOME redesign: am I blocked? Observations on the model, and the future (2026-11-12)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve, to read later, to know where things stand and that nothing is blocked. Evidence classes: **verified** (run or read in the code), **reasoned**, **idea** (not checked).
 
 ## 1. Am I blocked? No.

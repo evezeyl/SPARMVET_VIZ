@@ -1,5 +1,7 @@
 # The app and the audit plan seen by a software architect
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve, to decide with (before the review of 2026-11-12). **Written:** 2026-11-12; **rebuilt in a second pass** after you asked me to check every statement against what is decided. **Status:** analysis and recommendations. Nothing here is decided.
 Nothing was changed in the app code, the design files or the UML; the only change made while writing it is the new QA canary (forensics F1).
 **Companion:** `home_audit_forensics_2026-11-12.md` (the design forensics, section 3.2b explains the cheaper engine). **Method:** the persona method of
