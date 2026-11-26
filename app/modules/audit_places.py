@@ -27,8 +27,8 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
-# consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
+# provides: function:place_line, function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# consumes: libs/utils/src/utils/display_names.py (place_line), libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
 # @end_deps
@@ -42,7 +42,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from blueprint_arch.t3_translator import translate_t3_node
-from utils import recipe_tiers
+from utils import display_names, recipe_tiers
 from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
 from utils.audit_copy import AuditCopy, AuditCopyError, add_step, start_audit
 from utils.plan_book import Plan, PlanBook
@@ -286,6 +286,16 @@ def place_words(place: str) -> str:
     if tier in ("T1", "T2") and name:
         return f"Table {name} (tier {tier[1:]})"
     return f"Plot {name} (tier 3)" if tier == "T3" and name else str(place)
+
+
+def place_line(place: str, raw: Any) -> str:
+    """The place of an audit step as the lineage panel writes a node: "ResFinder: Table, T1", "Year Distribution: Plot data, T3" (the same names, `utils.display_names`). A place the recipe does
+    not have keeps its readable id; an empty or unreadable place is returned as it is. PROVISIONAL words."""
+    tier, _, name = (place or "").partition(":")
+    if not name or tier not in ("T1", "T2", "T3"):
+        return str(place)
+    kind = display_names.PLOT if tier == "T3" else display_names.TABLE
+    return display_names.tagged_name(display_names.shown_name(display_names.shown_names(raw), kind, name), tier == "T3", int(tier[1]))
 
 
 def t3_file_sentence(folder: str, plot_id: str, audited: bool, recipe_steps: bool) -> str:

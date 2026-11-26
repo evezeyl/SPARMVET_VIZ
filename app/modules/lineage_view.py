@@ -10,14 +10,22 @@ THE LAYOUT (`layout`): level = the longest path from a node with no arrow in, co
 independent graph, then ordered by the mean place of their parents in the level before (a plain barycentre pass, ties by graph order), so that arrows cross little and the same input
 gives the same picture. A dot sits at x = level * DX, y = place in the level * DY (all in pixels of the map's own coordinates). No two dots share a position (a test).
 
-THE TIER WORDS and the classes: `tier1` (a table after its tier 1), `tier2` (after its tier 2), `result` (a plot, or a result table nothing is built from). The colour of a class is
+THE COLUMN HEADINGS (`column_headings`): the dots sit in columns (the level), but a level is NOT a tier: a joined table is built from original tables, so the tier 1 of a joined table and
+the tier 2 of an original table share a level, and plots sit at the level after the table they read, wherever that is. So a heading never says "Tier 1", "Tier 2" or "Plot"; it says
+"Original tables" for a column that holds only the tier 1 of original tables, else "Level N" (N arrows from the original tables), and its hover text lists what the column holds
+(PROVISIONAL words, proposed for the owner: the first form of her item 8 would have printed wrong tier names). THE GRAPH NUMBERS (`graph_labels`): each independent graph is numbered in
+the text (list heading "Independent graph N"); the map shows the same N at the left of the first dot of that graph.
+
+THE NAMES (the owner, 2026-11-26): a line, a dot, the text area and the "Chosen" line show the same name, from `utils.display_names` (the recipe's `ui_label`, else the id with spaces; the id in
+brackets only where two names would be equal), then "Table" or "Plot data" and the tier as one short tag: "Summary phenotype length fragmentation: Table, T1". `line_text` is the one function.
+THE CLASSES: `tier1` (a table after its tier 1), `tier2` (after its tier 2), `result` (a plot, or a result table nothing is built from). The colour of a class is
 in `config/ui/theme.css` section 29; the words and the colours are PROVISIONAL (D-0634: "NOT decided: the exact colours and words").
 
 Consumed by: app/handlers/lineage_handlers.py (the panel), app/tests/test_lineage_view.py. If deleted: HOME's Audit mode has no lineage panel.
 
 # @deps
-# provides: function:layout, function:view_data, function:around_ids, function:built_from_sentence, function:node_detail, function:tier_class, constant:DX, constant:DY, constant:MARGIN
-# consumes: libs/utils/src/utils/lineage_data.py (Lineage, LineageNode)
+# provides: function:layout, function:view_data, function:around_ids, function:built_from_sentence, function:node_detail, function:line_text, function:tier_class, function:column_headings, function:graph_labels, constant:DX, constant:DY, constant:MARGIN, constant:TOP
+# consumes: libs/utils/src/utils/display_names.py (tagged_name, kind_tag, short_tag), libs/utils/src/utils/lineage_data.py (Lineage, LineageNode)
 # consumed_by: app/handlers/lineage_handlers.py, app/tests/test_lineage_view.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0629, D-0634)
 # @end_deps
@@ -26,13 +34,20 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from utils import display_names
 from utils.lineage_data import Lineage, LineageNode
 
 DX = 78          # pixels between two levels
 DY = 17          # pixels between two dots of one level
-MARGIN = 14      # pixels around the map
+MARGIN = 22      # pixels around the map (room for the number of an independent graph at the left of its first dot)
+TOP = 26         # pixels above the first row of dots: the headings of the columns (view_data shifts every dot down by it)
 
-TIER_WORDS = {"T1": "table after its tier 1", "T2": "table after its tier 2", "T3": "plot (tier 3)", "result": "result table (tier 1), no plot reads it"}
+
+
+def line_text(node: LineageNode) -> str:
+    """The one text of a node for every place that names it: "<shown name>: Table, T1" (a plot: "<shown name>: Plot data, T3"), with " [+ meta]" for a table that takes the metadata in.
+    The tier is the node's own (a result table is a tier 1). PROVISIONAL words."""
+    return display_names.tagged_name(node.shown, node.kind == "T3", node.tier) + (" [+ meta]" if node.brings_metadata else "")
 
 
 def tier_class(node: LineageNode) -> str:
@@ -82,6 +97,46 @@ def layout(ids: Sequence[str], edges: Sequence[Tuple[str, str]], group_of: Optio
     return pos, (width, height)
 
 
+_KIND_WORDS = {      # (one, several)
+    ("T1", "original"): ("tier 1 of an original table", "tier 1 of original tables"), ("T1", "joined"): ("tier 1 of a joined table", "tier 1 of joined tables"),
+    ("result", "original"): ("result table (tier 1)", "result tables (tier 1)"), ("result", "joined"): ("result table (tier 1)", "result tables (tier 1)"),
+    ("T2", "original"): ("tier 2 of an original table", "tier 2 of original tables"), ("T2", "joined"): ("tier 2 of a joined table", "tier 2 of joined tables"),
+    ("T3", "plot"): ("plot (tier 3)", "plots (tier 3)"),
+}
+
+
+def column_headings(nodes: Sequence[LineageNode], pos: Dict[str, Tuple[int, int]]) -> List[Dict[str, Any]]:
+    """One heading for each column (each x of `pos`), left to right: `{"x", "text", "short", "title"}` (`short` is used when the columns are drawn close together). A level is not a tier (see the module text), so the text is "Original tables" only for a column that
+    holds nothing but the tier 1 of original tables (or result tables made from them), else "Level N" (N = the number of the column, 0 at the left); `title` lists what the column holds,
+    with the number of each kind, so the heading is true for any recipe. PROVISIONAL words."""
+    by = {n.id: n for n in nodes}
+    columns: Dict[int, List[LineageNode]] = {}
+    for i, (x, _y) in pos.items():
+        columns.setdefault(x, []).append(by[i])
+    out: List[Dict[str, Any]] = []
+    for level, x in enumerate(sorted(columns)):
+        held: Dict[Tuple[str, str], int] = {}
+        for n in columns[x]:
+            held[(n.kind, n.table_kind)] = held.get((n.kind, n.table_kind), 0) + 1
+        only_original_t1 = all(n.kind in ("T1", "result") and n.table_kind == "original" for n in columns[x])
+        text, short = ("Original tables", "Orig.") if only_original_t1 else (f"Level {level}", f"L{level}")
+        title = "Holds: " + ", ".join(f"{count} {_KIND_WORDS[kind][0 if count == 1 else 1]}" for kind, count in sorted(held.items())) + ". A level is one arrow further from the original tables; it is not a tier."
+        out.append({"x": x, "text": text, "short": short, "title": title})
+    return out
+
+
+def graph_labels(pos: Dict[str, Tuple[int, int]], group_of: Dict[str, int]) -> Dict[str, Dict[str, Any]]:
+    """Where the number of each independent graph is drawn: `{"<graph number>": {"x", "y", "node"}}`, the place of the first dot of that graph among the nodes of `pos` (the lowest x, then the
+    lowest y: its original table at the top of the first column) and that node. The number shown is the graph's id plus one, the same as the list heading "Independent graph N". The browser
+    uses this rule again, on the dots shown, for "around my selection" with several chosen places (their dots keep the places of the whole map and a graph's first dot may be hidden)."""
+    top: Dict[int, Tuple[int, int, str]] = {}
+    for i, (x, y) in pos.items():
+        g = group_of.get(i, 0)
+        if g not in top or (x, y) < top[g][:2]:
+            top[g] = (x, y, i)
+    return {str(g + 1): {"x": x, "y": y, "node": i} for g, (x, y, i) in sorted(top.items())}
+
+
 def around_ids(lineage: Lineage, place: str) -> List[str]:
     """The nodes of "around my selection": the lineage back from the place (everything it is built from), the place, and everything built from it (`reach[place].built_from`),
     in graph order. KeyError for an id that is not a node."""
@@ -122,13 +177,12 @@ def node_detail(lineage: Lineage, node: LineageNode, shown_steps: int = 6) -> Li
     """The plain lines of the text area for a node (the same for a hover, a focus and a choice): name and tier, what it is, the columns, the metadata tag, why it cannot be chosen,
     and, for a node that can be chosen, what is built from it with the steps between it and each result on every path. `shown_steps`: how many steps of a path are listed before "..."."""
     names = {n.id: n for n in lineage.nodes}
-    lines = [f"{node.name}: {TIER_WORDS[node.kind]}", node.what]
+    lines = [line_text(node), node.what]
     def short(i: str) -> str:
-        """A node in a path: the table or plot name, with "(tier 2)" for a tier 2 (the table's tier 1 and tier 2 have the same name)."""
+        """A node in a path: the shown name, with "(T2)" for a tier 2 (the table's tier 1 and tier 2 have the same name)."""
         n = names[i]
-        return f"{n.name} (tier 2)" if n.kind == "T2" else n.name
-    if node.ui_label:
-        lines.append(f"Name in the recipe: {node.ui_label}")
+        return f"{n.shown} (T2)" if n.kind == "T2" else n.shown
+    lines.append(f"Id in the recipe: {node.name}")
     if node.columns is not None:
         lines.append(f"{len(node.columns)} columns at this place (the engine's plan).")
     elif node.columns_note:
@@ -142,7 +196,7 @@ def node_detail(lineage: Lineage, node: LineageNode, shown_steps: int = 6) -> Li
     reach = lineage.reach[node.id]
     for result in reach.results:
         target = names[result]
-        label = f"{target.name} ({'plot' if target.kind == 'T3' else 'result table'})"
+        label = f"{target.shown} ({'plot' if target.kind == 'T3' else 'result table'})"
         paths = reach.paths.get(result, ())
         for k, path in enumerate(paths, start=1):
             via = " -> ".join(short(n) for n in path.nodes) if path.nodes else "itself"
@@ -155,11 +209,6 @@ def node_detail(lineage: Lineage, node: LineageNode, shown_steps: int = 6) -> Li
     return lines
 
 
-def _line_text(node: LineageNode) -> str:
-    head = node.name + (f" ({node.ui_label})" if node.ui_label and node.ui_label != node.name else "")
-    return f"{head}: {TIER_WORDS[node.kind]}" + (" [+ meta]" if node.brings_metadata else "")
-
-
 def view_data(lineage: Lineage) -> Dict[str, Any]:
     """The JSON of the panel: nodes (with their words and the dots they keep when the lineage is cut around them), arrows, groups (the independent graphs), and one layout for the
     whole recipe (key "") and one for each node that can be chosen (key: its id; the nodes of "around my selection"). Deterministic and JSON-serialisable."""
@@ -168,24 +217,32 @@ def view_data(lineage: Lineage) -> Dict[str, Any]:
     edges = [list(e) for e in lineage.edges]
     layouts: Dict[str, Dict[str, List[int]]] = {}
     sizes: Dict[str, List[int]] = {}
-    pos, size = layout(ids, lineage.edges, group_of)
-    layouts[""] = {i: list(p) for i, p in pos.items()}
-    sizes[""] = list(size)
+    heads: Dict[str, List[Dict[str, Any]]] = {}
+    glabels: Dict[str, Dict[str, Dict[str, Any]]] = {}
+
+    def put(key: str, shown: Sequence[str]) -> None:
+        """The layout of `shown` under `key`, every dot moved down by TOP (the headings sit above), with its headings and graph numbers."""
+        p, (w, h) = layout(shown, lineage.edges, group_of)
+        p = {i: (x, y + TOP) for i, (x, y) in p.items()}
+        layouts[key] = {i: list(v) for i, v in p.items()}
+        sizes[key] = [w, h + TOP]
+        heads[key] = column_headings(lineage.nodes, p)
+        glabels[key] = graph_labels(p, group_of)
+
+    put("", ids)
     nodes = []
     for n in lineage.nodes:
         around: List[str] = []
         if n.choosable:
             around = around_ids(lineage, n.id)
-            p2, s2 = layout(around, lineage.edges, group_of)
-            layouts[n.id] = {i: list(p) for i, p in p2.items()}
-            sizes[n.id] = list(s2)
+            put(n.id, around)
         nodes.append({
-            "id": n.id, "name": n.name, "kind": n.kind, "cls": tier_class(n), "tier": n.tier, "tier_word": TIER_WORDS[n.kind], "table_kind": n.table_kind,
-            "label": n.ui_label, "line": _line_text(n), "meta": n.brings_metadata, "choosable": n.choosable, "reason": n.not_choosable_reason,
+            "id": n.id, "name": n.name, "shown": n.shown, "kind": n.kind, "cls": tier_class(n), "tier": n.tier, "table_kind": n.table_kind,
+            "label": n.ui_label, "line": line_text(n), "meta": n.brings_metadata, "choosable": n.choosable, "reason": n.not_choosable_reason,
             "no_plot": n.kind == "result", "group": group_of[n.id], "detail": node_detail(lineage, n),
-            "summary": built_from_sentence(lineage, n.id) if n.choosable else "",
+            "gnum": group_of[n.id] + 1, "summary": built_from_sentence(lineage, n.id) if n.choosable else "",
             "built_from": list(lineage.reach[n.id].built_from) if n.choosable else [],
             "around": around,
         })
     groups = [{"id": c.id, "nodes": list(c.nodes), "parents": list(c.parents), "first_places": list(c.first_places)} for c in lineage.components]
-    return {"nodes": nodes, "edges": edges, "groups": groups, "layouts": layouts, "sizes": sizes, "metadata_table": lineage.metadata_table}
+    return {"nodes": nodes, "edges": edges, "groups": groups, "layouts": layouts, "sizes": sizes, "heads": heads, "glabels": glabels, "top": TOP, "metadata_table": lineage.metadata_table}

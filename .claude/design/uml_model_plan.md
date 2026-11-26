@@ -331,6 +331,15 @@ Why: in StarUML 8.1 a name with a line break spills over the rows below it in th
 - **Check:** `audit_uml_model.py` fails on a name with a line break, on a name over the limit without the tag, and on a tag without a reason; it names the element id, its type, its length, its owner chain and the diagram that shows it.
 - Dated: 2026-11-26 pilot on EXP-MODES; 2026-11-26 the rest of the model (433 names over 45 characters and 50 with a line break before, 4 tagged and 0 after).
 
+### 6c. Text on a diagram (practice, 2026-11-26)
+
+Study with sources: `.claude/design/studies/staruml_text_practice/README.md`.
+- A box is as wide as its widest label; the documentation field is never drawn. Short name in the box, detail in documentation.
+- `minWidth` is re-measured only when the diagram is drawn; set widths with `app.engine.setProperty` (width and left, to keep the centre); a width below the minimum is put back at the next draw.
+- Layout commands move every box: not on a hand-arranged diagram.
+- **Tags on diagrams:** Show Property is OFF on every view whose element carries tags (a tag is not a name; tags stay in the model and the audit reads them there). With it on, one label holds all tags and can widen a box to 1000 or more.
+- Result of the 2026-11-26 pass: Show Property switched off on 23 views in REQ-CORE (16), DEP-APP (6) and UC-BLUEPRINT (1); no other diagram had tag labels drawn.
+
 ### 6a. Embedding a diagram in the Quarto book (ADR-096, 2026-11-08)
 
 No live fetch exists or is planned — StarUML has no headless/CLI export; the bridge needs the GUI
@@ -445,4 +454,4 @@ Checker persona of `.claude/workflows/design_review_personas.md` and is run by h
 
 **Added 2026-11-26 (owner's order, channel M698 section A point 2).** `DM-KEYS-HOME-AUDIT` (package "Data and configuration"): one diagram of the chain of keys and hashes of HOME and the audit, read from the code (`tmpAI/uml/keys_facts.md`, every line with file:line). Six columns: inputs, the key of one table (`E . rC . dC . [a1]`, `. [s2] . [a2]`, `. [s3] . [a3]`), session and stored tables with the places where a key is checked, audit, export, refusal/import/ids. White boxes are BUILT (`status` implemented or partial, `code` tag), grey boxes are DECIDED not built with the ledger number in the name (D-0331, D-0333, D-0345, D-0478), yellow boxes are NOT DECIDED (a hash per file, the content hash `c`, the steps hash `A` and the record hash `Rec`, the keys of the audit tables in the export); the documentation of every box starts with BUILT, PARTIAL, DECIDED not built or NOT DECIDED. The four older key diagrams were deleted on 2026-11-26 (owner's order, channel M700 point 3); see the line below.
 
-**Deleted 2026-11-26 (owner's order, channel M700 point 3).** `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE` and `DM-KEYS-EXPORT` (added 2026-11-12, lines above) with their wrapper elements and the 137 model elements they owned; replaced by `DM-KEYS-HOME-AUDIT`. Nothing else in the model showed those elements; pointers "Detail: DM-KEYS-..." in the documentation of the `EXP-MODES` and `HOME-AUDIT-CACHE` boxes now point to `DM-KEYS-HOME-AUDIT`. Words (owner's rule): the table a plot reads is T1, T2 or T3 depending on which tiers have steps, T3 is the last data tier, so the model says "plot data (T3)" or "the table the plot reads", never "the plot's table" (one box name and one documentation line changed in `DM-KEYS-HOME-AUDIT`; no other hit in the model).
+**Deleted 2026-11-26 (owner's order, channel M700 point 3).** `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE` and `DM-KEYS-EXPORT` (added 2026-11-12, lines above) with their wrapper elements and the 137 model elements they owned; replaced by `DM-KEYS-HOME-AUDIT`. Nothing else in the model showed those elements; pointers "Detail: DM-KEYS-..." in the documentation of the `EXP-MODES` and `HOME-AUDIT-CACHE` boxes now point to `DM-KEYS-HOME-AUDIT`. Words (owner's rule): the table a plot reads is T1, T2 or T3 depending on which tiers have steps, T3 is the last data tier, so the model says "Result data (T3)" (owner, 2026-11-26: it is the result table and what a plot reads) or "the table the plot reads", never "the plot's table" or "plot data" (one box name and one documentation line changed in `DM-KEYS-HOME-AUDIT`; no other hit in the model).

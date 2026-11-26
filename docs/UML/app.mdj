@@ -44615,9 +44615,9 @@
 											},
 											"font": "Arial;13;1",
 											"parentStyle": true,
-											"left": 264.5,
-											"top": 1017,
-											"width": 440,
+											"left": 601,
+											"top": 1024.5,
+											"width": 176,
 											"height": 13,
 											"text": "Branch the lineage at a node"
 										},
@@ -44640,11 +44640,12 @@
 											"_parent": {
 												"$ref": "AAAAAAGhu+nb3PUQlhA="
 											},
+											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 264.5,
 											"top": 1032,
-											"width": 440,
+											"width": 440.72412109375,
 											"height": 13,
 											"text": "{status=\"partial\", adr=\"ADR-082\", flag=\"data_analysis_recipe_edit_enabled\"}",
 											"horizontalAlignment": 1
@@ -44652,10 +44653,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": 259.5,
-									"top": 1010,
-									"width": 450.72412109375,
-									"height": 40,
+									"left": 596,
+									"top": 1017.5,
+									"width": 186.9853515625,
+									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGhu+nb3fURTfI="
 									},
@@ -44748,10 +44749,11 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 166,
+							"left": 557,
 							"top": 1002,
-							"width": 637,
+							"width": 264,
 							"height": 56,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhu+nb3PUQlhA="
 							},
@@ -44795,8 +44797,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 609,
-									"top": 784,
+									"left": 715,
+									"top": 778,
 									"height": 13,
 									"alpha": 1.5707963267948966,
 									"distance": 15,
@@ -44817,8 +44819,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 623,
-									"top": 790,
+									"left": 730,
+									"top": 779,
 									"height": 13,
 									"alpha": 1.5707963267948966,
 									"distance": 30,
@@ -44839,8 +44841,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 582,
-									"top": 771,
+									"left": 686,
+									"top": 777,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -44861,8 +44863,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 698,
-									"top": 590,
+									"left": 726,
+									"top": 587,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -44883,8 +44885,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 709,
-									"top": 598,
+									"left": 739,
+									"top": 590,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -44905,8 +44907,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 675,
-									"top": 575,
+									"left": 699,
+									"top": 581,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -44927,8 +44929,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 521,
-									"top": 977,
+									"left": 706,
+									"top": 969,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 30,
@@ -44948,8 +44950,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 534,
-									"top": 981,
+									"left": 719,
+									"top": 968,
 									"height": 13,
 									"alpha": -0.7853981633974483,
 									"distance": 40,
@@ -44969,8 +44971,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 494,
-									"top": 970,
+									"left": 678,
+									"top": 972,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 25,
@@ -45018,7 +45020,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "696:567;497:1001",
+							"points": "713:567;690:1001",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGhu+n2OfU6t1s="
@@ -63454,6 +63456,7 @@
 							"top": 20,
 							"width": 1000,
 							"height": 520,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht0wF9tYEf6o="
 							},
@@ -63639,6 +63642,7 @@
 							"top": 70,
 							"width": 220,
 							"height": 110,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht0wGDNYtLYE="
 							},
@@ -63832,6 +63836,7 @@
 							"top": 70,
 							"width": 670,
 							"height": 190,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht0wGI9ZWAoU="
 							},
@@ -65633,6 +65638,7 @@
 							"top": 70,
 							"width": 330.400390625,
 							"height": 170,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1TJfNkNX+0="
 							},
@@ -74412,10 +74418,11 @@
 							],
 							"font": "Arial;13;0",
 							"parentStyle": false,
-							"left": 8359.458984375,
+							"left": 8561,
 							"top": 278,
-							"width": 823.44580078125,
+							"width": 420,
 							"height": 76,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhuk/hItK1LEg="
 							},
@@ -74594,10 +74601,11 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 7821.170166015625,
+							"left": 8019,
 							"top": 684.5,
-							"width": 700.34423828125,
+							"width": 305,
 							"height": 45,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhuk/hhdLgKaU="
 							},
@@ -74775,11 +74783,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 8551.514404296875,
+							"left": 8712,
 							"top": 662,
-							"width": 689.70068359375,
+							"width": 368,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhuk/h5dMINA0="
 							},
@@ -75171,10 +75180,11 @@
 							],
 							"font": "Arial;13;0",
 							"parentStyle": false,
-							"left": 742,
+							"left": 746,
 							"top": 900,
-							"width": 427.35205078125,
+							"width": 420,
 							"height": 130,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrGwxqgTFk="
 							},
@@ -75353,10 +75363,11 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 1248,
+							"left": 1377,
 							"top": 1160,
-							"width": 408.3076171875,
+							"width": 150,
 							"height": 70,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrGxxrA9lg="
 							},
@@ -75633,11 +75644,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 20,
+							"left": 149,
 							"top": 1320,
-							"width": 500,
+							"width": 243,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrGyxro39g="
 							},
@@ -75914,11 +75926,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 540,
+							"left": 638,
 							"top": 1320,
-							"width": 500,
+							"width": 305,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrGzxsQpiM="
 							},
@@ -76195,11 +76208,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 1060,
+							"left": 1148,
 							"top": 1320,
-							"width": 511.17919921875,
+							"width": 336,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG0xs4MgM="
 							},
@@ -76496,6 +76510,7 @@
 							"top": 1520,
 							"width": 420,
 							"height": 130,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG1xtglGE="
 							},
@@ -76674,10 +76689,11 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 1248,
+							"left": 1658,
 							"top": 1780,
-							"width": 970.99560546875,
+							"width": 150,
 							"height": 70,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG2ht/mOg="
 							},
@@ -76954,11 +76970,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 20,
+							"left": 172,
 							"top": 1940,
-							"width": 500,
+							"width": 196,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG3RuncSE="
 							},
@@ -77235,11 +77252,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 540,
+							"left": 677,
 							"top": 1940,
-							"width": 500,
+							"width": 227,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG4RvPRD4="
 							},
@@ -77536,6 +77554,7 @@
 							"top": 2140,
 							"width": 420,
 							"height": 130,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG5Rv38wI="
 							},
@@ -77714,10 +77733,11 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 1248,
+							"left": 1711,
 							"top": 2400,
-							"width": 1075.68115234375,
+							"width": 150,
 							"height": 70,
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG5xwWUuE="
 							},
@@ -77994,11 +78014,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 20,
+							"left": 168,
 							"top": 2560,
-							"width": 500,
+							"width": 204,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG7Bw+0jc="
 							},
@@ -78275,11 +78296,12 @@
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"containerChangeable": true,
-							"left": 540,
+							"left": 700,
 							"top": 2560,
-							"width": 500,
+							"width": 180,
 							"height": 90,
 							"stereotypeDisplay": "icon",
+							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzrG7xxm+tE="
 							},
@@ -107939,9 +107961,9 @@
 									"fontColor": "#000000",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 320,
+									"left": 313,
 									"top": 560,
-									"width": 260,
+									"width": 274,
 									"height": 64,
 									"nameLabel": {
 										"$ref": "AAAAAAGiFpzrhmTy9bI="
@@ -111346,7 +111368,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGiFpvf+2OnY7w="
 							},
-							"name": "Key of plot data (T3) = key(T2) . [s3] . [a3]",
+							"name": "Key of Result data (T3) = key(T2).[s3].[a3]",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112217,7 +112239,7 @@
 									}
 								}
 							],
-							"documentation": "BUILT. README.txt and report.qmd list, per table, the tier 1 and tier 2 keys and the key of the plot data (T3) of a plot with its own tier-3 steps (export_handlers.py:1970-1980, 2356-2360); every picture and table file carries R, D and these keys in its metadata (:439-480). These are the ORIGINAL's keys; the keys of the audit tables (a1, a2, a3) are not recorded.",
+							"documentation": "BUILT. README.txt and report.qmd list, per table, the tier 1 and tier 2 keys and the key of the Result data (T3) of a plot with its own tier-3 steps (export_handlers.py:1970-1980, 2356-2360); every picture and table file carries R, D and these keys in its metadata (:439-480). These are the ORIGINAL's keys; the keys of the audit tables (a1, a2, a3) are not recorded.",
 							"tags": [
 								{
 									"_type": "Tag",

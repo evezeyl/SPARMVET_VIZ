@@ -11,6 +11,9 @@ selection" keeps exactly the lineage back and forward of the place and has its o
   `json.dumps` and equals itself on a second call (deterministic);
 - the largest shipped recipe (the demo) stays small enough to hand to the browser (a bound on the size of the JSON).
 
+Added 2026-11-26 (the owner's test of HOME in Audit mode): the column headings are true for any recipe (a level is not a tier: the demo has joined tables, tier 2 of original tables and plots in
+one column), each independent graph has its number at its first dot, the tag "no plot" says it once (the line of a result table no longer repeats it), every dot sits below the headings.
+
 Mutation index (each seen failing): MUTATION V1 `layout` gives every node level 0; MUTATION V2 `around_ids` leaves out the ancestors; MUTATION V3 `view_data` leaves out the `no_plot` mark.
 """
 import json
@@ -20,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
-from app.modules.lineage_view import DX, around_ids, layout, node_detail, view_data
+from app.modules.lineage_view import DX, TOP, around_ids, column_headings, graph_labels, layout, node_detail, view_data
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.plan_composer import compose_plan_book
 from utils.lineage_data import lineage_of
@@ -95,8 +98,8 @@ def test_the_words_of_the_nodes(world):
     assert leaves == sorted(["Quality_metrics", "Detailed_summary", "FastP_with_metadata", "Bracken_with_metadata", "ResFinder_with_metadata", "AR1_MLST_Serotype_Virulence"])
     assert Counter(n["cls"] for n in data["nodes"]) == {"tier1": 21, "tier2": 7, "result": 23}
     plot = next(n for n in data["nodes"] if n["kind"] == "T3")
-    assert plot["choosable"] and plot["built_from"] == [] and "plot" in plot["tier_word"]
-    assert all(n["line"] and n["detail"] and n["tier_word"] for n in data["nodes"])
+    assert plot["choosable"] and plot["built_from"] == [] and plot["line"].endswith(": Plot data, T3")
+    assert all(n["line"] and n["detail"] and n["shown"] for n in data["nodes"])
 
 
 def test_a_place_that_can_be_chosen_says_what_is_built_from_it_and_the_steps_to_each_result(world):
@@ -105,7 +108,7 @@ def test_a_place_that_can_be_chosen_says_what_is_built_from_it_and_the_steps_to_
     res = by["T1:ResFinder"]
     text = "\n".join(res["detail"])
     assert res["choosable"] and "Built from here:" in res["summary"] and "step" in text and " -> " in text
-    assert "To amr_heatmap (plot)" in text
+    assert "To AMR Heatmap (plot)" in text
     leaf = "\n".join(by["T1:Quality_metrics"]["detail"])
     assert "result table of its own" in leaf and "no figure changes" in leaf
 
@@ -155,3 +158,145 @@ def test_node_detail_of_a_node_without_plan_says_why(world):
     node = bare.node("T1:ResFinder")
     lines = node_detail(bare, node)
     assert any("not known" in ln or "never guessed" in ln or "no plan" in ln for ln in lines)
+
+
+# ---------------------------------------------------------------- the column headings and the numbers of the graphs (the owner's items 7 and 8)
+
+def test_the_headings_are_true_in_the_demo_where_a_level_mixes_tiers(world):
+    lin, data = world
+    by = {n["id"]: n for n in data["nodes"]}
+    pos = data["layouts"][""]
+    heads = data["heads"][""]
+    assert [h["x"] for h in heads] == sorted({p[0] for p in pos.values()}), "one heading for each column, left to right"
+    columns = {}
+    for i, (x, _y) in pos.items():
+        columns.setdefault(x, []).append(by[i])
+    for h in heads:
+        members = columns[h["x"]]
+        kinds = {(n["kind"], n["table_kind"]) for n in members}
+        pure_original = all(k in (("T1", "original"), ("result", "original")) for k in kinds)
+        if pure_original:
+            assert h["text"] == "Original tables"
+        else:
+            assert h["text"].startswith("Level "), "a column that holds anything but the tier 1 of original tables is not given a tier name"
+        assert "Tier" not in h["text"] and "Plot" not in h["text"]
+        assert "not a tier" in h["title"]
+    assert heads[0]["text"] == "Original tables" and heads[1]["text"] == "Level 1"
+    mixed = next(h for h in heads if h["text"] == "Level 1")["title"]
+    assert "plots (tier 3)" in mixed and "tier 1 of joined tables" in mixed and "tier 2 of original tables" in mixed, "what the column really holds is listed"
+    assert any(len({(n["kind"], n["table_kind"]) for n in ms}) > 1 for ms in columns.values()), "the demo does have a mixed column (the reason for the wording)"
+
+
+def test_the_headings_of_a_layout_around_a_place_are_true_for_that_layout(world):
+    lin, data = world
+    by = {n["id"]: n for n in data["nodes"]}
+    for place in ("T1:ResFinder", "T3:amr_heatmap"):
+        pos = data["layouts"][place]
+        for h in data["heads"][place]:
+            members = [by[i] for i, p in pos.items() if p[0] == h["x"]]
+            kinds = {(n["kind"], n["table_kind"]) for n in members}
+            if h["text"] == "Original tables":
+                assert all(k in (("T1", "original"), ("result", "original")) for k in kinds)
+            else:
+                assert h["text"].startswith("Level ")
+
+
+def test_a_small_recipe_without_a_join_has_two_columns(world):
+    book = None
+    bare = lineage_of(load_data_analysis_recipe(RECIPES / "3_test_no_joins.yaml").raw, book)
+    data = view_data(bare)
+    assert [h["text"] for h in data["heads"][""]] == ["Original tables", "Level 1"]
+    assert "plot (tier 3)" in data["heads"][""][1]["title"]
+
+
+def test_column_headings_of_no_dot_are_none():
+    assert column_headings([], {}) == []
+
+
+def test_every_independent_graph_has_its_number_at_its_first_dot(world):
+    lin, data = world
+    labels = data["glabels"][""]
+    assert sorted(labels, key=int) == [str(g["id"] + 1) for g in data["groups"]], "the number is the graph's id plus one, the same as the list heading"
+    pos = data["layouts"][""]
+    by = {n["id"]: n for n in data["nodes"]}
+    for g in data["groups"]:
+        lab = labels[str(g["id"] + 1)]
+        assert lab["node"] in g["nodes"] and [lab["x"], lab["y"]] == pos[lab["node"]]
+        assert (lab["x"], lab["y"]) == min(tuple(pos[i]) for i in g["nodes"]), "the first dot: the lowest x, then the lowest y"
+        assert all(by[i]["gnum"] == g["id"] + 1 for i in g["nodes"]), "every line of the list carries the same number"
+    # a layout around a place numbers only the graph it shows
+    around = data["glabels"]["T1:ResFinder"]
+    assert list(around) == [str(by["T1:ResFinder"]["gnum"])]
+
+
+def test_graph_labels_on_a_small_layout():
+    pos = {"a": (22, 60), "b": (100, 48), "c": (22, 44)}
+    got = graph_labels(pos, {"a": 0, "b": 0, "c": 1})
+    assert got == {"1": {"x": 22, "y": 60, "node": "a"}, "2": {"x": 22, "y": 44, "node": "c"}}
+    assert graph_labels({}, {}) == {}
+
+
+def test_every_dot_sits_below_the_headings_and_inside_the_map(world):
+    lin, data = world
+    for key, pos in data["layouts"].items():
+        w, h = data["sizes"][key]
+        assert all(y >= TOP and 0 <= x <= w and y <= h for x, y in pos.values()), key
+    assert data["top"] == TOP
+
+
+def test_the_tag_no_plot_says_it_once(world):
+    lin, data = world
+    leaves = [n for n in data["nodes"] if n["no_plot"]]
+    assert leaves and all("no plot" not in n["line"] for n in leaves), "the repeated sentence is gone from the line; the tag says it"
+    text = "\n".join(next(n for n in leaves if n["name"] == "Quality_metrics")["detail"])
+    assert "no plot reads it" in text, "the text area explains it once"
+
+
+# ---------------------------------------------------------------- the names of a line (the owner's item 9, 2026-11-26)
+
+def test_a_line_is_a_plain_name_the_word_table_or_plot_data_and_a_short_tier_tag(world):
+    lin, data = world
+    by = {n["id"]: n for n in data["nodes"]}
+    assert by["T1:Summary_phenotype_length_fragmentation"]["line"] == "Summary phenotype length fragmentation: Table, T1"
+    assert by["T3:amr_heatmap"]["line"] == "AMR Heatmap: Plot data, T3"
+    assert by["T1:ST22_Anchor"]["line"] == "ST22 Anchor: Table, T1 [+ meta]"
+    t2 = next(n for n in data["nodes"] if n["kind"] == "T2")
+    assert t2["line"].endswith(": Table, T2")
+    for n in data["nodes"]:
+        assert n["line"].startswith(n["shown"] + ": ") and "table after its tier" not in n["line"] and "(tier" not in n["line"]
+        assert n["line"].split(": ")[1].split(" [")[0] in ("Table, T1", "Table, T2", "Plot data, T3")
+
+
+def test_the_name_without_a_label_is_the_id_with_spaces_and_the_same_name_is_in_the_text_area(world):
+    lin, data = world
+    by = {n["id"]: n for n in data["nodes"]}
+    node = by["T1:Summary_phenotype_length_fragmentation"]
+    assert node["detail"][0] == node["line"], "the text area opens with the same text as the list"
+    plot = by["T3:amr_heatmap"]
+    text = "\n".join(by["T1:ResFinder"]["detail"])
+    assert "AMR Heatmap (plot)" in text and "amr_heatmap" not in text.replace("Id in the recipe", "")
+    assert plot["detail"][0] == plot["line"] and "it reads table ResFinder" in "\n".join(plot["detail"])
+
+
+def test_two_different_tables_with_the_same_label_are_told_apart_by_their_id_and_only_those():
+    from utils.display_names import shown_names
+    raw = {"data_schemas": {"a_one": {"ui_label": "Results"}, "a_two": {"ui_label": "results"}, "plain": {"ui_label": "Other"}}, "joins": {"j": {"ui_label": "Results"}},
+           "analysis_groups": {"g": {"ui_label": "G", "plots": {"p": {"ui_label": "Plot P", "target_dataset": "j"}, "plain": {"target_dataset": "j"}}}}}
+    got = shown_names(raw)
+    assert got[("table", "a_one")] == "Results (a_one)" and got[("table", "a_two")] == "results (a_two)" and got[("table", "j")] == "Results (j)"
+    assert got[("table", "plain")] == "Other" and got[("plot", "p")] == "Plot P"
+    assert got[("plot", "plain")] == "plain", "a plot and a table with the same id but other labels stay apart"
+
+
+def test_a_table_and_a_plot_with_the_same_label_and_id_get_their_kind():
+    from utils.display_names import shown_names
+    raw = {"data_schemas": {"x": {"ui_label": "Same"}}, "analysis_groups": {"g": {"ui_label": "G", "plots": {"x": {"ui_label": "Same", "target_dataset": "x"}}}}}
+    got = shown_names(raw)
+    assert got[("table", "x")] == "Same (table x)" and got[("plot", "x")] == "Same (plot x)"
+
+
+def test_names_without_labels_and_a_recipe_that_is_not_a_mapping():
+    from utils.display_names import readable_name, shown_name, shown_names
+    assert readable_name(None, "a_b_c") == "a b c" and readable_name("  ", "a_b") == "a b" and readable_name(" Nice ", "x") == "Nice"
+    assert shown_names(None) == {} and shown_names({}) == {}
+    assert shown_name({}, "table", "gone_table") == "gone table"

@@ -28,7 +28,7 @@ Consumed by: app/tests/test_lineage_data.py, libs/utils/tests/test_lineage_data.
 
 # @deps
 # provides: function:lineage_of, function:step_line, class:Lineage, class:LineageNode, class:StepLine, class:LinePath, class:PlaceReach, class:Component
-# consumes: libs/utils/src/utils/recipe_graph.py (build_graph, RecipeGraph), libs/utils/src/utils/recipe_tiers.py (METADATA_SCHEMA, collection_body, plot_entry), libs/utils/src/utils/plan_book.py (PlanBook, Plan, PlanFailure), libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/action_names.py
+# consumes: libs/utils/src/utils/display_names.py (shown_names: the name of each node), libs/utils/src/utils/recipe_graph.py (build_graph, RecipeGraph), libs/utils/src/utils/recipe_tiers.py (METADATA_SCHEMA, collection_body, plot_entry), libs/utils/src/utils/plan_book.py (PlanBook, Plan, PlanFailure), libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/action_names.py
 # consumed_by: libs/utils/tests/test_lineage_data.py
 # doc: .claude/knowledge/decision_ledger.md (D-0627, D-0629 to D-0634), .claude/rules/ui_implementation_contract.md#2
 # @end_deps
@@ -39,7 +39,7 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-from utils import action_names, join_keys, recipe_tiers
+from utils import action_names, display_names, join_keys, recipe_tiers
 from utils.plan_book import Plan, PlanBook, PlanBookIncomplete, PlanFailure
 from utils.recipe_graph import RecipeGraph, build_graph
 
@@ -52,7 +52,7 @@ class LineageNode:
     """One node. id: the graph's id (`T1:<table>`, `T2:<table>`, `T3:<plot>`). kind: `T1`, `T2`, `T3` or `result` (a leaf table). tier: 1, 2 or 3. name: the table or plot id.
     table_kind: `original`, `joined` or `plot`. what: one plain sentence. ui_label, description: the recipe's own words for the table or plot ("" when it gives none).
     choosable: whether an audit step can be written here; if not, `not_choosable_reason`. brings_metadata: a joined table that takes the metadata in (no arrow is drawn for it).
-    n_steps: the steps of this node's own tier. columns: the engine's (name, type) pairs after the node's steps, or None; then `columns_note` says why (never guessed from the graph)."""
+    shown: the name the app shows for the table or plot (`utils.display_names`: the ui_label, else the id with spaces; the id in brackets when two would be equal). n_steps: the steps of this node's own tier. columns: the engine's (name, type) pairs after the node's steps, or None; then `columns_note` says why (never guessed from the graph)."""
     id: str
     kind: str
     tier: int
@@ -67,6 +67,7 @@ class LineageNode:
     n_steps: int
     columns: Optional[Tuple[Tuple[str, str], ...]]
     columns_note: str
+    shown: str
 
 
 @dataclass(frozen=True)
@@ -214,6 +215,12 @@ def lineage_of(raw: Union[dict, RecipeGraph], plans: Optional[PlanBook] = None) 
             return True
         return any(isinstance(s, dict) and s.get("right_ingredient") == METADATA for s in node.steps)
 
+    names = display_names.shown_names(raw)
+
+    def shown_of(nid: str) -> str:
+        g = graph.node(nid)
+        return display_names.shown_name(names, display_names.PLOT if g.kind == "T3" else display_names.TABLE, g.name)
+
     nodes: List[LineageNode] = []
     for nid in ids:
         node = graph.node(nid)
@@ -225,8 +232,8 @@ def lineage_of(raw: Union[dict, RecipeGraph], plans: Optional[PlanBook] = None) 
         choosable, reason = True, ""
         if node.kind == "T3":
             kind, table_kind, tier = "T3", "plot", 3
-            target = graph.node(graph.parents(nid)[0]).name
-            what = f"Plot {node.name} (tier 3): it reads table {target}" + (f" and has {_count(n, 'step', 'steps')} of its own." if n else " as it is.")
+            target = shown_of(graph.parents(nid)[0])
+            what = f"Plot data {shown_of(nid)} (T3): it reads table {target}" + (f" and has {_count(n, 'step', 'steps')} of its own." if n else " as it is.")
         else:
             table_kind = "original" if node.collection_kind == "schema" else "joined"
             tier = 1 if node.kind == "T1" else 2
@@ -235,17 +242,17 @@ def lineage_of(raw: Union[dict, RecipeGraph], plans: Optional[PlanBook] = None) 
                 kind = "result"
             steps_words = _count(n, "step", "steps") if n else "no step"
             if node.kind == "T2":
-                what = f"Table {node.name} after its tier 2 ({steps_words})."
+                what = f"Table {shown_of(nid)} after its tier 2 ({steps_words})."
                 if not node.read_by_plot:
                     choosable, reason = False, "no plot reads this tier 2, so its steps run nowhere and no audit step can be written here (recipe check S07 for a table, J14 for a join)"
             elif table_kind == "original":
-                what = f"Original table {node.name}, after its tier 1 ({steps_words})."
+                what = f"Original table {shown_of(nid)}, after its tier 1 ({steps_words})."
             else:
-                made_of = [graph.node(p).name for p in graph.parents(nid) if graph.node(p).name != METADATA]
-                what = f"Table {node.name}, built by joining {', '.join(made_of) or 'no other table'}" + (" and the metadata" if brings_metadata(nid) else "") + f", after its tier 1 ({steps_words})."
+                made_of = [shown_of(p) for p in graph.parents(nid) if graph.node(p).name != METADATA]
+                what = f"Table {shown_of(nid)}, built by joining {', '.join(made_of) or 'no other table'}" + (" and the metadata" if brings_metadata(nid) else "") + f", after its tier 1 ({steps_words})."
             if kind == "result":
                 what += " Nothing is built from it: it is a result table of its own."
-        nodes.append(LineageNode(nid, kind, tier, node.name, table_kind, what, label, text, choosable, reason, brings_metadata(nid), n, columns, note))
+        nodes.append(LineageNode(nid, kind, tier, node.name, table_kind, what, label, text, choosable, reason, brings_metadata(nid), n, columns, note, shown_of(nid)))
     by_id = {n.id: n for n in nodes}
     edges = tuple((p, nid) for nid in ids for p in parents[nid])
 

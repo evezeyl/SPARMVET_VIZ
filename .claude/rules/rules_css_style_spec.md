@@ -392,6 +392,8 @@ ID: `#gallery_guidance_accordion`
 
 The list and the dots of the panel "Path of the data" use existing tokens only (`theme.css` section 29): tier 1 = surface neutral `#f8f9fa` with the muted grey `#6c757d` as its line; tier 2 = the Violet tint `#eef0fb` with the primary blue `#345beb`; results (a plot, a result table no plot reads) = the teal tint `#e6f7f5` with the teal `#10a395`. The chosen place has a dark line (`#1a1a1a`, thick), what is built from it the blue ring, an audit step a text mark in the success-tint colours of section 1e (`#d5efec` on `#0b6358`). A table is a circle, a plot a square (a shape, not only a colour). Type scale: 0.85rem title, 0.8rem body, 0.75rem notes, 0.65rem tags.
 
+
+Added 2026-11-26 (PROVISIONAL, the owner's test of HOME in Audit mode): the line "Chosen: ..." is 0.8rem, weight 700, `#0b6358` on `#fff3cd` (the amber tint of section 1e) with its `#ffeeba` border (contrast 6.45 to 1); the tag "no plot" is `#0b6358` on `#e6f7f5` with `#10a395` (6.46 to 1); what is built from the chosen place has a 4 px outline `#345beb` (the chosen place `#1a1a1a`, 5 px); the dot beside a list line follows (4 px `#1a1a1a` chosen, 3 px `#345beb` built); the headings of the columns, the numbers of the graphs and the dots' groups use 10 px SVG text in `#6c757d` (a size of the drawing, not of the page scale); the drag handles reuse the grip of section 12 (4 x 40 px `#6c757d`, `#345beb` on hover and focus); the zoom buttons are the small white buttons of the lineage bar (`#345beb` text). Where an audit step was written (`.spv-audit-place`): 0.8em, weight 600, `#1a1a1a`.
 ---
 
 ## 10. Tab & Navigation Patterns
