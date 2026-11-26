@@ -1,0 +1,1 @@
+The files of this folder moved to `.claude/outdated/design/studies/scratch_records_2026-11/panel/viz/` on 2026-11-26 (wave 2). The four files cited by `.claude/design/decisions_2026-11-14/` keep a one-line pointer here; they are removed when the citing files are actualised.
