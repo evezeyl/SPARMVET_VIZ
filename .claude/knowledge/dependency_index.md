@@ -589,7 +589,7 @@
 
 ## `app/tests/home_harness.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/home_theater.py (define_server)`, `app/tests/test_tier3_reader.py (Tier3World)`
+- **consumes:** `app/handlers/home_theater.py (define_server; its `shown_item` through the kwargs of the lineage handlers)`, `app/tests/test_tier3_reader.py (Tier3World)`
 - **consumed_by:** `app/tests/test_home_reads_the_plots_table.py`, `app/tests/test_home_view_choices.py`, `app/tests/test_filters_change_the_table_not_the_plot.py`, `app/tests/test_left_sidebar_redraw_wiring.py`
 
 ## `app/tests/test_audit_shown_browser.py`
