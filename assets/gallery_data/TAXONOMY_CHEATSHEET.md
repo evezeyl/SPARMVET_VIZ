@@ -8,12 +8,12 @@ Icons used consistently across all example data analysis recipes, example_meta.m
 
 | Icon | Axis | Sidebar label | Where used |
 |------|------|--------------|-----------|
-| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | data analysis recipe `info.family`, meta `> 📊 …`, sidebar |
-| 🔢 | **Data Pattern** | `🔢 Data Pattern` | data analysis recipe `info.pattern`, meta `> … 🔢 …`, sidebar |
-| 📈 | **Difficulty** | `📈 Difficulty` | data analysis recipe `info.difficulty`, meta `> … 📈 …`, sidebar |
-| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | data analysis recipe `info.geom`, meta `> … ⚙️ …`, sidebar |
-| 🎯 | **What it Shows** | `🎯 What it Shows` | data analysis recipe `info.show`, meta `> … 🎯 …`, sidebar |
-| 📏 | **Sample Size** | `📏 Sample Size` | data analysis recipe `info.sample_size`, meta `> … 📏 …`, sidebar |
+| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | plot entry `taxonomy.family`, meta `> 📊 …`, sidebar |
+| 🔢 | **Data Pattern** | `🔢 Data Pattern` | plot entry `taxonomy.pattern`, meta `> … 🔢 …`, sidebar |
+| 📈 | **Difficulty** | `📈 Difficulty` | plot entry `taxonomy.difficulty`, meta `> … 📈 …`, sidebar |
+| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | derived from the first `geom_*` or `stat_*` layer (not typed), meta `> … ⚙️ …`, sidebar |
+| 🎯 | **What it Shows** | `🎯 What it Shows` | plot entry `taxonomy.show`, meta `> … 🎯 …`, sidebar |
+| 📏 | **Sample Size** | `📏 Sample Size` | plot entry `taxonomy.sample_size`, meta `> … 📏 …`, sidebar |
 
 ---
 
@@ -100,16 +100,24 @@ Example:
 
 ---
 
-## Data analysis recipe info block format
+## Where the five typed axes are written (rules_gallery_standards.md section 2)
+
+The `taxonomy` mapping sits on the plot entry of the example, not in `info`; `info` holds `ui_label`, `description` and `submission_date`. The sixth axis, `geom`, is derived from the first `geom_*` or `stat_*` layer and is not typed.
 
 ```yaml
 info:
-  name: Example Name
+  ui_label: Example Name
   submission_date: 'YYYY-MM-DD'
-  family: Distribution         # 📊
-  pattern: 1 Numeric, 1 Categorical  # 🔢
-  difficulty: Intermediate     # 📈
-  geom: geom_violin            # ⚙️
-  show: distribution           # 🎯
-  sample_size: medium+         # 📏
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      example_plot:
+        ui_label: Example Name
+        taxonomy:
+          family: Distribution               # 📊
+          pattern: 1 Numeric, 1 Categorical  # 🔢
+          difficulty: Intermediate           # 📈
+          show: distribution                 # 🎯
+          sample_size: medium+               # 📏
 ```
