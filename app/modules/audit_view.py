@@ -12,9 +12,9 @@ T3 table, the filter dialog, the results bundle) asks this one object, so they c
 Pure of Shiny. Consumed by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py.
 
 # @deps
-# provides: class:PlaceAudit, constant:AUDIT_ERRORS
+# provides: class:PlaceAudit (run_of, plot_lazy, table_lazy, affected_plots, forget), constant:AUDIT_ERRORS
 # consumes: app/modules/audit_places.py (audit_copy_for, nodes_signature), app/modules/audit_run.py (run_audit, AuditRun), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/orchestrator.py (DataOrchestrator)
-# consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/audit_trial.py, app/tests/test_audit_view.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/knowledge/architecture_decisions.md#adr-101
 # @end_deps
 """
@@ -47,6 +47,11 @@ class PlaceAudit:
         self.original_dir = Path(original_dir)
         self.audit_dir = Path(audit_dir)
         self._memo: Optional[tuple] = None          # (signature, AuditRun)
+
+    def forget(self) -> None:
+        """Drop the memo of the last run. `PlaceTrial.apply_trial` calls it after it moved stored tables into the audit folder: a run object held from before points at files whose content is now
+        the new state (an `AuditRun` reads a stored table by path, with no key check), so it must not be served again for its old list."""
+        self._memo = None
 
     def run_of(self, recipe_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> Optional[AuditRun]:
         """The run of the copy made from `nodes` (the committed place nodes), or None when there is none. Raises `AuditRunError`, `AuditCopyError` or `UntranslatableNode`

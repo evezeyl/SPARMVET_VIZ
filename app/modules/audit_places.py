@@ -313,14 +313,14 @@ def t3_file_sentence(folder: str, plot_id: str, audited: bool, recipe_steps: boo
 
 def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[str, Any]]:
     """One record per committed node written at a place, in commit order, for `t3_steps.yaml`, the README and the report: id, place (as a node id and in words), the plot it was
-    started from, the action it is (`node_type`) with its parameters, the reason, the date and the plots built from the place (`plots`). A place the graph does not have lists no plot."""
+    started from, the action it is (`node_type`) with its parameters, the reason, the date it was APPLIED (`applied_at`; `created_at`, the staging time, for a step stored before that key existed) and the plots built from the place (`plots`). A place the graph does not have lists no plot."""
     records: List[Dict[str, Any]] = []
     for node in nodes:
         place = node.get("place") or ""
         records.append({
             "id": node.get("id"), "place": place, "place_words": place_words(place), "started_from": (node.get("started_from") or "").removeprefix("subtab_"),
             "action": node.get("node_type", "unknown"), "params": dict(node.get("params") or {}), "reason": node.get("reason", ""),
-            "committed_at": node.get("created_at", ""),
+            "committed_at": node.get("applied_at") or node.get("created_at", ""),
             "plots": plots_below(graph, [place]) if graph.has_node(place) else [],
         })
     return records
@@ -355,7 +355,7 @@ def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
 
 def _step_comment(node: dict) -> str:
     """What a written audit step says of itself in the recipe: the reason, the id of the audit step and the day it was committed (PROVISIONAL words)."""
-    when = str(node.get("created_at") or "")[:10]
+    when = str(node.get("applied_at") or node.get("created_at") or "")[:10]
     return f"Audit step {node.get('id')}" + (f", {when}" if when else "") + f": {node.get('reason', '')}"
 
 

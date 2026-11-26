@@ -154,7 +154,7 @@ PLACES: Tuple[EnginePlace, ...] = tuple(_place(*row) for row in (
     ("app/src/server.py", _P, TABLE_LIBRARY, "reads the stored tier 1 table with a Polars Parquet scan"),
     ("app/handlers/gallery_handlers.py", _P, TABLE_LIBRARY, "shows a Polars table with the error when an example cannot load"),
     ("app/handlers/test_lab_handlers.py", _P, TABLE_LIBRARY, "reads uploaded files with Polars for the TEST_LAB tools"),
-    ("app/modules/audit_run.py", _P, TABLE_LIBRARY, "hands out the table of a plot of the audit copy; Polars appears only in a type annotation"),
+    ("app/modules/audit_run.py", _P, TABLE_LIBRARY, "reads the stored Polars tables of an audit copy with Parquet scans, counts their rows and compares two tables; hands out the lazy table a plot reads"),
     ("app/modules/help_registry.py", _G, TABLE_LIBRARY, "builds a pandas table for the help grid of the interface; no plot is drawn and plotnine is not used here, so pandas has no plot engine to belong to in this file; not decided"),
     ("assets/scripts/SF_create_data_analysis_recipe.py", _P, TABLE_LIBRARY, "a script that reads one data file with Polars to write a recipe"),
     ("assets/scripts/create_data_analysis_recipe.py", _P, TABLE_LIBRARY, "a script that reads data files with Polars to write a recipe"),

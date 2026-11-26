@@ -52,7 +52,7 @@ MUST_USE_THE_HELPER = {
     "app/modules/cache_keys.py": {"tier2_parts": 1, "tier3_parts": 1, "audit_steps_of": 1},
     "app/modules/engine_record.py": {"step_list": 2},
     "app/modules/view_badge.py": {"tier2_steps": 1, "tier3_steps": 1},
-    "app/modules/audit_run.py": {"tier2_steps": 2},
+    "app/modules/audit_run.py": {"tier2_steps": 3},   # 3: the original's stored tier 2 table of a table is read by `original_table` (the trial of a step compares with it)
     "app/modules/session_manager.py": {"recipe_join_keys": 1},   # `extract_primary_keys` returns the shared rule; it read `step_list` itself before the merge of slice B
     "app/handlers/audit_stack.py": {"tier2_steps": 1},
     "app/handlers/export_handlers.py": {"tier2_steps": 3, "tier3_steps": 2},
