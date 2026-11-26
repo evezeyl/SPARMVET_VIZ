@@ -396,14 +396,14 @@ def test_every_place_uses_the_same_plain_name(ready: Page):
     _clear_choice(page)
     long = "Summary phenotype length fragmentation: Table, T1"
     assert _line(page, "T1:Summary_phenotype_length_fragmentation").locator(".spv-lin-line-text").inner_text() == long
-    assert _line(page, "T3:amr_heatmap").locator(".spv-lin-line-text").inner_text() == "AMR Heatmap: Plot data, T3"
+    assert _line(page, "T3:amr_heatmap").locator(".spv-lin-line-text").inner_text() == "AMR Heatmap: Result data, T3"
     shown_text = __import__("re").sub(r"\([^)]*\)", "", page.locator("#lineage_root .spv-lin-list").inner_text())     # an id in brackets keeps its underscores: it tells two equal names apart
     assert "_" not in shown_text
     assert "(table QA_L50_integer)" in page.locator("#lineage_root .spv-lin-list").inner_text(), "a table and a plot with the same name are told apart"
     assert "table after its tier" not in page.locator("#lineage_root .spv-lin-list").inner_text()
     assert _dot(page, "T1:Summary_phenotype_length_fragmentation").get_attribute("aria-label").startswith(long)
     _dot(page, "T3:amr_heatmap").click()
-    assert page.locator("#lineage_root .spv-lin-text-head").inner_text() == "AMR Heatmap: Plot data, T3"
+    assert page.locator("#lineage_root .spv-lin-text-head").inner_text() == "AMR Heatmap: Result data, T3"
     assert "Chosen: AMR Heatmap." in page.locator("#lineage_root .spv-lin-bar").inner_text()
     _clear_choice(page)
 
@@ -572,7 +572,7 @@ def test_a_step_on_a_plot_says_where_it_was_written(ready: Page):
     assert page.locator("#propagation_choice input[value=this]").is_checked()
     page.locator("#propagation_confirm").click()
     _wait_shiny(page)
-    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at AMR Heatmap: Plot data, T3", timeout=15_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at AMR Heatmap: Result data, T3", timeout=15_000)
     # the section of the audit steps: its own block below the recipe's steps, a heading in the style of a recipe tier, the place under it
     mine = page.locator("#audit_nodes_tier3 .spv-audit-mine")
     expect(mine.locator("h6")).to_have_text("My Adjustments — AMR Heatmap")

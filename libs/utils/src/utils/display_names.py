@@ -30,8 +30,8 @@ def readable_name(label: Any, ident: str) -> str:
 def shown_names(raw: Any) -> Dict[Tuple[str, str], str]:
     """`{(kind, id): shown name}` for every table (kind "table": data schemas, additional datasets and joins, not the metadata) and every plot (kind "plot") of the recipe.
 
-    Two different entries whose readable names are equal (case does not matter) both get their id in brackets after the name: "ResFinder (ResFinder_2)". If they are still equal (a table and a
-    plot with the same id and label) the kind is added: "ResFinder (table ResFinder)"."""
+    Two different entries whose readable names are equal (case does not matter) both get their id in brackets after the name: "ResFinder (ResFinder_2)"; when the id only repeats the name
+    (label equal to the id) the kind is shown instead: "ResFinder (table)", "ResFinder (plot)". If they are still equal (two ids that both repeat the name) the kind is added: "ResFinder (table ResFinder)"."""
     if not isinstance(raw, dict):
         return {}
     entries: List[Tuple[Tuple[str, str], str]] = []
@@ -53,7 +53,9 @@ def shown_names(raw: Any) -> Dict[Tuple[str, str], str]:
         return {key for keys in seen.values() if len(keys) > 1 for key in keys}
 
     for key in clashes(shown):
-        shown[key] = f"{shown[key]} ({key[1]})"
+        # a bracket that only repeats the name tells nothing: the kind is shown instead ("A (table)", "A (plot)")
+        repeats = readable_name(None, key[1]).casefold() == shown[key].casefold()
+        shown[key] = f"{shown[key]} ({key[0] if repeats else key[1]})"
     for key in clashes(shown):
         shown[key] = f"{shown[key].rsplit(' (', 1)[0]} ({key[0]} {key[1]})"
     return shown
@@ -65,12 +67,12 @@ def shown_name(names: Dict[Tuple[str, str], str], kind: str, ident: str) -> str:
 
 
 def kind_tag(is_plot: bool) -> str:
-    """"Plot data" for a plot, "Table" for a table: the word before the tier tag in a list line."""
-    return "Plot data" if is_plot else "Table"
+    """"Result data" for a plot, "Table" for a table: the word before the tier tag in a list line."""
+    return "Result data" if is_plot else "Table"
 
 
 def tagged_name(shown: str, is_plot: bool, tier: int) -> str:
-    """The text every place uses for a table or a plot: "<shown name>: Table, T1" or "<shown name>: Plot data, T3"."""
+    """The text every place uses for a table or a plot: "<shown name>: Table, T1" or "<shown name>: Result data, T3"."""
     return f"{shown}: {kind_tag(is_plot)}, {short_tag(tier)}"
 
 

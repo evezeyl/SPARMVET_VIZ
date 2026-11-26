@@ -15,9 +15,9 @@ Up to three rows; the first only when the audit is switched on in your setup.
 | **Source** | One source table as read from its file, before any step of the recipe. A second list names the source tables that feed the open plot (one table: the list still shows it) |
 | **T1** | The plot's table after the tier-1 steps of the recipe |
 | **T2** | The plot's table after the tier-2 steps (T2 = T1 if the recipe has none) |
-| **T3** | The table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe (T3 = T2 if it has none). In Audit mode, T3 also carries your audited steps |
+| **T3** | The Result data, the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe (T3 = T2 if it has none). In Audit mode, T3 also carries your audited steps |
 
-The badge next to the table says which table it is and when two tables are the same. In Audit mode, audit steps apply to the plot's table (T3) for now; T1, T2 and Source stay the original tables.
+The badge next to the table says which table it is and when two tables are the same. In Audit mode a step can be written at any table of "Path of the data" or at the Result data (T3) of a plot; T1 and T2 show the audited table where a step changes it, and Source stays the file as read.
 
 ### Filters (left sidebar)
 **A filter is built on the table you are viewing, and it is cleared when that table changes.**

@@ -97,8 +97,8 @@ Before you click *Add to audit pipeline*, the modal shows a per-plot preview of 
 > 📍 **Propagation preview:** ✅ 5 apply  •  ⚠️ 2 skip (col missing)
 >
 > ▶ Show details
->   ⚠️ *Plasmid Prevalence by Country* — column not in plot data; will be SKIPPED
->   ⚠️ *Phenotype Genome Length* — column not in plot data; will be SKIPPED
+>   ⚠️ *Plasmid Prevalence by Country* — column not in the Result data (T3) of this plot; will be SKIPPED
+>   ⚠️ *Phenotype Genome Length* — column not in the Result data (T3) of this plot; will be SKIPPED
 >
 > 👉 Apply filters one at a time and verify each plot before stacking. A skipped plot is **NOT filtered** — it shows the unfiltered data.
 

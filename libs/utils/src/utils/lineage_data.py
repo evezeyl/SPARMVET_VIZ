@@ -233,7 +233,7 @@ def lineage_of(raw: Union[dict, RecipeGraph], plans: Optional[PlanBook] = None) 
         if node.kind == "T3":
             kind, table_kind, tier = "T3", "plot", 3
             target = shown_of(graph.parents(nid)[0])
-            what = f"Plot data {shown_of(nid)} (T3): it reads table {target}" + (f" and has {_count(n, 'step', 'steps')} of its own." if n else " as it is.")
+            what = f"Result data of plot {shown_of(nid)} (T3): it reads table {target}" + (f" and has {_count(n, 'step', 'steps')} of its own." if n else " as it is.")
         else:
             table_kind = "original" if node.collection_kind == "schema" else "joined"
             tier = 1 if node.kind == "T1" else 2

@@ -1236,7 +1236,7 @@ def define_server(input, output, session, *,
             "T3": _tier_label(
                 "T3",
                 "the table the plot shows",
-                "T3: the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. If it has none, T3 = T2.",
+                "T3: the Result data, the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. If it has none, T3 = T2.",
             ),
         }
         mode_choices = {
@@ -1295,7 +1295,7 @@ def define_server(input, output, session, *,
                         ui.tags.span(
                             ui.output_text("home_data_preview_title", inline=True),
                             ui.output_ui("home_data_preview_badge", inline=True),
-                            title="Preview the active plot dataset at the selected tier",
+                            title="Preview the Result data (T3) or the table of the selected tier of the open plot",
                             class_="me-3",
                         ),
                         # PREVIEW-ALLROWS-1: "Show all rows" toggle — off by default (100-row cap).

@@ -3,7 +3,7 @@
 What the panel looked like before: the recipe's own tier-2 steps were listed under "Inherited (Tier 2)" in blue; the audit steps were cards under "My Adjustments - <plot id>" (the heading was
 drawn only when a card existed), and the line that said where a card was written was drawn only for a step at a table (`place and not place.startswith("T3:")`): a step at a plot's own tier 3
 (the plot "Year Distribution") showed no place at all, and the line was small grey text. Now: the section heading is always shown, below the recipe steps and set apart; every card, pending or
-committed, says "Written at <name>: Table, T1" or "Written at <name>: Plot data, T3" (the lineage panel's text, `utils.display_names`), a table also how many plots are built from there.
+committed, says "Written at <name>: Table, T1" or "Written at <name>: Result data, T3" (the lineage panel's text, `utils.display_names`), a table also how many plots are built from there.
 
 Mutation (seen failing): MUTATION P1 `_place_banner` returns an empty span for a place that starts with "T3:" (the old behaviour).
 """
@@ -24,7 +24,7 @@ def _text(tag) -> str:
 
 
 def test_a_step_at_a_plot_says_the_plot_by_its_label_the_kind_and_the_tier():
-    assert _text(_place_banner("T3:year_distribution", {}, RAW)) == "Written at Year Distribution: Plot data, T3"
+    assert _text(_place_banner("T3:year_distribution", {}, RAW)) == "Written at Year Distribution: Result data, T3"
 
 
 def test_a_step_at_a_table_says_the_table_the_tier_and_how_many_plots():
@@ -39,9 +39,9 @@ def test_a_table_no_plot_reads_says_that_no_figure_changes():
 
 
 def test_the_line_is_the_text_of_the_lineage_panel_and_falls_back_to_the_readable_id():
-    assert place_line("T3:no_label", RAW) == "no label: Plot data, T3"
+    assert place_line("T3:no_label", RAW) == "no label: Result data, T3"
     assert place_line("T1:Nope_table", RAW) == "Nope table: Table, T1"
-    assert place_line("T3:year_distribution", None) == "year distribution: Plot data, T3"
+    assert place_line("T3:year_distribution", None) == "year distribution: Result data, T3"
     assert place_line("", RAW) == "" and place_line("garbage", RAW) == "garbage"
 
 

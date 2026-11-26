@@ -1087,7 +1087,7 @@ def define_filter_audit_server(input, output, session, *,
         n_unknown = sum(1 for v in presence.values() if v == "unknown")
 
         absent_items = [
-            ui.tags.li(f"⚠️ {_plot_label(sub)} — column not in plot data; will be SKIPPED")
+            ui.tags.li(f"⚠️ {_plot_label(sub)} — column not in the Result data (T3) of this plot; will be SKIPPED")
             for sub, st in presence.items() if st == "absent"
         ]
         unknown_items = [
@@ -1307,7 +1307,7 @@ def define_filter_audit_server(input, output, session, *,
                 f"{_plot_label(p)}: {', '.join(cs)}"
                 for p, cs in skipped.items()
             )
-            msg += f" Skipped (column not in plot data): {skipped_summary}."
+            msg += f" Skipped (column not in the Result data, T3): {skipped_summary}."
         _notify(msg, type="message", duration=7)
 
     def _stage_nodes(state: dict, placed: list[tuple[dict, str]], active_subtab: str) -> None:
