@@ -1,5 +1,23 @@
 # Handoff: active state (last update 2026-11-26)
 
+## READ THIS FIRST: what is true now about HOME, the audit and the lineage (2026-11-26)
+
+The full one-page version, trusted over any older text on the same subject: `.claude/design/home_audit_what_is_true_now.md`. The model in six sentences:
+1. An audit step is applied in data, never "in a plot"; a plot's own drawing steps are not changed.
+2. Where it is applied is a place: a table after its tier 1 (T1), after its tier 2 (T2), or the Result data (T3) of a plot (the last data table, the data that arrives at that plot).
+3. The scope of a step is the place or places the user chooses in the panel "Path of the data"; nothing else says where a step goes.
+4. What is built from a place follows by the recipe and is shown as information ("what the step reaches"); it is not chosen and not ticked.
+5. At most one place on a path; the metadata is not a place; a step in several plots separately means choosing the Result data (T3) of each.
+6. What the user verifies is the table at the place; Exploration never changes a plot and is never exported; the export holds the Result plus the applied audit steps.
+
+| Say | Do not say |
+|---|---|
+| Result data (T3) | plot data, the plot's table |
+| the table the plot reads (T1, T2 or T3) | the plot's table |
+| place; the places chosen; what the step reaches | "This plot only", "All plots", "All plots except" (old thinking of ADR-049; still built in the pop-up, to be removed) |
+| applied step, audit step, trial | "My view" (gone since 2026-11-20) |
+
+
 Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE 2026-11-26 below (the section of 2026-11-25 after it is kept as history); one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
 
 ## OPEN STATE 2026-11-26 (coordinator session sparmvet-viz-44; records round of branch `task/records-2026-11-26`) — READ THIS FIRST
