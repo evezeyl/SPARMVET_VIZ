@@ -11366,7 +11366,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Wireframe1",
+					"name": "UI-HOME",
 					"ownedElements": [
 						{
 							"_type": "WFWireframeDiagram",
@@ -11375,6 +11375,18 @@
 								"$ref": "AAAAAAGht1V6z9k+p4w="
 							},
 							"name": "UI-HOME The screen as built today (before the audit redesign)",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKFOKffk=",
+									"_parent": {
+										"$ref": "AAAAAAGht1l62kuo/R0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "WFWebFrameView",
@@ -13594,6 +13606,18 @@
 								"$ref": "AAAAAAGhwIL8VRe1/BM="
 							},
 							"name": "EXP-MODES Export bundle contents by mode",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKFONK0g=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -14989,30 +15013,6 @@
 						},
 						{
 							"_type": "FCTerminator",
-							"_id": "AAAAAAGhwIMJnRhcBqw=",
-							"_parent": {
-								"$ref": "AAAAAAGhwIL8VRe1/BM="
-							},
-							"name": "TEST A"
-						},
-						{
-							"_type": "FCProcess",
-							"_id": "AAAAAAGhwIMbpBhk09s=",
-							"_parent": {
-								"$ref": "AAAAAAGhwIL8VRe1/BM="
-							},
-							"name": "TEST B"
-						},
-						{
-							"_type": "FCProcess",
-							"_id": "AAAAAAGhwIONlhhs3vw=",
-							"_parent": {
-								"$ref": "AAAAAAGhwIL8VRe1/BM="
-							},
-							"name": "TEST C"
-						},
-						{
-							"_type": "FCTerminator",
 							"_id": "AAAAAAGhwIRbyxiMbI8=",
 							"_parent": {
 								"$ref": "AAAAAAGhwIL8VRe1/BM="
@@ -15404,6 +15404,18 @@
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
 							"name": "HOME-EXPLORATION Filters in Exploration: preview only",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKVOQ1W4=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -15871,46 +15883,6 @@
 								},
 								{
 									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy6yij1F9c+Q=",
-									"_parent": {
-										"$ref": "AAAAAAGhypgeVUGv1LQ="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy6yij1F7v+8="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy6yij1F+xCI=",
-											"_parent": {
-												"$ref": "AAAAAAGhy6yij1F9c+Q="
-											},
-											"lineColor": "$red11",
-											"fillColor": "$red4",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 30,
-											"top": 630,
-											"width": 300,
-											"height": 26,
-											"text": "TO CHANGE (code): one list per (view, dataset); today ONE global list",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "$red11",
-									"fillColor": "$red4",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 20,
-									"top": 620,
-									"width": 320,
-									"height": 70,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy6yij1F+xCI="
-									}
-								},
-								{
-									"_type": "FCProcessView",
 									"_id": "AAAAAAGhy6yitFGF4nQ=",
 									"_parent": {
 										"$ref": "AAAAAAGhypgeVUGv1LQ="
@@ -16323,20 +16295,12 @@
 							]
 						},
 						{
-							"_type": "FCData",
-							"_id": "AAAAAAGhypgfeEHbgVs=",
-							"_parent": {
-								"$ref": "AAAAAAGhypgeVUGuLNo="
-							},
-							"name": "Raw plot, Result plot,\nCompare left plot:\nnever filtered (recipe plot)"
-						},
-						{
 							"_type": "FCTerminator",
 							"_id": "AAAAAAGhy6yhGlEb2gk=",
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "User in Exploration: Data = Raw (T1) or Result (T2)",
+							"name": "User in Exploration: Table to view = Source, T1, T2 or T3",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16395,7 +16359,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Staged list (per view and dataset)",
+							"name": "Staged list (of the viewed table)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16419,7 +16383,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Applied list (per view and dataset)",
+							"name": "Applied list (of the viewed table)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16496,7 +16460,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Change of Data view (Raw <-> Result) or of recipe: ALL preview filters and column choices are cleared, with a message",
+							"name": "Change of the viewed table (Source, T1, T2, T3) or of recipe (D-0311): ALL preview filters and column choices are cleared, with a message",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16527,7 +16491,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "PLOT: the recipe's Result plot, unchanged. Raw has no plot (NA)"
+							"name": "PLOT: the recipe's Result plot, drawn from T3, never changed by a preview filter (D-0310, D-0327)"
 						},
 						{
 							"_type": "FCDocument",
@@ -16544,14 +16508,6 @@
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
 							"name": "A stage without the filtered column skips the filter (safety net; should not fire)"
-						},
-						{
-							"_type": "FCProcess",
-							"_id": "AAAAAAGhy6yij1F7v+8=",
-							"_parent": {
-								"$ref": "AAAAAAGhypgeVUGuLNo="
-							},
-							"name": "TO CHANGE (code): one list per (view, dataset); today ONE global list"
 						},
 						{
 							"_type": "FCProcess",
@@ -16608,6 +16564,18 @@
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
 							"name": "HOME-AUDIT-LINEAGE Where an audit step is written (places), with real ST22 collections",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKVOTBlQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -18112,6 +18080,19 @@
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
 							"name": "HOME-VIEW-MATRIX What Exploration and the Audit workspace show and do",
+							"documentation": "OUTDATED IN PART since D-0310 (2026-11-20): drawn with the 'Raw (T1) / Result (T2)' choice and 'no plot on T1'. Built: the data choice is Source, T1, T2, T3 and the plot in Exploration is always the Result, never changed by an exploration filter (D-0310, D-0327). The Audit column and the row meanings still hold. Kept for the owner's decision (redraw or remove).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKVOWvxQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -19453,7 +19434,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "button: Add to preview"
+							"name": "Raw (T1): button: Add to preview"
 						},
 						{
 							"_type": "FCProcess",
@@ -19461,7 +19442,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "button: Add to preview"
+							"name": "Result (T2): button: Add to preview"
 						},
 						{
 							"_type": "FCProcess",
@@ -19497,7 +19478,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "hide columns in the table only"
+							"name": "Raw (T1): hide columns in the table only"
 						},
 						{
 							"_type": "FCProcess",
@@ -19505,7 +19486,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "hide columns in the table only"
+							"name": "Result (T2): hide columns in the table only"
 						},
 						{
 							"_type": "FCProcess",
@@ -19541,7 +19522,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "preview lists per view and dataset; cleared on view change"
+							"name": "Raw (T1): preview lists per view and dataset; cleared on view change"
 						},
 						{
 							"_type": "FCProcess",
@@ -19549,7 +19530,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "preview lists per view and dataset; cleared on view change"
+							"name": "Result (T2): preview lists per view and dataset; cleared on view change"
 						},
 						{
 							"_type": "FCProcess",
@@ -19573,7 +19554,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "NA"
+							"name": "Raw (T1): NA"
 						},
 						{
 							"_type": "FCProcess",
@@ -19581,7 +19562,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "NA"
+							"name": "Result (T2): NA"
 						},
 						{
 							"_type": "FCProcess",
@@ -19605,7 +19586,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "never exported"
+							"name": "Raw (T1): never exported"
 						},
 						{
 							"_type": "FCProcess",
@@ -19613,7 +19594,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "never exported"
+							"name": "Result (T2): never exported"
 						},
 						{
 							"_type": "FCProcess",
@@ -19660,6 +19641,18 @@
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
 							"name": "HOME-AUDIT-FLOW How an audit step is made, applied, checked and removed",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKVOZNeg=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -21392,6 +21385,18 @@
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
 							"name": "HOME-AUDIT-EFFECT What a step at each place changes: original and audit data, plots, export",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKlOcY6k=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -22789,7 +22794,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "unchanged"
+							"name": "original T1 / T2: unchanged by a step at T1"
 						},
 						{
 							"_type": "FCData",
@@ -22813,7 +22818,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "all plots built from this table"
+							"name": "plots (written at T1): all plots built from this table"
 						},
 						{
 							"_type": "FCDocument",
@@ -22845,7 +22850,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "unchanged"
+							"name": "original T1 / T2: unchanged by a step at T2"
 						},
 						{
 							"_type": "FCData",
@@ -22869,7 +22874,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "all plots built from this table"
+							"name": "plots (written at T2): all plots built from this table"
 						},
 						{
 							"_type": "FCDocument",
@@ -22901,7 +22906,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "unchanged"
+							"name": "original T1 / T2: unchanged by a step at T3"
 						},
 						{
 							"_type": "FCData",
@@ -22909,7 +22914,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "unchanged"
+							"name": "audit T1: unchanged by a step at T3"
 						},
 						{
 							"_type": "FCData",
@@ -22917,7 +22922,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "unchanged"
+							"name": "audit T2: unchanged by a step at T3"
 						},
 						{
 							"_type": "FCData",
@@ -23000,6 +23005,18 @@
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
 							"name": "HOME-AUDIT-CACHE Original cache and audit cache: chained keys, undo, empty state",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKlOfjps=",
+									"_parent": {
+										"$ref": "AAAAAAGhy69iEln+mlY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -23760,7 +23777,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "original T1 per collection. Key = E . rC . dC, stored in the file (ADR-089; today one key for the whole recipe, to be made per collection: KEYS-NODE-1)",
+							"name": "original T1 per collection. Key = E . rC . dC, stored in the file (ADR-089, ADR-101: each stored table has its own key, built, cache_keys.py tier1_key)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -23904,6 +23921,18 @@
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
 							"name": "UI-HOME-EXPLORATION The screen with audit mode off (target)",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKKlOiJV4=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Suy2PhOmM="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "WFWebFrameView",
@@ -25140,7 +25169,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH7VLz7Vg=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T4h2SgHsU="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH7VL2nn4=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T4h2SgHsU="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:sidebar_nav_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25156,7 +25207,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Alerts"
+							"name": "Alerts",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH7lL570A=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T4tGStdF8="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH7lL8PRk=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T4tGStdF8="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:notification_log_panel_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25172,7 +25245,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Info: the info block of the data analysis recipe"
+							"name": "Info: the info block of the data analysis recipe",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH7lL/8BM=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T44WS69VE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH71MCbzE=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T44WS69VE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:data_analysis_recipe_info_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25188,7 +25283,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data analysis recipe Choice"
+							"name": "Data analysis recipe Choice",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH71MF26Y=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5CWTHA6g="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH71MIk/E=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5CWTHA6g="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:data_analysis_recipe_id"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8FMLZSM=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5CWTHA6g="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "data_analysis_recipe_selector.visible"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25220,7 +25347,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data Import"
+							"name": "Data Import",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8FMOFKg=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5WmThxYw="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8VMRMi8=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5WmThxYw="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/data_import_handlers.py:data_import_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8VMU+D0=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5WmThxYw="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "metadata_ingestion_enabled"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25236,7 +25395,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
+							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8VMX0hA=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5rmTuQaA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8lMaIm8=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5rmTuQaA="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:system_tools_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8lMdR9M=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T5rmTuQaA="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "export_enabled"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25357,7 +25548,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH8lMgGhk=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T6smUVqHM="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH81MjwyU=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T6smUVqHM="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25373,7 +25586,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Exploration: one toggle Data: Raw (T1) | Result (T2). No \"Plot to show\", no grey explanations (changed)"
+							"name": "Exploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
 						},
 						{
 							"_type": "WFText",
@@ -25381,7 +25594,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Exploration: one toggle Data: Raw (T1) | Result (T2). No \"Plot to show\", no grey explanations (changed)"
+							"name": "Exploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
 						},
 						{
 							"_type": "WFPanel",
@@ -25389,7 +25602,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Group tabs from analysis_groups"
+							"name": "Group tabs from analysis_groups",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH81Mmk1o=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T7lWU82mA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH81MpzzY=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T7lWU82mA="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25405,7 +25640,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Plot tabs of the group"
+							"name": "Plot tabs of the group",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9FMs0Ss=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T762VJ1sE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9FMvjkk=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9T762VJ1sE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -25421,7 +25678,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Result plot: the recipe plot, never changed by a preview filter. Raw has no plot (NA). Badge, and a Reshuffle button when jitter is unpinned"
+							"name": "Result plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
 						},
 						{
 							"_type": "WFText",
@@ -25429,7 +25686,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Result plot: the recipe plot, never changed by a preview filter. Raw has no plot (NA). Badge, and a Reshuffle button when jitter is unpinned"
+							"name": "Result plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
 						},
 						{
 							"_type": "WFPanel",
@@ -25437,7 +25694,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data preview of the chosen view (Raw or Result), first 100 rows, with the column selector (preview only). Badge: Viewing Raw/Result and N preview filter(s) on, not saved"
+							"name": "Data preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
 						},
 						{
 							"_type": "WFText",
@@ -25445,7 +25702,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data preview of the chosen view (Raw or Result), first 100 rows, with the column selector (preview only). Badge: Viewing Raw/Result and N preview filter(s) on, not saved"
+							"name": "Data preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
 						},
 						{
 							"_type": "WFPanel",
@@ -25485,7 +25742,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Preview filters and column choices are cleared when the view (Raw/Result) or the recipe changes"
+							"name": "Preview filters and column choices are cleared when the viewed table or the recipe changes"
 						},
 						{
 							"_type": "WFText",
@@ -25493,7 +25750,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Preview filters and column choices are cleared when the view (Raw/Result) or the recipe changes"
+							"name": "Preview filters and column choices are cleared when the viewed table or the recipe changes"
 						},
 						{
 							"_type": "WFPanel",
@@ -25528,6 +25785,18 @@
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
 							"name": "UI-HOME-AUDIT The screen with audit mode on (target)",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKK1OlmBo=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UugmWYaSs="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "WFWebFrameView",
@@ -27080,7 +27349,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9VMy76c=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvCWWhbHk="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9VM1JZM=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvCWWhbHk="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:sidebar_nav_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27096,7 +27387,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Alerts"
+							"name": "Alerts",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9lM4fbQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvNmWuYzo="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9lM7CD8=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvNmWuYzo="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:notification_log_panel_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27112,7 +27425,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Info: the info block of the data analysis recipe"
+							"name": "Info: the info block of the data analysis recipe",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH9lM+oPA=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvW2W7O9k="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH91NB+Xo=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvW2W7O9k="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:data_analysis_recipe_info_ui"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27128,7 +27463,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Data analysis recipe Choice"
+							"name": "Data analysis recipe Choice",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH91NE5Mk=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvgWXI+lk="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH91NHEGQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvgWXI+lk="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:data_analysis_recipe_id"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+FNKUBc=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UvgWXI+lk="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "data_analysis_recipe_selector.visible"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27160,7 +27527,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Data Import"
+							"name": "Data Import",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+FNNInE=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Uv7WXiw5s="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+FNQU68=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Uv7WXiw5s="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/data_import_handlers.py:data_import_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+VNTlWc=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Uv7WXiw5s="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "metadata_ingestion_enabled"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27176,7 +27575,39 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
+							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+VNW4y4=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UwH2Xvq/E="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+VNZgDc=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UwH2Xvq/E="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:system_tools_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+lNcjI4=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UwH2Xvq/E="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "export_enabled"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27297,7 +27728,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+lNfiYU=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UwyWYWSn8="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+1NiTrY=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UwyWYWSn8="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27329,7 +27782,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Group tabs from analysis_groups"
+							"name": "Group tabs from analysis_groups",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+1Nl9V8=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UxeGY97R4="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH+1No3Io=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9UxeGY97R4="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27345,7 +27820,29 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Plot tabs of the group"
+							"name": "Plot tabs of the group",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH/FNrZoU=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Ux9mZKuXQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlGH/FNug9g=",
+									"_parent": {
+										"$ref": "AAAAAAGhy9Ux9mZKuXQ="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:dynamic_tabs"
+								}
+							]
 						},
 						{
 							"_type": "WFText",
@@ -27701,6 +28198,18 @@
 							},
 							"name": "HOME-AUDIT-GUARDRAILS The software informs, warns and lets the user decide",
 							"documentation": "OUTDATED IN PART since 2026-11-25: drawn before the places design. The checks are not built (status of 2026-11-25). The level CONFIRM WITH A REASON is not in D-0026 (three levels). Kept for the owner's decision.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKK1OoTfc=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -28666,6 +29175,18 @@
 							},
 							"name": "HOME-AUDIT-COMPONENTS Components of audit mode: built and not built (software view)",
 							"documentation": "Redrawn 2026-11-26: built components marked BUILT, the draft components of 2026-11-15 marked NOT BUILT, NOT confirmed.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKK1OrrKw=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -31686,6 +32207,18 @@
 								"$ref": "AAAAAAGht+OPHqE+rU8="
 							},
 							"name": "COM-REACTIVE-GALLERY Reactive wiring of GALLERY",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLFOuFkM=",
+									"_parent": {
+										"$ref": "AAAAAAGhuifk78gEBSY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -33922,7 +34455,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "Wireframe1",
+					"name": "UI-GALLERY",
 					"ownedElements": [
 						{
 							"_type": "WFWireframeDiagram",
@@ -35952,6 +36485,18 @@
 								"$ref": "AAAAAAGh/Q7nWI9OCTE="
 							},
 							"name": "GALLERY-BUNDLE What an example folder holds, how it is checked and indexed, and who reads each file",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKL1PJ050=",
+									"_parent": {
+										"$ref": "AAAAAAGh/Q7nWI9PKeI="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -43889,6 +44434,18 @@
 								"$ref": "AAAAAAGht+RueKvnUGY="
 							},
 							"name": "COM-REACTIVE-BLUEPRINT Reactive wiring of BLUEPRINT",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLFOxRiQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhuing0sm3xEg="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -49494,7 +50051,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "Wireframe1",
+					"name": "UI-BLUEPRINT",
 					"ownedElements": [
 						{
 							"_type": "WFWireframeDiagram",
@@ -51596,7 +52153,39 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "Branch the lineage at a node"
+					"name": "Branch the lineage at a node",
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFlLMhlOByJc=",
+							"_parent": {
+								"$ref": "AAAAAAGhu+nb2/UN82s="
+							},
+							"name": "status",
+							"kind": "string",
+							"value": "partial"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFlLMh1OEUPM=",
+							"_parent": {
+								"$ref": "AAAAAAGhu+nb2/UN82s="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-082"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFlLMh1OHysI=",
+							"_parent": {
+								"$ref": "AAAAAAGhu+nb2/UN82s="
+							},
+							"name": "flag",
+							"kind": "string",
+							"value": "data_analysis_recipe_edit_enabled"
+						}
+					]
 				},
 				{
 					"_type": "WFPanel",
@@ -54497,6 +55086,18 @@
 								"$ref": "AAAAAAGht+Tsy7rVSMU="
 							},
 							"name": "COM-REACTIVE-TESTLAB Reactive wiring of TEST_LAB",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLFO0cXI=",
+									"_parent": {
+										"$ref": "AAAAAAGhui5yTM2XpNY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -56240,7 +56841,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Wireframe1",
+					"name": "UI-TESTLAB",
 					"ownedElements": [
 						{
 							"_type": "WFWireframeDiagram",
@@ -57161,6 +57762,38 @@
 										"$ref": "AAAAAAGhweYIcxrLkcE="
 									},
 									"name": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale."
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlOTCVPMOrA=",
+									"_parent": {
+										"$ref": "AAAAAAGhweYIcxrLkcE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlOTCVPPx3c=",
+									"_parent": {
+										"$ref": "AAAAAAGhweYIcxrLkcE="
+									},
+									"name": "flag",
+									"kind": "string",
+									"value": "test_lab_enabled"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlOTCVPS7+8=",
+									"_parent": {
+										"$ref": "AAAAAAGhweYIcxrLkcE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/sidebar_registry.py:PANEL_REGISTRY"
 								}
 							]
 						}
@@ -64144,7 +64777,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht0aRaMLat/0="
 					},
-					"name": "Wireframe1",
+					"name": "UI-FRAME",
 					"ownedElements": [
 						{
 							"_type": "WFWireframeDiagram",
@@ -64153,6 +64786,18 @@
 								"$ref": "AAAAAAGh/QvFSIpRiZI="
 							},
 							"name": "UI-FRAME The app frame shared by the four user spaces",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLVO3IUA=",
+									"_parent": {
+										"$ref": "AAAAAAGh/QvFSIpSujg="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "WFWebFrameView",
@@ -76582,6 +77227,36 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/handlers/export_handlers.py:define_export_server"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5reFI1azo=",
+							"_parent": {
+								"$ref": "AAAAAAGht1ld00WDG5E="
+							},
+							"name": "flag",
+							"kind": "string",
+							"value": "export_enabled"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5reVI4s9o=",
+							"_parent": {
+								"$ref": "AAAAAAGht1ld00WDG5E="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-089"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5relI7fTg=",
+							"_parent": {
+								"$ref": "AAAAAAGht1ld00WDG5E="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component export_handlers in Architecture / Shiny app"
 						}
 					]
 				},
@@ -76928,6 +77603,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/modules/orchestrator.py:DataOrchestrator"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5re1JBUuE=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lmZUfIiKg="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-089"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5re1JExSU=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lmZUfIiKg="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component DataOrchestrator in Architecture / Shiny app"
 						}
 					]
 				},
@@ -77127,6 +77822,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "libs/viz_factory/src/viz_factory/viz_factory.py:VizFactory"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rfFJK1xY=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lsG0kFEPQ="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-090"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rfFJNgkc=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lsG0kFEPQ="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component VizFactory in Architecture / Shiny app"
 						}
 					]
 				},
@@ -77249,6 +77964,36 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/handlers/audit_stack.py:define_server"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rfVJTYHE=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lv6Um7pDA="
+							},
+							"name": "flag",
+							"kind": "string",
+							"value": "t3_sandbox_enabled"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rflJWCGI=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lv6Um7pDA="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-099"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rflJZtNA=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lv6Um7pDA="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component audit_stack in Architecture / Shiny app"
 						}
 					]
 				},
@@ -77371,6 +78116,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/src/bootloader.py:Bootloader"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rf1Jfupo=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lzfEpxmc8="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-091"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rf1JiRgU=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lzfEpxmc8="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component Startup in Architecture / Shiny app"
 						}
 					]
 				},
@@ -77493,6 +78258,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/src/server.py:server"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rgFJomA8=",
+							"_parent": {
+								"$ref": "AAAAAAGht1l29ksnJ10="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-045"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rgVJraow=",
+							"_parent": {
+								"$ref": "AAAAAAGht1l29ksnJ10="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component Wiring in Architecture / Shiny app"
 						}
 					]
 				},
@@ -77919,6 +78704,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "app/modules/audit_places.py"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rglJxWjI=",
+							"_parent": {
+								"$ref": "AAAAAAGiEzrG2Rt8aL4="
+							},
+							"name": "test",
+							"kind": "string",
+							"value": "app/tests/test_audit_places.py"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rglJ0jNQ=",
+							"_parent": {
+								"$ref": "AAAAAAGiEzrG2Rt8aL4="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component audit_places in Architecture / Shiny app"
 						}
 					]
 				},
@@ -78075,6 +78880,26 @@
 							"name": "code",
 							"kind": "string",
 							"value": "libs/utils/src/utils/id_completion.py"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rg1J6Epw=",
+							"_parent": {
+								"$ref": "AAAAAAGiEzrG5xwTJFI="
+							},
+							"name": "test",
+							"kind": "string",
+							"value": "libs/utils/tests/test_id_completion.py"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFk5rg1J9fDM=",
+							"_parent": {
+								"$ref": "AAAAAAGiEzrG5xwTJFI="
+							},
+							"name": "counterpart",
+							"kind": "string",
+							"value": "C4Component id_completion in Architecture / Shiny app"
 						}
 					]
 				},
@@ -81146,7 +81971,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role1",
+							"name": "Operator",
 							"type": {
 								"$ref": "AAAAAAGhty/3ZcEGiMc="
 							}
@@ -81157,7 +81982,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role2",
+							"name": "shiny run",
 							"type": {
 								"$ref": "AAAAAAGhty/3u8EeQ5w="
 							}
@@ -81168,7 +81993,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role3",
+							"name": "Bootloader",
 							"type": {
 								"$ref": "AAAAAAGht0v7EdN9foM="
 							}
@@ -81179,7 +82004,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role4",
+							"name": "connector",
 							"type": {
 								"$ref": "AAAAAAGht0v+39SdsLQ="
 							}
@@ -81190,7 +82015,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role5",
+							"name": "validators",
 							"type": ""
 						},
 						{
@@ -81199,7 +82024,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role6",
+							"name": "server",
 							"type": {
 								"$ref": "AAAAAAGht0v7StOSMzc="
 							}
@@ -81210,7 +82035,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1vyQGatf8w="
 							},
-							"name": "Role7",
+							"name": "Browser",
 							"type": {
 								"$ref": "AAAAAAGhty/3SMEAqzM="
 							}
@@ -84856,7 +85681,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role1",
+							"name": "User",
 							"type": {
 								"$ref": "AAAAAAGhty/3SMEAqzM="
 							}
@@ -84867,7 +85692,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role2",
+							"name": "HOME screen",
 							"type": {
 								"$ref": "AAAAAAGht1V7LNlQDvY="
 							}
@@ -84878,7 +85703,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role3",
+							"name": "Change tracker",
 							"type": {
 								"$ref": "AAAAAAGht1V/1tpwgas="
 							}
@@ -84889,7 +85714,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role4",
+							"name": "Data engine",
 							"type": {
 								"$ref": "AAAAAAGht0v879QT+60="
 							}
@@ -84900,7 +85725,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role5",
+							"name": "Data loader",
 							"type": {
 								"$ref": "AAAAAAGht0v9u9RPHgE="
 							}
@@ -84911,7 +85736,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role6",
+							"name": "Stored stages",
 							"type": {
 								"$ref": "AAAAAAGhty/4dcE/Ux8="
 							}
@@ -84922,7 +85747,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1v8WmjY1Ug="
 							},
-							"name": "Role7",
+							"name": "Plot renderer",
 							"type": {
 								"$ref": "AAAAAAGht0v98dRh1yk="
 							}
@@ -87907,7 +88732,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role1",
+							"name": "User",
 							"type": {
 								"$ref": "AAAAAAGhty/3SMEAqzM="
 							}
@@ -87918,7 +88743,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role2",
+							"name": "Filters panel",
 							"type": {
 								"$ref": "AAAAAAGht1V8VdmYrRk="
 							}
@@ -87929,7 +88754,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role3",
+							"name": "Session state",
 							"type": ""
 						},
 						{
@@ -87938,7 +88763,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role4",
+							"name": "Audit trail panel",
 							"type": {
 								"$ref": "AAAAAAGht1V7g9lotGY="
 							}
@@ -87949,7 +88774,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role5",
+							"name": "Saved sessions",
 							"type": {
 								"$ref": "AAAAAAGht0v9QdQokNc="
 							}
@@ -87960,7 +88785,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wH1Wttkm0="
 							},
-							"name": "Role6",
+							"name": "HOME screen",
 							"type": {
 								"$ref": "AAAAAAGht1V7LNlQDvY="
 							}
@@ -90021,7 +90846,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wRjG2NOa4="
 							},
-							"name": "Role1",
+							"name": "User",
 							"type": {
 								"$ref": "AAAAAAGhty/3SMEAqzM="
 							}
@@ -90032,7 +90857,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wRjG2NOa4="
 							},
-							"name": "Role2",
+							"name": "export_handlers",
 							"type": {
 								"$ref": "AAAAAAGht1V9QtnIt0A="
 							}
@@ -90043,7 +90868,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wRjG2NOa4="
 							},
-							"name": "Role3",
+							"name": "DataOrchestrator",
 							"type": {
 								"$ref": "AAAAAAGht0v879QT+60="
 							}
@@ -90054,7 +90879,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wRjG2NOa4="
 							},
-							"name": "Role4",
+							"name": "VizFactory",
 							"type": {
 								"$ref": "AAAAAAGht0v98dRh1yk="
 							}
@@ -91786,6 +92611,18 @@
 								"$ref": "AAAAAAGht1V6z9k+p4w="
 							},
 							"name": "COM-REACTIVE Reactive wiring of HOME",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLVO6y3M=",
+									"_parent": {
+										"$ref": "AAAAAAGht1w9cHp4W+I="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -105094,6 +105931,18 @@
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
 							"name": "DM-KEYS The hash model: what each hash is made from and what it answers",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLVO9jQA=",
+									"_parent": {
+										"$ref": "AAAAAAGh0GpzEm59FA8="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCDataView",
@@ -107202,6 +108051,18 @@
 								"$ref": "AAAAAAGh0G3mQ3VIeYc="
 							},
 							"name": "DM-KEYS-CHAIN The series of node keys, original and audit (illustrative example)",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLlPA07Y=",
+									"_parent": {
+										"$ref": "AAAAAAGh0G3mQ3VJQ7c="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -108148,6 +109009,18 @@
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
 							"name": "DM-KEYS-USE When each hash is computed, checked and recorded",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLlPDi9E=",
+									"_parent": {
+										"$ref": "AAAAAAGh0G5Fb3bkAfk="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCDocumentView",
@@ -110672,6 +111545,18 @@
 								"$ref": "AAAAAAGh0G6e+3nPCU4="
 							},
 							"name": "DM-KEYS-EXPORT What the export records and what the import verifies",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFlNKLlPG5fc=",
+									"_parent": {
+										"$ref": "AAAAAAGh0G6e+3nQ2zw="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							],
 							"ownedViews": [
 								{
 									"_type": "FCDocumentView",
@@ -115745,6 +116630,16 @@
 											"name": "status",
 											"kind": "string",
 											"value": "implemented"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rgFJlPzI=",
+											"_parent": {
+												"$ref": "AAAAAAGht0v7EdN9foM="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent Startup in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "app/src/bootloader.py, validators",
@@ -115884,6 +116779,16 @@
 											"name": "status",
 											"kind": "string",
 											"value": "implemented"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rgVJuea8=",
+											"_parent": {
+												"$ref": "AAAAAAGht0v7StOSMzc="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent Wiring in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "app/src/server.py",
@@ -116346,6 +117251,16 @@
 											"name": "status",
 											"kind": "string",
 											"value": "implemented"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5re1JHTZg=",
+											"_parent": {
+												"$ref": "AAAAAAGht0v879QT+60="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent DataOrchestrator in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "orchestrator, cache_keys",
@@ -116510,6 +117425,16 @@
 											"name": "status",
 											"kind": "string",
 											"value": "implemented"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rfVJQoQs=",
+											"_parent": {
+												"$ref": "AAAAAAGht0v98dRh1yk="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent VizFactory in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "libs/viz_factory",
@@ -122288,6 +123213,16 @@
 											"name": "adr",
 											"kind": "string",
 											"value": "ADR-099"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rflJcQnQ=",
+											"_parent": {
+												"$ref": "AAAAAAGht1V7g9lotGY="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent audit_stack in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "app/handlers/audit_stack.py",
@@ -122584,6 +123519,16 @@
 											"name": "adr",
 											"kind": "string",
 											"value": "ADR-089"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5relI+giU=",
+											"_parent": {
+												"$ref": "AAAAAAGht1V9QtnIt0A="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent export_handlers in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"technology": "app/handlers/export_handlers.py",
@@ -128458,6 +129403,16 @@
 											"name": "test",
 											"kind": "string",
 											"value": "app/tests/test_audit_places.py"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rglJ3lTM=",
+											"_parent": {
+												"$ref": "AAAAAAGiEzo2VxlEgl0="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent audit_places in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"description": "Audit places: an audit step is written at T1:<table>, T2:<table> or T3:<plot>, one mechanism for the three tie"
@@ -128622,6 +129577,16 @@
 											"name": "test",
 											"kind": "string",
 											"value": "libs/utils/tests/test_id_completion.py"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGiFk5rg1KAMuA=",
+											"_parent": {
+												"$ref": "AAAAAAGiEzo2XRl+HB0="
+											},
+											"name": "counterpart",
+											"kind": "string",
+											"value": "UMLComponent id_completion in Requirements (satisfies the requirements of REQ-CORE)"
 										}
 									],
 									"description": "Completion of the ids: before tier 1 every participating table gets a line for each entity id of the union tha"
