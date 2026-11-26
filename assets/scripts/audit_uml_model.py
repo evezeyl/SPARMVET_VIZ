@@ -20,6 +20,15 @@ Checks:
 
 Also (not a per-element tag check):
   - PKG-TIERS every UMLDependency edge matches a live import scan, both directions
+  - names     every named element that is not a view and not a diagram (a box, a use case, a message,
+              a class, an attribute, a requirement, a flow label, a wireframe panel) has a name that
+              holds no line break and is at most NAME_MAX_LENGTH (45) characters. Why: in StarUML 8.1
+              a name with a line break spills over the rows below it in the Model Explorer, and a long
+              name overflows its box. The full text belongs in the element's documentation field
+              (under a line "Original box text:"). An element whose long name is the point of it (a
+              pytest test identifier, text the screen really shows) carries the tag `longname` with a
+              short reason as its value; the tag excuses the length only, never a line break, and a
+              `longname` tag with no reason is itself a finding
 
 Usage:
   .venv/bin/python assets/scripts/audit_uml_model.py
@@ -44,6 +53,10 @@ ADR_FILE = ".claude/knowledge/architecture_decisions.md"
 RULES_DIR = ".claude/rules"
 APP_FEATURES_DIR = "config/app_features"
 VALID_STATUS = {"implemented", "partial", "planned"}
+# The names rule (owner, 2026-11-26, pilot on EXP-MODES): one line, at most this many characters.
+NAME_MAX_LENGTH = 45
+# Exception tag for a name that is long on purpose; its value is the reason, never empty.
+NAME_EXCEPTION_TAG = "longname"
 # code/test paths that are not Python files: existence is the only check
 _NON_PY_OK = (".yaml", ".toml", ".md", ".qmd", "Dockerfile")
 
@@ -279,6 +292,96 @@ def check_pkg_tiers(project_root: Path) -> tuple[list[dict], dict]:
     return violations, counts
 
 
+def _is_view_or_diagram(type_name: str) -> bool:
+    """Views (UMLClassView, FCProcessView, ...) and diagrams show elements: their names are not element names."""
+    return type_name.endswith("View") or type_name.endswith("Diagram")
+
+
+def _owner_chain(node_id, parents, names) -> str:
+    chain = []
+    cur = parents.get(node_id)
+    while cur is not None and len(chain) < 4:
+        if names.get(cur):
+            chain.append(names[cur])
+        cur = parents.get(cur)
+    return " < ".join(chain) if chain else "(project)"
+
+
+def check_names(model: dict) -> tuple[list[dict], dict]:
+    """The names rule: no line break in any element name, at most NAME_MAX_LENGTH characters, unless the
+    element carries the exception tag NAME_EXCEPTION_TAG with a reason. Returns (violations, counts).
+    A violation names the element id, its type, its length, its owner chain and the diagram(s) that show it."""
+    parents: dict[str, str | None] = {}
+    names: dict[str, str] = {}
+    elements: dict[str, dict] = {}
+    diagrams: list[dict] = []
+
+    def walk(node, parent_id):
+        if isinstance(node, dict):
+            eid = node.get("_id")
+            next_parent = parent_id
+            if eid is not None:
+                parents[eid] = parent_id
+                next_parent = eid
+                type_name = node.get("_type") or "?"
+                if type_name.endswith("Diagram"):
+                    diagrams.append(node)
+                if not _is_view_or_diagram(type_name):
+                    elements[eid] = node
+                    if isinstance(node.get("name"), str):
+                        names[eid] = node["name"]
+            for value in node.values():
+                walk(value, next_parent)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value, parent_id)
+
+    walk(model, None)
+
+    shown_in: dict[str, list[str]] = {}
+    for diagram in diagrams:
+        label = (diagram.get("name") or "?").split(" ")[0]
+        for view in diagram.get("ownedViews") or []:
+            ref = (view.get("model") or {}).get("$ref") if isinstance(view, dict) else None
+            if ref and label not in shown_in.setdefault(ref, []):
+                shown_in[ref].append(label)
+
+    violations = []
+    counts = {"names_checked": 0, "names_excused": 0}
+    for eid, node in elements.items():
+        name = node.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        counts["names_checked"] += 1
+        type_name = node.get("_type") or "?"
+        where = f"id {eid}, owner {_owner_chain(eid, parents, names)}"
+        if eid in shown_in:
+            where += f", diagram {', '.join(shown_in[eid][:2])}"
+        excuses = [t for t in (node.get("tags") or []) if isinstance(t, dict) and t.get("name") == NAME_EXCEPTION_TAG]
+        if excuses and not any((t.get("value") or "").strip() for t in excuses):
+            violations.append({
+                "check": "NAME_EXCEPTION_NO_REASON", "element": name[:60], "type": type_name,
+                "detail": f"tag '{NAME_EXCEPTION_TAG}' has no reason as its value ({where})",
+            })
+        if "\n" in name or "\r" in name:
+            violations.append({
+                "check": "NAME_LINE_BREAK", "element": name.replace("\n", " / ").replace("\r", "")[:60], "type": type_name,
+                "detail": f"the name holds a line break, length {len(name)} ({where}); use one line and put the long "
+                          f"text in the documentation",
+            })
+        elif len(name) > NAME_MAX_LENGTH:
+            if any((t.get("value") or "").strip() for t in excuses):
+                counts["names_excused"] += 1
+            else:
+                violations.append({
+                    "check": "NAME_TOO_LONG", "element": name[:60], "type": type_name,
+                    "detail": f"the name has {len(name)} characters, the limit is {NAME_MAX_LENGTH} ({where}); shorten it "
+                              f"and put the full text in the documentation under 'Original box text:', or tag it "
+                              f"'{NAME_EXCEPTION_TAG}' with a reason if the long name is the point of the element",
+                })
+    return violations, counts
+
+
 def run_checks(project_root: Path):
     """Return (violations: list[dict], counts: dict)."""
     model_path = project_root / MODEL_FILE
@@ -364,6 +467,10 @@ def run_checks(project_root: Path):
     violations.extend(pkg_violations)
     counts.update(pkg_counts)
 
+    name_violations, name_counts = check_names(model)
+    violations.extend(name_violations)
+    counts.update(name_counts)
+
     return violations, counts
 
 
@@ -374,8 +481,8 @@ def render_report(violations, counts, project_root: Path) -> tuple[str, int]:
         f"Generated: {now}",
         f"Project root: {project_root}",
         f"Model file: {MODEL_FILE}",
-        "Rule: every code/test/adr/flag/status tag in the model resolves against the repository "
-        "(.claude/design/uml_model_plan.md section 5)",
+        "Rule: every code/test/adr/flag/status tag in the model resolves against the repository, and every "
+        "element name is one line of at most 45 characters (.claude/design/uml_model_plan.md sections 5 and 6b)",
         "",
         f"- Elements with tags: {counts.get('elements_with_tags', 0)}",
         f"- code tags checked: {counts.get('code', 0)}",
@@ -387,6 +494,8 @@ def render_report(violations, counts, project_root: Path) -> tuple[str, int]:
         f"- PKG-TIERS packages scanned: {counts.get('pkg_tiers_packages', 0)}, "
         f"model edges: {counts.get('pkg_tiers_model_edges', 0)}, "
         f"live-import edges: {counts.get('pkg_tiers_real_edges', 0)}",
+        f"- Names checked (one line, at most {NAME_MAX_LENGTH} characters): {counts.get('names_checked', 0)}, "
+        f"long on purpose (tag {NAME_EXCEPTION_TAG}): {counts.get('names_excused', 0)}",
         f"- Violations: {len(violations)}",
         "",
     ]

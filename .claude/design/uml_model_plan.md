@@ -87,6 +87,7 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | **Data** — cross-cutting, not tied to one space | | | | |
 | DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical | ✅ |
 | DM-RECIPE | The data analysis recipe's own data model — Data schema, Join, Analysis group, Plot, Wrangling step | Class | logical | ✅ |
+| DM-KEYS-HOME-AUDIT | What is hashed from what, from the recipe files to the audit export; what each key protects, where it is checked; each box says BUILT, DECIDED not built (ledger number) or NOT DECIDED (added 2026-11-26) | Flowchart | logical, process | ✅ partial |
 | REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all | ✅ |
 
 **Later, not yet in this table** (from §3's original prose, still open): class diagrams of "the
@@ -306,6 +307,8 @@ its sibling handlers (`filter_and_audit_handlers.py`, `audit_stack.py`, `session
 would likely be noisy — most individual inputs were never meant to be drawn. Needs a decision on
 scope (panel-level ids only? nav/accordion structure only?) before building it, so it isn't done.
 
+**Built (2026-11-26):** the names check (section 6b). Every named element that is not a view and not a diagram has a one-line name of at most 45 characters, or the tag `longname` with a reason; `app/tests/test_audit_uml_model.py` has a planted error for each rule.
+
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.
 
 ## 6. Working rules
@@ -314,6 +317,19 @@ It checks names and links. It does not prove that the code runs in the order a s
 - Commit the model file by name after each diagram.
 - Every difference found goes into the findings register. Findings that need work become issues.
 - Tags: `[opus/high]` for this plan and the architecture diagrams, `[sonnet/high]` for the HOME diagrams read from code, `[sonnet/medium]` for the script.
+
+### 6b. The names rule (owner, 2026-11-26)
+
+Why: in StarUML 8.1 a name with a line break spills over the rows below it in the Model Explorer, and a long name overflows its box. The rule, agreed by the owner after the pilot on EXP-MODES (2026-11-26, commit `001276ef`):
+
+- **No line break in any element name, at most 45 characters** (`NAME_MAX_LENGTH` in `assets/scripts/audit_uml_model.py`). The short name says what the element is.
+- **The full original text goes into the element's documentation**, under the line "Original box text:" (appended when the documentation already holds text). Nothing is lost.
+- A ledger number or a file name stays in the name when it is the point of the element.
+- **Boxes are resized** to the short text (centre and reading order kept; no re-layout). Changes are made through `app.engine.setProperty`, never by assigning fields.
+- **Exception:** an element whose long name is the point of it carries the tag `longname` with a short reason as its value (today: the four pytest identifiers in REQ-CORE, reason `test identifier`). The tag excuses the length only, never a line break; a tag with no reason is a finding.
+- **Wireframes:** the panels and texts of the UI-* diagrams are descriptions of the screen (what a panel holds, which flag gates it), not texts the screen shows, so they follow the rule and need no exception. If a wireframe box ever stands for a real text of the screen that must stay long, it takes the tag `longname` with the reason `screen text`.
+- **Check:** `audit_uml_model.py` fails on a name with a line break, on a name over the limit without the tag, and on a tag without a reason; it names the element id, its type, its length, its owner chain and the diagram that shows it.
+- Dated: 2026-11-26 pilot on EXP-MODES; 2026-11-26 the rest of the model (433 names over 45 characters and 50 with a line break before, 4 tagged and 0 after).
 
 ### 6a. Embedding a diagram in the Quarto book (ADR-096, 2026-11-08)
 
@@ -426,3 +442,5 @@ Checker persona of `.claude/workflows/design_review_personas.md` and is run by h
 - Moved and renamed: the package of GALLERY-BUNDLE went from the project root into GALLERY; the wrappers "Flowchart1", "Flowchart2" and "Wireframe1" are named like their diagram (COM-REACTIVE-*, GALLERY-BUNDLE, UI-HOME, UI-GALLERY, UI-BLUEPRINT, UI-TESTLAB, UI-FRAME); the roles "Role1" to "Role7" of the four sequence diagrams carry the name of their lifeline.
 - Stale words fixed: "Raw (T1) / Result (T2)" in HOME-EXPLORATION and UI-HOME-EXPLORATION is now "Table to view: Source, T1, T2 or T3" (D-0310); the per-table key of HOME-AUDIT-CACHE is built (ADR-101). HOME-VIEW-MATRIX keeps the old choice and carries an OUTDATED note (owner's decision: redraw or remove).
 - Conventions added: (1) every diagram that holds untagged flow nodes or panels has a `status` tag of its own (`implemented` or `partial`); its nodes inherit it, and a "decided, not built" node names its ledger number in its text. (2) A component that is drawn both in C4 (Architecture) and in UML (Requirements, as the thing a requirement is satisfied by) has the same `status`, `code`, `flag`, `adr`, `test` tags on both and a tag `counterpart` that names the other copy.
+
+**Added 2026-11-26 (owner's order, channel M698 section A point 2).** `DM-KEYS-HOME-AUDIT` (package "Data and configuration"): one diagram of the chain of keys and hashes of HOME and the audit, read from the code (`tmpAI/uml/keys_facts.md`, every line with file:line). Six columns: inputs, the key of one table (`E . rC . dC . [a1]`, `. [s2] . [a2]`, `. [s3] . [a3]`), session and stored tables with the places where a key is checked, audit, export, refusal/import/ids. White boxes are BUILT (`status` implemented or partial, `code` tag), grey boxes are DECIDED not built with the ledger number in the name (D-0331, D-0333, D-0345, D-0478), yellow boxes are NOT DECIDED (a hash per file, the content hash `c`, the steps hash `A` and the record hash `Rec`, the keys of the audit tables in the export); the documentation of every box starts with BUILT, PARTIAL, DECIDED not built or NOT DECIDED. The four old `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` are kept, each with a dated line in its documentation that says what is stale; the owner decides keep, delete or merge.
