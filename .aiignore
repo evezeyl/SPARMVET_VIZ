@@ -8,6 +8,7 @@
 EVE_WORK/
 presentation/
 .claude/conversations/
+.claude/outdated/
 
 # --- Data files (rows of data add no value to AI context) ---
 *.csv
