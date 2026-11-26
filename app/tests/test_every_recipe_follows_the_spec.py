@@ -284,6 +284,29 @@ def test_two_recipes_with_the_same_plot_id_are_reported_by_the_set_check(tmp_pat
     assert problems and all("plot id" in p for p in problems)
 
 
+def test_an_audit_recipe_beside_its_original_passes_the_check_and_is_a_copy_for_the_set_check(tmp_path):
+    """The audit recipe as `audit_recipe_of` writes it (with a step at tier 1 of ResFinder) passes the recipe check with `info.audit_of`, and the set check gives no X5 for the plot ids
+    it shares with its original; without the key the same pair is an X5 (D-0354, D-0534, D-0690)."""
+    import yaml
+    from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of
+    from app.modules.cache_keys import load_data_analysis_recipe
+    from app.modules.session_manager import make_audit_step
+    work = _copy_pipelines(tmp_path)
+    original = work / "1_test_data_ST22_dummy.yaml"
+    raw = load_data_analysis_recipe(original).raw
+    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, plot_scope=PLACES_BUCKET, reason="a test reason", place="T1:ResFinder",
+                           started_from="subtab_amr_heatmap")
+    recipe = audit_recipe_of(raw, [node], "1_test_data_ST22_dummy", "2026-11-26")
+    assert recipe["info"]["audit_of"] == "1_test_data_ST22_dummy"
+    target = work / f"{recipe['id']}.yaml"
+    target.write_text(yaml.safe_dump(recipe, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    assert run_check("recipe_check", target) == []
+    assert set_check_problems([original, target]) == []
+    del recipe["info"]["audit_of"]
+    target.write_text(yaml.safe_dump(recipe, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    assert any("plot id" in p for p in set_check_problems([original, target]))
+
+
 def test_an_empty_yaml_file_in_a_recipe_folder_is_reported(tmp_path):
     folder = tmp_path / "newfolder"
     (folder / "sub").mkdir(parents=True)
