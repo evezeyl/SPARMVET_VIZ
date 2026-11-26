@@ -30,9 +30,9 @@ engine refuses what it cannot apply).
 Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; the slices that put the audit on the screen need it.
 
 # @deps
-# provides: function:run_audit, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
+# provides: function:run_audit, function:row_count, function:same_table, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
 # consumes: app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
-# consumed_by: app/tests/test_audit_run.py
+# consumed_by: app/tests/test_audit_run.py, app/modules/audit_trial.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
 # @end_deps
 """
@@ -151,10 +151,37 @@ class AuditRun:
             return pl.scan_parquet(run.t1_path)
         return None
 
+    def original_table_lazy(self, table: str, tier: str) -> pl.LazyFrame:
+        """The ORIGINAL's stored table `table` at `tier` ("T1" or "T2"), LAZY (a table with no tier-2 steps of its own has the tier 1 table as its tier 2): what the copy's table is compared with
+        when no applied audit step changes it (the trial of a step, `audit_trial.py`). Raises KeyError when this run has no context."""
+        if tier not in ("T1", "T2"):
+            raise ValueError("tier is T1 or T2")
+        if self.context is None:
+            raise KeyError("This run has no context to read the original's tables.")
+        return self.context.original_table(table, tier)
+
+    def original_plot_lazy(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> pl.LazyFrame:
+        """The table a plot reads in the ORIGINAL (its Result data, T3), LAZY, keyed as the app keys it; KeyError for a plot the recipe does not have or a run with no context."""
+        if plot_id not in self.plots or self.context is None:
+            raise KeyError(f"The recipe has no plot '{plot_id}'.")
+        return self.context.original_plot(plot_id, told)
+
     @property
     def built_tables(self) -> List[str]:
         """The stages built now, as `<table> T1` or `<table> T2`, in the order of the recipe."""
         return [f"{t.table} {stage}" for t in self.tables.values() for stage, source in (("T1", t.t1), ("T2", t.t2)) if source == BUILT]
+
+
+def row_count(table: pl.LazyFrame) -> int:
+    """The number of rows of a lazy table, counted lazily (the table is not held in memory)."""
+    return int(table.select(pl.len()).collect().item())
+
+
+def same_table(first: pl.LazyFrame, second: pl.LazyFrame) -> bool:
+    """Whether two lazy tables hold the same columns, the same rows and the same order (collected; a table that differs in its row count is told apart by the count first)."""
+    if row_count(first) != row_count(second):
+        return False
+    return first.collect().equals(second.collect())
 
 
 def _stored(path: Path, meta_key: str, key: str) -> bool:
@@ -230,6 +257,17 @@ class _Run:
         target = self.graph.plot_target(plot_id)
         return self.orch.materialize_tier3(self.recipe_id, plot_id, self.t1_dir(target, self.keys_audit, self.audit_dir), keys=self.keys_audit,
                                            loaded=self.audit_loaded, tier2_path=self.t2_path(target, self.keys_audit, self.audit_dir), on_inputs_changed=told)
+
+    def original_table(self, table: str, tier: str) -> pl.LazyFrame:
+        """The original's stored table `table` at `tier` (the original's tables are stored first by `ensure_original`)."""
+        path = self.original_dir / f"{table}.parquet"
+        if tier == "T2" and tier2_steps(self.original.raw, table):
+            path = tier2_path_for(path)
+        return pl.scan_parquet(path)
+
+    def original_plot(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> pl.LazyFrame:
+        """The lazy table a plot reads in the original, over the original's stored tables."""
+        return self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original, on_inputs_changed=told)
 
     def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path, changed: List[str]) -> pl.DataFrame:
         """The table a plot reads in the copy, collected. The tables under it are those `copy_table` placed."""
