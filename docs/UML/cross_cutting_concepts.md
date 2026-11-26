@@ -56,7 +56,7 @@ Every stored artifact that can be compared against another run carries the keys 
 `report.qmd`, and are embedded in exported PNG/SVG metadata. The export's key check
 (`REQ-VIZ-EXP-01`) exists because these keys can be compared cheaply before any heavy recomputation.
 
-*Target (ADR-099 point 16, not yet built):* node keys become a series of labelled parts and cover T3 and the audit steps; the export records the engine, data, recipe, audit recipe, steps and record legs and the key of every exported node. See the diagrams `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT`.
+*Target (ADR-099 point 16, not yet built):* node keys become a series of labelled parts and cover T3 and the audit steps; the export records the engine, data, recipe, audit recipe, steps and record legs and the key of every exported node. See the diagram `DM-KEYS-HOME-AUDIT` (it replaces the four older `DM-KEYS*` diagrams, deleted on 2026-11-26).
 
 ## Reactive write discipline (ADR-045 companion, `ui_implementation_contract.md` section 14)
 

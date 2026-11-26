@@ -88,7 +88,7 @@ Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyp
 4. The audit is **the original recipe plus steps written into its own lists** (the audit recipe, exportable and re-runnable); audit steps are filters, drops and removals by key; a recipe maker may use any action in T3 and is responsible for good practice.
 5. The software **informs, warns and lets the user decide**: three levels (info, warning, block, technical only). Missing values: every filter step states `na: keep|remove` (no default); the engine follows Polars, so `!=` and "everything except x" also remove them unless the user keeps them; always counted and reported (Eve, 2026-11-14).
 6. **Attrition per step**, derived and never stored: it starts at the source population (every unit of the population table), lists the recipe's own row-removing steps, then the audit steps, each with before and after; the figure caption is composed from it, in the entity's own word (declared in the recipe).
-7. **Keys**: a series of labelled parts (`E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`), per collection, empty parts left out; whole-recipe hashes identify the project state and never decide what to rebuild (`home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`).
+7. **Keys**: a series of labelled parts (`E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`), per collection, empty parts left out; whole-recipe hashes identify the project state and never decide what to rebuild (`home_evidence/home_hash_model_2026-11-12.md`, diagram `DM-KEYS-HOME-AUDIT` (the four older `DM-KEYS*` diagrams were deleted on 2026-11-26)).
 8. **Export** is one bundle: audited plots, the original Result plot for each really affected plot, original and audit data, the steps with reasons, the exclusion list, the attrition table, the verification legs; one tick adds the recipe and raw data. **Import** is gated by the configuration and validated.
 9. **Every table has T1, T2 and T3, with or without a join** (empty = the previous node, a dataset plotted directly is a collection). **Everything written in a recipe is executed or the recipe is rejected with the reason**: HOME rejects at the load gate, BLUEPRINT reports and never blocks building (empty placeholders accepted).
 10. Audit is for **publication-ready** figures (data that is really bad or makes no sense in a plot, with a reason); not for exploring, not for mass cleaning.
@@ -121,7 +121,7 @@ So **nothing is waiting for you now except the review of the text; the right pan
    1. `spaces/HOME.md` (new: the whole of HOME in one place, built or target);
    2. `home_preview_filters.md` sections 2, 3, 6, 7 (Exploration);
    3. `home_audit_steps.md`: section 2 (vocabulary, step compiler), 4 (the two kinds of step), 5a points 3-20 (the mechanism, nodes, keys, shapes, fail instead of warn, the Blueprint boundary), 9 (drop), 10, 11 (reason, export, import), 16, 19 (levels, missing values, attrition and caption);
-   4. `home_evidence/home_hash_model_2026-11-12.md` with the diagrams `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` (`docs/UML/diagrams/`);
+   4. `home_evidence/home_hash_model_2026-11-12.md` with the diagram `DM-KEYS-HOME-AUDIT` (the four older `DM-KEYS*` diagrams were deleted on 2026-11-26) (`docs/UML/app.mdj`);
    5. `home_evidence/home_attrition_report_2026-11-12.md`;
    6. ADR-099 points 10-16 in `architecture_decisions.md`;
    7. `home_evidence/home_uml_review_2026-11-12.md` (which diagrams are outdated) and `recipe_review_st22_2026-11-11.md` section 3b (the recipe proposals);
@@ -133,7 +133,7 @@ So **nothing is waiting for you now except the review of the text; the right pan
 ## 4. Diagrams (`docs/UML/diagrams/`, model `docs/UML/app.mdj`)
 | Diagram | Status |
 |---|---|
-| `DM-KEYS` (general), `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` | **new 2026-11-12, current target** |
+| `DM-KEYS` (general), `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` | **HISTORICAL (replaced by `DM-KEYS-HOME-AUDIT`, 2026-11-26): drawn 2026-11-12, deleted from the model on 2026-11-26 (owner's order M700)** |
 | `HOME-AUDIT-CACHE`, `EXP-MODES`, `STM-STAGE`, `SEQ-EXPORT` | updated 2026-11-12 for the keys |
 | `HOME-EXPLORATION`, `HOME-VIEW-MATRIX`, `UI-HOME-EXPLORATION`, `UI-HOME-AUDIT`, `HOME-AUDIT-GUARDRAILS`, `HOME-AUDIT-COMPONENTS`, `UC-HOME` | partly outdated (details in `home_evidence/home_uml_review_2026-11-12.md`); redrawn after your review |
 | `HOME-AUDIT-LINEAGE`, `HOME-AUDIT-FLOW`, `HOME-AUDIT-EFFECT` | **contradicted** (they show the replaced level model); redrawn |
