@@ -248,6 +248,33 @@ def test_the_mode_switch_exists_only_with_the_audit_flag(world, monkeypatch):
         assert 'id="data_view"' in text, "the data choice exists whenever the strip does"
 
 
+def _decisions(*nodes: tuple) -> dict:
+    """HOME's state with committed audit steps: each item is `(decision id, place)`; two items with one id are ONE decision written at two places."""
+    return {"t3_audit_steps_by_plot": {"__places__": [
+        {"id": ident, "node_type": "filter_row", "params": {"column": "score", "op": "le", "value": 3, "dtype": "Int64", "na": "remove"}, "reason": "test",
+         "place": place, "plot_scope": "__places__", "created_at": f"2026-11-26T10:00:0{i}"} for i, (ident, place) in enumerate(nodes)]}}
+
+
+def _pane_label(world, monkeypatch, plot: str, *nodes: tuple) -> str:
+    home = Home(world, monkeypatch, flags=AUDIT, mode="audit", subtab=f"subtab_{plot}", home_state=_decisions(*nodes))
+    with reactive.isolate():
+        return html(home.outputs[f"plot_cmp_label_{plot}"]())
+
+
+def test_the_audited_pane_counts_two_decisions_at_one_table_as_two_steps(world, monkeypatch):
+    assert "Audited (after 2 steps)" in _pane_label(world, monkeypatch, "p_table", ("a", "T1:T"), ("b", "T1:T"))
+
+
+def test_the_audited_pane_counts_one_decision_written_at_two_places_as_one_step(world, monkeypatch):
+    """MUTATION (seen failing): without the de-duplication by decision id in `_audit_nodes_for` this counts 2 (nodes, not decisions)."""
+    assert "Audited (after 1 step)" in _pane_label(world, monkeypatch, "p_table", ("a", "T1:T"), ("a", "T3:p_table"))
+
+
+def test_the_audited_pane_ignores_a_step_at_a_table_the_plot_is_not_built_from(world, monkeypatch):
+    assert "Audited (no steps yet)" in _pane_label(world, monkeypatch, "p_table", ("a", "T1:M"))
+    assert "Audited (after 1 step)" in _pane_label(world, monkeypatch, "p_join", ("a", "T1:M")), "the plot that IS built from that table counts it"
+
+
 def _mode_row(home: Home) -> str:
     """The recipe banner and the mode row, the first element of what `dynamic_tabs` draws."""
     with reactive.isolate():
