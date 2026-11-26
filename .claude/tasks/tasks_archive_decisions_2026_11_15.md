@@ -48,8 +48,6 @@ Whole items from `.claude/tasks/tasks.md`: the ticked tasks and the open tasks t
   - Verdict A, wave 2 (2026-11-26): commit 8bf8a8fc; app/modules/renamed_keys.py:237 refuses it.
 - [x] **AUDIT-RECIPE-RULE, one list of steps** `[sonnet/high]` — DECIDED 2026-11-15 (M124, with the corrections of M125). The audit recipe is the exported recipe. Four lines: (1) every step of the recipe is done in HOME; (2) every step sent to audit and checked is applied in HOME's table, the plot, the bundle and the export, in the recorded order; (3) a step the app cannot apply is refused with a plain message, never skipped silently; (4) no step type may exist that only one place applies. The check: the build against these lines, including the raw-YAML case. State: the check is open.
   - Verdict A, wave 2 (2026-11-26): app/tests/test_audit_recipe_runs_alone.py; contract section 7.2 rules 8 and 10; D-0535.
-- [x] **FILTER-CONTROLS-TYPE, filter controls by type of column** — MERGED in `a386422a` (2026-11-16), not pushed. Eight provisional choices wait for Eve (FILTER-PICKERS-1 above).
-  - Verdict A, wave 2 (2026-11-26): merged in a386422a (dev contains it).
 - [x] **PLOT-TEXT-RUNS-CODE-1** `[sonnet/high]` — Five places where a text of a recipe could run code are closed on branch `task/smooth-formula` (HEAD `3527855d`), in review. Decision that applies: 2026-11-13, a recipe text must never run code.
   - Verdict A, wave 2 (2026-11-26): commit cfe1dc22 (ancestor of HEAD); libs/viz_factory/src/viz_factory/checked_plot.py:42.
 - [x] **TEST-STAGING-1** `[sonnet/medium]` — A browser test stages a recipe inside the repository. A killed run left the file `zz_gate_gap_stage`, and 65 tests then failed in a reviewer's worktree (2026-11-16). OPEN.
