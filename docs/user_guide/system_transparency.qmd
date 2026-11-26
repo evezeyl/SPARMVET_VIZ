@@ -72,11 +72,11 @@ Two small choices above the plot area say what you look at. The first (the mode,
 | Choice | What you see |
 |---|---|
 | **Source** | One source table as read from its file, before any step of the data analysis recipe. A second list names the source tables that feed the open plot. |
-| **T1** | The plot's table after the tier-1 steps of the recipe. |
-| **T2** | The plot's table after the tier-2 steps. Equal to T1 when the dataset has no tier-2 steps. |
-| **T3** | The table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. In Audit mode it also carries your audited steps. |
+| **T1** | The table the open plot reads, after the tier-1 steps of the recipe. |
+| **T2** | The same table after the tier-2 steps. Equal to T1 when the recipe has no tier-2 steps for it. |
+| **T3** | The Result data, the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. In Audit mode it also carries your audited steps. |
 
-Each panel states what it shows and when two tables are identical (for example "T2=T1"). In Audit mode, audit steps apply to the plot's table (T3) for now; Source, T1 and T2 stay the original tables.
+Each panel states what it shows and when two tables are identical (for example "T2=T1"). In Audit mode an audit step is written at a place: a table after its tier 1 or its tier 2, or the Result data (T3) of a plot. T1 and T2 then show the audited table where a step changes it; Source is always the file as read.
 
 ### Filters adapt to what you are looking at
 
@@ -96,7 +96,7 @@ The **Filters** accordion in the left sidebar lets you narrow down what is previ
 
 **How it works:**
 
-1. Select a column from the dropdown (scoped to the active plot's dataset).
+1. Select a column from the dropdown (the columns of the table you are viewing).
 2. Choose an operator: `∈ any of` / `∉ none of` / `= equals` / `≠ not equal` for categories; `=`, `≠`, `>`, `≥`, `<`, `≤`, `↔ between` for numbers. One selected value reads "column = value"; several read "any of".
    The line under the column says what it holds ("year holds whole numbers (Int64)"). A number column that the plot draws as categories offers both the list operators and the comparisons (`>`, `<`, `↔ between` use number boxes).
 3. Select or type a value, then click **+ Add** to stage the row. `↔ between` asks which ends are included (both, only min, only max, neither).

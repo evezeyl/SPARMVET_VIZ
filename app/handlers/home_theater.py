@@ -1258,12 +1258,12 @@ def define_server(input, output, session, *,
             "T1": _tier_label(
                 "T1",
                 "after tier 1",
-                "T1: the plot's table after the tier-1 steps of the recipe (cleaning, joins).",
+                "T1: the table the open plot reads, after the tier-1 steps of the recipe (cleaning, joins).",
             ),
             "T2": _tier_label(
                 "T2",
                 "after tier 2",
-                "T2: the plot's table after the tier-2 steps of the recipe. If the recipe has none, T2 = T1.",
+                "T2: the same table after the tier-2 steps of the recipe. If the recipe has none, T2 = T1.",
             ),
             "T3": _tier_label(
                 "T3",
@@ -1812,11 +1812,11 @@ def define_server(input, output, session, *,
             return "Data Preview"
         return f"Data Preview (max. first {PREVIEW_ROW_LIMIT} rows)"
 
-    # Phase 21-D/F: Data preview — scoped to active plot's dataset, with filters + col selector.
+    # Phase 21-D/F: Data preview — scoped to the table the active plot reads, with filters + col selector.
     @output
     @render.data_frame
     def home_data_preview():
-        """Preview for the active plot's dataset. Applies committed filters + col selector.
+        """Preview for the table the active plot reads. Applies committed filters + col selector.
         PREVIEW-ALLROWS-1: capped at 100 rows by default; toggle 'preview_all_rows' to uncap."""
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
