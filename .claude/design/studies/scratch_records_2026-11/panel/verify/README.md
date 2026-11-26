@@ -1,0 +1,1 @@
+Moved to `.claude/outdated/design/studies/scratch_records_2026-11/panel/verify` on 2026-11-26 (outdated: scratch record of a closed panel or slice; the decisions are in the ledger, the built behaviour in the code and rules). Current source: `.claude/knowledge/decision_ledger.md` and the rules. This pointer is removed when the files that cite this folder are actualised (wave 2).
