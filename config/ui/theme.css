@@ -31,6 +31,7 @@
  *  28. Audit dialog: the places as the path of the lineage (D-0553)
  *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
  *  30. HOME mode row (title and Exploration | Audit) and the Compare line
+ *  31. HOME Audit mode: the chosen places with Show, the shown mark and the band above the preview (slice 3a)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1351,3 +1352,23 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-compare-line { display: flex; align-items: center; justify-content: flex-start; margin: 0 0 6px 0; font-size: 0.8rem; }
 .spv-compare-line .shiny-input-container { margin-bottom: 0 !important; width: auto !important; }
 .spv-compare-panes { gap: 8px; }
+
+/* ── 31. HOME Audit mode: the chosen places, the shown mark and the band (slice 3a, 2026-11-26; PROVISIONAL) ──── */
+/* Existing tokens only (rules_css_style_spec.md sections 1e, 4, 9g). The band is the amber tint of the notices with the dark teal text and bar of the line "Chosen" (#0b6358 on #fff3cd, 6.45 to 1);
+   the list of the chosen places is a white card with the small white buttons of the lineage bar; "Show selection" is a Type 1 primary button. The SHOWN place has a text mark ("shown", the
+   primary blue on the Violet tint) in the list and on the map, so that it is told apart from the CHOSEN places (dark line) by a word and not by colour alone. */
+.spv-lin-staged { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px 0; padding: 4px 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #ffffff; }
+.spv-lin-staged-title { font-size: 0.75rem; font-weight: 700; color: #6c757d; }
+.spv-lin-staged-list { display: flex; flex-direction: column; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.spv-lin-staged-line { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.spv-lin-staged-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.spv-lin-show { border: 1px solid #dee2e6; background: #ffffff; color: #345beb; border-radius: 6px; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; }
+.spv-lin-show:hover { background: #eef0fb; }
+.spv-lin-show:focus-visible { outline: 2px solid #345beb; }
+.spv-lin-showsel { height: 28px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; padding: 0 12px; }
+.spv-lin-shown { font-size: 0.65rem; font-weight: 700; color: #345beb; background: #eef0fb; border: 1px solid #345beb; border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+.spv-lin-shown:empty { display: none; }
+.spv-lin-shownmark { font-size: 10px; font-weight: 700; fill: #345beb; pointer-events: none; }
+.spv-shown-band { display: flex; flex-direction: column; gap: 1px; margin: 0 0 6px 0; padding: 4px 10px; font-size: 0.8rem; font-weight: 700; color: #0b6358; background: #fff3cd; border: 0; border-left: 3px solid #0b6358; border-radius: 4px; }
+.spv-shown-band-line { overflow-wrap: anywhere; }
+.spv-shown-band-line + .spv-shown-band-line { font-weight: 400; }

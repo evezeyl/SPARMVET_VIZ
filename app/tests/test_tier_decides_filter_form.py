@@ -29,7 +29,7 @@ from app.modules.data_analysis_recipe_validator import validate_data_analysis_re
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import dialog_rows_signature, stored_table_identity, value_choices
 from app.tests.audit_nodes import audited_lf
-from app.tests.browser_view import set_mode, set_view
+from app.tests.browser_view import set_mode, set_view, show_place
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly, _choose_operator
 from app.tests.test_shiny_smoke import _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
@@ -167,6 +167,8 @@ class TestTheRealFormFollowsTheViewShown:
         flags = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled")
         for mode, view, expected_has_group in (("audit", "T3", False), ("audit", "T2", True), ("exploration", "T3", True)):
             home = Home(world, monkeypatch, view=view, mode=mode, flags=flags, home_state=state, subtab="subtab_p_join")
+            if mode == "audit" and view == "T2":
+                home.show("T2:J")            # slice 3a: in Audit mode the table is the place shown, not a data choice
             home.filter_handlers(monkeypatch)
             with reactive.isolate():
                 assert ("group" in _options(str(home.outputs["filter_form_ui"]()))) is expected_has_group, (mode, view)
@@ -292,8 +294,12 @@ def _table_samples(page: Page, expected_count: int, timeout: float = 15.0):
 
 
 def _view(page: Page, tier: str) -> None:
-    """Choose the data view (T1, T2 or T3) and wait until Shiny is idle; nothing is chosen again after it."""
-    set_view(page, tier)
+    """Show the table of tier T1, T2 or T3 and wait until Shiny is idle; nothing is chosen again after it. In Audit mode (slice 3a) there is no data choice: T3 is the Result data of the open
+    plot, and the table `t` of this recipe has no tier-2 steps, so its tier 2 is its tier 1: both are shown as the place `T1:t`."""
+    if tier == "T3":
+        set_view(page, "T3")
+    else:
+        show_place(page, "T1:t", keep_chosen=False)
 
 
 def _list_settles_to(page: Page, expected_count: int, timeout: float = 15.0):

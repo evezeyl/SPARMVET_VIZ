@@ -14,7 +14,8 @@ The recipe is `1_test_data_ST22_dummy`, the one the lineage tests call the demo 
 The walk (each stage is a small function, so that a later slice changes one stage only):
   1 open          the recipe opens in Exploration, with the mode row and no Compare
   2 audit mode    switch to Audit: the Compare switch appears, the lineage panel can be opened
-  3 lineage       open "Path of the data" and choose the place: the first table, tier 1 (ResFinder)
+  3 lineage       open "Path of the data" (it is open on entering Audit mode); choose the place: the first table, tier 1 (ResFinder): nothing changes on screen; Show it and see its table (slice 3a);
+                  show the Result data (T3) of the plot again, which the filter is built on, and choose ResFinder again, to write the step there
   4 filter        build a filter on a column of the table the open plot reads, a value taken from the data (never a fixed count), sent to audit at that place
   5 apply         a reason, Apply: the card says where it was written, the place is marked, the plot is the audited one, the data preview has the rows expected
   6 compare       Compare shows the two panes with their labels
@@ -34,7 +35,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_compare, set_mode, set_view, wait_preview_rows
+from app.tests.browser_view import preview_rows, set_compare, set_mode, set_view, show_place, wait_preview_rows
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_lineage_view_browser import _clear_choice, _line, _open_panel
@@ -52,12 +53,14 @@ def expected(tmp_path_factory):
     """The rows the data preview must show before and after the step, from the engine's own table of the plot (computed here, not typed in)."""
     from app.modules.orchestrator import DataOrchestrator
     orch = DataOrchestrator(ROOT / "config" / "data_analysis_recipes" / "pipelines", ROOT / "assets" / "test_data")
-    table = orch.materialize_tier3(RECIPE, PLOT, tmp_path_factory.mktemp("walk")).collect()
+    where = tmp_path_factory.mktemp("walk")
+    table = orch.materialize_tier3(RECIPE, PLOT, where).collect()
+    resfinder_rows = orch.materialize_tier1(RECIPE, "ResFinder", where / "ResFinder.parquet").collect().height
     identity = table["identity"].drop_nulls()
     threshold = float(identity.unique().sort()[len(identity.unique()) // 2])      # a value the data holds: some rows are below it, some are not
     kept = table.filter(pl.col("identity") < threshold).height
     assert 0 < kept < table.height, "the walk needs a value that removes some rows and keeps others"
-    return {"before": table.height, "after": kept, "removed": table.height - kept, "threshold": threshold}
+    return {"before": table.height, "after": kept, "removed": table.height - kept, "threshold": threshold, "resfinder": resfinder_rows}
 
 
 # -- the stages ---------------------------------------------------------------------------------------------------
@@ -80,10 +83,21 @@ def stage_audit_mode(page: Page) -> None:
     set_view(page, "T3")
 
 
-def stage_lineage(page: Page) -> None:
+def stage_lineage(page: Page, expected: dict) -> None:
     _open_panel(page)
     _clear_choice(page)
-    _line(page, PLACE).click()
+    expect(page.locator("#shown_band_ui")).to_contain_text("Shown: AMR Heatmap: Result data, T3")
+    _line(page, PLACE).click()                      # choosing only stages the place: the table on screen is still the plot's Result data
+    _wait_shiny(page)
+    expect(page.locator("#lineage_root .spv-lin-chosen")).to_contain_text("ResFinder")
+    assert preview_rows(page) == expected["before"], "choosing changed what is shown"
+    page.locator(f"#lineage_root .spv-lin-show[data-place='{PLACE}']").click()                  # Show: the table of the place, original (no step yet)
+    _wait_shiny(page)
+    expect(page.locator("#shown_band_ui")).to_contain_text("Shown: ResFinder: Table, T1")
+    wait_preview_rows(page, expected["resfinder"], timeout=60_000)
+    show_place(page, f"T3:{PLOT}")                  # the filter below is built on the Result data (T3) of the open plot, so it is shown again
+    wait_preview_rows(page, expected["before"], timeout=60_000)
+    _line(page, PLACE).click()                      # the place the step is written at: chosen again, not shown
     _wait_shiny(page)
     expect(page.locator("#lineage_root .spv-lin-chosen")).to_contain_text("ResFinder")
 
@@ -166,7 +180,7 @@ def test_the_demo_recipe_in_audit_mode_from_opening_to_export(page: Page, shiny_
     try:
         stage_audit_mode(page)
         wait_preview_rows(page, expected["before"], timeout=60_000)
-        stage_lineage(page)
+        stage_lineage(page, expected)
         stage_filter(page, expected)
         stage_apply(page, expected)
         stage_compare(page)

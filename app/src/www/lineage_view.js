@@ -9,6 +9,12 @@
 // group" (the first places of the group). A choice that is a set of first places is accepted by the server's rule too (no place lies below another).
 // The marks of the places that hold an audit step come from the server (custom message 'lineage_marks': {place: number of steps}).
 //
+// CHOOSING ONLY STAGES (slice 3a, D-0655): a choice changes nothing in the preview or the plots. The chosen places are listed under the bar ("Chosen places") with a button "Show" on each
+// line and one button "Show selection" (the place clicked first: the browser keeps the order of the clicks). A button sends Shiny.setInputValue('lineage_show', {place, t}, {priority:'event'})
+// (place null for "Show selection"); the server makes it the shown item and tells the browser which place is shown (custom message 'lineage_shown': {place}). The shown place is marked in the
+// list and on the map with the word "shown", so that it differs from the chosen places by more than colour. The list of the chosen places is built again only when the choice or the shown place
+// changes (never at a hover), so that a click on a button is never lost to a redraw. PROVISIONAL words.
+//
 // THE SIZES (PROVISIONAL, the owner's remark of 2026-11-26): a drag handle between the list and the map (left and right arrows move it), one under the list and the map (up and down arrows:
 // their height) and one under the text area (its height); a double click on a handle gives its default back. The choice is kept in the browser's local storage (key
 // spv.lineage_layout.v1; every access inside try/catch; a missing or broken value gives the default silently), like the width of the side panels. Nothing is sent to the server.
@@ -25,6 +31,7 @@
   var LIMITS = { split: [0.2, 0.8], bodyH: [140, 900], textH: [60, 600] };
   var ZOOM = [0.5, 4];
   var lastMarks = {};
+  var lastShown = null;
   var panels = [];
 
   function el(tag, cls, text) {
@@ -108,7 +115,7 @@
     root.setAttribute("data-built", "1");
     var byId = {};
     data.nodes.forEach(function (n) { byId[n.id] = n; });
-    var st = { chosen: {}, mode: "whole", hot: null, last: null, layoutKey: null, reveal: null };
+    var st = { chosen: {}, order: [], mode: "whole", hot: null, last: null, layoutKey: null, reveal: null, stagedKey: null };
     var view = { k: 1, tx: 0, ty: 0 };
     var prefs = readPrefs();
     var refs = {};
@@ -123,6 +130,19 @@
     chosenInfo.setAttribute("aria-live", "polite");
     bar.appendChild(chosenInfo);
     root.appendChild(bar);
+
+    // the chosen places, to be shown one by one (choosing only stages them)
+    var staged = el("div", "spv-lin-staged");
+    staged.setAttribute("aria-label", "Chosen places");
+    staged.appendChild(el("span", "spv-lin-staged-title", "Chosen places"));
+    var stagedList = el("div", "spv-lin-staged-list");
+    var showSel = el("button", "btn btn-primary spv-lin-showsel", "Show selection");
+    showSel.type = "button"; showSel.disabled = true;
+    showSel.title = "Show the first place you chose in the data preview. Choosing a place does not change what is shown.";
+    showSel.addEventListener("click", function () { send("lineage_show", { place: null, t: Date.now() }); });
+    staged.appendChild(stagedList);
+    staged.appendChild(showSel);
+    root.appendChild(staged);
 
     var body = el("div", "spv-lin-body");
     var list = el("div", "spv-lin-list");
@@ -213,12 +233,14 @@
         line.appendChild(el("span", "spv-lin-swatch " + n.cls));
         line.appendChild(el("span", "spv-lin-line-text", n.line));
         if (n.no_plot) { var tag = el("span", "spv-lin-tag", "no plot"); tag.title = "No plot reads this table."; line.appendChild(tag); }
+        var shownTag = el("span", "spv-lin-shown");
+        line.appendChild(shownTag);
         var mark = el("span", "spv-lin-mark");
         line.appendChild(mark);
         wire(line, id);
         list.appendChild(line);
         refs[id] = refs[id] || {};
-        refs[id].line = line; refs[id].mark = mark;
+        refs[id].line = line; refs[id].mark = mark; refs[id].shownTag = shownTag;
       });
     });
 
@@ -251,9 +273,12 @@
       var m = svg("text", { "class": "spv-lin-dotmark", "aria-hidden": "true" });
       m.textContent = "";
       dotLayer.appendChild(m);
+      var sm = svg("text", { "class": "spv-lin-shownmark", "aria-hidden": "true" });
+      sm.textContent = "";
+      dotLayer.appendChild(sm);
       wire(d, n.id);
       refs[n.id] = refs[n.id] || {};
-      refs[n.id].dot = d; refs[n.id].dotmark = m;
+      refs[n.id].dot = d; refs[n.id].dotmark = m; refs[n.id].shownmark = sm;
     });
     var numEls = {};                    // one small number for each independent graph: the same N as the list heading
     data.groups.forEach(function (g) {
@@ -283,14 +308,16 @@
       choose(n.group, (cur.length === 1 && cur[0] === id) ? [] : [id]);
     }
 
+    // the places chosen in the order the user chose them (an object's keys would sort the graph numbers): the first one is what "Show selection" shows
     function flat() {
       var out = [];
-      Object.keys(st.chosen).forEach(function (g) { st.chosen[g].forEach(function (id) { out.push(id); }); });
+      st.order.forEach(function (g) { (st.chosen[g] || []).forEach(function (id) { out.push(id); }); });
       return out;
     }
 
     function choose(group, ids) {
-      if (ids.length) st.chosen[group] = ids; else delete st.chosen[group];
+      st.order = st.order.filter(function (g) { return String(g) !== String(group); });
+      if (ids.length) { st.chosen[group] = ids; st.order.push(group); } else delete st.chosen[group];
       if (ids.length) { st.last = ids[0]; st.reveal = ids[0]; }
       root.setAttribute("data-chosen", JSON.stringify(flat()));
       send("lineage_chosen", flat());
@@ -400,6 +427,32 @@
       });
     }
 
+    // the list of the chosen places: built again only when the choice or the shown place changes
+    function paintStaged(chosen) {
+      var key = chosen.join("|") + "#" + lastShown;
+      showSel.disabled = !chosen.length;
+      if (st.stagedKey === key) return;
+      st.stagedKey = key;
+      stagedList.textContent = "";
+      if (!chosen.length) {
+        stagedList.appendChild(el("span", "spv-lin-note", "No place chosen. Choosing a place only stages it: press Show to see its table."));
+        return;
+      }
+      chosen.forEach(function (id) {
+        var row = el("div", "spv-lin-staged-line");
+        row.appendChild(el("span", "spv-lin-staged-name", byId[id].line));
+        if (lastShown === id) row.appendChild(el("span", "spv-lin-shown", "shown"));
+        var b = el("button", "spv-lin-show", "Show");
+        b.type = "button";
+        b.setAttribute("data-place", id);
+        b.title = "Show " + byId[id].shown + " in the data preview";
+        b.setAttribute("aria-label", "Show " + byId[id].line);
+        b.addEventListener("click", function () { send("lineage_show", { place: id, t: Date.now() }); });
+        row.appendChild(b);
+        stagedList.appendChild(row);
+      });
+    }
+
     function paint() {
       var s = shown();
       var layoutKey = s.key + "|" + (s.union ? s.ids.join(",") : "");
@@ -420,19 +473,23 @@
         var r = refs[n.id], on = !!visible[n.id];
         var cls = (chosenSet[n.id] ? " chosen" : "") + (built[n.id] ? " built" : "") + (hot === n.id ? " hot" : "") + (hotBuilt[n.id] && !built[n.id] ? " built-hint" : "") + (lastMarks[n.id] ? " marked" : "");
         r.line.style.display = on ? "" : "none";
-        r.line.className = "spv-lin-line " + n.cls + (n.choosable ? "" : " not-choosable") + cls;
+        r.line.className = "spv-lin-line " + n.cls + (n.choosable ? "" : " not-choosable") + cls + (lastShown === n.id ? " shown" : "");
+        r.shownTag.textContent = lastShown === n.id ? "shown" : "";
         r.line.setAttribute("aria-selected", chosenSet[n.id] ? "true" : "false");
         r.dot.style.display = on ? "" : "none";
         r.dotmark.style.display = on && lastMarks[n.id] ? "" : "none";
         r.dot.setAttribute("class", "spv-lin-dot " + n.cls + cls);
         r.dot.setAttribute("aria-pressed", chosenSet[n.id] ? "true" : "false");
-        r.dot.setAttribute("aria-label", n.line + (n.choosable ? "" : " (cannot be chosen)") + (chosenSet[n.id] ? ", chosen" : "") + (built[n.id] ? ", built from the chosen place" : "") + (lastMarks[n.id] ? ", holds audit step(s)" : "") + ", graph " + n.gnum);
+        r.shownmark.style.display = on && lastShown === n.id ? "" : "none";
+        r.dot.setAttribute("aria-label", n.line + (n.choosable ? "" : " (cannot be chosen)") + (lastShown === n.id ? ", shown" : "") + (chosenSet[n.id] ? ", chosen" : "") + (built[n.id] ? ", built from the chosen place" : "") + (lastMarks[n.id] ? ", holds audit step(s)" : "") + ", graph " + n.gnum);
         if (on) {
           var p = s.pos[n.id];
           if (n.kind === "T3") { r.dot.setAttribute("x", p[0] - 5.5); r.dot.setAttribute("y", p[1] - 5.5); }
           else { r.dot.setAttribute("cx", p[0]); r.dot.setAttribute("cy", p[1]); }
           r.dotmark.setAttribute("x", p[0] + 7); r.dotmark.setAttribute("y", p[1] - 5);
           r.dotmark.textContent = lastMarks[n.id] ? "*" : "";
+          r.shownmark.setAttribute("x", p[0] + 7); r.shownmark.setAttribute("y", p[1] + 12);
+          r.shownmark.textContent = lastShown === n.id ? "shown" : "";
         }
         var mk = lastMarks[n.id];
         r.mark.textContent = mk ? ("audit step" + (mk > 1 ? "s: " + mk : "")) : "";
@@ -478,6 +535,7 @@
       }
       chosenInfo.textContent = chosen.length ? ("Chosen: " + chosen.map(function (c) { return byId[c].shown; }).join(", ") + ".") : "No place chosen.";
       chosenInfo.className = "spv-lin-chosen" + (chosen.length ? "" : " none");
+      paintStaged(chosen);
       create.disabled = !chosen.length;
       createNote.textContent = chosen.length ? (st.mode === "around" ? "" : "The dialog opens with the chosen place(s) ticked, for the step you staged in the Filters panel (view T3).") : "Choose a place first.";
       whole.className = "spv-lin-switch" + (st.mode === "whole" ? " active" : "");
@@ -510,6 +568,10 @@
     if (window.Shiny && Shiny.addCustomMessageHandler) {
       Shiny.addCustomMessageHandler("lineage_marks", function (marks) {
         lastMarks = marks || {};
+        panels.forEach(function (p) { try { p.paint(); } catch (e) { /* the panel left the page */ } });
+      });
+      Shiny.addCustomMessageHandler("lineage_shown", function (msg) {
+        lastShown = (msg && msg.place) || null;
         panels.forEach(function (p) { try { p.paint(); } catch (e) { /* the panel left the page */ } });
       });
     } else {

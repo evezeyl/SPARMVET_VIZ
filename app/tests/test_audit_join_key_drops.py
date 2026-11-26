@@ -161,7 +161,7 @@ class Box:
     def drop(self, kept):
         closure(
             "_col_drop_to_audit",
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, _can_write_audit_step=lambda: True,
+            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, _can_write_audit_step=lambda: True, _selection_problem=lambda: None,
             active_home_subtab=Val("subtab_p1"),
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,

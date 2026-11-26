@@ -129,17 +129,22 @@ def test_audit_mode_t3_is_the_audited_table_and_the_plot_is_the_audited_plot(wor
 
 
 @pytest.mark.parametrize("view", ["T1", "T2"])
-def test_audit_mode_shows_the_original_tables_on_t1_and_t2(world, monkeypatch, view):
+def test_audit_mode_shows_the_original_tables_on_t1_and_t2_where_no_step_changes_them(world, monkeypatch, view):
+    """Slice 3a: in Audit mode the table shown is the place shown (`T1:J`, `T2:J`), not a data choice. The audited step here is written at the plot's tier 3 only, so the tables of J are the originals."""
     state = audit_state("p_join", AUDITED_SCORE_LE_3)
-    audit = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
+    audit = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state, subtab="subtab_p_join")
     exploration = Home(world, monkeypatch, flags=AUDIT, mode="exploration", home_state=state)
-    assert table(audit, view, "p_join").equals(table(exploration, view, "p_join"))
+    audit.show(f"{view}:J")
+    with reactive.isolate():
+        shown = audit.outputs["home_data_preview"]().data
+    assert shown.equals(table(exploration, view, "p_join"))
 
 
-def test_audit_mode_source_is_the_original_table(world, monkeypatch):
+def test_audit_mode_ignores_the_data_choice_and_shows_the_audited_result_data_with_nothing_shown(world, monkeypatch):
+    """The strip "Table to view" is hidden in Audit mode (slice 3a): a stale choice (here Source) changes nothing, the preview is the Result data (T3) of the open plot, audited."""
     state = audit_state("p_join", AUDITED_SCORE_LE_3)
     home = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
-    assert ids(table(home, "SRC", "p_join", "T")) == ["s1", "s2", "s3", "s4", "s5"]
+    assert ids(table(home, "SRC", "p_join", "T")) == ["s2", "s3"]
 
 
 def test_exploration_filters_do_not_exist_in_audit_mode(world, monkeypatch):
@@ -149,7 +154,10 @@ def test_exploration_filters_do_not_exist_in_audit_mode(world, monkeypatch):
     row = stamped(home, SCORE_GE_4)
     with reactive.isolate():
         home.filters_applied.set([row])
-    assert ids(table(home, "T3", "p_join")) == ["s2", "s3"] and ids(table(home, "T2", "p_join")) == ["s2", "s3", "s4"]
+    assert ids(table(home, "T3", "p_join")) == ["s2", "s3"]
+    home.show("T2:J")
+    with reactive.isolate():
+        assert ids(home.outputs["home_data_preview"]().data) == ["s2", "s3", "s4"]
     assert ids(home.plot("p_join")) == ["s2", "s3"]
 
 
@@ -235,8 +243,9 @@ def test_compare_needs_the_comparison_flag_even_in_audit_mode(world, monkeypatch
 
 
 def _strip(home: Home) -> str:
+    """What `dynamic_tabs` draws and the strip "Table to view" (its own output since slice 3a: `data_strip_ui`)."""
     with reactive.isolate():
-        return html(home.outputs["dynamic_tabs"]())
+        return html(home.outputs["dynamic_tabs"]()) + html(home.outputs["data_strip_ui"]())
 
 
 def test_the_mode_switch_exists_only_with_the_audit_flag(world, monkeypatch):

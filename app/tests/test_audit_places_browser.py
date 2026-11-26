@@ -19,7 +19,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import preview_rows, set_compare, set_mode, set_view, wait_preview_rows, wait_preview_rows_below
+from app.tests.browser_view import preview_rows, set_compare, set_mode, set_view, show_place, wait_preview_rows, wait_preview_rows_below
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_smoke import (_load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _choose_fb_op, _wait_shiny)
@@ -157,7 +157,7 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed")
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("plots are built from there")
     # D-0622: in Audit mode the T1 view of ResFinder shows the audited table (the step was written at its tier 1), and its badge says so
-    set_view(page, "T1")
+    show_place(page, "T1:ResFinder")      # slice 3a: in Audit mode the table shown is the place chosen in Path of the data and shown
     wait_preview_rows(page, rows_after, timeout=30_000)
     expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, audited", timeout=20_000)
     set_view(page, "T3")
@@ -366,10 +366,10 @@ def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_a
     try:
         wait_preview_rows(page, expected["amr_after"], timeout=60_000)
         expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)
-        set_view(page, "T2")
+        show_place(page, "T2:ResFinder")
         wait_preview_rows(page, expected["amr_after"], timeout=30_000)       # D-0622: the T2 view shows the audited tier 2
         expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T2, audited", timeout=20_000)
-        set_view(page, "T1")
+        show_place(page, "T1:ResFinder")
         wait_preview_rows(page, expected["amr_before"], timeout=30_000)      # a step at tier 2 leaves tier 1 as it is
         expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
         set_view(page, "T3")

@@ -67,7 +67,7 @@ Two small choices above the plot area say what you look at. The first (the mode,
 | **Exploration** | One plot per plot tab, the **Result**, drawn from the plot's own table. Your filters change the table you view and never the plot. Nothing here is saved or exported. |
 | **Audit** | The **audited plot**: the Result plus the steps you sent to audit. The switch **Compare with the original**, above the plots, shows the original plot and the audited plot side by side. |
 
-**Table to view** (the table below the plots):
+**Table to view** (the table below the plots; in Exploration. In Audit mode the choice is not drawn: the table below the plots is the one you show from "Path of the data", and a band above it says which):
 
 | Choice | What you see |
 |---|---|

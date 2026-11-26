@@ -86,7 +86,7 @@ class Session:
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _clear_exploration_filters=lambda: (0, 0),
-            _can_write_audit_step=lambda: True,
+            _can_write_audit_step=lambda: True, _selection_problem=lambda: None,
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d),
             input={},

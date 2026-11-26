@@ -1,7 +1,7 @@
 """home_harness.py - the real `home_theater.define_server`, run headless with every part a fake except the recipe, the orchestrator and the keys.
 
 # @deps
-# consumes: app/handlers/home_theater.py (define_server), app/tests/test_tier3_reader.py (Tier3World)
+# consumes: app/handlers/home_theater.py (define_server; its `shown_item` through the kwargs of the lineage handlers), app/tests/test_tier3_reader.py (Tier3World)
 # consumed_by: app/tests/test_home_reads_the_plots_table.py, app/tests/test_home_view_choices.py, app/tests/test_filters_change_the_table_not_the_plot.py, app/tests/test_left_sidebar_redraw_wiring.py
 # @end_deps
 
@@ -124,6 +124,8 @@ class Home:
         monkeypatch.setattr(ui, "notification_show", lambda message, **kw: self.notes.append((kw.get("type"), str(message))))
         monkeypatch.setattr(home_theater, "define_filter_audit_server", lambda *a, **kw: self.readers.update(kw))
         monkeypatch.setattr(home_theater, "define_export_server", lambda *a, **kw: self.readers.update({"export": kw}))
+        self.lineage_kw = {}       # what HOME hands to the lineage handlers (slice 3a): `shown_item`, `restored_steps`, ...
+        monkeypatch.setattr(home_theater, "define_lineage_server", lambda *a, **kw: self.lineage_kw.update(kw))
         self.cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
         self.flags = set(flags)
         bootloader = mock.MagicMock()
@@ -203,6 +205,11 @@ class Home:
         with reactive.isolate():
             self.outputs[f"plot_group_{plot_id}"]()
         return self.drawn[plot_id]
+
+    def show(self, place):
+        """Audit mode (slice 3a): make `place` (`T1:J`, `T2:J`, `T3:p_join`) the SHOWN ITEM, as the button Show does."""
+        with reactive.isolate():
+            self.lineage_kw["shown_item"].set(place)
 
     def set(self, *, mode=None, view=None, source=None, subtab=None):
         with reactive.isolate():

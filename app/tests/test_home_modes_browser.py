@@ -14,7 +14,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_compare, set_mode, set_source, set_view
+from app.tests.browser_view import set_compare, set_mode, set_source, set_view, show_place
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _open_filters_panel, _wait_shiny
 
@@ -123,9 +123,13 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
         set_view(page, "T3")
         expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
         expect(page.locator("#filter_apply")).to_have_count(0)
-        set_view(page, "T1")
+        # Audit mode has no "Table to view" (slice 3a): another table is shown from Path of the data
+        expect(page.locator("#data_view")).to_have_count(0)
+        page.wait_for_selector("#lineage_root .spv-lin-line", timeout=30_000)
+        a_table = page.locator("#lineage_root .spv-lin-line[data-id^='T1:']:not(.not-choosable)").first.get_attribute("data-id")
+        show_place(page, a_table)
         expect(page.locator("#filter_send_to_audit")).to_have_count(0, timeout=10_000)
-        expect(page.locator("#filter_controls_ui")).to_contain_text("To create an audit step, view T3.")
+        expect(page.locator("#filter_controls_ui")).to_contain_text("To create an audit step, show the Result data (T3) of the open plot")
     finally:
         set_mode(page, "exploration")
         set_view(page, "T3")

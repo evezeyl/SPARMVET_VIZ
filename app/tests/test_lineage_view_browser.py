@@ -7,7 +7,7 @@ and, for the test that the panel is absent without the audit:
 
 What a person does on the demo `1_test_data_ST22_dummy`, and sees (the design expects: a list and a map with one entry for every node; a choice by click or keyboard; what is built from the
 chosen place is marked; one chosen place for each independent graph; the dialog opens with the chosen place ticked; a table no plot reads can take a step):
-- Exploration: no panel. Audit mode: a collapsible panel, collapsed; opened, the list and the map hold the same 51 nodes; no line is the metadata; the node tagged "+ meta" says so;
+- Exploration: no panel. Audit mode: a collapsible panel, open when Audit mode is entered (slice 3a); the list and the map hold the same 51 nodes; no line is the metadata; the node tagged "+ meta" says so;
 - a click on a dot chooses its place (the list line and the dot are chosen together); everything built from it is marked; the text area says what is built from it; a second click
   chooses nothing; a choice in the same independent graph replaces the first one;
 - the keyboard: a list line takes focus, Enter chooses; a dot takes focus and Space chooses; hover shows the name and the steps without choosing;
@@ -73,14 +73,14 @@ def ready(page: Page, shiny_app: ShinyAppProc):
 
 
 @NEEDS_AUDIT
-def test_no_panel_in_exploration_and_a_collapsed_panel_in_audit_mode(ready: Page):
+def test_no_panel_in_exploration_and_an_open_panel_in_audit_mode(ready: Page):
     page = ready
     set_mode(page, "exploration")
     expect(page.locator("#acc_lineage")).to_have_count(0)
     expect(page.locator("#lineage_root")).to_have_count(0)
     set_mode(page, "audit")
     expect(page.locator("#acc_lineage")).to_have_count(1, timeout=30_000)
-    assert page.locator("#acc_lineage .accordion-collapse.show").count() == 0, "collapsed when it is drawn"
+    expect(page.locator("#acc_lineage .accordion-collapse.show")).to_have_count(1, timeout=15_000)     # slice 3a: open when Audit mode is entered
     assert "Path of the data" in page.locator("#acc_lineage").inner_text()
 
 
@@ -488,6 +488,7 @@ def test_the_parts_can_be_resized_the_choice_is_kept_and_a_double_click_resets(r
     page.mouse.down(); page.mouse.move(hb["x"] + 140, hb["y"] + hb["height"] / 2, steps=6); page.mouse.up()
     assert list_box() > w0 + 100, "the list is wider"
     hh = page.locator("#lineage_root .spv-lin-handle.h").first
+    hh.scroll_into_view_if_needed()          # the list of the chosen places pushes the handle down: a drag needs it inside the window
     hb = hh.bounding_box()
     page.mouse.move(hb["x"] + hb["width"] / 2, hb["y"] + hb["height"] / 2)
     page.mouse.down(); page.mouse.move(hb["x"] + hb["width"] / 2, hb["y"] + hb["height"] / 2 + 90, steps=6); page.mouse.up()

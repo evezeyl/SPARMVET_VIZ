@@ -112,8 +112,9 @@ The HOME header strip has two choices (not one combined toggle):
 
 - **"Mode"**: Exploration | Audit. It exists only when `interactivity_enabled` and `t3_sandbox_enabled`
   are both on. Without the audit flag there is no switch and the app is in Exploration.
-- **"Table to view"** (drives the data preview): Source | T1 | T2 | T3. A second list names the source tables
-  that feed the open plot when Source is chosen.
+- **"Table to view"** (drives the data preview, in Exploration only): Source | T1 | T2 | T3. A second list names the source tables
+  that feed the open plot when Source is chosen. In Audit mode the choice is not drawn: the data preview follows the place
+  shown from "Path of the data" (slice 3a).
 
 `interactivity_enabled` is the master gate for the Filters panel and for the header strip. If it is `false`,
 the Filters panel and the entire header strip are absent: the plots show the Result and the table shows T3.

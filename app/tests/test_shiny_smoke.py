@@ -382,20 +382,22 @@ class TestAuditGate:
 class TestTierPersistence:
     def test_the_data_choice_and_the_mode_survive_a_workspace_switch(self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
+        set_mode(page, "exploration")       # a test before this one can leave the page in Audit mode, where "Table to view" is not drawn (slice 3a)
         page.wait_for_selector("#data_view", timeout=15_000)
 
         set_view(page, "T1")
         set_mode(page, "audit")
+        expect(page.locator("#data_view")).to_have_count(0, timeout=10_000)       # slice 3a: "Table to view" is not drawn in Audit mode
 
         page.get_by_text("Gallery", exact=True).click()
         _wait_shiny(page)
         page.get_by_text("Home", exact=True).click()
         _wait_shiny(page)
 
-        page.wait_for_selector("#data_view", timeout=15_000)
-        expect(page.locator("#data_view input[value=T1]")).to_be_checked(timeout=8_000)
         expect(page.locator("#home_mode input[value=audit]")).to_be_checked(timeout=8_000)
         set_mode(page, "exploration")
+        page.wait_for_selector("#data_view", timeout=15_000)
+        expect(page.locator("#data_view input[value=T1]")).to_be_checked(timeout=8_000)       # Exploration kept its own choice
         set_view(page, "T3")
 
 

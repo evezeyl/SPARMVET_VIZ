@@ -109,12 +109,13 @@ def test_compare_is_one_switch_above_the_plots_in_audit_mode_only(page: Page, sh
     expect(page.locator("#audit_compare")).to_have_count(0, timeout=10_000)
 
 
-def test_a_click_on_the_switch_or_the_mode_redraws_neither_the_strip_nor_the_lineage_nor_folds_the_plot(page: Page, shiny_app: ShinyAppProc):
+def test_a_click_on_the_switch_or_the_mode_redraws_neither_the_control_nor_the_lineage_nor_folds_the_plot(page: Page, shiny_app: ShinyAppProc):
+    """Slice 3a: the strip "Table to view" is not drawn in Audit mode (it is drawn again when Exploration comes back); the mode control, the lineage and the Compare switch are never drawn again by a click."""
     _ready(page, shiny_app.url)
-    _mark(page, "#data_view")
     _mark(page, "#home_mode")
     set_mode(page, "audit")
     try:
+        expect(page.locator("#data_view")).to_have_count(0, timeout=15_000)
         expect(page.locator("#lineage_root")).to_be_attached(timeout=20_000)
         _mark(page, "#lineage_root")
         _mark(page, "#audit_compare")
@@ -125,11 +126,12 @@ def test_a_click_on_the_switch_or_the_mode_redraws_neither_the_strip_nor_the_lin
         set_compare(page, False)
         _wait_shiny(page)
         assert page.locator(".spv-plot-accordion .accordion-collapse.show").count() >= 1, "the plot stays unfolded"
-        for selector in ("#data_view", "#home_mode", "#lineage_root", "#audit_compare"):
+        for selector in ("#home_mode", "#lineage_root", "#audit_compare"):
             assert _still_marked(page, selector), f"{selector} was drawn again"
     finally:
         set_mode(page, "exploration")
-    assert _still_marked(page, "#data_view") and _still_marked(page, "#home_mode"), "the strip and the control survive a round trip of the mode"
+    expect(page.locator("#data_view")).to_have_count(1, timeout=15_000)       # the strip is drawn again, with its own choice
+    assert _still_marked(page, "#home_mode"), "the control survives a round trip of the mode"
 
 
 @pytest.mark.parametrize("width", [1100, 1300])
