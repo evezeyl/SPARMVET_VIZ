@@ -12731,7 +12731,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1l7nEusbS0="
 									},
-									"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)",
+									"name": "Processing Issues: last 10 errors (F-26)",
 									"ownedElements": [
 										{
 											"_type": "WFText",
@@ -12739,9 +12739,11 @@
 											"_parent": {
 												"$ref": "AAAAAAGhuxCO6vMhry0="
 											},
-											"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+											"name": "Processing Issues: last 10 errors (F-26)",
+											"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)"
 										}
 									],
+									"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)",
 									"tags": [
 										{
 											"_type": "Tag",
@@ -12785,7 +12787,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -12815,7 +12818,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Info: the info block of the data analysis recipe",
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -12885,7 +12889,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Filters: column, operator, value; Add row, Apply, Send to Audit, Reset",
+							"name": "Filters: form, Add row, Apply, Send to Audit",
+							"documentation": "Original box text:\nFilters: column, operator, value; Add row, Apply, Send to Audit, Reset",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -12965,7 +12970,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13005,8 +13011,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Session Management: label, export, import, restore, delete",
-							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.",
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.\n\nOriginal box text:\nSession Management: label, export, import, restore, delete",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13106,7 +13112,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13136,7 +13143,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Mode: Exploration | Audit (home_mode; the switch needs t3_sandbox_enabled)",
+							"name": "Mode: Exploration | Audit (home_mode)",
+							"documentation": "Original box text:\nMode: Exploration | Audit (home_mode; the switch needs t3_sandbox_enabled)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13166,7 +13174,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Table to view: Source | T1 | T2 | T3 (data_view)",
+							"name": "Table to view: Source | T1 | T2 | T3",
+							"documentation": "Original box text:\nTable to view: Source | T1 | T2 | T3 (data_view)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13256,7 +13265,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Plot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)",
+							"name": "Plot: badge, Reshuffle when jitter unpinned",
+							"documentation": "Original box text:\nPlot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13286,7 +13296,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Data preview, first 100 rows, with column selector (home_data_preview)",
+							"name": "Data preview: 100 rows, column selector",
+							"documentation": "Original box text:\nData preview, first 100 rows, with column selector (home_data_preview)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13316,7 +13327,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Pipeline Audit: Tier 2 steps, audit steps of the open plot, reason of each",
+							"name": "Pipeline Audit: steps of the open plot",
+							"documentation": "Original box text:\nPipeline Audit: Tier 2 steps, audit steps of the open plot, reason of each",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -13456,7 +13468,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 						},
 						{
 							"_type": "WFText",
@@ -13464,7 +13477,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Info: the info block of the data analysis recipe"
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe"
 						},
 						{
 							"_type": "WFText",
@@ -13480,7 +13494,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Filters: column, operator, value; Add row, Apply, Send to Audit, Reset"
+							"name": "Filters: form, Add row, Apply, Send to Audit",
+							"documentation": "Original box text:\nFilters: column, operator, value; Add row, Apply, Send to Audit, Reset"
 						},
 						{
 							"_type": "WFText",
@@ -13496,7 +13511,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
 						},
 						{
 							"_type": "WFText",
@@ -13504,7 +13520,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Session Management: label, export, import, restore, delete"
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Original box text:\nSession Management: label, export, import, restore, delete"
 						},
 						{
 							"_type": "WFText",
@@ -13512,7 +13529,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFText",
@@ -13520,7 +13538,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Mode: Exploration | Audit (home_mode; the switch needs t3_sandbox_enabled)"
+							"name": "Mode: Exploration | Audit (home_mode)",
+							"documentation": "Original box text:\nMode: Exploration | Audit (home_mode; the switch needs t3_sandbox_enabled)"
 						},
 						{
 							"_type": "WFText",
@@ -13528,7 +13547,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Table to view: Source | T1 | T2 | T3 (data_view)"
+							"name": "Table to view: Source | T1 | T2 | T3",
+							"documentation": "Original box text:\nTable to view: Source | T1 | T2 | T3 (data_view)"
 						},
 						{
 							"_type": "WFText",
@@ -13552,7 +13572,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Plot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)"
+							"name": "Plot: badge, Reshuffle when jitter unpinned",
+							"documentation": "Original box text:\nPlot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)"
 						},
 						{
 							"_type": "WFText",
@@ -13560,7 +13581,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Data preview, first 100 rows, with column selector (home_data_preview)"
+							"name": "Data preview: 100 rows, column selector",
+							"documentation": "Original box text:\nData preview, first 100 rows, with column selector (home_data_preview)"
 						},
 						{
 							"_type": "WFText",
@@ -13568,7 +13590,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Pipeline Audit: Tier 2 steps, audit steps of the open plot, reason of each"
+							"name": "Pipeline Audit: steps of the open plot",
+							"documentation": "Original box text:\nPipeline Audit: Tier 2 steps, audit steps of the open plot, reason of each"
 						},
 						{
 							"_type": "WFText",
@@ -25909,7 +25932,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -25939,7 +25963,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 						},
 						{
 							"_type": "WFPanel",
@@ -25985,7 +26010,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Info: the info block of the data analysis recipe",
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -26015,7 +26041,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Info: the info block of the data analysis recipe"
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe"
 						},
 						{
 							"_type": "WFPanel",
@@ -26071,7 +26098,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Filters: the shared filter form (column, operator, value). Buttons: Add to preview, Reset. The header names the view and dataset it acts on (new)"
+							"name": "Filters: shared form; Add to preview, Reset",
+							"documentation": "Original box text:\nFilters: the shared filter form (column, operator, value). Buttons: Add to preview, Reset. The header names the view and dataset it acts on (new)"
 						},
 						{
 							"_type": "WFText",
@@ -26079,7 +26107,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Filters: the shared filter form (column, operator, value). Buttons: Add to preview, Reset. The header names the view and dataset it acts on (new)"
+							"name": "Filters: shared form; Add to preview, Reset",
+							"documentation": "Original box text:\nFilters: the shared filter form (column, operator, value). Buttons: Add to preview, Reset. The header names the view and dataset it acts on (new)"
 						},
 						{
 							"_type": "WFPanel",
@@ -26135,7 +26164,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -26175,7 +26205,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
 						},
 						{
 							"_type": "WFPanel",
@@ -26183,8 +26214,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Session Management: label, export, import, restore, delete",
-							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.",
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.\n\nOriginal box text:\nSession Management: label, export, import, restore, delete",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -26264,7 +26295,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Session Management: label, export, import, restore, delete"
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Original box text:\nSession Management: label, export, import, restore, delete"
 						},
 						{
 							"_type": "WFPanel",
@@ -26272,7 +26304,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+							"name": "Processing Issues: last 10 errors (F-26)",
+							"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)"
 						},
 						{
 							"_type": "WFText",
@@ -26280,7 +26313,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+							"name": "Processing Issues: last 10 errors (F-26)",
+							"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)"
 						},
 						{
 							"_type": "WFPanel",
@@ -26288,7 +26322,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -26318,7 +26353,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFPanel",
@@ -26326,7 +26362,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Exploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
+							"name": "Exploration: one choice, Table to view",
+							"documentation": "Original box text:\nExploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
 						},
 						{
 							"_type": "WFText",
@@ -26334,7 +26371,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Exploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
+							"name": "Exploration: one choice, Table to view",
+							"documentation": "Original box text:\nExploration: one choice Table to view: Source | T1 | T2 | T3 (D-0310). No \"Plot to show\", no grey explanations (changed)"
 						},
 						{
 							"_type": "WFPanel",
@@ -26418,7 +26456,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Result plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
+							"name": "Result plot: never changed by a filter",
+							"documentation": "Original box text:\nResult plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
 						},
 						{
 							"_type": "WFText",
@@ -26426,7 +26465,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Result plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
+							"name": "Result plot: never changed by a filter",
+							"documentation": "Original box text:\nResult plot: the recipe plot, never changed by a preview filter. Badge, and a Reshuffle button when jitter is unpinned"
 						},
 						{
 							"_type": "WFPanel",
@@ -26434,7 +26474,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
+							"name": "Data preview of the chosen view, 100 rows",
+							"documentation": "Original box text:\nData preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
 						},
 						{
 							"_type": "WFText",
@@ -26442,7 +26483,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Data preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
+							"name": "Data preview of the chosen view, 100 rows",
+							"documentation": "Original box text:\nData preview of the chosen view (Source, T1, T2 or T3), first 100 rows, with the column selector (preview only). Badge: Viewing Source/T1/T2/T3 and N preview filter(s) on, not saved"
 						},
 						{
 							"_type": "WFPanel",
@@ -26450,7 +26492,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Pipeline Audit panel (right panel): closed in Exploration; empty if the user opens it by hand (D-0383, D-0385). Without the sandbox flag the whole right sidebar is absent"
+							"name": "Pipeline Audit panel: closed in Exploration",
+							"documentation": "Original box text:\nPipeline Audit panel (right panel): closed in Exploration; empty if the user opens it by hand (D-0383, D-0385). Without the sandbox flag the whole right sidebar is absent"
 						},
 						{
 							"_type": "WFText",
@@ -26458,7 +26501,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Pipeline Audit panel (right panel): closed in Exploration; empty if the user opens it by hand (D-0383, D-0385). Without the sandbox flag the whole right sidebar is absent"
+							"name": "Pipeline Audit panel: closed in Exploration",
+							"documentation": "Original box text:\nPipeline Audit panel (right panel): closed in Exploration; empty if the user opens it by hand (D-0383, D-0385). Without the sandbox flag the whole right sidebar is absent"
 						},
 						{
 							"_type": "WFPanel",
@@ -26466,7 +26510,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Not in this mode: Compare, Send to Audit, any change to a plot or to the data"
+							"name": "Not in this mode: Compare, Send to Audit",
+							"documentation": "Original box text:\nNot in this mode: Compare, Send to Audit, any change to a plot or to the data"
 						},
 						{
 							"_type": "WFText",
@@ -26474,7 +26519,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Not in this mode: Compare, Send to Audit, any change to a plot or to the data"
+							"name": "Not in this mode: Compare, Send to Audit",
+							"documentation": "Original box text:\nNot in this mode: Compare, Send to Audit, any change to a plot or to the data"
 						},
 						{
 							"_type": "WFPanel",
@@ -26482,7 +26528,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Preview filters and column choices are cleared when the viewed table or the recipe changes"
+							"name": "Preview filters cleared on view change",
+							"documentation": "Original box text:\nPreview filters and column choices are cleared when the viewed table or the recipe changes"
 						},
 						{
 							"_type": "WFText",
@@ -26490,7 +26537,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Preview filters and column choices are cleared when the viewed table or the recipe changes"
+							"name": "Preview filters cleared on view change",
+							"documentation": "Original box text:\nPreview filters and column choices are cleared when the viewed table or the recipe changes"
 						},
 						{
 							"_type": "WFPanel",
@@ -26498,7 +26546,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Mode switch: Exploration (active) | Audit mode. Only with the sandbox flag"
+							"name": "Mode switch: Exploration (active) | Audit",
+							"documentation": "Original box text:\nMode switch: Exploration (active) | Audit mode. Only with the sandbox flag"
 						},
 						{
 							"_type": "WFText",
@@ -26506,7 +26555,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Mode switch: Exploration (active) | Audit mode. Only with the sandbox flag"
+							"name": "Mode switch: Exploration (active) | Audit",
+							"documentation": "Original box text:\nMode switch: Exploration (active) | Audit mode. Only with the sandbox flag"
 						}
 					]
 				},
@@ -28089,7 +28139,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28119,7 +28170,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+							"name": "Navigation: the five user spaces and Help",
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 						},
 						{
 							"_type": "WFPanel",
@@ -28165,7 +28217,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Info: the info block of the data analysis recipe",
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28195,7 +28248,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Info: the info block of the data analysis recipe"
+							"name": "Info: the recipe info block",
+							"documentation": "Original box text:\nInfo: the info block of the data analysis recipe"
 						},
 						{
 							"_type": "WFPanel",
@@ -28251,7 +28305,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Filters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
+							"name": "Filters: shared form; Send to Audit (T3)",
+							"documentation": "Original box text:\nFilters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
 						},
 						{
 							"_type": "WFText",
@@ -28259,7 +28314,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Filters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
+							"name": "Filters: shared form; Send to Audit (T3)",
+							"documentation": "Original box text:\nFilters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
 						},
 						{
 							"_type": "WFPanel",
@@ -28315,7 +28371,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28355,7 +28412,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
+							"name": "Export / Import: bundle import, Export Bundle",
+							"documentation": "Original box text:\nExport / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
 						},
 						{
 							"_type": "WFPanel",
@@ -28363,8 +28421,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Session Management: label, export, import, restore, delete",
-							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.",
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Import of a session zip: if the session exists, a dialog asks Replace / Keep both / Cancel; the zip is refused whole for a bad member name, a key that differs from its folder, or a size over the limit; look-alike folder names are named on the panel.\n\nOriginal box text:\nSession Management: label, export, import, restore, delete",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28444,7 +28502,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Session Management: label, export, import, restore, delete"
+							"name": "Session Management: save, restore, delete",
+							"documentation": "Original box text:\nSession Management: label, export, import, restore, delete"
 						},
 						{
 							"_type": "WFPanel",
@@ -28452,7 +28511,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+							"name": "Processing Issues: last 10 errors (F-26)",
+							"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)"
 						},
 						{
 							"_type": "WFText",
@@ -28460,7 +28520,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+							"name": "Processing Issues: last 10 errors (F-26)",
+							"documentation": "Original box text:\nProcessing Issues: last 10 errors, fix/who guidance (F-26)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28468,7 +28529,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28498,7 +28560,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
+							"name": "Title banner: info.ui_label or file name",
+							"documentation": "Original box text:\nTitle banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFPanel",
@@ -28506,7 +28569,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Exploration strip: minimised (exclusive with audit mode)"
+							"name": "Exploration strip: minimised in Audit mode",
+							"documentation": "Original box text:\nExploration strip: minimised (exclusive with audit mode)"
 						},
 						{
 							"_type": "WFText",
@@ -28514,7 +28578,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Exploration strip: minimised (exclusive with audit mode)"
+							"name": "Exploration strip: minimised in Audit mode",
+							"documentation": "Original box text:\nExploration strip: minimised (exclusive with audit mode)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28598,7 +28663,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Original Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
+							"name": "Original Result plot (reference), if Compare",
+							"documentation": "Original box text:\nOriginal Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
 						},
 						{
 							"_type": "WFText",
@@ -28606,7 +28672,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Original Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
+							"name": "Original Result plot (reference), if Compare",
+							"documentation": "Original box text:\nOriginal Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28614,7 +28681,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
+							"name": "Audited plot (audit T3 of this plot)",
+							"documentation": "Original box text:\nAudited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
 						},
 						{
 							"_type": "WFText",
@@ -28622,7 +28690,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
+							"name": "Audited plot (audit T3 of this plot)",
+							"documentation": "Original box text:\nAudited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
 						},
 						{
 							"_type": "WFPanel",
@@ -28630,7 +28699,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
+							"name": "Audit data table: audit T3, 100 rows",
+							"documentation": "Original box text:\nAudit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
 						},
 						{
 							"_type": "WFText",
@@ -28638,7 +28708,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
+							"name": "Audit data table: audit T3, 100 rows",
+							"documentation": "Original box text:\nAudit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
 						},
 						{
 							"_type": "WFPanel",
@@ -28646,7 +28717,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
+							"name": "DIALOG Send to Audit: stages the steps",
+							"documentation": "Original box text:\nDIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
 						},
 						{
 							"_type": "WFText",
@@ -28654,7 +28726,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
+							"name": "DIALOG Send to Audit: stages the steps",
+							"documentation": "Original box text:\nDIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
 						},
 						{
 							"_type": "WFPanel",
@@ -28662,7 +28735,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
+							"name": "Pipeline Audit panel: opens in Audit mode",
+							"documentation": "Original box text:\nPipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
 						},
 						{
 							"_type": "WFText",
@@ -28670,7 +28744,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
+							"name": "Pipeline Audit panel: opens in Audit mode",
+							"documentation": "Original box text:\nPipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28678,7 +28753,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Remove step: the user picks any step and removes it (no 'remove last', no 'remove all', D-0314)"
+							"name": "Remove step: any step (D-0314)",
+							"documentation": "Original box text:\nRemove step: the user picks any step and removes it (no 'remove last', no 'remove all', D-0314)"
 						},
 						{
 							"_type": "WFText",
@@ -28686,7 +28762,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Remove step: the user picks any step and removes it (no 'remove last', no 'remove all', D-0314)"
+							"name": "Remove step: any step (D-0314)",
+							"documentation": "Original box text:\nRemove step: the user picks any step and removes it (no 'remove last', no 'remove all', D-0314)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28694,7 +28771,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Where each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
+							"name": "Where each step is written; Applied to N",
+							"documentation": "Original box text:\nWhere each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
 						},
 						{
 							"_type": "WFText",
@@ -28702,7 +28780,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Where each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
+							"name": "Where each step is written; Applied to N",
+							"documentation": "Original box text:\nWhere each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
 						},
 						{
 							"_type": "WFPanel",
@@ -28710,7 +28789,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
+							"name": "A step that cannot run: one plain error",
+							"documentation": "Original box text:\nA step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
 						},
 						{
 							"_type": "WFText",
@@ -28718,7 +28798,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
+							"name": "A step that cannot run: one plain error",
+							"documentation": "Original box text:\nA step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
 						},
 						{
 							"_type": "WFPanel",
@@ -28726,7 +28807,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Apply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps (no preview Apply). To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
+							"name": "Apply: in Pipeline Audit, needs a reason",
+							"documentation": "Original box text:\nApply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps (no preview Apply). To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
 						},
 						{
 							"_type": "WFText",
@@ -28734,7 +28816,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Apply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps. To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
+							"name": "Apply: in Pipeline Audit, needs a reason",
+							"documentation": "Original box text:\nApply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps. To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
 						},
 						{
 							"_type": "WFPanel",
@@ -28742,7 +28825,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Mode switch: Exploration | Audit mode (active)"
+							"name": "Mode switch: Exploration | Audit (active)",
+							"documentation": "Original box text:\nMode switch: Exploration | Audit mode (active)"
 						},
 						{
 							"_type": "WFText",
@@ -28750,7 +28834,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Mode switch: Exploration | Audit mode (active)"
+							"name": "Mode switch: Exploration | Audit (active)",
+							"documentation": "Original box text:\nMode switch: Exploration | Audit mode (active)"
 						},
 						{
 							"_type": "WFPanel",
@@ -28758,7 +28843,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Path of the data (collapsed panel, Audit mode only): list and map of the tables and plots; the user chooses the place of an audit step; button 'Create an audit step here...'",
+							"name": "Path of the data: list and map, Audit mode",
+							"documentation": "Original box text:\nPath of the data (collapsed panel, Audit mode only): list and map of the tables and plots; the user chooses the place of an audit step; button 'Create an audit step here...'",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -28798,7 +28884,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Path of the data (collapsed panel, Audit mode only): list and map of the tables and plots; the user chooses the place of an audit step; button 'Create an audit step here...'"
+							"name": "Path of the data: list and map, Audit mode",
+							"documentation": "Original box text:\nPath of the data (collapsed panel, Audit mode only): list and map of the tables and plots; the user chooses the place of an audit step; button 'Create an audit step here...'"
 						}
 					]
 				},
@@ -35942,7 +36029,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -35950,9 +36037,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOW59XTUqU="
 									},
-									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+									"name": "Navigation: the five user spaces and Help",
+									"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 								}
 							],
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36010,7 +36099,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
+							"name": "Gallery Taxonomy: six axes; Apply",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36018,9 +36107,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOYOdX1ew4="
 									},
-									"name": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply"
+									"name": "Gallery Taxonomy: six axes; Apply",
+									"documentation": "Original box text:\nGallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply"
 								}
 							],
+							"documentation": "Original box text:\nGallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36085,7 +36176,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Preview, collapsible: tab Plot Preview (gallery_preview_img, the stored picture)",
+							"name": "Preview, collapsible: tab Plot Preview",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36093,9 +36184,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOZtNYZ2aM="
 									},
-									"name": "Preview, collapsible: tab Plot Preview (gallery_preview_img, the stored picture)"
+									"name": "Preview, collapsible: tab Plot Preview",
+									"documentation": "Original box text:\nPreview, collapsible: tab Plot Preview (gallery_preview_img, the stored picture)"
 								}
 							],
+							"documentation": "Original box text:\nPreview, collapsible: tab Plot Preview (gallery_preview_img, the stored picture)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36119,7 +36212,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Guidance (example_meta.md rendered) (gallery_md_content)",
+							"name": "Guidance (example_meta.md rendered)",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36127,9 +36220,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOaYtYqnYw="
 									},
-									"name": "Guidance (example_meta.md rendered) (gallery_md_content)"
+									"name": "Guidance (example_meta.md rendered)",
+									"documentation": "Original box text:\nGuidance (example_meta.md rendered) (gallery_md_content)"
 								}
 							],
+							"documentation": "Original box text:\nGuidance (example_meta.md rendered) (gallery_md_content)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36153,7 +36248,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Preview tab Data Sample (gallery_static_data): example_data.tsv",
+							"name": "Preview tab Data Sample: example_data.tsv",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36161,9 +36256,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulObldY7E+g="
 									},
-									"name": "Preview tab Data Sample (gallery_static_data): example_data.tsv"
+									"name": "Preview tab Data Sample: example_data.tsv",
+									"documentation": "Original box text:\nPreview tab Data Sample (gallery_static_data): example_data.tsv"
 								}
 							],
+							"documentation": "Original box text:\nPreview tab Data Sample (gallery_static_data): example_data.tsv",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36187,7 +36284,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Preview tab YAML Example (gallery_yaml_preview): the recipe text, copy by hand",
+							"name": "Preview tab YAML Example: recipe text",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36195,9 +36292,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOcUdZMnuE="
 									},
-									"name": "Preview tab YAML Example (gallery_yaml_preview): the recipe text, copy by hand"
+									"name": "Preview tab YAML Example: recipe text",
+									"documentation": "Original box text:\nPreview tab YAML Example (gallery_yaml_preview): the recipe text, copy by hand"
 								}
 							],
+							"documentation": "Original box text:\nPreview tab YAML Example (gallery_yaml_preview): the recipe text, copy by hand",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36221,7 +36320,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "No interactive handoff into any other space (ADR-093)",
+							"name": "No interactive handoff to another space",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36229,9 +36328,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulOdBtZdDL4="
 									},
-									"name": "No interactive handoff into any other space (ADR-093)"
+									"name": "No interactive handoff to another space",
+									"documentation": "Original box text:\nNo interactive handoff into any other space (ADR-093)"
 								}
 							],
+							"documentation": "Original box text:\nNo interactive handoff into any other space (ADR-093)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -36248,7 +36349,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulOWmNXMH10="
 							},
-							"name": "Left-out notice (gallery_left_out_notice): why an example is not listed. Absent when none failed the check",
+							"name": "Left-out notice: why an example is not listed",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -36256,9 +36357,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/Q46xY5/+KY="
 									},
-									"name": "Left-out notice (gallery_left_out_notice): why an example is not listed. Absent when none failed the check"
+									"name": "Left-out notice: why an example is not listed",
+									"documentation": "Original box text:\nLeft-out notice (gallery_left_out_notice): why an example is not listed. Absent when none failed the check"
 								}
 							],
+							"documentation": "Original box text:\nLeft-out notice (gallery_left_out_notice): why an example is not listed. Absent when none failed the check",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52164,7 +52267,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52172,9 +52275,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX3utgnDWk="
 									},
-									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+									"name": "Navigation: the five user spaces and Help",
+									"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 								}
 							],
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52198,7 +52303,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Recipe picker: choose the data analysis recipe and the step to view",
+							"name": "Recipe picker: recipe and step to view",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52206,9 +52311,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX4Zdg4+yI="
 									},
-									"name": "Recipe picker: choose the data analysis recipe and the step to view"
+									"name": "Recipe picker: recipe and step to view",
+									"documentation": "Original box text:\nRecipe picker: choose the data analysis recipe and the step to view"
 								}
 							],
+							"documentation": "Original box text:\nRecipe picker: choose the data analysis recipe and the step to view",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52239,7 +52346,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Edit data: fix column names, replace or add data",
+							"name": "Edit data: column names, replace or add data",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52247,9 +52354,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX5GNhLQuA="
 									},
-									"name": "Edit data: fix column names, replace or add data"
+									"name": "Edit data: column names, replace or add data",
+									"documentation": "Original box text:\nEdit data: fix column names, replace or add data"
 								}
 							],
+							"documentation": "Original box text:\nEdit data: fix column names, replace or add data",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52518,7 +52627,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Step editor: pick an action, fill in its form, Apply",
+							"name": "Step editor: pick an action, form, Apply",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52526,9 +52635,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX/GtjVFEs="
 									},
-									"name": "Step editor: pick an action, fill in its form, Apply"
+									"name": "Step editor: pick an action, form, Apply",
+									"documentation": "Original box text:\nStep editor: pick an action, fill in its form, Apply"
 								}
 							],
+							"documentation": "Original box text:\nStep editor: pick an action, fill in its form, Apply",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52559,7 +52670,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Join designer: match columns between two datasets, preview, Apply",
+							"name": "Join designer: match columns, preview, Apply",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52567,9 +52678,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX/7tjoTcI="
 									},
-									"name": "Join designer: match columns between two datasets, preview, Apply"
+									"name": "Join designer: match columns, preview, Apply",
+									"documentation": "Original box text:\nJoin designer: match columns between two datasets, preview, Apply"
 								}
 							],
+							"documentation": "Original box text:\nJoin designer: match columns between two datasets, preview, Apply",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52593,7 +52706,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Branch designer: split the recipe into two paths from a step",
+							"name": "Branch designer: split the recipe at a step",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52601,9 +52714,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYAt9j5JGw="
 									},
-									"name": "Branch designer: split the recipe into two paths from a step"
+									"name": "Branch designer: split the recipe at a step",
+									"documentation": "Original box text:\nBranch designer: split the recipe into two paths from a step"
 								}
 							],
+							"documentation": "Original box text:\nBranch designer: split the recipe into two paths from a step",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52627,7 +52742,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Plot defaults: colours, style, layout for every plot",
+							"name": "Plot defaults: colours, style, layout",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52635,9 +52750,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYBhtkKhKk="
 									},
-									"name": "Plot defaults: colours, style, layout for every plot"
+									"name": "Plot defaults: colours, style, layout",
+									"documentation": "Original box text:\nPlot defaults: colours, style, layout for every plot"
 								}
 							],
+							"documentation": "Original box text:\nPlot defaults: colours, style, layout for every plot",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -52661,7 +52778,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Recipe as text: view the raw recipe; edit directly if allowed",
+							"name": "Recipe as text: view, edit if allowed",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -52669,9 +52786,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYCUNkboNQ="
 									},
-									"name": "Recipe as text: view the raw recipe; edit directly if allowed"
+									"name": "Recipe as text: view, edit if allowed",
+									"documentation": "Original box text:\nRecipe as text: view the raw recipe; edit directly if allowed"
 								}
 							],
+							"documentation": "Original box text:\nRecipe as text: view the raw recipe; edit directly if allowed",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58287,7 +58406,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"name": "Navigation: the five user spaces and Help",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58295,9 +58414,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWGVtcG05g="
 									},
-									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+									"name": "Navigation: the five user spaces and Help",
+									"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
 								}
 							],
+							"documentation": "Original box text:\nNavigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58321,7 +58442,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)",
+							"name": "Info: Test Lab's own placeholder (issue #33)",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58329,9 +58450,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWHHdcX43A="
 									},
-									"name": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)"
+									"name": "Info: Test Lab's own placeholder (issue #33)",
+									"documentation": "Original box text:\nInfo: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)"
 								}
 							],
+							"documentation": "Original box text:\nInfo: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58362,7 +58485,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "ID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml",
+							"name": "ID Reconciliation: uploads, run, table",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58370,9 +58493,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWH6dcquVE="
 									},
-									"name": "ID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml"
+									"name": "ID Reconciliation: uploads, run, table",
+									"documentation": "Original box text:\nID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml"
 								}
 							],
+							"documentation": "Original box text:\nID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58396,7 +58521,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Data analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe",
+							"name": "Recipe Scaffolding: upload, run, download",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58404,9 +58529,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWIntc7MlA="
 									},
-									"name": "Data analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe"
+									"name": "Recipe Scaffolding: upload, run, download",
+									"documentation": "Original box text:\nData analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe"
 								}
 							],
+							"documentation": "Original box text:\nData analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58430,7 +58557,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "AquaSynthesizer: upload schema, generate, preview, download synthetic TSV",
+							"name": "AquaSynthesizer: schema, generate, download",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58438,9 +58565,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWJVddMEWI="
 									},
-									"name": "AquaSynthesizer: upload schema, generate, preview, download synthetic TSV"
+									"name": "AquaSynthesizer: schema, generate, download",
+									"documentation": "Original box text:\nAquaSynthesizer: upload schema, generate, preview, download synthetic TSV"
 								}
 							],
+							"documentation": "Original box text:\nAquaSynthesizer: upload schema, generate, preview, download synthetic TSV",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58464,7 +58593,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Anonymiser: upload, pick columns, run, preview, download anon TSV + mapping",
+							"name": "Anonymiser: upload, columns, run, download",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58472,9 +58601,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWKldddW1c="
 									},
-									"name": "Anonymiser: upload, pick columns, run, preview, download anon TSV + mapping"
+									"name": "Anonymiser: upload, columns, run, download",
+									"documentation": "Original box text:\nAnonymiser: upload, pick columns, run, preview, download anon TSV + mapping"
 								}
 							],
+							"documentation": "Original box text:\nAnonymiser: upload, pick columns, run, preview, download anon TSV + mapping",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58498,7 +58629,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Reformatter: upload (xlsx/csv), sheet role assignment, download TSV",
+							"name": "Reformatter: upload, sheet roles, download",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58506,9 +58637,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWLYNduWCc="
 									},
-									"name": "Reformatter: upload (xlsx/csv), sheet role assignment, download TSV"
+									"name": "Reformatter: upload, sheet roles, download",
+									"documentation": "Original box text:\nReformatter: upload (xlsx/csv), sheet role assignment, download TSV"
 								}
 							],
+							"documentation": "Original box text:\nReformatter: upload (xlsx/csv), sheet role assignment, download TSV",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58532,7 +58665,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)",
+							"name": "Stateless tools: no session state (§1)",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58540,9 +58673,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWMQtd/u4I="
 									},
-									"name": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)"
+									"name": "Stateless tools: no session state (§1)",
+									"documentation": "Original box text:\nStateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)"
 								}
 							],
+							"documentation": "Original box text:\nStateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -58559,7 +58694,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale.",
+							"name": "Right sidebar: the five tool descriptions",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -58567,9 +58702,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGhweYIcxrLkcE="
 									},
-									"name": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale."
+									"name": "Right sidebar: the five tool descriptions",
+									"documentation": "Original box text:\nRight sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale."
 								}
 							],
+							"documentation": "Original box text:\nRight sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale.",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66185,7 +66322,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht0aRaMLat/0="
 					},
-					"name": "App frame (app/src/ui.py): the same for HOME, GALLERY, BLUEPRINT, TEST_LAB",
+					"name": "App frame (ui.py), same for all four spaces",
 					"ownedElements": [
 						{
 							"_type": "WFPanel",
@@ -66193,7 +66330,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Left panel (#nav_sidebar). Default width 17% of the window, never below 190 px, never above 340 px. PROVISIONAL values (D-0386)",
+							"name": "Left panel (#nav_sidebar): 17%, 190-340 px",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66201,9 +66338,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvFz4pbigE="
 									},
-									"name": "Left panel (#nav_sidebar). Default width 17% of the window, never below 190 px, never above 340 px. PROVISIONAL values (D-0386)"
+									"name": "Left panel (#nav_sidebar): 17%, 190-340 px",
+									"documentation": "Original box text:\nLeft panel (#nav_sidebar). Default width 17% of the window, never below 190 px, never above 340 px. PROVISIONAL values (D-0386)"
 								}
 							],
+							"documentation": "Original box text:\nLeft panel (#nav_sidebar). Default width 17% of the window, never below 190 px, never above 340 px. PROVISIONAL values (D-0386)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66233,7 +66372,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Main panel: the user space (HOME, GALLERY, BLUEPRINT or TEST_LAB). About two thirds of the window from 1100 to 1920 px. After a drag it never goes below half of the window (D-0384)",
+							"name": "Main panel: the user space, about two thirds",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66241,9 +66380,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvGEopmQek="
 									},
-									"name": "Main panel: the user space (HOME, GALLERY, BLUEPRINT or TEST_LAB). About two thirds of the window from 1100 to 1920 px. After a drag it never goes below half of the window (D-0384)"
+									"name": "Main panel: the user space, about two thirds",
+									"documentation": "Original box text:\nMain panel: the user space (HOME, GALLERY, BLUEPRINT or TEST_LAB). About two thirds of the window from 1100 to 1920 px. After a drag it never goes below half of the window (D-0384)"
 								}
 							],
+							"documentation": "Original box text:\nMain panel: the user space (HOME, GALLERY, BLUEPRINT or TEST_LAB). About two thirds of the window from 1100 to 1920 px. After a drag it never goes below half of the window (D-0384)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66273,7 +66414,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Right panel (#audit_sidebar). Default width 15% of the window, never below 170 px, never above 340 px. PROVISIONAL values (D-0386)",
+							"name": "Right panel (#audit_sidebar): 15%, 170-340 px",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66281,9 +66422,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvGPIpx+RM="
 									},
-									"name": "Right panel (#audit_sidebar). Default width 15% of the window, never below 170 px, never above 340 px. PROVISIONAL values (D-0386)"
+									"name": "Right panel (#audit_sidebar): 15%, 170-340 px",
+									"documentation": "Original box text:\nRight panel (#audit_sidebar). Default width 15% of the window, never below 170 px, never above 340 px. PROVISIONAL values (D-0386)"
 								}
 							],
+							"documentation": "Original box text:\nRight panel (#audit_sidebar). Default width 15% of the window, never below 170 px, never above 340 px. PROVISIONAL values (D-0386)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66313,7 +66456,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Drag handle, left edge of the main panel: 10 px grab area in the gap, grip always visible, tooltip 'Drag to change the panel width. Double-click to reset.' (D-0381)",
+							"name": "Drag handle, left edge of the main panel",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66321,9 +66464,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvGbIp89+I="
 									},
-									"name": "Drag handle, left edge of the main panel: 10 px grab area in the gap, grip always visible, tooltip 'Drag to change the panel width. Double-click to reset.' (D-0381)"
+									"name": "Drag handle, left edge of the main panel",
+									"documentation": "Original box text:\nDrag handle, left edge of the main panel: 10 px grab area in the gap, grip always visible, tooltip 'Drag to change the panel width. Double-click to reset.' (D-0381)"
 								}
 							],
+							"documentation": "Original box text:\nDrag handle, left edge of the main panel: 10 px grab area in the gap, grip always visible, tooltip 'Drag to change the panel width. Double-click to reset.' (D-0381)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66353,7 +66498,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Drag handle, right edge of the main panel: same mechanism as the left handle (D-0381)",
+							"name": "Drag handle, right edge of the main panel",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66361,9 +66506,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvGpIqHawk="
 									},
-									"name": "Drag handle, right edge of the main panel: same mechanism as the left handle (D-0381)"
+									"name": "Drag handle, right edge of the main panel",
+									"documentation": "Original box text:\nDrag handle, right edge of the main panel: same mechanism as the left handle (D-0381)"
 								}
 							],
+							"documentation": "Original box text:\nDrag handle, right edge of the main panel: same mechanism as the left handle (D-0381)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66393,7 +66540,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Stored width: the browser keeps the dragged width as a share of the window, one value per side (key spv.panel_widths.v1). A broken value gives the default. Double-click removes it. Nothing is sent to the server (D-0382)",
+							"name": "Stored width: share of window, per side",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66401,9 +66548,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvG0YqSe1M="
 									},
-									"name": "Stored width: the browser keeps the dragged width as a share of the window, one value per side (key spv.panel_widths.v1). A broken value gives the default. Double-click removes it. Nothing is sent to the server (D-0382)"
+									"name": "Stored width: share of window, per side",
+									"documentation": "Original box text:\nStored width: the browser keeps the dragged width as a share of the window, one value per side (key spv.panel_widths.v1). A broken value gives the default. Double-click removes it. Nothing is sent to the server (D-0382)"
 								}
 							],
+							"documentation": "Original box text:\nStored width: the browser keeps the dragged width as a share of the window, one value per side (key spv.panel_widths.v1). A broken value gives the default. Double-click removes it. Nothing is sent to the server (D-0382)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66433,7 +66582,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "Widths are named in ONE place, frame_widths.py. ui.py reads them for the CSS width; panel_widths.js reads them as data attributes (D-0386)",
+							"name": "Widths named in ONE place: frame_widths.py",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66441,9 +66590,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvHBYqdZug="
 									},
-									"name": "Widths are named in ONE place, frame_widths.py. ui.py reads them for the CSS width; panel_widths.js reads them as data attributes (D-0386)"
+									"name": "Widths named in ONE place: frame_widths.py",
+									"documentation": "Original box text:\nWidths are named in ONE place, frame_widths.py. ui.py reads them for the CSS width; panel_widths.js reads them as data attributes (D-0386)"
 								}
 							],
+							"documentation": "Original box text:\nWidths are named in ONE place, frame_widths.py. ui.py reads them for the CSS width; panel_widths.js reads them as data attributes (D-0386)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66473,7 +66624,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh/QvFrYpW+MI="
 							},
-							"name": "HOME: the right panel is closed in Exploration and open in Audit mode (D-0375, D-0385). The other user spaces keep it open (D-0381)",
+							"name": "HOME: right panel closed in Exploration",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -66481,9 +66632,11 @@
 									"_parent": {
 										"$ref": "AAAAAAGh/QvHZ4qo8OA="
 									},
-									"name": "HOME: the right panel is closed in Exploration and open in Audit mode (D-0375, D-0385). The other user spaces keep it open (D-0381)"
+									"name": "HOME: right panel closed in Exploration",
+									"documentation": "Original box text:\nHOME: the right panel is closed in Exploration and open in Audit mode (D-0375, D-0385). The other user spaces keep it open (D-0381)"
 								}
 							],
+							"documentation": "Original box text:\nHOME: the right panel is closed in Exploration and open in Audit mode (D-0375, D-0385). The other user spaces keep it open (D-0381)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -66517,7 +66670,8 @@
 								}
 							]
 						}
-					]
+					],
+					"documentation": "Original box text:\nApp frame (app/src/ui.py): the same for HOME, GALLERY, BLUEPRINT, TEST_LAB"
 				}
 			]
 		},
