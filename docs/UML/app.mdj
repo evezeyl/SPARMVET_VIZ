@@ -20679,6 +20679,7 @@
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
 							"name": "HOME-AUDIT-FLOW How an audit step is made, applied, checked and removed",
+							"documentation": "2026-11-26: the left and centre show what is built; parts that are old thinking are marked \"built, to go\". The amber column on the right (x 1560) is the target flow, decided and not built (D-0662, D-0655, D-0656, D-0657, D-0652). The grey column is NOT DECIDED. Every element is the current build or a planned, accepted build with a ledger number (D-0640).",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -20714,7 +20715,7 @@
 											"top": 40,
 											"width": 400,
 											"height": 13,
-											"text": "User in audit mode: the selected plot",
+											"text": "User in audit mode: plot tabs (built, to go)",
 											"wordWrap": true
 										}
 									],
@@ -20752,7 +20753,7 @@
 											"top": 160,
 											"width": 400,
 											"height": 13,
-											"text": "STEP 1 WHAT: filter, drop, removal by key",
+											"text": "STEP 1 WHAT: four entries (built, to be one)",
 											"wordWrap": true
 										}
 									],
@@ -20792,7 +20793,7 @@
 											"top": 300,
 											"width": 400,
 											"height": 13,
-											"text": "STEP 1 WHAT: the dialog asks where to write",
+											"text": "Scope pop-up (built, to be removed)",
 											"wordWrap": true
 										}
 									],
@@ -20910,7 +20911,7 @@
 											"top": 802.5,
 											"width": 150,
 											"height": 45,
-											"text": "STEP 3 WHY: reason typed? Apply pressed?",
+											"text": "Staged cards, reason, Apply (built, on hold)",
 											"wordWrap": true
 										}
 									],
@@ -20988,7 +20989,7 @@
 											"top": 1100,
 											"width": 260,
 											"height": 13,
-											"text": "Audited plot and audit T3 table shown",
+											"text": "Audited plot and its Result data (T3) shown",
 											"wordWrap": true
 										}
 									],
@@ -21588,8 +21589,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 893,
-											"top": 910,
+											"left": 899,
+											"top": 906,
 											"width": 14.4599609375,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -22025,6 +22026,1039 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDYjL2zaLAc="
 									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv1VhnA1hFw=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv1VhnAzX/0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv1VhnA2wWU=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv1VhnA1hFw="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 40,
+											"width": 400,
+											"height": 13,
+											"text": "TARGET (planned): Audit mode, one entry",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 30,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv1VhnA2wWU="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv14/3BMQIE=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv14/3BKAvY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv14/3BNkQY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv14/3BMQIE="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 110,
+											"width": 400,
+											"height": 13,
+											"text": "Toggle beside recipe title (D-0652)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 100,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv14/3BNkQY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15A3BjyUk=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15A3BhMF8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15A3BkR0U=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15A3BjyUk="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 200,
+											"width": 400,
+											"height": 13,
+											"text": "Choose places in \"Path of the data\" (D-0662)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 190,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15A3BkR0U="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15DHB658U=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15DXB7vuM=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15DHB658U="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 290,
+											"width": 400,
+											"height": 13,
+											"text": "Show selection: one item at a time (D-0655)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 280,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15DXB7vuM="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15GHCRkS4=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15GHCSlRw=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15GHCRkS4="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 380,
+											"width": 400,
+											"height": 13,
+											"text": "Condition built on the table shown (D-0655)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 370,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15GHCSlRw="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15IHCoTds=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15IHCmSKI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15IHCp0UI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15IHCoTds="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 470,
+											"width": 400,
+											"height": 13,
+											"text": "Try: effect computed, a trial (D-0656)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 460,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15IHCp0UI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15JHC/noY=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15JHC9xGU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15JHDAHYQ=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15JHC/noY="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 560,
+											"width": 400,
+											"height": 13,
+											"text": "Verify the table at each place (D-0662)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 550,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15JHDAHYQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15KHDWMjE=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15KHDUudQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15KHDXysg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15KHDWMjE="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1570,
+											"top": 650,
+											"width": 400,
+											"height": 13,
+											"text": "Reason, then Add to audit pipeline (D-0648)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1560,
+									"top": 640,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15KHDXysg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15LnDtIEs=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15LnDrI/I="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15LnDu0XY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15LnDtIEs="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2070,
+											"top": 380,
+											"width": 400,
+											"height": 13,
+											"text": "Step bar: the one entry (ledger pending)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2060,
+									"top": 370,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15LnDu0XY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv15MnEEBNA=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv15MXEC0eE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv15MnEFcVk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv15MnEEBNA="
+											},
+											"fillColor": "$amber3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2070,
+											"top": 290,
+											"width": 400,
+											"height": 13,
+											"text": "No plot tabs; Compare above plot (D-0657)",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$amber3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2060,
+									"top": 280,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv15MnEFcVk="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2sgnEz8Tw=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2sgnEx/MM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2sgnE0s3I=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2sgnEz8Tw="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2sgnEx/MM="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 81,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2sgnEz8Tw="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv14/3BMQIE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv1VhnA1hFw="
+									},
+									"lineStyle": 2,
+									"points": "1770:76;1770:100",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2sgnE0s3I="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2si3E5MQQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2si3E3X7E="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2si3E61NY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2si3E5MQQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2si3E3X7E="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 161,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2si3E5MQQ="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15A3BjyUk="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv14/3BMQIE="
+									},
+									"lineStyle": 2,
+									"points": "1770:146;1770:190",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2si3E61NY="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2smHE/ylQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2smHE9k+I="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2smHFABXQ=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2smHE/ylQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2smHE9k+I="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 251,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2smHE/ylQ="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15DHB658U="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15A3BjyUk="
+									},
+									"lineStyle": 2,
+									"points": "1770:236;1770:280",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2smHFABXQ="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2smXFFyxw=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2smXFDHuA="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2smXFGuRU=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2smXFFyxw="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2smXFDHuA="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 341,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2smXFFyxw="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15GHCRkS4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15DHB658U="
+									},
+									"lineStyle": 2,
+									"points": "1770:326;1770:370",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2smXFGuRU="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2srXFLSTo=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2srXFJi64="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2srXFMXjY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2srXFLSTo="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2srXFJi64="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 431,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2srXFLSTo="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15IHCoTds="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15GHCRkS4="
+									},
+									"lineStyle": 2,
+									"points": "1770:416;1770:460",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2srXFMXjY="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2sr3FRCMQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2sr3FPvcY="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2sr3FSK78=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2sr3FRCMQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2sr3FPvcY="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 521,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2sr3FRCMQ="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15JHC/noY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15IHCoTds="
+									},
+									"lineStyle": 2,
+									"points": "1770:506;1770:550",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2sr3FSK78="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2swHFXjXg=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2swHFVRRM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2swHFYMfY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2swHFXjXg="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2swHFVRRM="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1784,
+											"top": 611,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2swHFXjXg="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15KHDWMjE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15JHC/noY="
+									},
+									"lineStyle": 2,
+									"points": "1770:596;1770:640",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2swHFYMfY="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2swXFdsc0=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2swXFbWP4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2swXFeZG8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2swXFdsc0="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2swXFbWP4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 2000,
+											"top": 425,
+											"width": 39.00634765625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2swXFdsc0="
+											},
+											"edgePosition": 1,
+											"text": "carries"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15GHCRkS4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15LnDtIEs="
+									},
+									"lineStyle": 2,
+									"points": "2060:416;1980:416",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2swXFeZG8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFv2szHFlruQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv2szHFj/Tg="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFv2szHFmClg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv2szHFlruQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFv2szHFj/Tg="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1983,
+											"top": 335,
+											"width": 72.26806640625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFv2szHFlruQ="
+											},
+											"edgePosition": 1,
+											"text": "when shown"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFv15DHB658U="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFv15MnEEBNA="
+									},
+									"lineStyle": 2,
+									"points": "2060:326;1980:326",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv2szHFmClg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3DoHFtE0c=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3DoHFrVdA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3DoHFu4EM=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3DoHFtE0c="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 40,
+											"width": 400,
+											"height": 13,
+											"text": "NOT DECIDED (D-0662): do not build on a guess",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 30,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3DoHFu4EM="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3DpHGEGkE=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3DpHGCE1k="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3DpHGFcWc=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3DpHGEGkE="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 110,
+											"width": 400,
+											"height": 13,
+											"text": "Unverified place at Add: written or not?",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 100,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3DpHGFcWc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3Dp3Gbh1M=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3Dp3GZVDE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3Dp3GcmDE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3Dp3Gbh1M="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 200,
+											"width": 400,
+											"height": 13,
+											"text": "Word for the mark: verified/checked/accepted",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 190,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3Dp3GcmDE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3Dq3GyyBI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3Dq3Gw++w="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3Dq3Gzvmc=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3Dq3GyyBI="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 290,
+											"width": 400,
+											"height": 13,
+											"text": "Compare beside a trial: previous or original",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 280,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3Dq3Gzvmc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3Dr3HJeSI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3Dr3HHJ9g="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3Dr3HKVnY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3Dr3HJeSI="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 380,
+											"width": 400,
+											"height": 13,
+											"text": "Is the mark kept in the audit log?",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 370,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3Dr3HKVnY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFv3Ds3HgMLE=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFv3Ds3HeW1o="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFv3Ds3HhG9E=",
+											"_parent": {
+												"$ref": "AAAAAAGiFv3Ds3HgMLE="
+											},
+											"fillColor": "$grey3",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 2570,
+											"top": 470,
+											"width": 400,
+											"height": 13,
+											"text": "Does the separate Apply go?",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "$grey3",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 2560,
+									"top": 460,
+									"width": 420,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFv3Ds3HhG9E="
+									}
 								}
 							]
 						},
@@ -22034,7 +23068,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "User in audit mode: the selected plot",
+							"name": "User in audit mode: plot tabs (built, to go)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -22050,7 +23084,7 @@
 									}
 								}
 							],
-							"documentation": "Original box text:\nUser in audit mode (sandbox flag on): the selected plot, audited"
+							"documentation": "Original box text:\nUser in audit mode (sandbox flag on): the selected plot, audited\n\nEarlier name: User in audit mode: the selected plot\n\nOld thinking: built today; replaced by the place model (D-0662; D-0022, D-0093, D-0535, D-0553, D-0621). Removal on hold until the owner answers. [2026-11-26] Built: in Audit mode the plot tabs and the open plot are shown. Target: no plot tabs, one item at a time (D-0657)."
 						},
 						{
 							"_type": "FCProcess",
@@ -22058,7 +23092,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 1 WHAT: filter, drop, removal by key",
+							"name": "STEP 1 WHAT: four entries (built, to be one)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -22074,7 +23108,7 @@
 									}
 								}
 							],
-							"documentation": "Original box text:\nSTEP 1 WHAT. In Audit mode with T3 viewed: the Filters form (rows staged) and the button \"Send to Audit\", or the column chooser (a drop); for a result table no plot reads, the small form of the lineage panel. A step is a filter, a column drop or a removal by key (the check that refuses any other step: decided, not built, D-0322)"
+							"documentation": "Original box text:\nSTEP 1 WHAT. In Audit mode with T3 viewed: the Filters form (rows staged) and the button \"Send to Audit\", or the column chooser (a drop); for a result table no plot reads, the small form of the lineage panel. A step is a filter, a column drop or a removal by key (the check that refuses any other step: decided, not built, D-0322)\n\nEarlier name: STEP 1 WHAT: filter, drop, removal by key\n\nOld thinking: built today; replaced by the place model (D-0662; D-0022, D-0093, D-0535, D-0553, D-0621). Removal on hold until the owner answers. [2026-11-26] Built: four entries create a step (Filters panel button, lineage button, column-drop button, small form of a table no plot reads) and only while T3 is viewed. Target: one entry, the step bar (owner chose C, 2026-11-26; ledger line pending)."
 						},
 						{
 							"_type": "FCProcess",
@@ -22082,7 +23116,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 1 WHAT: the dialog asks where to write",
+							"name": "Scope pop-up (built, to be removed)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -22098,7 +23132,7 @@
 									}
 								}
 							],
-							"documentation": "Original box text:\nSTEP 1 WHAT (continued). The dialog asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from (one line for each table upstream that holds the column, and the plot's own tier 3)"
+							"documentation": "Original box text:\nSTEP 1 WHAT (continued). The dialog asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from (one line for each table upstream that holds the column, and the plot's own tier 3)\n\nEarlier name: STEP 1 WHAT: the dialog asks where to write\n\nOld thinking: built today; replaced by the place model (D-0662; D-0022, D-0093, D-0535, D-0553, D-0621). Removal on hold until the owner answers. [2026-11-26] The plot choices \"This plot only\", \"All plots\", \"All plots except\" are in no ledger line. A step wanted in several plots separately means choosing the Result data (T3) of each plot as a place. The place part of the pop-up (the rule of places) stays in the new flow."
 						},
 						{
 							"_type": "FCProcess",
@@ -22160,7 +23194,7 @@
 									}
 								}
 							],
-							"documentation": "Original box text:\nBEFORE CONFIRM. Built: the choice of places is checked and refused in one plain line. DECIDED, not built (D-0316, D-0325, D-0337): the dialog shows the rows and plots affected before the user confirms; each affected plot reads \"table changed\" and, separately, \"picture changed\"",
+							"documentation": "Original box text:\nBEFORE CONFIRM. Built: the choice of places is checked and refused in one plain line. DECIDED, not built (D-0316, D-0325, D-0337): the dialog shows the rows and plots affected before the user confirms; each affected plot reads \"table changed\" and, separately, \"picture changed\"\n\nPlanned: the effect is computed as a trial before it is applied and the applying reuses it (D-0656 point 2); the user verifies the table at each place (D-0662 point 3). Not built.",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -22190,7 +23224,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 3 WHY: reason typed? Apply pressed?",
+							"name": "Staged cards, reason, Apply (built, on hold)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -22221,7 +23255,7 @@
 									}
 								}
 							],
-							"documentation": "Original box text:\nSTEP 3 WHY. The nodes are staged (pending, one per place) with no reason. The reason is typed in the Pipeline Audit panel; Apply is locked while a reason is empty. Apply pressed?"
+							"documentation": "Original box text:\nSTEP 3 WHY. The nodes are staged (pending, one per place) with no reason. The reason is typed in the Pipeline Audit panel; Apply is locked while a reason is empty. Apply pressed?\n\nEarlier name: STEP 3 WHY: reason typed? Apply pressed?\n\nOld thinking: built today; replaced by the place model (D-0662; D-0022, D-0093, D-0535, D-0553, D-0621). Removal on hold until the owner answers. [2026-11-26] Built: steps are staged as cards with no reason, the reason is typed in the Pipeline Audit panel, then Apply. Whether the separate Apply goes is NOT decided (D-0662)."
 						},
 						{
 							"_type": "FCProcess",
@@ -22278,8 +23312,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Audited plot and audit T3 table shown",
-							"documentation": "Original box text:\nAudited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on"
+							"name": "Audited plot and its Result data (T3) shown",
+							"documentation": "Original box text:\nAudited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on\n\nEarlier name: Audited plot and audit T3 table shown\n\nWords: \"Result data (T3)\" is the last data table, the data that arrives at the plot (D-0646)."
 						},
 						{
 							"_type": "FCProcess",
@@ -22396,7 +23430,7 @@
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
 							"name": "Panel \"Path of the data\" (built, PROVISIONAL)",
-							"documentation": "Original box text:\nPanel \"Path of the data\" (built, PROVISIONAL): list and map of the tables and plots; the user chooses a place; \"Create an audit step here...\" opens the dialog with the chosen places ticked. Own renderer in HOME (lineage_view.js); data from utils.lineage_data"
+							"documentation": "Original box text:\nPanel \"Path of the data\" (built, PROVISIONAL): list and map of the tables and plots; the user chooses a place; \"Create an audit step here...\" opens the dialog with the chosen places ticked. Own renderer in HOME (lineage_view.js); data from utils.lineage_data\n\nThe button \"Create an audit step here...\" is old thinking, built today; one of the two buttons goes (D-0662 point 5). It is replaced by the step bar. [2026-11-26]"
 						},
 						{
 							"_type": "FCProcess",
@@ -22422,6 +23456,479 @@
 								}
 							],
 							"documentation": "Original box text:\nEXPORT starts. The keys of the open view are compared with the keys now: if the recipe or the data changed, nothing is exported (key check, built). Exploration is never exported"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv1VhnAzX/0=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "TARGET (planned): Audit mode, one entry",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2sgnEx/MM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv1VhnAzX/0="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv1VhnAzX/0="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv14/3BKAvY="
+									}
+								}
+							],
+							"documentation": "PLANNED, decided and not built. The target flow of the owner (D-0662, D-0655, D-0656, D-0657, D-0652). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv1VjXBHosw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv1VhnAzX/0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv14/3BKAvY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Toggle beside recipe title (D-0652)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2si3E3X7E=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv14/3BKAvY="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv14/3BKAvY="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15A3BhMF8="
+									}
+								}
+							],
+							"documentation": "Exploration | Audit toggle in a row beside the recipe title; Table to view in Exploration only (D-0652 is an agent reading, to be confirmed by the owner). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15AnBerLw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv14/3BKAvY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15A3BhMF8=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Choose places in \"Path of the data\" (D-0662)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2smHE9k+I=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15A3BhMF8="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv15A3BhMF8="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									}
+								}
+							],
+							"documentation": "The scope of a step is the place or places chosen in the panel. Choosing only stages the selection (D-0655). At most one place on a path; the metadata is not a place. A step wanted in several plots separately means choosing the Result data (T3) of each plot. [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15CHB1DMs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15A3BhMF8="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15DHB41io=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Show selection: one item at a time (D-0655)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2smXFDHuA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									}
+								}
+							],
+							"documentation": "A button (working label \"Show selection\", PROVISIONAL) displays the first staged place: a table at a place, or a plot with its Result data (T3). The list of staged places is visible (D-0656). With nothing chosen, the plot that was open is shown (D-0653). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15E3CMmcs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15GHCPdbU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Condition built on the table shown (D-0655)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2srXFJi64=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15IHCmSKI="
+									}
+								}
+							],
+							"documentation": "The condition is built on the table shown. A click on another place while a condition is built clears it, with a notice that stays (D-0654). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15H3Cj6I0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15IHCmSKI=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Try: effect computed, a trial (D-0656)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2sr3FPvcY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15IHCmSKI="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv15IHCmSKI="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15JHC9xGU="
+									}
+								}
+							],
+							"documentation": "The effect of the pending step is computed on a click, before it is applied, labelled as a trial: not applied, not saved, not exported. The result is keyed and reused at apply (D-0656 point 2). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15I3C6L/M=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15IHCmSKI="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15JHC9xGU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Verify the table at each place (D-0662)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2swHFVRRM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15JHC9xGU="
+									},
+									"source": {
+										"$ref": "AAAAAAGiFv15JHC9xGU="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15KHDUudQ="
+									}
+								}
+							],
+							"documentation": "The user verifies the table at each chosen place. The tables and plots built from a place are shown as information (\"what the step reaches\"). The mark means the table at this place was verified and its scope accepted; it resets when the condition or the places change (D-0656 point 3, D-0662 point 3). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15J3DR9Sc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15JHC9xGU="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15KHDUudQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Reason, then Add to audit pipeline (D-0648)",
+							"documentation": "The reason is typed, then \"Add to audit pipeline\"; the tried result is reused, no second calculation (D-0656). The confirmation names where the step is written and what it reaches; a place at which it cannot be written is named and cannot be confirmed (D-0648). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15LHDogtI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15KHDUudQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15LnDrI/I=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Step bar: the one entry (ledger pending)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2swXFbWP4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15LnDrI/I="
+									},
+									"name": "carries",
+									"source": {
+										"$ref": "AAAAAAGiFv15LnDrI/I="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15GHCPdbU="
+									}
+								}
+							],
+							"documentation": "One entry next to the preview title: condition, place, reach, Try, reason, \"Add to audit pipeline\"; it also carries the column drop. Owner chose C, 2026-11-26 (channel block M703); ledger line pending. Built last; the Filters panel button and the lineage button are removed at the end. [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15MXD/P7k=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15LnDrI/I="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv15MXEC0eE=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "No plot tabs; Compare above plot (D-0657)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFv2szHFj/Tg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15MXEC0eE="
+									},
+									"name": "when shown",
+									"source": {
+										"$ref": "AAAAAAGiFv15MXEC0eE="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFv15DHB41io="
+									}
+								}
+							],
+							"documentation": "In Audit mode there are no tabs for all the plots: one item at a time; \"Compare with the original\" is a switch above the plot area (D-0652, to confirm; D-0657). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv15NHEWO3c=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv15MXEC0eE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3DoHFrVdA=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "NOT DECIDED (D-0662): do not build on a guess",
+							"documentation": "Open points of the owner, not decided, not built, not drawn as built. Review session list of 2026-11-26 (channel block M703). A decision of hers is needed for each. [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3Do3F/Tso=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3DoHFrVdA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "not-decided"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3DpHGCE1k=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Unverified place at Add: written or not?",
+							"documentation": "What an unverified place means at \"Add to audit pipeline\": written anyway with a line, or left out. NOT decided (D-0662). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3Dp3GWbcA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3DpHGCE1k="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3Dp3GZVDE=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Word for the mark: verified/checked/accepted",
+							"documentation": "The word for the mark on a place. NOT decided; \"verified\" is only a working word (D-0662). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3Dq3Gt2zA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3Dp3GZVDE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3Dq3Gw++w=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Compare beside a trial: previous or original",
+							"documentation": "What Compare shows beside a trial: the state before this step, or the original. NOT decided. [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3DrnHEZ4k=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3Dq3Gw++w="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3Dr3HHJ9g=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Is the mark kept in the audit log?",
+							"documentation": "Whether the mark is kept in the audit log. NOT decided (see also D-0478, the log content). [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3DsnHbV0c=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3Dr3HHJ9g="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFv3Ds3HeW1o=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Does the separate Apply go?",
+							"documentation": "Whether the separate Apply with staged cards goes, so that steps are tried and applied one at a time. NOT decided (D-0662). Built today: staged cards and Apply. [2026-11-26]",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFv3DtXHyGEU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFv3Ds3HeW1o="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
 						}
 					]
 				},
