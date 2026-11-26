@@ -26,7 +26,7 @@ The UI implements a high-density **3-column nested shell** to maximize screen re
   - Top-level tabs are **exclusively** driven by data analysis recipe `analysis_groups` — no hardcoded tabs (Inspector removed).
   - Each group tab contains `navset_underline` sub-tabs (one per declared plot), wrapped in a **collapsible accordion panel**.
   - A **separate collapsible accordion panel** below shows the data preview (the table chosen in "Table to view").
-  - A header strip with the mode switch **Mode: Exploration | Audit** and the data choice **Table to view: Source | T1 | T2 | T3** (D-0016, D-0310). The data choice controls the data preview; the plot follows the mode (D-0019, D-0327). Details below.
+  - A row of its own with the recipe title and the mode control **Exploration | Audit** (slice 1, built 2026-11-26), and below it a header strip with the data choice **Table to view: Source | T1 | T2 | T3** (D-0016, D-0310). The data choice controls the data preview; the plot follows the mode (D-0019, D-0327). Details below.
   - Uses a Neutral Grey (#d1d1d1) background.
 - **Pipeline Audit (Right)**: Audit trail for T2 blueprint and T3 sandbox transitions. **Visible only for ≥ `pipeline-exploration-advanced`**. When hidden, the theater column expands to fill the full layout width — the layout element itself is excluded, not merely hidden via CSS. Uses a Dark Grey (#c0c0c0) background. In HOME the panel is closed in Exploration (it is empty if the user opens it by hand, D-0383) and opens in Audit mode, closing again when the user leaves it (D-0375, D-0385); in the other user spaces it is open (D-0381). As built; the widths and the drag are in `rules_css_style_spec.md` section 12 (values PROVISIONAL, D-0386).
 
@@ -36,6 +36,8 @@ The UI implements a high-density **3-column nested shell** to maximize screen re
 
 The two choices "Data to show" and "Plot to show" of ADR-086, the view "My view" and Compare as a third plot value are gone (D-0179, D-0180). There is no "My view" any more.
 
+> **The mode row and the Compare switch (slice 1 of the header strip, built 2026-11-26 on branch `task/strip-toggle-compare`; the words are PROVISIONAL).** The mode control left the strip: it sits in a row of its own at the level of the recipe title (`.spv-mode-row` in the recipe banner, `dynamic_tabs`): the title on the left (cut with an ellipsis when narrow, the full text in its `title`), the two-state control "Exploration | Audit" on the right, and under them one caption line that says what the open mode does (output `mode_caption_ui`; Exploration: "look at the data ... Nothing here is saved"). The control is a labelled radio group (visually hidden label "Mode", keyboard arrows change it, the open mode is told by a tick in text and by colour); its input id is still `home_mode` and the server value `home_mode`. The row exists also when the deployment hides the recipe name (`branding.show_recipe_name: false`): it then holds the control alone. Without `t3_sandbox_enabled` there is no control (only Exploration) and the banner is the title alone, as before; without `interactivity_enabled` nothing changed. Compare is ONE switch "Compare with the original" in a line above the group tabs, shared by all plots (output `compare_switch_ui`, input id `audit_compare`), shown only in Audit mode and with `comparison_mode_enabled`, absent otherwise, never greyed; it is not inside the per-plot cell (each cell reads the compare value, and one input id would be mounted once per plot, R4) and not inside an accordion header, so a click on it folds nothing. The panes are labelled "Original (before your audit steps)" and "Audited (after N steps)" (output `plot_cmp_label_{p_id}`; N = the committed audit decisions that reach that plot, at its own tier 3 or at a table it is built from; "Audited (no steps yet)" with none); at narrow width they may stack. The old sentence "Audit steps apply to the plot's table (T3) for now" is gone. "Table to view" stays in the strip in BOTH modes for now; hiding it in Audit mode is a later slice. Tests: `app/tests/test_home_mode_row_browser.py`, `app/tests/test_home_view_choices.py`.
+>
 > **Implementation status:** built (`app/handlers/home_theater.py`, the strip in `dynamic_tabs`; `home_mode` and `data_view` in `app/src/server.py`). The strip exists only with `interactivity_enabled`. Without it there is no strip: the plots show the Result and the table shows T3 (as built; the choice of T3 there is the builder's, not a decision).
 
 | Table to view | Data pane | Gate |
@@ -135,11 +137,11 @@ The theater layout is controlled by the mode (Exploration or Audit, which decide
 
 ```
 ┌──────────────────────┬──────────────────────┐
-│  Original            │  Audited              │  ← Plot accordion (collapsible)
+│  Original (before…)  │  Audited (after N…)   │  ← Plot accordion (collapsible)
 └──────────────────────┴──────────────────────┘
 ```
 
-- The left pane is the original plot (the Result); it does not follow "Table to view".
+- The Compare switch is one line above the plots, not in each plot (see section 2, slice 1); the left pane is the original plot (the Result, labelled "Original (before your audit steps)"); it does not follow "Table to view".
 - The data preview below stays a single table that follows "Table to view".
 - Plot and data accordions are independently collapsible.
 - The previous `theater_grid` toggle, `btn_max_plot`, `btn_max_table`, and `btn_reset_theater` controls are **removed** (superseded by this model).

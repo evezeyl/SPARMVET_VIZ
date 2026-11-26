@@ -113,7 +113,7 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
     set_mode(page, "audit")
     try:
         expect(page.locator("#audit_compare")).to_be_attached(timeout=10_000)
-        expect(page.locator("body")).to_contain_text("Audit steps apply to the plot's table (T3) for now.")
+        expect(page.locator("body")).not_to_contain_text("Audit steps apply to the plot's table (T3) for now.")
         # Compare on: the original and the audited plot side by side; off: the audited plot alone
         set_compare(page, True)
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=20_000)

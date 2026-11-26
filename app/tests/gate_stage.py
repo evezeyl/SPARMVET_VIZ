@@ -40,7 +40,7 @@ WORK: Path | None = None
 FRAGMENT: Path | None = None
 
 
-def stage(blueprint: bool = False) -> Path:
+def stage(blueprint: bool = False, deployment_extra: dict | None = None) -> Path:
     """Build the staged recipe, its data and a deployment of their own in a new folder under tmpAI; returns the deployment file."""
     global WORK, FRAGMENT, STAGE
     STAGE = f"{STAGE_PREFIX}_p{os.getpid()}_{uuid.uuid4().hex[:8]}"
@@ -69,7 +69,7 @@ def stage(blueprint: bool = False) -> Path:
         Path(locations[key]).mkdir()
     deployment = WORK / "deployment.yaml"
     deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "locations": locations,
-                                          "default_data_analysis_recipe": STAGE, "default_app_features": "qa"}), encoding="utf-8")
+                                          "default_data_analysis_recipe": STAGE, "default_app_features": "qa", **(deployment_extra or {})}), encoding="utf-8")
     return deployment
 
 
@@ -152,9 +152,10 @@ def _free_port() -> int:
 
 
 @contextlib.contextmanager
-def running_app(tmp_path, features: str = "qa", recipe: str | None = None, blueprint: bool = False):
-    """The app on the staged recipe (named by SPARMVET_DATA_ANALYSIS_RECIPE); yields (url, log path). Always removes its work folder."""
-    deployment = stage(blueprint)
+def running_app(tmp_path, features: str = "qa", recipe: str | None = None, blueprint: bool = False, deployment_extra: dict | None = None):
+    """The app on the staged recipe (named by SPARMVET_DATA_ANALYSIS_RECIPE); yields (url, log path). Always removes its work folder.
+    `deployment_extra` adds keys to the deployment file (for example `{"branding": {"show_recipe_name": False}}`)."""
+    deployment = stage(blueprint, deployment_extra)
     recipe = recipe or STAGE
     log = tmp_path / "server.log"
     port = _free_port()

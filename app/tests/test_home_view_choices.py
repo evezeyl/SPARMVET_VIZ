@@ -217,20 +217,21 @@ def test_the_badge_of_the_source_says_which_table_and_that_it_is_before_any_step
 
 # -- (c) the switch and Compare ------------------------------------------------------------------------------------
 
-def test_the_audit_strip_row_holds_compare_in_audit_mode_only(world, monkeypatch):
+def test_the_compare_line_holds_the_switch_in_audit_mode_only(world, monkeypatch):
     exploration = Home(world, monkeypatch, flags=AUDIT, mode="exploration")
     with reactive.isolate():
-        assert "audit_compare" not in html(exploration.outputs["audit_strip_ui"]())
+        assert "audit_compare" not in html(exploration.outputs["compare_switch_ui"]())
     audit = Home(world, monkeypatch, flags=AUDIT, mode="audit")
     with reactive.isolate():
-        row = html(audit.outputs["audit_strip_ui"]())
-    assert 'id="audit_compare"' in row and "Audit steps apply to the plot&#x27;s table (T3) for now." in row.replace("'", "&#x27;")
+        row = html(audit.outputs["compare_switch_ui"]())
+    assert 'id="audit_compare"' in row and "Compare with the original" in row
+    assert "for now" not in row and "plot's table" not in row.replace("&#x27;", "'"), "the old sentence of the audit strip is gone"
 
 
 def test_compare_needs_the_comparison_flag_even_in_audit_mode(world, monkeypatch):
     home = Home(world, monkeypatch, flags=("interactivity_enabled", "t3_sandbox_enabled"), mode="audit")
     with reactive.isolate():
-        assert "audit_compare" not in html(home.outputs["audit_strip_ui"]())
+        assert "audit_compare" not in html(home.outputs["compare_switch_ui"]())
 
 
 def _strip(home: Home) -> str:
@@ -245,6 +246,57 @@ def test_the_mode_switch_exists_only_with_the_audit_flag(world, monkeypatch):
         text = _strip(home)
         assert ('id="home_mode"' in text) is expected, flags
         assert 'id="data_view"' in text, "the data choice exists whenever the strip does"
+
+
+def _mode_row(home: Home) -> str:
+    """The recipe banner and the mode row, the first element of what `dynamic_tabs` draws."""
+    with reactive.isolate():
+        tree = home.outputs["dynamic_tabs"]()
+    return html(tree.children[0])
+
+
+def test_the_mode_control_sits_in_a_row_of_its_own_with_the_title_and_leaves_the_strip(world, monkeypatch):
+    home = Home(world, monkeypatch, flags=AUDIT)
+    row, text = _mode_row(home), _strip(home)
+    assert "spv-mode-row" in row and 'id="home_mode"' in row and 'class="banner-title"' in row, "the title and the control are one row"
+    assert 'role="radiogroup"' in row and 'aria-labelledby="home_mode-label"' in row and ">Mode</span>" in row, "a labelled group (the label is visually hidden)"
+    strip = text[text.index("theater-header-strip"):]
+    assert 'id="home_mode"' not in strip and "Mode:" not in text, "the radios left the strip"
+    assert 'id="data_view"' in strip, "Table to view stays in the strip"
+    assert 'value="exploration"' in row and 'value="audit"' in row
+
+
+def test_the_mode_row_exists_when_the_recipe_name_is_hidden_and_then_holds_the_control_alone(world, monkeypatch):
+    home = Home(world, monkeypatch, flags=AUDIT)
+    home.bootloader.show_recipe_name.return_value = False
+    row = _mode_row(home)
+    assert 'id="home_mode"' in row and "banner-title" not in row
+
+
+def test_without_the_audit_there_is_no_control_and_the_banner_is_the_title_alone(world, monkeypatch):
+    for flags in (("interactivity_enabled",), ("interactivity_enabled", "comparison_mode_enabled"), ()):
+        home = Home(world, monkeypatch, flags=flags)
+        row = _mode_row(home)
+        assert "home_mode" not in row and "spv-mode-row" not in row and 'class="banner-title"' in row, flags
+        home.bootloader.show_recipe_name.return_value = False
+        assert "banner-title" not in _mode_row(home) and "home_mode" not in _mode_row(home), "the name hidden: no banner, no control"
+
+
+def test_the_caption_tells_what_the_open_mode_does(world, monkeypatch):
+    with reactive.isolate():
+        exploration = html(Home(world, monkeypatch, flags=AUDIT, mode="exploration").outputs["mode_caption_ui"]())
+        audit = html(Home(world, monkeypatch, flags=AUDIT, mode="audit").outputs["mode_caption_ui"]())
+    assert "Nothing here is saved" in exploration and "never a plot" in exploration
+    assert "change the plot and the export" in audit
+
+
+def test_the_audited_pane_says_how_many_steps_reach_the_plot(world, monkeypatch):
+    none = Home(world, monkeypatch, flags=AUDIT, mode="audit", subtab="subtab_p_join")
+    with reactive.isolate():
+        assert "Audited (no steps yet)" in html(none.outputs["plot_cmp_label_p_join"]())
+    one = Home(world, monkeypatch, flags=AUDIT, mode="audit", subtab="subtab_p_join", home_state=audit_state("p_join", AUDITED_SCORE_LE_3))
+    with reactive.isolate():
+        assert "Audited (after 1 step)" in html(one.outputs["plot_cmp_label_p_join"]())
 
 
 def test_the_strip_is_absent_without_interactivity(world, monkeypatch):
