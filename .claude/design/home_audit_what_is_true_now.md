@@ -1,8 +1,8 @@
 # WHAT IS TRUE NOW: HOME, the audit and the lineage (state of 2026-11-26, evening)
 
-**Describes `dev` at commit `0a6965ae` (the merge of the lineage panel look), plus the decisions of 2026-11-26 recorded in the ledger lines D-0638 to D-0662 and later (branch `task/records-2026-11-26`). Copied into git from the coordinator's page `tmpAI/status/WHAT_IS_TRUE_NOW_HOME_AUDIT.md` (not in git) on 2026-11-26; this copy is the one a new session reads. Paths below that start with `tmpAI/` are working pages in the main tree, not in git: they may be missing in a clone.**
+**Describes `dev` at commit `043a0c5c` (the merge that holds the one reader), plus the decisions of 2026-11-26 recorded in the ledger lines D-0638 to D-0667 and later (branch `task/records-2026-11-26`). Copied into git from the coordinator's page `tmpAI/status/WHAT_IS_TRUE_NOW_HOME_AUDIT.md` (not in git) on 2026-11-26; this copy is the one a new session reads. Paths below that start with `tmpAI/` are working pages in the main tree, not in git: they may be missing in a clone.**
 
-One page. A new session reads this first and trusts it over any older text on the same subject. Written by the coordinator; each "decided today" is the owner's, relayed by the review session (channel blocks M693 to M703); the ledger lines are D-0638 to D-0662 (and the lines of block M703) in `.claude/knowledge/decision_ledger.md`. "Built" means merged on `dev` (not pushed). When this page and an older record disagree, the older record is the one to correct.
+One page. A new session reads this first and trusts it over any older text on the same subject. Written by the coordinator. Every "decided today" item comes from the review session's relays of 2026-11-26 of what the owner said: some as channel blocks (M693 to M704), and the direct messages to the coordinator (the rule for what is shown; the review of a step before applying it; no plot tabs in Audit mode; the two removals and the one rename; the review before the demo) are now recorded in the channel blocks M705 (the review before the demo) and M706 (the other seven items), each marking what is hers and what is to be confirmed. The ledger lines are D-0638 to D-0668 in `.claude/knowledge/decision_ledger.md`. "Built" means merged on `dev` (not pushed). When this page and an older record disagree, the older record is the one to correct.
 
 ## The model, in six sentences
 1. An audit step is applied in **data**, never "in a plot". A plot's own drawing steps are not changed.
@@ -27,7 +27,9 @@ One page. A new session reads this first and trusts it over any older text on th
 - The right panel lists the audit steps under "My Adjustments", each with "Written at <name>: Table, T1" or the plot's Result data.
 - Plain wording of a filter step ("rows with no <column> record are removed / kept").
 - The recipe checks for the metadata (declared only with a data table; joined from the data table with a left join in tier 1; a listed but unjoined metadata refused).
-- One test walks every recipe folder and every Gallery example against the recipe check; its exception lists are empty.
+- One test walks every recipe folder and every Gallery example against the recipe check; its exception lists are empty; the two retest recipes that are refused on purpose are declared in `config/data_analysis_recipes/retest/EXPECTED_REFUSALS.yml` and the test asserts the refusal (it fails if one stops failing).
+- The opening of a recipe: HOME builds and stores every table and draws every plot once, with a progress line in plain words, and warns (refusing nothing) when a plot receives more than 1,000,000 rows (`app/modules/opening_build.py`, `app/handlers/opening_handlers.py`; D-0326, D-0334, D-0363).
+- The one reader of what is on screen, as pure code, merged but NOT yet wired into HOME: `app/modules/audit_place_view.py` (`viewed`, `table_for`, `view_identity`, `condition_fits`; the three states original, audited, trial; the no-plot cases). Slice 3a wires it in.
 - The UML model: names of at most 45 characters and no line break (checked by the audit script); one diagram of the keys and hashes, DM-KEYS-HOME-AUDIT; tags not drawn on diagrams.
 
 ## Still built the OLD way (old thinking, to be removed; do not copy it into new work)
@@ -40,30 +42,31 @@ One page. A new session reads this first and trusts it over any older text on th
 Details with file and line: `tmpAI/panel/review_queue/OLD_THINKING_IN_CODE.md`.
 
 ## Decided today, not built (the target)
-- **The header:** a toggle "Exploration | Audit" in a row beside the recipe title; "Table to view" in Exploration only; "Compare with the original" as a switch above the plot area. (In build: slice 1.)
+- **The header (her DIRECTION; D-0652 is to be confirmed as a whole):** a toggle "Exploration | Audit" in a row beside the recipe title; "Table to view" in Exploration only; Compare near the plot. The exact form "a switch above the plot area" and its words are the builder's, PROVISIONAL. (In build: slice 1.)
 - **Showing:** choosing in the lineage only stages; a button shows (working label "Show selection"). A table place shows its table and a note in the plot area; a plot place shows the plot and its Result data. With nothing chosen, the item shown on entering Audit is the plot that was open. A condition being built is cleared, with a notice that stays, only when another table is shown.
 - **In Audit mode there are no plot tabs:** one item at a time, with its Compare.
-- **Try before applying:** the effect of a step is computed before it is applied, labelled as a trial, never saved, never exported; applying reuses that result. Marks ("place verified") reset when the condition or the places change.
+- **Try before applying:** the effect of a step is computed before it is applied, labelled as a trial; applying reuses that result. Marks ("place verified") reset when the condition or the places change.
 - **One entry: a step bar next to the preview title** (she chose C, D-0663: condition, place, reach, Try, reason, "Add to audit pipeline"); it also carries the column drop. Build order: the flow first with the Filters panel button, the bar last; both old buttons removed at the end.
-- **One reader** for what HOME shows (place to table, three states); built as pure code on a branch, in review.
+- **One reader** for what HOME shows: built (see "Built"), to be wired in by slice 3a.
+- **The coordinator's design rule, not her words:** a trial is never saved and never exported; it follows from D-0302 (only applied steps are saved) and from D-0327 (exploration is never exported).
 - Data with no plot stays reachable (a table no plot reads; no plot open).
+- **At "Add to audit pipeline" the step is written at ALL the places chosen, including those not marked verified (D-0669):** the summary shows "N of M places verified" and the audit log records which were not; the mark is advisory, and making it required can be added later. (Source: the review session's direct message to the coordinator, 2026-11-26; a channel block has been requested.)
 - **Removal and one rename, ON HOLD until she has read the behaviour page (D-0665, decided 2026-11-26, after M703):** the colour and shape pop-up (Plot Style, with its three plot choices) and its rule text (contract section 12g.9) are removed with the pop-up of "Send to Audit"; the stored names `plot_scope` and `t3_audit_steps_by_plot` are renamed ONCE, with a new session format number, together with that removal; only the per-place list is kept in `t3_steps.yaml` (the per-plot list goes). Not decided: the new names. Task: AUDIT-OLD-SCOPE-REMOVE-1.
 
 ## Open (the owner has not decided; do not build on a guess)
-1. What an unverified place means at "Add to audit pipeline" (written anyway with a line, or left out).
-2. The word for the mark ("verified", "checked", "accepted").
-3. What Compare shows beside a trial (the state before this step, or the original).
-4. Whether the mark is kept in the audit log.
-5. Whether the separate "Apply" with staged cards goes (then steps are tried and applied one at a time).
-6. [moved to "Decided today, not built": the removal of the colour and shape pop-up, the one rename of the stored names, the per-place list only; D-0665. Still open: the new names.]
-7. A recipe of tables only (refused before HOME today; kept refused until she answers).
-8. Her new idea, being checked for feasibility: in Exploration, a switch "Recipe: Original | With my audit steps".
-9. Older open points, unchanged: the audit log's content; uploaded data; plot ids across dated copies; the Gallery list (`tmpAI/status/QUESTIONS_HOME_2026-11-26.md`, `QUESTIONS_GALLERY_2026-11-26.md`).
+1. The word for the mark ("verified", "checked", "accepted").
+2. What Compare shows beside a trial (the state before this step, or the original).
+3. Whether the mark is kept in the audit log beyond what is decided above (the recommendation is yes).
+4. Whether the separate "Apply" with staged cards goes (then steps are tried and applied one at a time). The tension: the step bar (D-0663) carries the reason and "Add to audit pipeline", which implies one act; she has not said that the separate Apply goes.
+5. [moved to "Decided today, not built": the removal of the colour and shape pop-up, the one rename of the stored names, the per-place list only; D-0665. Still open: the new names.]
+6. A recipe of tables only (refused before HOME today; kept refused until she answers).
+7. Her new idea, being checked for feasibility: in Exploration, a switch "Recipe: Original | With my audit steps".
+8. Older open points, unchanged: the audit log's content; uploaded data; plot ids across dated copies; the Gallery list (`tmpAI/status/QUESTIONS_HOME_2026-11-26.md`, `QUESTIONS_GALLERY_2026-11-26.md`).
 **On hold until she has read the behaviour page:** the confirm-and-apply flow, the marks, the removal of the pop-up and of Apply.
 
 ## Where things are
 - The behaviour page and its mock: `tmpAI/panel/review_queue/BEHAVIOUR.md`, `mock_flow.html`. (The study page beside it, `DESIGN_FOR_THE_OWNER.md`, is superseded in its flow and questions; its part on the reuse at apply holds.)
 - The header and Audit-mode design: `tmpAI/panel/header_strip_audit/DESIGN_FOR_THE_OWNER.md` (the dated updates at its top win), `mock_strip.html`.
 - The plan: `tmpAI/status/DEMO_BUILD_PLAN_2026-11-26.md`.
-- Branches in work: `task/strip-toggle-compare` (fix round, the walk test, slice 1), `task/audit-place-reader` (the one reader, in review), `task/records-2026-11-26` (records and ledger lines).
+- Branches in work: `task/strip-toggle-compare` (fix round, the walk test, slice 1), `task/records-2026-11-26` (records and ledger lines), `task/outdated-wave1` (a records wave of the coordinator, not part of this page).
 - Held and left alone: BLUEPRINT; Test Lab; the Gallery beyond what is necessary.
