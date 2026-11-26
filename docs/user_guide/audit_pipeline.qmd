@@ -13,7 +13,8 @@ recipe). The Home header gives you **two choices**:
 - **Table to view** (in **Exploration** only): **Source** (a source table as read from its file),
   **T1**, **T2** or **T3**. In **Audit** mode this choice is not drawn: the table you see is the
   one you show from **Path of the data** (below), and it is the audited table where an audit step
-  changes it. With nothing shown, you see the Result data (T3) of the plot that is open.
+  changes it. With nothing shown, you see the Result data (T3) of the plot that was open in Exploration.
+- **One plot at a time in Audit mode.** In **Exploration** you move between the plots with the group tabs and the plot tabs. In **Audit** mode there are no tabs: the plot area shows the **one item you have shown**. Show a plot from **Path of the data** (its square, then **Show**) and you see that plot, the audited one, with the **Compare** switch above it. Show a table and the area says that a table is not a figure, names the plots built from it, and has no Compare. The right panel (**Pipeline Audit**) follows what you show: for a plot, the steps it is built from; for a table, the steps written at that table or above it. When you go back to **Exploration** its tabs come back on the tab you had.
 
 **Audit mode** is where you remove bad samples, drop unused columns, and filter to the rows you
 want to publish. The audit pipeline is what records every decision you commit in Audit mode so
@@ -121,8 +122,8 @@ This is the recommended sequence for building a clean audit trail:
 3. **Read the preview**. Check which plots show ✅, which show ⚠️ (column absent). If a plot you expected to be affected shows ⚠️, that means the column name differs in the table that plot reads — fix the source data or author the filter separately for that plot with the correct column name.
 4. **Choose scope** — "This plot only", "All plots", or "All plots except…". When in doubt, start with "This plot only" and expand scope once you've confirmed the effect.
 5. **Fill in the reason** in the right sidebar audit panel (see [Writing good reasons](#writing-good-reasons) below). The Apply button stays locked until a reason is entered.
-6. **Click Apply**. The node commits. Verify the data preview and the plot on the current plot sub-tab.
-7. **Switch to every other affected plot** (check the tabs that showed ✅ in the preview). Confirm the filter took effect as expected.
+6. **Click Apply**. The node commits. Verify the data preview and the plot shown.
+7. **Show every other affected plot** (press **Show** on its square in **Path of the data**; check the ones that showed ✅ in the preview). Confirm the filter took effect as expected.
 8. **Only then** return to the Filters accordion and stage the next filter.
 
 Stacking multiple uncommitted nodes before verifying any of them is the most common way to end up with an audit trail that's technically complete but analytically opaque.

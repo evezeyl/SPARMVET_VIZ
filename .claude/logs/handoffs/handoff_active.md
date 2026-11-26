@@ -20,6 +20,10 @@ The full one-page version, trusted over any older text on the same subject: `.cl
 
 Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE 2026-11-26 below (the section of 2026-11-25 after it is kept as history); one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
 
+## OPEN STATE 2026-11-26/27 (slice 3b; the newest block, read it before the one below)
+
+Merged on `dev` (not pushed; the owner pushes): slice 1 (f445cd30, the mode row and Compare), slice 3a "the shown item" (9e82a623), the trial engine, the `info.audit_of` checks. In work: slice 3b "one plot area, no plot tabs in Audit mode" on branch `task/audit-one-plot` (worktree `SPARMVET_VIZ_wt_lineage_look`; see `.claude/design/home_audit_what_is_true_now.md` "Built"). Next: FLOW-1, FLOW-2, FLOW-3, then the step bar. The one-screen state is `tmpAI/coordinator/STATE_NOW.md`, the owner's return list `tmpAI/status/FOR_HER_RETURN.md` (main tree, not in git).
+
 ## OPEN STATE 2026-11-26 (coordinator session sparmvet-viz-44; records round of branch `task/records-2026-11-26`) — READ THIS FIRST
 
 1. **Git.** `dev` head is `8d7eba49` (it holds the one reader, `app/modules/audit_place_view.py`, merged and not yet wired into HOME, the records pass and the cleanup wave 1); not pushed, the owner pushes, agents never push. The ledger on `dev` runs to D-0671; branch `task/outdated-wave-tasks` (not merged) adds D-0672 to D-0691 (the separate Apply goes; the audit log; block M708 as the source of D-0669 to D-0671; the place model replaces D-0316, D-0359, D-0451; the tasks rule; "who" is initials; a configurable log place). The page "what is true now" is `.claude/design/home_audit_what_is_true_now.md`.
