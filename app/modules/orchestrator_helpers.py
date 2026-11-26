@@ -39,6 +39,8 @@ DEFAULT_HOME_STATE: dict = {
     # Navigation
     "active_group_tab": None,
     "active_plot_subtab": None,
+    # Audit mode: the lineage node of the item shown ("T3:<plot>", "T1:<table>", "T2:<table>"), None in Exploration (slice 3b; the right panel follows it)
+    "audit_shown_place": None,
     # Accordion collapse states
     "accordion_plots_expanded": True,
     "accordion_data_expanded": True,

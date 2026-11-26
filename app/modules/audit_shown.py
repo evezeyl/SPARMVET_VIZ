@@ -3,7 +3,7 @@
 THE RULE (D-0655, D-0653, D-0654, D-0657; the owner's words are in the ledger): in Audit mode, choosing a place in "Path of the data" only STAGES it. A button shows it: "Show" on a line
 of the list of the chosen places, or "Show selection" (the first place clicked). The place shown is the SHOWN ITEM: the data preview, its title, its badge, the column chooser and the filter form read
 its table through `app/modules/audit_place_view.py` (the one reader), nothing else. With no item shown the preview shows the table the open plot reads (her answer 1, a: `Viewed.is_default`).
-A click on a plot tab makes that plot's node the shown item (interim: the tabs go in the next slice).
+In Audit mode there are no plot tabs (slice 3b, D-0657): the plot shown IS the open plot; a click on a plot tab in Exploration only says which plot is shown by default when Audit mode is entered.
 
 This module holds the small decisions around that, so that they can be tested without a browser:
 
@@ -11,18 +11,18 @@ This module holds the small decisions around that, so that they can be tested wi
   never raises: it is a plain sentence (the same refusals as `audit_place_view.viewed`).
 - `others_chosen(chosen, shown_place)`: how many chosen places are not the one shown (the band says "N other places chosen, not shown").
 - `band_lines(...)`: the words of the band above the preview.
+- `open_subtab_of(viewed)`: the open plot of Audit mode (the plot shown, "" while a table is shown), `plot_area_title(name)` and `table_shown_lines(name, plots)`: the words of the plot area; `table_shown_in_panel(place)` and `unlisted_pending_line(...)`: what the right panel needs.
 - `selection_problem(chosen, shown_place)`: "Show your selection first" when the places chosen do not include the place shown (item 9 of the brief; PROVISIONAL, see the handler for where it is asked).
-- `shown_node_of_tab(plot_id)`.
 
 PROVISIONAL (the builder's words and choices; the owner reads them): every sentence below; that "Show selection" shows the first place clicked (header-strip question 4 says so; the browser keeps the
 order of the clicks).
 
-Consumed by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/tests/test_audit_shown.py. If deleted: HOME's Audit mode has no shown item.
+Consumed by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/tests/test_audit_shown.py. If deleted: HOME's Audit mode has no shown item.
 
 # @deps
-# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:shown_node_of_tab, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
+# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:open_subtab_of, function:table_shown_in_panel, function:unlisted_pending_line, function:plot_area_title, function:table_shown_lines, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
 # consumes: app/modules/audit_place_view.py (viewed, TableFacts), libs/utils/src/utils/lineage_data.py (Lineage), libs/utils/src/utils/recipe_graph.py (RecipeGraph)
-# consumed_by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/tests/test_audit_shown.py
+# consumed_by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/tests/test_audit_shown.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0653, D-0654, D-0655, D-0657)
 # @end_deps
 """
@@ -31,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from app.modules.audit_place_view import AUDIT, TableFacts, viewed
+from app.modules.audit_place_view import AUDIT, TableFacts, Viewed, viewed
 from utils.lineage_data import Lineage
 from utils.recipe_graph import RecipeGraph
 
@@ -104,6 +104,45 @@ def selection_problem(chosen: Sequence[str], shown_place: Optional[str]) -> Opti
     return SHOW_SELECTION_FIRST
 
 
-def shown_node_of_tab(plot_id: Optional[str]) -> Optional[str]:
-    """The node of the plot a tab belongs to: a click on a plot tab shows it (interim, until the tabs go)."""
-    return f"T3:{plot_id}" if plot_id else None
+
+def open_subtab_of(shown: Optional[Viewed]) -> str:
+    """The open plot of Audit mode, as the id of its tab ("subtab_<plot>"): the plot SHOWN (the default plot when nothing is shown). While a table is shown, or when nothing can be shown
+    (`None`, the recipe cannot be read; the nothing-chosen state), no plot is open: "". Every reader of "the open plot" gets this in Audit mode (slice 3b, D-0657)."""
+    if shown is None or shown.nothing_chosen or not shown.shown_plot:
+        return ""
+    return f"subtab_{shown.shown_plot}"
+
+
+def plot_area_title(name: str) -> str:
+    """The one line above the plot of Audit mode (it replaces the name the tab carried in Exploration). PROVISIONAL words."""
+    return f"Plot shown: {name}"
+
+
+def table_shown_lines(name: str, plot_names: Sequence[str]) -> tuple:
+    """The lines of the plot area while a table is shown (D-0655 rule 1): the table is not a plot's final data, so there is no figure; the plots built from it are named, as information
+    (not buttons to tick). `name` is the text the lineage panel writes for the table; `plot_names` the plots built from it. PROVISIONAL words."""
+    lines = [f"No figure: {name} is a table, not the Result data (T3) of a plot."]
+    if plot_names:
+        n = len(plot_names)
+        lines.append(f"{n} plot{'' if n == 1 else 's'} {'is' if n == 1 else 'are'} built from it: {', '.join(plot_names)}.")
+        lines.append("To see a figure, choose a plot in Path of the data and press Show.")
+    else:
+        lines.append("No plot is built from it. To see a figure, choose a plot in Path of the data and press Show.")
+    return tuple(lines)
+
+
+def table_shown_in_panel(shown_place: Optional[str]) -> str:
+    """The node of the table shown ("T1:<table>" or "T2:<table>"), or "" when a plot is shown or nothing is (Exploration, `audit_shown_place` None). The right panel (`audit_stack`) lists the
+    steps of the TABLE then, not of a plot."""
+    place = shown_place or ""
+    return place if place[:3] in ("T1:", "T2:") else ""
+
+
+def unlisted_pending_line(pending_steps: int, listed: int) -> str:
+    """The note of the right panel when pending steps exist that the list does not show (they are written at a place the item shown is not built from): "" when there is none. Apply asks a reason
+    for EVERY pending step and refuses without a word of the step; the panel says that some are not listed. PROVISIONAL words."""
+    hidden = pending_steps - listed
+    if hidden <= 0:
+        return ""
+    return (f"{hidden} pending step{' is' if hidden == 1 else 's are'} written elsewhere and not listed here. Apply needs a reason for every step: "
+            "show the plot or the table it is written at to type it.")

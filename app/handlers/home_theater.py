@@ -12,6 +12,8 @@ Entry point:
                   home_state=None, session_manager=None)
 
 Slice 3a (shown item): in Audit mode the table of the preview, its title, badge, column chooser, filter form and key is the item SHOWN from "Path of the data" (`shown_item`); "Table to view" is Exploration only.
+Slice 3b (one plot area): in Audit mode there are no plot tabs: `home_plots_area_ui` draws the plot shown (or a note while a table is shown); the plot shown IS the open plot (`active_home_subtab`,
+`home_state.active_plot_subtab`, written by `_sync_open_plot`), `_exploration_subtab` keeps the tab of Exploration (D-0657).
 
 Concern: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui,
          right_sidebar_content_ui, home_data_preview/col_selector,
@@ -33,8 +35,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), output:data_strip_ui (Table to view, Exploration only, slice 3a), output:shown_band_ui (the band of the shown item, slice 3a), effect:_forget_shown_item, effect:_tab_shows_its_plot, effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, shown_node_of_tab), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_plots_area_ui, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), output:data_strip_ui (Table to view, Exploration only, slice 3a), output:shown_band_ui (the band of the shown item, slice 3a), effect:_forget_shown_item, effect:_tab_shows_its_plot, effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
+# consumes: app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, open_subtab_of, plot_area_title, table_shown_lines), app/modules/audit_places.py (plots_below: the plots built from a table shown), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -62,10 +64,10 @@ from app.modules.orchestrator import InputsChanged, plot_read_error_text
 from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import PlanComposerBug, compose_plan_book, plan_book_for_the_gate
-from app.modules.audit_places import nodes_reaching_plot, nodes_signature, own_plot_place, place_nodes
+from app.modules.audit_places import nodes_reaching_plot, nodes_signature, own_plot_place, place_nodes, plots_below
 from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
 from app.modules.audit_place_view import AUDIT, AUDITED, Readers, Viewed, columns_digest, table_for, view_identity, viewed as viewed_item
-from app.modules.audit_shown import band_lines, others_chosen, shown_node_of_tab
+from app.modules.audit_shown import band_lines, open_subtab_of, others_chosen, plot_area_title, table_shown_lines
 from app.modules.lineage_view import line_text
 from app.handlers.id_warning_handlers import define_server as define_id_warning_server
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
@@ -78,6 +80,7 @@ from app.modules.t3_audit_engine import (
     view_key, viewed_table)
 from utils.recipe_graph import RecipeGraphError, build_graph, source_tables_of_plot
 from utils.lineage_data import lineage_of
+from utils import display_names
 from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from app.modules.sidebar_registry import is_panel_active
@@ -456,6 +459,11 @@ def define_server(input, output, session, *,
         picked = source_table.get()
         return picked if picked in tables else (tables[0] if tables else None)
 
+    # The plot tab of EXPLORATION (slice 3b, D-0657): written only by the tracker of the tabs, read by the Exploration tabs when they are drawn again (the tab it had) and
+    # as the default plot of Audit mode. `active_home_subtab` is the OPEN PLOT for every reader: in Exploration it is this tab, in Audit mode it is the plot shown ("" while a
+    # table is shown), written by `_sync_open_plot`.
+    _exploration_subtab = reactive.Value("")
+
     def _open_plot_id() -> str | None:
         subtab = active_home_subtab.get()
         return subtab.removeprefix("subtab_") if subtab else None
@@ -619,26 +627,37 @@ def define_server(input, output, session, *,
         except (RecipeGraphError, KeyError, TypeError, ValueError) as exc:
             return None, f"The recipe cannot be drawn as a lineage: {exc}"
 
-    def _audit_open_plot(graph) -> str | None:
-        """The plot open now, as the reader needs it: the tab's plot when the recipe has it, else the first plot of the recipe (what HOME does with no tab open), else None."""
-        plot = _open_plot_id()
+    def _audit_default_plot(graph) -> str | None:
+        """The plot of Audit mode when nothing is shown: the plot that was open in Exploration (its tab) when the recipe has it, else the first plot of the recipe (what HOME does with no
+        tab open), else None. Reads the tab of Exploration, never the open plot (which in Audit mode follows the shown item: that would be a circle)."""
+        subtab = _exploration_subtab.get()
+        plot = subtab.removeprefix("subtab_") if subtab else None
         if plot and graph.has_node(f"T3:{plot}"):
             return plot
         plots = graph.plots()
         return plots[0] if plots else None
 
     def _audit_viewed() -> Viewed:
-        """What is on screen in Audit mode (`audit_place_view.viewed`): the shown item, or with none the table the open plot reads. Raises what the graph load raises."""
+        """What is on screen in Audit mode (`audit_place_view.viewed`): the shown item, or with none the table the default plot reads. Raises what the graph load raises.
+        The OPEN plot of the reader is the plot shown (slice 3b: there are no plot tabs in Audit mode); while a table is shown no plot is open."""
         graph = _open_graph()
-        open_plot = _audit_open_plot(graph)
+        default_plot = _audit_default_plot(graph)
         lineage, problem = _lineage_calc()
         place = shown_item.get()
         if lineage is None:
-            # the lineage cannot be drawn: the panel says why; the preview keeps the table the open plot reads, as before this slice
-            if open_plot is None:
+            # the lineage cannot be drawn: the panel says why; the preview keeps the table the default plot reads, as before this slice
+            if default_plot is None:
                 raise RuntimeError(problem)
-            return Viewed(AUDIT, "T3", graph.plot_target(open_plot), f"T3:{open_plot}", open_plot, open_plot, True, True)
-        return viewed_item(AUDIT, "T3", None, open_plot, [place] if place else [], graph, lineage)
+            return Viewed(AUDIT, "T3", graph.plot_target(default_plot), f"T3:{default_plot}", default_plot, default_plot, True, True)
+        candidate = default_plot
+        if place and graph.has_node(place):
+            node = graph.node(place)
+            candidate = node.name if node.kind == "T3" else None
+        found = viewed_item(AUDIT, "T3", None, candidate, [place] if place else [], graph, lineage)
+        if place and found.refused:
+            # a place that is not valid (a stale id after a change of recipe): the default, never another place picked for the user
+            found = viewed_item(AUDIT, "T3", None, default_plot, [], graph, lineage)
+        return found
 
     def _audit_viewed_safe() -> Viewed | None:
         """`_audit_viewed`, or None when the recipe cannot be read (the table's place says why): for the readers that only need to know the tier or the place."""
@@ -689,10 +708,10 @@ def define_server(input, output, session, *,
     _view_for_handlers = SimpleNamespace(get=_effective_view)
 
     def _audit_write_ok() -> bool:
-        """True when an audit step may be written from the screen as it is: the item shown is the Result data (T3) of the plot OPEN (the dialog and the drops write at the open plot).
-        PROVISIONAL (slice 3a): the table shown is a plot's Result data and that plot is the open tab; a table shown, or another plot shown, offers no step until the step bar (next slices)."""
+        """True when an audit step may be written from the screen as it is: the item shown is the Result data (T3) of a plot (the plot shown is the plot open, slice 3b), the dialog and
+        the drops write at it. PROVISIONAL (slice 3a): a table shown offers no step until the step bar (next slices)."""
         shown = _audit_viewed_safe()
-        return bool(shown is not None and not shown.nothing_chosen and shown.tier == "T3" and shown.shown_plot is not None and shown.shown_plot == shown.plot)
+        return bool(shown is not None and not shown.nothing_chosen and shown.tier == "T3" and shown.shown_plot is not None)
 
     def _effective_shown_place() -> str | None:
         """The place shown in Audit mode (the default open plot's node included): what the lineage marks as shown; None when nothing can be shown."""
@@ -1362,7 +1381,6 @@ def define_server(input, output, session, *,
         all_cols = lf_full.collect_schema().names()  # noqa: F841
 
         cfg = active_cfg()
-        groups = cfg.raw_config.get("analysis_groups", {})
 
         # --- the recipe banner: info.ui_label (the file name when there is none), hidden by branding.show_recipe_name: false in the
         # deployment file (D-0410, D-0470, D-0474). It reads nothing from the app features file and not info.subtitle (D-0482).
@@ -1435,6 +1453,23 @@ def define_server(input, output, session, *,
             class_="spv-panel overflow-visible",
         )
 
+        # The plots area is its own output (slice 3b, D-0657): Exploration draws the group and plot tabs, Audit mode draws ONE plot (the plot shown) or a note while a table is shown.
+        # It reads the mode and, in Audit mode, the shown item; this output does not, so a Show never draws the lineage panel, the band or the data preview again (R4).
+        return ui.div(
+            home_title_banner,
+            theater_header,
+            ui.output_ui("compare_switch_ui"),
+            ui.output_ui("lineage_panel_ui"),
+            ui.output_ui("home_plots_area_ui"),
+            data_preview_section,
+            class_="theater-container-main"
+        )
+
+    def _exploration_tabs_ui(cfg):
+        """The group tabs and the plot tabs of Exploration (ADR-043), as they always were: a pill per group of the recipe and a card of tabs per plot. The tab it had is restored
+        (`_exploration_subtab`, read isolated: a click on a tab never draws this again)."""
+        groups = cfg.raw_config.get("analysis_groups", {})
+
         # --- No groups: fallback to top-level plots or show guidance ---
         if not groups:
             # Attempt to fall back to top-level plots in the data analysis recipe
@@ -1454,20 +1489,10 @@ def define_server(input, output, session, *,
                 plots_card = ui.navset_card_tab(
                     *plot_subtabs, id="subtabs_default_group"
                 )
-                groups_nav = ui.div(plots_card, class_="spv-panel p-2")
-            else:
-                groups_nav = ui.p(
-                    "Define analysis_groups (or top-level plots) in your data analysis recipe to populate this view.",
-                    class_="text-muted p-4"
-                )
-            return ui.div(
-                home_title_banner,
-                theater_header,
-                ui.output_ui("compare_switch_ui"),
-                ui.output_ui("lineage_panel_ui"),
-                groups_nav,
-                data_preview_section,
-                class_="theater-container-main"
+                return ui.div(plots_card, class_="spv-panel p-2")
+            return ui.p(
+                "Define analysis_groups (or top-level plots) in your data analysis recipe to populate this view.",
+                class_="text-muted p-4"
             )
 
         # --- Group nav panels — plots only inside each group (Option B) ---
@@ -1478,11 +1503,9 @@ def define_server(input, output, session, *,
         # the compare switch toggles, leaving the tab structure (and all other plots)
         # untouched.
 
-        # Restore active tab after Gallery/Blueprint nav switch (isolated read so
-        # home_state changes — tier, filters, T3 nodes — never re-trigger this render)
+        # Restore the tab Exploration had after a Gallery/Blueprint nav switch or a round trip through Audit mode (isolated read: a click on a tab never draws this again)
         with reactive.isolate():
-            _saved_hs = home_state.get() if home_state else {}
-        _saved_subtab = _saved_hs.get("active_plot_subtab")  # e.g. "subtab_year_distribution"
+            _saved_subtab = _exploration_subtab.get()  # e.g. "subtab_year_distribution"
         _saved_group = None
         if _saved_subtab:
             _saved_p_id = _saved_subtab.removeprefix("subtab_")
@@ -1533,7 +1556,7 @@ def define_server(input, output, session, *,
             )
 
         # Group pill nav wrapped in spv-panel for consistent rounding
-        groups_nav = ui.div(
+        return ui.div(
             ui.navset_pill(
                 *group_nav_panels,
                 id="home_groups_nav",
@@ -1543,15 +1566,48 @@ def define_server(input, output, session, *,
             style="padding: 8px 10px 0 10px;",
         )
 
+    def _audit_area_frame(header: str, *body):
+        """The frame of the plot area of Audit mode: the same nesting and padding as the plot tabs of Exploration (a panel, a padded block, a card), so that a plot is drawn at the same width in
+        both modes and the audited plot with no step is the picture of the Result (`test_shiny_plot_tier3.py`). The card header holds the line that tells what is shown, where Exploration has its tabs."""
         return ui.div(
-            home_title_banner,
-            theater_header,
-            ui.output_ui("compare_switch_ui"),
-            ui.output_ui("lineage_panel_ui"),
-            groups_nav,
-            data_preview_section,
-            class_="theater-container-main"
+            ui.div(
+                ui.div(ui.div(ui.tags.span(header, class_="spv-view-note"), class_="card-header"), ui.div(*body, class_="card-body"), class_="card"),
+                class_="p-2"),
+            class_="spv-panel spv-audit-plot-area",
+            style="padding: 8px 10px 0 10px;",
         )
+
+    def _audit_plot_area_ui(cfg):
+        """The plot area of Audit mode (slice 3b, D-0657): ONE item at a time and no tabs. The plot shown is drawn with its Compare (`plot_cell_<id>`, the cell of that plot only: a plot
+        that is not shown is not on the page and is not computed); while a table is shown a note says that it is not a plot's final data and names the plots built from it, as information.
+        The words are PROVISIONAL (the builder's; the owner reads them)."""
+        shown = _audit_viewed_safe()
+        if shown is None:
+            return _audit_area_frame("Nothing to show", ui.p("What is shown cannot be told: the recipe cannot be read.", class_="spv-view-note m-0"))
+        if shown.nothing_chosen:
+            return _audit_area_frame("Nothing to show", ui.p(shown.note, class_="spv-view-note m-0"))
+        names = display_names.shown_names(cfg.raw_config)
+        if shown.shown_plot:
+            name = display_names.shown_name(names, display_names.PLOT, shown.shown_plot)
+            return _audit_area_frame(plot_area_title(name), ui.output_ui(f"plot_cell_{shown.shown_plot}"))
+        lineage, _ = _lineage_calc()
+        plot_names = []
+        if lineage is not None and shown.place:
+            graph = _open_graph()
+            plot_names = [display_names.shown_name(names, display_names.PLOT, p) for p in plots_below(graph, [shown.place])]
+        title_name = _shown_name(shown)
+        lines = table_shown_lines(title_name, plot_names)
+        return _audit_area_frame("Table shown", *[ui.p(line, class_="spv-view-note mb-1") for line in lines])
+
+    @output
+    @render.ui
+    def home_plots_area_ui():
+        """The plots area of HOME: the group and plot tabs in Exploration, the one plot (or the note of a table) in Audit mode (slice 3b). Its own output, so that a Show or a change of
+        mode draws this area only (R4); it mounts the inputs of the tabs and never reads them."""
+        cfg = active_cfg()
+        if _in_audit():
+            return _audit_plot_area_ui(cfg)
+        return _exploration_tabs_ui(cfg)
 
     @output
     @render.ui
@@ -1724,18 +1780,6 @@ def define_server(input, output, session, *,
                 _notify(f"The audit steps of the recipe '{previous}' ({n}) are not applied to '{recipe}': a step is written at a table or a plot by name, and another recipe can hold one of the "
                         f"same name. They are kept for '{previous}' and are back when you return to it.", type="warning", duration=15)
 
-    # A click on a plot tab in Audit mode shows that plot (interim: the tabs go in the next slice; D-0655 point 3, D-0657). The effect follows the open tab only, so entering
-    # Audit mode on a tab shows that plot by default, and a click on the tab already open does nothing (a tab that does not change is not an event).
-    @reactive.Effect
-    def _tab_shows_its_plot():
-        subtab = active_home_subtab.get()
-        with reactive.isolate():
-            if not subtab or not _in_audit():
-                return
-            node = shown_node_of_tab(subtab.removeprefix("subtab_"))
-            if shown_item.get() != node:
-                shown_item.set(node)
-
     @output
     @render.ui
     def shown_band_ui():
@@ -1801,7 +1845,9 @@ def define_server(input, output, session, *,
         a moment after the mode changes and would push a switch below it down while the user is clicking it): only in Audit mode and with
         `comparison_mode_enabled`; absent otherwise, never greyed. It is not in the per-plot cell: each cell reads the compare value, and one input
         id would be mounted once per plot (R4). The value is read isolated, so the switch does not redraw itself."""
-        if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled")):
+        # slice 3b: Compare belongs to a plot. While a table is shown (no plot is open) the switch is absent, not greyed. The open plot is the shim `active_home_subtab`, which changes
+        # only when the plot changes, so showing another plot does not draw the switch again.
+        if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled") and active_home_subtab.get()):
             return ui.div()
         with reactive.isolate():
             compare_on = _audit_compare.get()
@@ -1925,26 +1971,36 @@ def define_server(input, output, session, *,
                 "session cannot be compared until they can", "check that the recipe file and the data files can be read, "
                 "then pick the recipe again", exc))
 
-    # Phase 21-B/D: Track active plot sub-tab across all group navsets.
+    # THE OPEN PLOT (slice 3b, D-0657). `active_home_subtab` and `home_state["active_plot_subtab"]` are what every reader of "the open plot" reads (the filter form, the right panel,
+    # the dialog, the badge). In Exploration it is the plot tab; in Audit mode there are no plot tabs, it is the plot SHOWN ("" while a table is shown, nothing is open then).
+    def _set_open_subtab(val: str, shown_place: str | None = None) -> None:
+        """Write the open plot to both the shim and home_state.active_plot_subtab, and the node of the item shown in Audit mode to home_state.audit_shown_place (None in Exploration).
+
+        Phase 22-J: per-plot T3 stacks key off home_state.active_plot_subtab, so we mirror every shim update there. Idempotent guard avoids loops. The right panel (`audit_stack`) reads
+        `audit_shown_place`: it follows the item shown, a plot or a table (slice 3b)."""
+        with reactive.isolate():
+            if active_home_subtab.get() != val:
+                active_home_subtab.set(val)
+            if home_state is not None:
+                cur = home_state.get()
+                if cur.get("active_plot_subtab") != val or cur.get("audit_shown_place") != shown_place:
+                    home_state.set({**cur, "active_plot_subtab": val, "audit_shown_place": shown_place})
+
+    # Phase 21-B/D: Track active plot sub-tab across all group navsets (Exploration only: Audit mode has no tabs, the navsets are not on the page).
     # Polls subtabs_{safe_sub_id} for the active group first, then all others.
     @reactive.Effect
     def _track_active_home_subtab():
+        if _in_audit():
+            return
         cfg = active_cfg()
         groups = cfg.raw_config.get("analysis_groups", {})
         active_group = safe_input(input, "home_groups_nav", None)
 
         def _set_active(val: str) -> None:
-            """Write subtab to both the shim and home_state.active_plot_subtab.
-
-            Phase 22-J: per-plot T3 stacks key off home_state.active_plot_subtab,
-            so we mirror every shim update there. Idempotent guard avoids loops.
-            """
-            if active_home_subtab.get() != val:
-                active_home_subtab.set(val)
-            if home_state is not None:
-                cur = home_state.get()
-                if cur.get("active_plot_subtab") != val:
-                    home_state.set({**cur, "active_plot_subtab": val})
+            with reactive.isolate():
+                if _exploration_subtab.get() != val:
+                    _exploration_subtab.set(val)
+            _set_open_subtab(val)
 
         for group_id in groups:
             safe_sub_id = _safe_id(group_id)
@@ -1967,6 +2023,16 @@ def define_server(input, output, session, *,
         if val:
             _set_active(val)
             return
+
+    @reactive.Effect
+    def _sync_open_plot():
+        """The open plot follows the mode (slice 3b). Audit mode: the plot shown (the default plot when nothing is shown, "" while a table is shown). Back in Exploration: the tab it had.
+        The tracker above writes the open plot in Exploration at once; this effect makes the change of mode (and of the shown item) reach every reader."""
+        if _in_audit():
+            shown = _audit_viewed_safe()
+            _set_open_subtab(open_subtab_of(shown), shown.place if shown is not None and not shown.nothing_chosen else None)
+        else:
+            _set_open_subtab(_exploration_subtab.get(), None)
 
     def _preview_lf(spec, p_id):
         """The lazy table the data preview shows the head of: the view's table, then (Audit mode, T3) the audited steps, or (Exploration) the
