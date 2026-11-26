@@ -142,7 +142,7 @@ analysis_groups:
 
 **Rules:**
 - `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all data analysis recipes** (the app registers `@render.plot` by ID at startup).
-- The same `plot_id` written in two groups of ONE recipe is refused by the recipe check, code P07 (built 2026-11-22; wording PROVISIONAL): one plain line names the id and both groups. Across recipes the id is checked by X5 (`check_recipe_set`).
+- The same `plot_id` written in two groups of ONE recipe is refused by the recipe check, code P07 (built 2026-11-22; wording PROVISIONAL): one plain line names the id and both groups. Across recipes the id is checked by X5 (`check_recipe_set`). `info.audit_of` (the id of the original, written by the app in the audit recipe of an export; value checked by I04; a Gallery example may not carry it, GP07) changes nothing in X5: D-0534 stands unchanged. A switch for an exemption of verified copies exists in the code, off, for the later switch of the recipe HOME reads (D-0690, parked, not built).
 - `group_id` (the dict key) is auto-sanitised to a Shiny-safe internal ID via `_safe_id()`. **Spaces, emoji, and punctuation are allowed** — they're stripped from the internal ID but preserved verbatim in the visible label. (Updates ADR-036: previously hardcoded sanitisation; now general regex sanitisation.)
 - Each plot entry written as `!include` points to a file in `plots/` subdirectory.
 - The included plot file holds the whole plot entry (`ui_label`, `target_dataset`, `mapping`, `layers`, ...) and no wrapper key; there is no `spec:` key (D-0237, D-0252; built: `spec` is refused, P01).
@@ -329,7 +329,7 @@ the expected, normal state while building one.
 
 ## 12. The `id:` key equals the file name (ADR-092)
 
-The file name without `.yaml` is the data analysis recipe id (selector, cache keys, sessions, export). The top-level `id:` key of the file marks the root of a data analysis recipe and is shown in the Pipeline Audit panel, so it MUST equal the file name. `validate_data_analysis_recipe()` reports a difference; `app/tests/test_data_analysis_recipe_validator.py` checks every shipped data analysis recipe and template. There is no top-level `type:` key (removed, issue evezeyl/SPARMVET_VIZ#29); describe the data analysis recipe under `info:`.
+The file name without `.yaml` is the data analysis recipe id (selector, cache keys, sessions, export). The top-level `id:` key of the file marks the root of a data analysis recipe and is shown in the Pipeline Audit panel, so it MUST equal the file name. `validate_data_analysis_recipe()` reports a difference; `app/tests/test_data_analysis_recipe_validator.py` checks every shipped data analysis recipe and template. There is no top-level `type:` key (removed, issue evezeyl/SPARMVET_VIZ#29); describe the data analysis recipe under `info:`. The one key of `info` the app writes is `info.audit_of` (the id of the original, in an audit recipe; I04; `recipe_format_spec.md` section 7.1).
 
 ---
 

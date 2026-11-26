@@ -61,6 +61,8 @@ _SUM_OF_COLUMN = re.compile(r"pl\.col\(\s*['\"]([^'\"]+)['\"]\s*\)\.sum\(\)")
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = recipe_tiers.AUDIT_ID   # one form, one place (`utils.recipe_tiers`)
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
+# PROVISIONAL (an agent's reading): what a recipe id may be. Shipped ids start with a letter or a digit and hold letters, digits, underscore, hyphen (file names).
+_RECIPE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _TIER1_ONLY_DEFAULT = TIER1_ONLY
 
 
@@ -316,10 +318,24 @@ class _Check:
                      "Suggestion: write a short ui_label (the HOME banner and the lists show it); a longer text goes in description.", "A")
         if "comment" in info and not isinstance(info["comment"], str):
             self.add("CM01", "info.comment", "a comment is text", "write text")
+        self.audit_of(info)
         for key in ("description", "contact"):
             if not info.get(key):
                 self.add("I02", f"info.{key}", f"info.{key} is missing", "Suggestion: write it (spec section 13).", "A")
         self.cut_description("info.description", info.get("description"))
+
+    def audit_of(self, info: dict) -> None:
+        """I04: `info.audit_of` names the original of an audit recipe (D-0354; the app writes it, never by hand). The check cannot know that a recipe is an audit recipe except through
+        this key, so what it enforces is the value: the id of another recipe (text, an id of the form of a file name, not this recipe's own id). PROVISIONAL words."""
+        if "audit_of" not in info:
+            return
+        value = info["audit_of"]
+        if not isinstance(value, str) or not value.strip():
+            self.add("I04", "info.audit_of", "info.audit_of must be the id of the original recipe, written as text", "remove it: the app writes this key in an audit recipe, you do not")
+        elif not _RECIPE_ID.match(value):
+            self.add("I04", "info.audit_of", f"info.audit_of {value!r} is not the form of a recipe id (letters, digits, underscore, hyphen)", "remove it: the app writes this key in an audit recipe, you do not")
+        elif value in (self.raw.get("id"), self.file_stem):
+            self.add("I04", "info.audit_of", "a recipe cannot be the audit recipe of itself: info.audit_of is this recipe's own id", "remove it, or write the id of the original recipe")
 
     def cut_description(self, path: str, text: Any) -> None:
         """Advice D01: a description with an open bracket is probably cut where an unquoted ' #' started a YAML comment."""
@@ -1316,6 +1332,8 @@ class _Check:
         plots = [p for g in groups.values() if isinstance(g, dict) for p in (g.get("plots") or {}).values()] if isinstance(groups, dict) else []
         if len(groups) != 1 or len(plots) != 1:
             self.add("GP01", "analysis_groups", "a gallery example has exactly one group and one plot", "keep one group with one plot")
+        if isinstance(raw.get("info"), dict) and "audit_of" in raw["info"]:
+            self.add("GP07", "info.audit_of", "a gallery example is never an audit recipe, so it may not carry info.audit_of (PROVISIONAL words)", "remove info.audit_of")
         if self.file_stem is not None and raw.get("id") != self.file_stem:
             self.add("GP04", "id", f"the id must equal the example's folder name {self.file_stem!r}", f"write id: {self.file_stem}")
         for plot in plots:
@@ -1346,19 +1364,52 @@ class _Check:
                     self.add("GP05", companion, f"the companion file {companion} is missing in the example's folder", f"add {companion}")
 
 
-def check_recipe_set(recipes: Dict[str, Any]) -> List[Problem]:
-    """X5 across the recipes of a folder: a plot id must be unique over all of them (the app registers plots by id)."""
-    owners: Dict[str, str] = {}
-    problems: List[Problem] = []
+def audit_original_of(raw: Any, own_name: str) -> Optional[str]:
+    """The id of the original that a recipe names in `info.audit_of`, or None: no such key, a value that is not a recipe id (I04 refuses it), or the recipe's own name."""
+    info = raw.get("info") if isinstance(raw, dict) else None
+    value = info.get("audit_of") if isinstance(info, dict) else None
+    if isinstance(value, str) and _RECIPE_ID.match(value) and value != own_name:
+        return value
+    return None
+
+
+def plot_id_groups(recipes: Dict[str, Any], plot_ids: Dict[str, Set[str]], pid: str, named_copies_are_copies: bool = False) -> Dict[str, List[str]]:
+    """The recipes that write the plot id `pid`, grouped by who owns it: {group key: [recipe names in order]}. Two groups mean a clash (X5).
+    By DEFAULT every recipe is its own group: `info.audit_of` changes nothing, the rule of D-0534 (a plot id is unique over the recipes of a deployment) stands as it was.
+    With `named_copies_are_copies=True` a recipe that names its original (`info.audit_of`) joins the original's group when the original is in the set and has the id, so the ids they
+    share are no clash (nor the ids two copies of one original share with it); any other case is a group of its own.
+    The switch exists for the later switch of the recipe HOME reads (D-0690, the owner's direction of 2026-11-26, parked; not built). It must be turned on only where the copy is VERIFIED
+    (a fingerprint of the original in the copy, the copy's plot ids a subset of the original's, the original in the same set, no chains): that verification is not built, so NO caller
+    turns it on today. A key that nothing verifies must not weaken D-0534."""
+    groups: Dict[str, List[str]] = {}
+    for name in recipes:
+        if pid not in plot_ids[name]:
+            continue
+        original = audit_original_of(recipes[name], name) if named_copies_are_copies else None
+        key = original if original is not None and original in recipes and pid in plot_ids[original] else name
+        groups.setdefault(key, []).append(name)
+    return groups
+
+
+def check_recipe_set(recipes: Dict[str, Any], named_copies_are_copies: bool = False) -> List[Problem]:
+    """X5 across the recipes of a folder: a plot id must be unique over all of them (the app registers plots by id). `info.audit_of` changes nothing unless
+    `named_copies_are_copies=True` (see `plot_id_groups`: off, and used by no caller)."""
+    plot_ids: Dict[str, Set[str]] = {}
+    order: List[str] = []
     for name, raw in recipes.items():
         groups = raw.get("analysis_groups") if isinstance(raw, dict) else None
+        found: Set[str] = set()
         for group in (groups or {}).values() if isinstance(groups, dict) else []:
             for pid in ((group or {}).get("plots") or {}) if isinstance(group, dict) else []:
-                if pid in owners:
-                    problems.append(Problem("X5", "E", f"{name}:analysis_groups.*.plots.{pid}",
-                                            f"the plot id {pid!r} is also used in {owners[pid]}", "plot ids are unique over all recipes: rename one"))
-                else:
-                    owners[pid] = name
+                found.add(pid)
+                if pid not in order:
+                    order.append(pid)
+        plot_ids[name] = found
+    problems: List[Problem] = []
+    for pid in order:
+        groups = list(plot_id_groups(recipes, plot_ids, pid, named_copies_are_copies).values())
+        for later in groups[1:]:
+            problems.append(Problem("X5", "E", f"{later[0]}:analysis_groups.*.plots.{pid}", f"the plot id {pid!r} is also used in {groups[0][0]}", "plot ids are unique over all recipes: rename one"))
     return problems
 
 

@@ -7,7 +7,7 @@ basename_mirroring_mandate:
   level: "Same level as the main data analysis recipe file."
 
 directory_taxonomy:
-  info: "The top-level metadata block (free-form; ui_label is the name of the recipe and is optional, advised). A gallery example classifies itself with the taxonomy key of the plot entry, not here."
+  info: "The top-level metadata block (free-form; ui_label is the name of the recipe and is optional, advised). A gallery example classifies itself with the taxonomy key of the plot entry, not here. The app writes info.audit_of, the id of the original recipe, in an audit recipe; do not write it by hand."
   completion: "Required on a table of data_schemas, and on metadata_schema, that declares an entity id: completion: {marker: <table>_not_in_original_data, meaning: <a sentence of the recipe maker, about this table>}. The app adds, when it reads the files, a line for every entity id the table lacks (the union of the ids of all these tables), marked in that column; the meaning sentence says what such a line means for the table; the app's own words for it are 'missing in original table'. Nothing is removed. Tables of additional_datasets_schemas are never completed."
   input_fields: "Defines the columns that are read (keys: type, original_name, ui_label, is_entity_id, null_values, strip). type is a Polars type name and is required."
   tiers: "Each tier is a key of its table, join or plot entry (tier1, tier2; tier3 at the plot entry): a mapping with an optional data_engine as its first key and steps (the list). There is no wrangling key and no steps container. An included tier file is written `tier1: !include <file>`; the file holds data_engine and steps."
