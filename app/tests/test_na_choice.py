@@ -201,16 +201,16 @@ def test_the_dialog_warns_for_not_equal_and_none_of_on_a_column_with_missing_val
 
 def test_the_staged_row_says_what_happens_to_the_rows_with_no_value():
     from app.modules.t3_audit_engine import describe_filter
-    assert describe_filter("x", "ne", 2, "keep") == "x ≠ 2 (rows with no x are kept)"
-    assert describe_filter("x", "ne", 2, "remove") == "x ≠ 2 (rows with no x are removed)"
+    assert describe_filter("x", "ne", 2, "keep") == "x ≠ 2 (rows with no x record are kept)"
+    assert describe_filter("x", "ne", 2, "remove") == "x ≠ 2 (rows with no x record are removed)"
     assert describe_filter("x", "ne", 2) == "x ≠ 2"          # callers that do not pass na keep their line
 
 
 def test_the_audit_card_shows_the_choice_and_an_old_step_as_remove():
     from app.handlers.audit_stack import _params_summary
     keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2, "na": "keep"})
-    assert _params_summary(keep).endswith("rows with no x are kept")
-    assert _params_summary(OLD_NODE).endswith("rows with no x are removed")
+    assert _params_summary(keep).endswith("rows with no x record are kept")
+    assert _params_summary(OLD_NODE).endswith("rows with no x record are removed")
     assert "no x" not in _params_summary(make_audit_step("drop_column", {"column": "x"}))
 
 
@@ -221,11 +221,11 @@ def test_the_report_states_the_choice_for_every_filter_step():
     def report(node):
         return "\n".join(_build_methods_section(plots, {"p": [node]}, {"d": ["p"]}, ["T1"]))
 
-    assert ", rows with no x are kept" in report(
+    assert ", rows with no x record are kept" in report(
         make_audit_step("filter_row", {"column": "x", "op": "ne", "value": "a", "na": "keep"}, reason="r"))
-    assert ", rows with no x are removed" in report(
+    assert ", rows with no x record are removed" in report(
         make_audit_step("filter_row", {"column": "x", "op": "ne", "value": "a", "na": "remove"}, reason="r"))
-    assert ", rows with no x are removed" in report(OLD_NODE | {"params": {"column": "x", "op": "ne", "value": "a"}})
+    assert ", rows with no x record are removed" in report(OLD_NODE | {"params": {"column": "x", "op": "ne", "value": "a"}})
 
 
 # ── the real orchestrator: the table HOME shows and the recipe the export re-runs ───────────
@@ -391,13 +391,13 @@ def test_between_gives_the_same_rows_in_the_table_the_plot_the_bundle_and_the_ex
 
 def test_the_staged_line_of_between_says_when_the_ends_are_not_included():
     from app.modules.t3_audit_engine import describe_filter
-    assert describe_filter("x", "between", [1, 3], "remove", "none") == "x between 1 and 3, ends not included (rows with no x are removed)"
-    assert describe_filter("x", "between", [1, 3], "remove", "both") == "x between 1 and 3 (rows with no x are removed)"
+    assert describe_filter("x", "between", [1, 3], "remove", "none") == "x between 1 and 3, ends not included (rows with no x record are removed)"
+    assert describe_filter("x", "between", [1, 3], "remove", "both") == "x between 1 and 3 (rows with no x record are removed)"
 
 
 def test_a_filter_listed_in_the_inventory_says_what_happens_to_the_rows_with_no_value():
     from utils.filter_words import no_value_words
-    assert no_value_words("keep", "year") == "rows with no year are kept" and no_value_words("remove", "year") == "rows with no year are removed"
+    assert no_value_words("keep", "year") == "rows with no year record are kept" and no_value_words("remove", "year") == "rows with no year record are removed"
     with pytest.raises(ValueError):
         no_value_words("maybe", "year")
 
@@ -407,9 +407,9 @@ def test_a_whole_number_typed_for_a_decimal_column_reads_without_point_zero_in_t
     from app.handlers.audit_stack import _params_summary
     from app.handlers.export_handlers import _build_methods_section
     node = make_audit_step("filter_row", {"column": "year", "op": "ge", "value": 2024.0, "na": "remove"}, reason="r")
-    assert _params_summary(node) == "year ≥ 2024 · rows with no year are removed"
+    assert _params_summary(node) == "year ≥ 2024 · rows with no year record are removed"
     assert node["params"]["value"] == 2024.0                                   # what is stored and compared is not changed
     text = "\n".join(_build_methods_section([("p", {"title": "P"})], {"p": [node]}, {"d": ["p"]}, ["T1"]))
     assert '"2024"' in text and "2024.0" not in text
     between = make_audit_step("filter_row", {"column": "year", "op": "between", "value": [2023.0, 2025.5], "closed": "both", "na": "keep"}, reason="r")
-    assert _params_summary(between) == "year ∈ [2023, 2025.5] · rows with no year are kept"
+    assert _params_summary(between) == "year ∈ [2023, 2025.5] · rows with no year record are kept"

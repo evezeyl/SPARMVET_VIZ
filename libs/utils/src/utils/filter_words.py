@@ -3,7 +3,7 @@
 Stdlib only, so the HOME panels, the audit cards, the dialog and the export read the same sentences (one function for each thing, never a second spelling).
 Display only: nothing here changes what a step stores or compares.
 
-PROVISIONAL (the builder's words, 2026-11-26, from the owner's remarks): "rows with no <column> are removed" / "rows with no <column> are kept"; a whole number is shown without ".0".
+PROVISIONAL (the owner's own example of 2026-11-26, one line to change): "rows with no <column> record are removed" / "rows with no <column> record are kept"; a whole number is shown without ".0".
 
 # @deps
 # provides: function:value_text, function:no_value_words
@@ -30,7 +30,7 @@ def value_text(value: Any) -> str:
 
 
 def no_value_words(na: str, column: str) -> str:
-    """What the choice `na` does to the rows with no value in `column`, in plain words: "rows with no year are removed" or "rows with no year are kept".
+    """What the choice `na` does to the rows with no value in `column`, in plain words: "rows with no year record are removed" or "rows with no year record are kept".
     `na` is "keep" or "remove" (anything else is refused, never guessed: `na_of`)."""
     fate = "kept" if na_of({"na": na}) == "keep" else "removed"
-    return f"rows with no {column} are {fate}"
+    return f"rows with no {column} record are {fate}"

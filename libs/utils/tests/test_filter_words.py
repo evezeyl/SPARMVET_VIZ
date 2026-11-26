@@ -19,8 +19,8 @@ def test_a_text_that_looks_like_a_decimal_is_not_rewritten():
 
 
 def test_no_value_words_name_the_column_and_the_fate():
-    assert no_value_words("remove", "year") == "rows with no year are removed"
-    assert no_value_words("keep", "Collection Year") == "rows with no Collection Year are kept"
+    assert no_value_words("remove", "year") == "rows with no year record are removed"
+    assert no_value_words("keep", "Collection Year") == "rows with no Collection Year record are kept"
 
 
 def test_an_unknown_choice_is_refused_never_guessed():

@@ -552,7 +552,7 @@ def _build_methods_section(
                 else:
                     detail = f"where **{col}** is {op} {val_str}"
                 # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
-                detail += ", " + no_value_words(na_of(params), col)
+                detail += ", " + _qp(no_value_words(na_of(params), str(params.get("column", "?"))))
                 scope = where if at_table else (f" (plot: *{plot_label}*)" if p_id != "__all__" else "")
                 sentence = f"{verb} {detail}{scope}."
             elif nt == "drop_column":
