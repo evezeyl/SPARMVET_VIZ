@@ -16094,9 +16094,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 20,
+									"top": 30,
 									"width": 320,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yhGlEeC5Y="
 									}
@@ -16134,9 +16134,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 120,
+									"top": 150,
 									"width": 320,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yhNFEm+RE="
 									}
@@ -16254,9 +16254,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 470,
+									"top": 490,
 									"width": 320,
-									"height": 90,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yhiVE+ZJg="
 									}
@@ -16294,9 +16294,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 400,
-									"top": 470,
+									"top": 480,
 									"width": 320,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yhn1FGc3w="
 									}
@@ -16330,9 +16330,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 400,
-									"top": 260,
+									"top": 280,
 									"width": 320,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yhulFObmU="
 									}
@@ -16366,9 +16366,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 400,
-									"top": 360,
+									"top": 375,
 									"width": 320,
-									"height": 80,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yh1VFWZzs="
 									}
@@ -16402,9 +16402,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 400,
-									"top": 140,
+									"top": 165,
 									"width": 320,
-									"height": 100,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yh91Fe9gc="
 									}
@@ -16442,9 +16442,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 780,
-									"top": 470,
+									"top": 485,
 									"width": 320,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yiF1FmXms="
 									}
@@ -16482,9 +16482,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 780,
-									"top": 260,
+									"top": 270,
 									"width": 320,
-									"height": 70,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yiOFFukGE="
 									}
@@ -16522,9 +16522,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 780,
-									"top": 360,
+									"top": 375,
 									"width": 320,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yiZFF2/eY="
 									}
@@ -16562,9 +16562,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 345,
-									"top": 620,
+									"top": 640,
 									"width": 387.123046875,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yitFGGawI="
 									}
@@ -16602,9 +16602,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 780,
-									"top": 620,
+									"top": 645,
 									"width": 320,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy6yi2FGO1Cw="
 									}
@@ -16948,7 +16948,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "User in Exploration: Table to view = Source, T1, T2 or T3",
+							"name": "User in Exploration: Table to view",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16963,7 +16963,8 @@
 										"$ref": "AAAAAAGhy6yhNFEjTgU="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nUser in Exploration: Table to view = Source, T1, T2 or T3"
 						},
 						{
 							"_type": "FCProcess",
@@ -16971,7 +16972,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Filters form (column, operator, value). Button: Add to preview. The same form is used in audit mode with another button (detail: HOME-AUDIT-FLOW)",
+							"name": "Filters form; button Add to preview",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -16988,6 +16989,7 @@
 									}
 								}
 							],
+							"documentation": "Original box text:\nFilters form (column, operator, value). Button: Add to preview. The same form is used in audit mode with another button (detail: HOME-AUDIT-FLOW)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -17054,7 +17056,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "DATA TABLE of this view: rows filtered. Badge: N preview filter(s) on, not saved. Row count line"
+							"name": "DATA TABLE of this view: rows filtered, badge",
+							"documentation": "Original box text:\nDATA TABLE of this view: rows filtered. Badge: N preview filter(s) on, not saved. Row count line"
 						},
 						{
 							"_type": "FCProcess",
@@ -17062,7 +17065,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Column selector: hides columns in the table only",
+							"name": "Column selector: hides columns in the table",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17077,7 +17080,8 @@
 										"$ref": "AAAAAAGhy6yhiVE7UzA="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nColumn selector: hides columns in the table only"
 						},
 						{
 							"_type": "FCProcess",
@@ -17085,7 +17089,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Trash on a row: removes it from staged AND applied. Reset: clears this view's lists",
+							"name": "Trash on a row; Reset clears the lists",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17100,7 +17104,8 @@
 										"$ref": "AAAAAAGhy6yhSFErpp0="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nTrash on a row: removes it from staged AND applied. Reset: clears this view's lists"
 						},
 						{
 							"_type": "FCProcess",
@@ -17108,7 +17113,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Change of the viewed table (Source, T1, T2, T3) or of recipe (D-0311): ALL preview filters and column choices are cleared, with a message",
+							"name": "Change of table or recipe clears all filters",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17123,7 +17128,8 @@
 										"$ref": "AAAAAAGhy6yhalEzy5M="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nChange of the viewed table (Source, T1, T2, T3) or of recipe (D-0311): ALL preview filters and column choices are cleared, with a message"
 						},
 						{
 							"_type": "FCDocument",
@@ -17131,7 +17137,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "WHY: a filter is built against the columns, names and types of ONE stage (T1 wide, T2 long, Year 2022.0 vs \"2022\"); carried over it could match nothing or the wrong rows"
+							"name": "WHY: a filter is built on ONE stage (D-0311)",
+							"documentation": "Original box text:\nWHY: a filter is built against the columns, names and types of ONE stage (T1 wide, T2 long, Year 2022.0 vs \"2022\"); carried over it could match nothing or the wrong rows"
 						},
 						{
 							"_type": "FCData",
@@ -17139,7 +17146,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "PLOT: the recipe's Result plot, drawn from T3, never changed by a preview filter (D-0310, D-0327)"
+							"name": "PLOT: the Result, never changed by a filter",
+							"documentation": "Original box text:\nPLOT: the recipe's Result plot, drawn from T3, never changed by a preview filter (D-0310, D-0327)"
 						},
 						{
 							"_type": "FCDocument",
@@ -17147,7 +17155,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Never saved in sessions, never exported, data files never written"
+							"name": "Never saved, never exported, no data written",
+							"documentation": "Original box text:\nNever saved in sessions, never exported, data files never written"
 						},
 						{
 							"_type": "FCProcess",
@@ -17155,7 +17164,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "A stage without the filtered column skips the filter (safety net; should not fire)"
+							"name": "A stage without the column skips the filter",
+							"documentation": "Original box text:\nA stage without the filtered column skips the filter (safety net; should not fire)"
 						},
 						{
 							"_type": "FCProcess",
@@ -17163,7 +17173,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "BUILT: filters are cleared with one notice when the view changes: the recipe, the data choice, the source table, the table the open plot reads, the mode (filter_and_audit_handlers.py:_clear_filters_on_view_change).",
+							"name": "BUILT: filters cleared with one notice",
+							"documentation": "Original box text:\nBUILT: filters are cleared with one notice when the view changes: the recipe, the data choice, the source table, the table the open plot reads, the mode (filter_and_audit_handlers.py:_clear_filters_on_view_change).",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -17193,7 +17204,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "BUILT: the strip has the mode and the table to view (Source | T1 | T2 | T3); there is no My view and no Plot to show"
+							"name": "BUILT: the strip has the mode and the table",
+							"documentation": "Original box text:\nBUILT: the strip has the mode and the table to view (Source | T1 | T2 | T3); there is no My view and no Plot to show"
 						}
 					]
 				},
@@ -20360,9 +20372,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 20,
+									"top": 30,
 									"width": 420,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66xz1dc3b0="
 									}
@@ -20400,9 +20412,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 130,
+									"top": 150,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66x41dkirI="
 									}
@@ -20440,9 +20452,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 260,
+									"top": 290,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66x9FdsfWE="
 									}
@@ -20480,9 +20492,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 410,
+									"top": 440,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yBld0sT8="
 									}
@@ -20520,9 +20532,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 560,
+									"top": 615,
 									"width": 420,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yKVd8c5Q="
 									}
@@ -20556,9 +20568,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 725,
-									"top": 760,
+									"top": 780,
 									"width": 300,
-									"height": 130,
+									"height": 90,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yQleEDeg="
 									}
@@ -20596,9 +20608,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 245,
-									"top": 940,
+									"top": 960,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yU1eMZhI="
 									}
@@ -20636,9 +20648,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 1075,
+									"top": 1090,
 									"width": 420,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yZVeUZ94="
 									}
@@ -20676,9 +20688,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 235,
-									"top": 785,
+									"top": 805,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yiVekNz8="
 									}
@@ -20716,9 +20728,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 1070,
+									"top": 1090,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ym1esHAE="
 									}
@@ -20756,9 +20768,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 1205,
+									"top": 1215,
 									"width": 420,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ytle0gQo="
 									}
@@ -20796,9 +20808,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 1470,
+									"top": 1500,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66y01e840g="
 									}
@@ -20836,9 +20848,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 695,
-									"top": 950,
+									"top": 960,
 									"width": 420,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66y5VfEEME="
 									}
@@ -20876,9 +20888,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 920,
-									"top": 1480,
+									"top": 1500,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66y/FfM78U="
 									}
@@ -20916,9 +20928,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1370,
-									"top": 1480,
+									"top": 1500,
 									"width": 420,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66zDVfU4Xs="
 									}
@@ -21475,9 +21487,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1055,
-									"top": 775,
+									"top": 805,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO01mtNN5A="
 									}
@@ -21563,9 +21575,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 1320,
+									"top": 1350,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDYArmzDrGs="
 									}
@@ -21673,7 +21685,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "User in audit mode (sandbox flag on): the selected plot, audited",
+							"name": "User in audit mode: the selected plot",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21688,7 +21700,8 @@
 										"$ref": "AAAAAAGhy66x41dhDdk="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nUser in audit mode (sandbox flag on): the selected plot, audited"
 						},
 						{
 							"_type": "FCProcess",
@@ -21696,7 +21709,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 1 WHAT. In Audit mode with T3 viewed: the Filters form (rows staged) and the button \"Send to Audit\", or the column chooser (a drop); for a result table no plot reads, the small form of the lineage panel. A step is a filter, a column drop or a removal by key (the check that refuses any other step: decided, not built, D-0322)",
+							"name": "STEP 1 WHAT: filter, drop, removal by key",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21711,7 +21724,8 @@
 										"$ref": "AAAAAAGhy66x9FdpVC8="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nSTEP 1 WHAT. In Audit mode with T3 viewed: the Filters form (rows staged) and the button \"Send to Audit\", or the column chooser (a drop); for a result table no plot reads, the small form of the lineage panel. A step is a filter, a column drop or a removal by key (the check that refuses any other step: decided, not built, D-0322)"
 						},
 						{
 							"_type": "FCProcess",
@@ -21719,7 +21733,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 1 WHAT (continued). The dialog asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from (one line for each table upstream that holds the column, and the plot's own tier 3)",
+							"name": "STEP 1 WHAT: the dialog asks where to write",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21734,7 +21748,8 @@
 										"$ref": "AAAAAAGhy66yBldxTk0="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nSTEP 1 WHAT (continued). The dialog asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from (one line for each table upstream that holds the column, and the plot's own tier 3)"
 						},
 						{
 							"_type": "FCProcess",
@@ -21742,7 +21757,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "The step is written at the chosen place(s): one node per place, all with one shared id. Rule of places (D-0553): at most one place on a path; a clash is refused in one plain line and the dialog stays open. A place where the column is absent is skipped and told. The metadata table is not a place (D-0632)",
+							"name": "The step is written at the chosen place(s)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21757,7 +21772,8 @@
 										"$ref": "AAAAAAGhy66yKVd533U="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nThe step is written at the chosen place(s): one node per place, all with one shared id. Rule of places (D-0553): at most one place on a path; a clash is refused in one plain line and the dialog stays open. A place where the column is absent is skipped and told. The metadata table is not a place (D-0632)"
 						},
 						{
 							"_type": "FCProcess",
@@ -21765,7 +21781,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "BEFORE CONFIRM. Built: the choice of places is checked and refused in one plain line. DECIDED, not built (D-0316, D-0325, D-0337): the dialog shows the rows and plots affected before the user confirms; each affected plot reads \"table changed\" and, separately, \"picture changed\"",
+							"name": "BEFORE CONFIRM: places checked only",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21795,6 +21811,7 @@
 									}
 								}
 							],
+							"documentation": "Original box text:\nBEFORE CONFIRM. Built: the choice of places is checked and refused in one plain line. DECIDED, not built (D-0316, D-0325, D-0337): the dialog shows the rows and plots affected before the user confirms; each affected plot reads \"table changed\" and, separately, \"picture changed\"",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -21824,7 +21841,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "STEP 3 WHY. The nodes are staged (pending, one per place) with no reason. The reason is typed in the Pipeline Audit panel; Apply is locked while a reason is empty. Apply pressed?",
+							"name": "STEP 3 WHY: reason typed? Apply pressed?",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21854,7 +21871,8 @@
 										"$ref": "AAAAAAGhy66y5VfB6tM="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nSTEP 3 WHY. The nodes are staged (pending, one per place) with no reason. The reason is typed in the Pipeline Audit panel; Apply is locked while a reason is empty. Apply pressed?"
 						},
 						{
 							"_type": "FCProcess",
@@ -21862,7 +21880,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Apply: the committed nodes are saved in the session (format 5); the audit copy of the recipe is built and run (own keys, own folder); HOME reads its tables (detail: HOME-AUDIT-CACHE)",
+							"name": "Apply: save nodes, build and run audit copy",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21891,6 +21909,7 @@
 									}
 								}
 							],
+							"documentation": "Original box text:\nApply: the committed nodes are saved in the session (format 5); the audit copy of the recipe is built and run (own keys, own folder); HOME reads its tables (detail: HOME-AUDIT-CACHE)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -21910,7 +21929,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Audited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on"
+							"name": "Audited plot and audit T3 table shown",
+							"documentation": "Original box text:\nAudited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on"
 						},
 						{
 							"_type": "FCProcess",
@@ -21918,7 +21938,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Remove step: the user picks any step and removes it (the bin of the step); the nodes with the same id at other places go too (D-0314). No \"remove last\", no \"remove all\". The audit copy is built again without it",
+							"name": "Remove step: any step and its copies",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21933,7 +21953,8 @@
 										"$ref": "AAAAAAGhy66yU1eJ0K4="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nRemove step: the user picks any step and removes it (the bin of the step); the nodes with the same id at other places go too (D-0314). No \"remove last\", no \"remove all\". The audit copy is built again without it"
 						},
 						{
 							"_type": "FCProcess",
@@ -21941,7 +21962,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks (built; partly fixed: tasks line 910)",
+							"name": "A step that cannot run: one plain error",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21956,7 +21977,8 @@
 										"$ref": "AAAAAAGhy66ytVexRGY="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nA step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks (built; partly fixed: tasks line 910)"
 						},
 						{
 							"_type": "FCProcess",
@@ -21964,7 +21986,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "A step that cannot be written as an action stops the audit recipe part of the export: audit_recipe/ERROR.txt and a notice; the rest of the bundle is complete",
+							"name": "Step not writable: ERROR.txt in export",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21979,7 +22001,8 @@
 										"$ref": "AAAAAAGhzDYArmzAm/I="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nA step that cannot be written as an action stops the audit recipe part of the export: audit_recipe/ERROR.txt and a notice; the rest of the bundle is complete"
 						},
 						{
 							"_type": "FCDocument",
@@ -21987,7 +22010,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Export (built, PROVISIONAL form): in Audit mode the audited table files beside the originals, T3_data_<plot>.tsv, the audit recipe that runs alone. DECIDED, not built: the audit log and the hash of the audit recipe (D-0478, D-0333)"
+							"name": "Export in Audit mode: audited files, recipe",
+							"documentation": "Original box text:\nExport (built, PROVISIONAL form): in Audit mode the audited table files beside the originals, T3_data_<plot>.tsv, the audit recipe that runs alone. DECIDED, not built: the audit log and the hash of the audit recipe (D-0478, D-0333)"
 						},
 						{
 							"_type": "FCProcess",
@@ -21995,7 +22019,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Cancel, or no reason: nothing is applied. The user can read the information first"
+							"name": "Cancel, or no reason: nothing is applied",
+							"documentation": "Original box text:\nCancel, or no reason: nothing is applied. The user can read the information first"
 						},
 						{
 							"_type": "FCProcess",
@@ -22003,7 +22028,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "BUILT (PROVISIONAL): one mechanism for the three tiers, a step is written at a place (2026-11-24); the panel \"Path of the data\" (2026-11-25); no My view"
+							"name": "BUILT (PROV.): a step is written at a place",
+							"documentation": "Original box text:\nBUILT (PROVISIONAL): one mechanism for the three tiers, a step is written at a place (2026-11-24); the panel \"Path of the data\" (2026-11-25); no My view"
 						},
 						{
 							"_type": "FCProcess",
@@ -22011,7 +22037,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "KNOWN: one failing audit step shows its error at plots it does not reach (partly fixed, tasks line 910); no test clicks the delete icon of a step (tasks line 487)"
+							"name": "KNOWN: failing step shows at plots it misses",
+							"documentation": "Original box text:\nKNOWN: one failing audit step shows its error at plots it does not reach (partly fixed, tasks line 910); no test clicks the delete icon of a step (tasks line 487)"
 						},
 						{
 							"_type": "FCProcess",
@@ -22019,7 +22046,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Panel \"Path of the data\" (built, PROVISIONAL): list and map of the tables and plots; the user chooses a place; \"Create an audit step here...\" opens the dialog with the chosen places ticked. Own renderer in HOME (lineage_view.js); data from utils.lineage_data"
+							"name": "Panel \"Path of the data\" (built, PROVISIONAL)",
+							"documentation": "Original box text:\nPanel \"Path of the data\" (built, PROVISIONAL): list and map of the tables and plots; the user chooses a place; \"Create an audit step here...\" opens the dialog with the chosen places ticked. Own renderer in HOME (lineage_view.js); data from utils.lineage_data"
 						},
 						{
 							"_type": "FCProcess",
@@ -22027,7 +22055,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "EXPORT starts. The keys of the open view are compared with the keys now: if the recipe or the data changed, nothing is exported (key check, built). Exploration is never exported",
+							"name": "EXPORT starts: key check, then the bundle",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -22043,7 +22071,8 @@
 										"$ref": "AAAAAAGhy66y01e5N8U="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nEXPORT starts. The keys of the open view are compared with the keys now: if the recipe or the data changed, nothing is exported (key check, built). Exploration is never exported"
 						}
 					]
 				},
@@ -22348,10 +22377,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 110,
+											"top": 130,
 											"width": 150,
 											"height": 26,
-											"text": "PLACE T1:<table>\n(end of tier 1)",
+											"text": "PLACE T1:<table> (end of tier 1)",
 											"wordWrap": true
 										}
 									],
@@ -22430,8 +22459,8 @@
 											"left": 495,
 											"top": 110,
 											"width": 80,
-											"height": 13,
-											"text": "unchanged",
+											"height": 65,
+											"text": "original T1 / T2: unchanged by a step at T1",
 											"wordWrap": true
 										}
 									],
@@ -22467,11 +22496,11 @@
 											"fillColor": "$blue7",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 658,
-											"top": 110,
-											"width": 94,
-											"height": 78,
-											"text": "recomputed: the recipe's tier-1 steps, then the audit step (starting point)",
+											"left": 656,
+											"top": 134,
+											"width": 98,
+											"height": 39,
+											"text": "recomputed: tier-1 steps, then the audit step",
 											"wordWrap": true
 										}
 									],
@@ -22482,7 +22511,7 @@
 									"left": 617,
 									"top": 124,
 									"width": 176,
-									"height": 50,
+									"height": 98,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68yC1lQ4kg="
 									}
@@ -22508,10 +22537,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 838,
-											"top": 110,
+											"top": 130,
 											"width": 94,
-											"height": 52,
-											"text": "recomputed from the audit T1 (the recipe's tier-2 steps)",
+											"height": 39,
+											"text": "recomputed from the audit T1",
 											"wordWrap": true
 										}
 									],
@@ -22522,7 +22551,7 @@
 									"left": 800,
 									"top": 120,
 									"width": 170,
-									"height": 50,
+									"height": 72,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68yM1lYQG0="
 									}
@@ -22548,10 +22577,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1031,
-											"top": 110,
+											"top": 130,
 											"width": 148,
 											"height": 26,
-											"text": "all plots built from this table",
+											"text": "plots (written at T1): all built from it",
 											"wordWrap": true
 										}
 									],
@@ -22588,10 +22617,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1250,
-											"top": 110,
+											"top": 141,
 											"width": 240,
-											"height": 73,
-											"text": "T1_data_audited.tsv and T2_data_audited.tsv beside the originals (export made in Audit mode); the audit recipe",
+											"height": 40,
+											"text": "T1 and T2 audited files, audit recipe",
 											"wordWrap": true
 										}
 									],
@@ -22602,7 +22631,7 @@
 									"left": 1240,
 									"top": 131,
 									"width": 260,
-									"height": 50,
+									"height": 72,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68yillotVM="
 									}
@@ -22628,10 +22657,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 210,
+											"top": 230,
 											"width": 150,
 											"height": 26,
-											"text": "PLACE T2:<table>\n(end of tier 2)",
+											"text": "PLACE T2:<table> (end of tier 2)",
 											"wordWrap": true
 										}
 									],
@@ -22668,10 +22697,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 210,
-											"top": 210,
+											"top": 247,
 											"width": 230,
 											"height": 26,
-											"text": "the end of the tier 2 of THIS table, when it has tier-2 steps",
+											"text": "end of tier 2 of THIS table, if it has steps",
 											"wordWrap": true
 										}
 									],
@@ -22710,8 +22739,8 @@
 											"left": 495,
 											"top": 210,
 											"width": 80,
-											"height": 13,
-											"text": "unchanged",
+											"height": 65,
+											"text": "original T1 / T2: unchanged by a step at T2",
 											"wordWrap": true
 										}
 									],
@@ -22787,11 +22816,11 @@
 											"fillColor": "$blue7",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 838,
-											"top": 210,
-											"width": 94,
-											"height": 78,
-											"text": "recomputed: the recipe's tier-2 steps, then the audit step (starting point)",
+											"left": 836,
+											"top": 234,
+											"width": 98,
+											"height": 39,
+											"text": "recomputed: tier-2 steps, then the audit step",
 											"wordWrap": true
 										}
 									],
@@ -22802,7 +22831,7 @@
 									"left": 797,
 									"top": 224,
 									"width": 176,
-									"height": 50,
+									"height": 98,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68zUlmQ6zE="
 									}
@@ -22828,10 +22857,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1031,
-											"top": 210,
+											"top": 230,
 											"width": 148,
 											"height": 26,
-											"text": "all plots built from this table",
+											"text": "plots (written at T2): all built from it",
 											"wordWrap": true
 										}
 									],
@@ -22868,10 +22897,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1250,
-											"top": 210,
+											"top": 235,
 											"width": 240,
-											"height": 55,
-											"text": "T2_data_audited.tsv beside T2_data.tsv; the audit recipe",
+											"height": 19,
+											"text": "T2 audited file, audit recipe",
 											"wordWrap": true
 										}
 									],
@@ -22882,7 +22911,7 @@
 									"left": 1240,
 									"top": 225,
 									"width": 260,
-									"height": 40,
+									"height": 46,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68znFmgKBk="
 									}
@@ -22990,8 +23019,8 @@
 											"left": 495,
 											"top": 310,
 											"width": 80,
-											"height": 13,
-											"text": "unchanged",
+											"height": 65,
+											"text": "original T1 / T2: unchanged by a step at T3",
 											"wordWrap": true
 										}
 									],
@@ -23030,8 +23059,8 @@
 											"left": 658,
 											"top": 310,
 											"width": 94,
-											"height": 13,
-											"text": "unchanged",
+											"height": 39,
+											"text": "audit T1: unchanged by a step at T3",
 											"wordWrap": true
 										}
 									],
@@ -23070,8 +23099,8 @@
 											"left": 838,
 											"top": 310,
 											"width": 94,
-											"height": 13,
-											"text": "unchanged",
+											"height": 39,
+											"text": "audit T2: unchanged by a step at T3",
 											"wordWrap": true
 										}
 									],
@@ -23108,10 +23137,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1031,
-											"top": 310,
+											"top": 330,
 											"width": 148,
-											"height": 39,
-											"text": "only the plots the step is written at (one node per plot chosen)",
+											"height": 26,
+											"text": "only the plots the step is written at",
 											"wordWrap": true
 										}
 									],
@@ -23122,7 +23151,7 @@
 									"left": 980,
 									"top": 320,
 									"width": 250,
-									"height": 50,
+									"height": 59,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy680sVnQqic="
 									}
@@ -23148,10 +23177,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1250,
-											"top": 310,
+											"top": 330,
 											"width": 240,
-											"height": 55,
-											"text": "T3_data_<plot>.tsv and the figure of those plots; the audit recipe",
+											"height": 22,
+											"text": "T3 file and figure of those plots, recipe",
 											"wordWrap": true
 										}
 									],
@@ -23186,10 +23215,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 430,
+											"top": 445,
 											"width": 680,
-											"height": 26,
-											"text": "Order of application (built): in each tier the recipe's own steps, then the audit steps of that tier in the order written; tiers in the order tier 1, tier 2, tier 3",
+											"height": 13,
+											"text": "Order: tiers 1, 2, 3; own steps first",
 											"wordWrap": true
 										}
 									],
@@ -23198,7 +23227,7 @@
 									"left": 20,
 									"top": 435,
 									"width": 700,
-									"height": 40,
+									"height": 46,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy681DVngpQs="
 									}
@@ -23222,10 +23251,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 510,
+											"top": 525,
 											"width": 680,
-											"height": 26,
-											"text": "The metadata table is not a place (D-0632). Keys are declared with is_entity_id in the data schema. DECIDED, not built: remove from all the data, a removal by the entity key at tier 1 of the ticked places (D-0499, D-0531)",
+											"height": 13,
+											"text": "The metadata table is not a place (D-0632)",
 											"wordWrap": true
 										}
 									],
@@ -23234,7 +23263,7 @@
 									"left": 20,
 									"top": 515,
 									"width": 700,
-									"height": 40,
+									"height": 46,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy681NVnozY4="
 									}
@@ -23260,10 +23289,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 770,
-											"top": 430,
+											"top": 445,
 											"width": 710,
-											"height": 26,
-											"text": "Drop column: a drop of a column that a later join still uses is refused at that place (built); where no later join uses it the drop is allowed. A recipe's own steps are never refused",
+											"height": 13,
+											"text": "Drop column: refused if a later join uses it",
 											"wordWrap": true
 										}
 									],
@@ -23274,7 +23303,7 @@
 									"left": 760,
 									"top": 435,
 									"width": 730,
-									"height": 40,
+									"height": 46,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy681V1nw1IY="
 									}
@@ -23298,10 +23327,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 770,
-											"top": 510,
+											"top": 525,
 											"width": 710,
-											"height": 39,
-											"text": "Two plots sharing one table: a step at the table (T1 or T2 place) changes both, a step at T3 only the plot it is written at. A step has exactly one place; the same decision at several places is several nodes with one id, and removing by that id removes them all",
+											"height": 13,
+											"text": "Two plots on one table: table or plot step",
 											"wordWrap": true
 										}
 									],
@@ -23310,7 +23339,7 @@
 									"left": 760,
 									"top": 515,
 									"width": 730,
-									"height": 40,
+									"height": 59,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy681gFn4ZXo="
 									}
@@ -23334,10 +23363,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 600,
+											"top": 615,
 											"width": 1450,
 											"height": 13,
-											"text": "Colours: dark blue = recomputed where the step is written (starting point); light blue = recomputed because it depends on it; grey = unchanged; amber = the user step",
+											"text": "Colours: dark blue, light blue, grey, amber",
 											"wordWrap": true
 										}
 									],
@@ -23372,10 +23401,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 680,
+											"top": 683,
 											"width": 1450,
-											"height": 26,
-											"text": "DECIDED, not built: the audit log in the export with the warnings shown at each choice (D-0478); the hash of the audit recipe in the run file, and the original recipe beside the audit recipe (D-0333, D-0324). Built, PROVISIONAL form: the audited table files and the audit recipe that runs alone",
+											"height": 13,
+											"text": "DECIDED, not built: audit log, hash, baseline",
 											"wordWrap": true
 										}
 									],
@@ -23386,7 +23415,7 @@
 									"left": 20,
 									"top": 673,
 									"width": 1470,
-									"height": 40,
+									"height": 46,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzEpRp252rAk="
 									}
@@ -23786,9 +23815,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 200,
+									"top": 215,
 									"width": 400,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9Omz2NLcqA="
 									}
@@ -23826,9 +23855,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 330,
+									"top": 345,
 									"width": 400,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9Om5WNTcPA="
 									}
@@ -23866,9 +23895,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 200,
+									"top": 220,
 									"width": 400,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnAGNbmtc="
 									}
@@ -23906,9 +23935,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 330,
+									"top": 345,
 									"width": 400,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnFGNjUdo="
 									}
@@ -23946,9 +23975,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 450,
+									"top": 470,
 									"width": 400,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnJmNrOOs="
 									}
@@ -23986,9 +24015,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 910,
-									"top": 130,
+									"top": 160,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnNmNz2A8="
 									}
@@ -24026,9 +24055,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 910,
-									"top": 260,
+									"top": 290,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnVGN7WJI="
 									}
@@ -24062,9 +24091,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 910,
-									"top": 390,
+									"top": 420,
 									"width": 420,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OncmODic8="
 									}
@@ -24102,9 +24131,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 460,
+									"top": 470,
 									"width": 400,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9OnjGOL42M="
 									}
@@ -24379,9 +24408,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 110,
+									"top": 120,
 									"width": 400,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9PtcmPTlX4="
 									}
@@ -24419,9 +24448,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 470,
-									"top": 110,
+									"top": 120,
 									"width": 400,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9PtoGPbjUI="
 									}
@@ -24472,7 +24501,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "original T1 per collection. Key = E . rC . dC, stored in the file (ADR-089, ADR-101: each stored table has its own key, built, cache_keys.py tier1_key)",
+							"name": "original T1 per collection: key = E . rC . dC",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -24487,7 +24516,8 @@
 										"$ref": "AAAAAAGhy9Om5WNQreo="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\noriginal T1 per collection. Key = E . rC . dC, stored in the file (ADR-089, ADR-101: each stored table has its own key, built, cache_keys.py tier1_key)"
 						},
 						{
 							"_type": "FCProcess",
@@ -24495,7 +24525,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "original T2 per collection. Key = key(T1) . s2 (none when tier2 is empty: same key as T1)"
+							"name": "original T2: key = key(T1) . s2",
+							"documentation": "Original box text:\noriginal T2 per collection. Key = key(T1) . s2 (none when tier2 is empty: same key as T1)"
 						},
 						{
 							"_type": "FCProcess",
@@ -24503,7 +24534,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "audit T1 = the original T1 plus the audit steps at T1 (key = original T1 key . a1, computed from the stored original T1). With no audit step at T1 there is none: the original T1 is used as it is (empty part, same key). Detail: DM-KEYS-CHAIN",
+							"name": "audit T1: original T1 plus steps at T1",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -24518,7 +24549,8 @@
 										"$ref": "AAAAAAGhy9OnFGNgeUQ="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\naudit T1 = the original T1 plus the audit steps at T1 (key = original T1 key . a1, computed from the stored original T1). With no audit step at T1 there is none: the original T1 is used as it is (empty part, same key). Detail: DM-KEYS-CHAIN"
 						},
 						{
 							"_type": "FCProcess",
@@ -24526,7 +24558,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "audit T2 = key(audit T1 or T1) . s2 . a2: the recipe's tier-2 steps, then the audit steps at T2; recomputed only when a part differs",
+							"name": "audit T2: key(audit T1 or T1) . s2 . a2",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -24541,7 +24573,8 @@
 										"$ref": "AAAAAAGhy9OnJmNoGyE="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\naudit T2 = key(audit T1 or T1) . s2 . a2: the recipe's tier-2 steps, then the audit steps at T2; recomputed only when a part differs"
 						},
 						{
 							"_type": "FCProcess",
@@ -24549,7 +24582,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "audit T3 of a plot = key(audit T2) . [s3] . [a3]; cached by key like T1 and T2 (stored or derived is an implementation detail); empty means the same key as T2"
+							"name": "audit T3: key(audit T2) . [s3] . [a3]",
+							"documentation": "Original box text:\naudit T3 of a plot = key(audit T2) . [s3] . [a3]; cached by key like T1 and T2 (stored or derived is an implementation detail); empty means the same key as T2"
 						},
 						{
 							"_type": "FCProcess",
@@ -24557,7 +24591,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "Key = a SERIES of labelled parts joined in execution order, not a hash of hashes: E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]. Never in a part: reason, initials, date. Stored in the file, checked on read. Detail: DM-KEYS, DM-KEYS-CHAIN"
+							"name": "Key = a SERIES of labelled parts",
+							"documentation": "Original box text:\nKey = a SERIES of labelled parts joined in execution order, not a hash of hashes: E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]. Never in a part: reason, initials, date. Stored in the file, checked on read. Detail: DM-KEYS, DM-KEYS-CHAIN"
 						},
 						{
 							"_type": "FCProcess",
@@ -24565,7 +24600,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "Limit of N recent states and removal of dependent entries: from the first plan, NOT decided and not drawn as built. The audit run does roll back its folder when a run fails (audit_run._rollback)"
+							"name": "Limit of N recent states: NOT decided",
+							"documentation": "Original box text:\nLimit of N recent states and removal of dependent entries: from the first plan, NOT decided and not drawn as built. The audit run does roll back its folder when a run fails (audit_run._rollback)"
 						},
 						{
 							"_type": "FCProcess",
@@ -24573,7 +24609,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "Tests of the first plan (not checked on 2026-11-26): a key starts with its upstream key; different operations never share a key; the reason does not change the key; originals are never written"
+							"name": "Tests of the first plan: not checked",
+							"documentation": "Original box text:\nTests of the first plan (not checked on 2026-11-26): a key starts with its upstream key; different operations never share a key; the reason does not change the key; originals are never written"
 						},
 						{
 							"_type": "FCProcess",
@@ -24581,7 +24618,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "BUILT (PROVISIONAL, demo 2026-11-24): the audit copy of the recipe is run by audit_run with its own stored tables and keys in a folder of its own (app/modules/audit_run.py: run_audit). Not checked against the code on 2026-11-26: the chained key parts a1, a2, a3 as drawn here"
+							"name": "BUILT (PROV.): audit copy run by audit_run",
+							"documentation": "Original box text:\nBUILT (PROVISIONAL, demo 2026-11-24): the audit copy of the recipe is run by audit_run with its own stored tables and keys in a folder of its own (app/modules/audit_run.py: run_audit). Not checked against the code on 2026-11-26: the chained key parts a1, a2, a3 as drawn here"
 						},
 						{
 							"_type": "FCTerminator",
@@ -24589,7 +24627,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "ORIGINAL CACHE (folder anchors/), exists today. Only the normal build writes here"
+							"name": "ORIGINAL CACHE (anchors/), exists today",
+							"documentation": "Original box text:\nORIGINAL CACHE (folder anchors/), exists today. Only the normal build writes here"
 						},
 						{
 							"_type": "FCTerminator",
@@ -24597,7 +24636,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "AUDIT CACHE (a separate folder, audit_anchors, built, PROVISIONAL). Only an audit run writes here"
+							"name": "AUDIT CACHE (audit_anchors, PROVISIONAL)",
+							"documentation": "Original box text:\nAUDIT CACHE (a separate folder, audit_anchors, built, PROVISIONAL). Only an audit run writes here"
 						}
 					]
 				},
@@ -29119,9 +29159,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 200,
-									"top": 100,
+									"top": 125,
 									"width": 300,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO2pmuKbmI="
 									}
@@ -29191,9 +29231,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 100,
+									"top": 125,
 									"width": 420,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO20mua9/Y="
 									}
@@ -29267,9 +29307,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 200,
-									"top": 210,
+									"top": 235,
 									"width": 300,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO3A2uqBHk="
 									}
@@ -29339,9 +29379,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 210,
+									"top": 235,
 									"width": 420,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO3Tmu6vXU="
 									}
@@ -29415,9 +29455,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 200,
-									"top": 320,
+									"top": 345,
 									"width": 300,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO3mGvK8YQ="
 									}
@@ -29451,9 +29491,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 520,
-									"top": 320,
+									"top": 345,
 									"width": 320,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO3uGvSuvo="
 									}
@@ -29487,9 +29527,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 320,
+									"top": 345,
 									"width": 420,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO312vaWQA="
 									}
@@ -29563,9 +29603,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 200,
-									"top": 430,
+									"top": 450,
 									"width": 300,
-									"height": 90,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO4IGvqDs4="
 									}
@@ -29635,9 +29675,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 430,
+									"top": 455,
 									"width": 420,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO4bGv61kY="
 									}
@@ -29675,9 +29715,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 560,
+									"top": 585,
 									"width": 1260,
-									"height": 90,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO4n2wCfp8="
 									}
@@ -29730,7 +29770,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "Shown in the dialog (counts, affected plots and tables, chain). Nothing to do"
+							"name": "INFO: shown in the dialog, nothing to do",
+							"documentation": "Original box text:\nShown in the dialog (counts, affected plots and tables, chain). Nothing to do"
 						},
 						{
 							"_type": "FCProcess",
@@ -29746,7 +29787,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "I1 rows and entities before/after, entities losing all rows, NA rows | I2 plots and tables that change | I3 sample census"
+							"name": "INFO checks I1, I2, I3",
+							"documentation": "Original box text:\nI1 rows and entities before/after, entities losing all rows, NA rows | I2 plots and tables that change | I3 sample census"
 						},
 						{
 							"_type": "FCProcess",
@@ -29762,7 +29804,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "Plain explanation; the user ticks \"I understand\" before Apply"
+							"name": "CONFIRM: plain text, tick I understand",
+							"documentation": "Original box text:\nPlain explanation; the user ticks \"I understand\" before Apply"
 						},
 						{
 							"_type": "FCProcess",
@@ -29778,7 +29821,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "W1 large attrition | W2 a plot loses a whole group | W3 group left with fewer than 3 entities | W4 drop of a used column | W5 no effect, zero rows"
+							"name": "WARNING checks W1 to W5",
+							"documentation": "Original box text:\nW1 large attrition | W2 a plot loses a whole group | W3 group left with fewer than 3 entities | W4 drop of a used column | W5 no effect, zero rows"
 						},
 						{
 							"_type": "FCProcess",
@@ -29794,7 +29838,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "Strong warning for choices that usually bias results; the user writes why it is acceptable here"
+							"name": "STRONG WARNING: the user writes why",
+							"documentation": "Original box text:\nStrong warning for choices that usually bias results; the user writes why it is acceptable here"
 						},
 						{
 							"_type": "FCProcess",
@@ -29802,7 +29847,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "The override reason with the warning id; the report lists them"
+							"name": "The override reason with the warning id",
+							"documentation": "Original box text:\nThe override reason with the warning id; the report lists them"
 						},
 						{
 							"_type": "FCProcess",
@@ -29810,7 +29856,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "C1 samples removed after population statistics (z-score, percentile, rank, top-N, pivot, summaries) | C2 filter on the variable the plot shows (outlier by value) | C3 incomplete exclusion (variants still present)"
+							"name": "CONFIRM checks C1, C2, C3",
+							"documentation": "Original box text:\nC1 samples removed after population statistics (z-score, percentile, rank, top-N, pivot, summaries) | C2 filter on the variable the plot shows (outlier by value) | C3 incomplete exclusion (variants still present)"
 						},
 						{
 							"_type": "FCProcess",
@@ -29826,7 +29873,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "Technical problems only. Nothing is applied; the error is shown"
+							"name": "BLOCK: technical problems, nothing applied",
+							"documentation": "Original box text:\nTechnical problems only. Nothing is applied; the error is shown"
 						},
 						{
 							"_type": "FCProcess",
@@ -29842,7 +29890,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "B1 a column or key no longer exists | a key renamed in tier-1 | a step the forked recipe cannot represent | the recomputation failed"
+							"name": "BLOCK check B1: column or key missing",
+							"documentation": "Original box text:\nB1 a column or key no longer exists | a key renamed in tier-1 | a step the forked recipe cannot represent | the recomputation failed"
 						},
 						{
 							"_type": "FCDocument",
@@ -29850,7 +29899,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "The software makes good data science possible and the choice informed. It does not decide for the user. STATUS 2026-11-26: NOT BUILT. Decided: three levels, info, warning, block, and a first list of checks (D-0026). This diagram has a fourth level, CONFIRM WITH A REASON with an \"I understand\" tick, that the ledger line does not show: listed for the owner. Only technical problems block"
+							"name": "STATUS 2026-11-26: NOT BUILT, see D-0026",
+							"documentation": "Original box text:\nThe software makes good data science possible and the choice informed. It does not decide for the user. STATUS 2026-11-26: NOT BUILT. Decided: three levels, info, warning, block, and a first list of checks (D-0026). This diagram has a fourth level, CONFIRM WITH A REASON with an \"I understand\" tick, that the ledger line does not show: listed for the owner. Only technical problems block"
 						}
 					]
 				},
@@ -29952,9 +30002,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 70,
+									"top": 80,
 									"width": 1300,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaG5mzy/xI="
 									}
@@ -30028,9 +30078,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 210,
+									"top": 240,
 									"width": 400,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaHJW0CbN8="
 									}
@@ -30068,9 +30118,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 440,
-									"top": 210,
+									"top": 240,
 									"width": 400,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaHPm0K9vs="
 									}
@@ -30108,9 +30158,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 210,
+									"top": 240,
 									"width": 460,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaHWm0SwWA="
 									}
@@ -30148,9 +30198,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 340,
+									"top": 370,
 									"width": 400,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaHim0aCgY="
 									}
@@ -30188,9 +30238,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 440,
-									"top": 340,
+									"top": 370,
 									"width": 400,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaHwm0ioMo="
 									}
@@ -30228,9 +30278,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 340,
+									"top": 370,
 									"width": 460,
-									"height": 100,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaH6G0qLsU="
 									}
@@ -30304,9 +30354,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 520,
+									"top": 535,
 									"width": 1300,
-									"height": 70,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaILW06Y6U="
 									}
@@ -30344,9 +30394,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 620,
+									"top": 640,
 									"width": 1300,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaIVm1CV9U="
 									}
@@ -30384,9 +30434,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 730,
+									"top": 740,
 									"width": 1300,
-									"height": 60,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDaIiG1KvvA="
 									}
@@ -30399,7 +30449,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "LAYER: handlers and screen (Shiny; app/handlers)"
+							"name": "LAYER: handlers and screen (Shiny)",
+							"documentation": "Original box text:\nLAYER: handlers and screen (Shiny; app/handlers)"
 						},
 						{
 							"_type": "FCProcess",
@@ -30407,7 +30458,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "Audit mode screen (built, PROVISIONAL): mode switch, Filters form, the dialog \"Send to Audit\" with its choice of places, the step list of the Pipeline Audit panel, the panel \"Path of the data\". Not decided: project overview, pre-export review"
+							"name": "Audit mode screen (built, PROVISIONAL)",
+							"documentation": "Original box text:\nAudit mode screen (built, PROVISIONAL): mode switch, Filters form, the dialog \"Send to Audit\" with its choice of places, the step list of the Pipeline Audit panel, the panel \"Path of the data\". Not decided: project overview, pre-export review"
 						},
 						{
 							"_type": "FCProcess",
@@ -30415,7 +30467,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "LAYER: pure modules (no Shiny; app/modules and libs). Unit and property tests, no browser needed"
+							"name": "LAYER: pure modules (no Shiny), unit tests",
+							"documentation": "Original box text:\nLAYER: pure modules (no Shiny; app/modules and libs). Unit and property tests, no browser needed"
 						},
 						{
 							"_type": "FCProcess",
@@ -30423,7 +30476,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "BUILT: recipe_graph (libs/utils/src/utils/recipe_graph.py): one graph of the recipe; the places, the lineage data and the audit copy ask it"
+							"name": "BUILT: recipe_graph, one graph of the recipe",
+							"documentation": "Original box text:\nBUILT: recipe_graph (libs/utils/src/utils/recipe_graph.py): one graph of the recipe; the places, the lineage data and the audit copy ask it"
 						},
 						{
 							"_type": "FCProcess",
@@ -30431,7 +30485,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "NOT BUILT, NOT confirmed (draft of 2026-11-15): audit_events, an append-only event log. Decided, not built: the audit log of added and removed steps kept in the session (D-0315)"
+							"name": "NOT BUILT, not confirmed: audit_events",
+							"documentation": "Original box text:\nNOT BUILT, NOT confirmed (draft of 2026-11-15): audit_events, an append-only event log. Decided, not built: the audit log of added and removed steps kept in the session (D-0315)"
 						},
 						{
 							"_type": "FCProcess",
@@ -30439,7 +30494,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "NOT BUILT as drawn. Built instead: audit_copy (libs/utils/src/utils/audit_copy.py) writes a step as a plain step of a tier of a copy of the recipe; audit_places and audit_view (app/modules) choose the places and read the audit copy; audit_run runs the copy"
+							"name": "NOT BUILT as drawn: audit_copy built instead",
+							"documentation": "Original box text:\nNOT BUILT as drawn. Built instead: audit_copy (libs/utils/src/utils/audit_copy.py) writes a step as a plain step of a tier of a copy of the recipe; audit_places and audit_view (app/modules) choose the places and read the audit copy; audit_run runs the copy"
 						},
 						{
 							"_type": "FCProcess",
@@ -30447,7 +30503,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "NOT BUILT: audit_guard_rails, a registry of checks. Three levels (info, warning, block) and a first list of checks are decided (D-0026); see HOME-AUDIT-GUARDRAILS"
+							"name": "NOT BUILT: audit_guard_rails, checks registry",
+							"documentation": "Original box text:\nNOT BUILT: audit_guard_rails, a registry of checks. Three levels (info, warning, block) and a first list of checks are decided (D-0026); see HOME-AUDIT-GUARDRAILS"
 						},
 						{
 							"_type": "FCProcess",
@@ -30455,7 +30512,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "NOT BUILT, NOT confirmed (draft of 2026-11-15): audit_policy, thresholds and reason categories as configuration"
+							"name": "NOT BUILT, not confirmed: audit_policy",
+							"documentation": "Original box text:\nNOT BUILT, NOT confirmed (draft of 2026-11-15): audit_policy, thresholds and reason categories as configuration"
 						},
 						{
 							"_type": "FCProcess",
@@ -30463,7 +30521,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "BUILT, PROVISIONAL (different from the draft): the audit copy is run by audit_run (app/modules/audit_run.py) with its own stored tables in a folder of its own; see HOME-AUDIT-CACHE"
+							"name": "BUILT, PROV.: audit copy run by audit_run",
+							"documentation": "Original box text:\nBUILT, PROVISIONAL (different from the draft): the audit copy is run by audit_run (app/modules/audit_run.py) with its own stored tables in a folder of its own; see HOME-AUDIT-CACHE"
 						},
 						{
 							"_type": "FCProcess",
@@ -30471,7 +30530,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "LAYER: existing engine (unchanged except for the filter fixes)"
+							"name": "LAYER: existing engine (filter fixes only)",
+							"documentation": "Original box text:\nLAYER: existing engine (unchanged except for the filter fixes)"
 						},
 						{
 							"_type": "FCProcess",
@@ -30479,7 +30539,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "Orchestrator and cache (originals) | shared filter implementation (#62, #63) | transformer actions | blueprint_arch lineage code and t3_translator (extended) | VizFactory"
+							"name": "Orchestrator, cache, actions, VizFactory",
+							"documentation": "Original box text:\nOrchestrator and cache (originals) | shared filter implementation (#62, #63) | transformer actions | blueprint_arch lineage code and t3_translator (extended) | VizFactory"
 						},
 						{
 							"_type": "FCProcess",
@@ -30487,7 +30548,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "TESTS: property tests (hypothesis): audit with no steps = original, idempotent, undo restores the hash, originals never written, trial = apply, exported recipe re-run = audit data, independent reference on frames with nulls, NaN, whitespace, case"
+							"name": "TESTS: property tests (hypothesis)",
+							"documentation": "Original box text:\nTESTS: property tests (hypothesis): audit with no steps = original, idempotent, undo restores the hash, originals never written, trial = apply, exported recipe re-run = audit data, independent reference on frames with nulls, NaN, whitespace, case"
 						},
 						{
 							"_type": "FCProcess",
@@ -30495,7 +30557,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "NOT CHANGED: Blueprint, Gallery, Test Lab. HOME has its own lineage map renderer; it only reads data from blueprint_arch (cross-panel rule respected)"
+							"name": "NOT CHANGED: Blueprint, Gallery, Test Lab",
+							"documentation": "Original box text:\nNOT CHANGED: Blueprint, Gallery, Test Lab. HOME has its own lineage map renderer; it only reads data from blueprint_arch (cross-panel rule respected)"
 						}
 					]
 				},
@@ -36473,7 +36536,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "data_analysis_recipe.yaml: a standard recipe of format 1. One group, one plot. The plot entry holds ui_label (the name of the example, D-0387), the taxonomy (five typed axes) and the layers",
+					"name": "data_analysis_recipe.yaml: recipe format 1",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36515,6 +36578,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\ndata_analysis_recipe.yaml: a standard recipe of format 1. One group, one plot. The plot entry holds ui_label (the name of the example, D-0387), the taxonomy (five typed axes) and the layers",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36602,7 +36666,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "example_meta.md: the guidance text, with a tag strip written from the taxonomy",
+					"name": "example_meta.md: guidance text, tag strip",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36631,6 +36695,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\nexample_meta.md: the guidance text, with a tag strip written from the taxonomy",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36660,7 +36725,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "preview_plot.png: the stored picture; the viewer never draws a plot",
+					"name": "preview_plot.png: the stored picture",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36702,6 +36767,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\npreview_plot.png: the stored picture; the viewer never draws a plot",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36731,7 +36797,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "preview_thumb.png: the small picture; its presence is recorded in the index",
+					"name": "preview_thumb.png: the small picture",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36747,6 +36813,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\npreview_thumb.png: the small picture; its presence is recorded in the index",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36776,7 +36843,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "geom: derived, never typed. It is the first geom_* or stat_* layer of the plot",
+					"name": "geom: derived, never typed",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36792,6 +36859,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\ngeom: derived, never typed. It is the first geom_* or stat_* layer of the plot",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36821,7 +36889,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "The check, profile gallery: one group and one plot (GP01), taxonomy axes and terms (GP02, GP03), id equals folder name (GP04), companion files exist (GP05), data is example_data.tsv (GP06)",
+					"name": "The check, profile gallery (GP01 to GP06)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36837,6 +36905,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\nThe check, profile gallery: one group and one plot (GP01), taxonomy axes and terms (GP02, GP03), id equals folder name (GP04), companion files exist (GP05), data is example_data.tsv (GP06)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36866,7 +36935,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "Repeat check: an example whose name or plot id is already taken is left out, the first in folder order is kept",
+					"name": "Repeat check: a taken name or id is left out",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36882,6 +36951,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\nRepeat check: an example whose name or plot id is already taken is left out, the first in folder order is kept",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36911,7 +36981,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "gallery_index.json: the registry (name, path, picture flags, taxonomy) and the pivot of the six axes; the rejected examples with their reasons",
+					"name": "gallery_index.json: registry, pivot, rejected",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36927,6 +36997,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\ngallery_index.json: the registry (name, path, picture flags, taxonomy) and the pivot of the six axes; the rejected examples with their reasons",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -36966,7 +37037,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "Check at app start (only with gallery_enabled): the same check, the index is rewritten on any difference",
+					"name": "Check at app start (gallery_enabled only)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36982,6 +37053,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\nCheck at app start (only with gallery_enabled): the same check, the index is rewritten on any difference",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -37021,7 +37093,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "refresh_gallery.py: check by hand; --apply writes the index",
+					"name": "refresh_gallery.py: check; --apply writes",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -37037,6 +37109,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\nrefresh_gallery.py: check by hand; --apply writes the index",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -37066,7 +37139,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "gallery_previews.py: draws each example through the app path and compares with the stored picture; --apply writes it",
+					"name": "gallery_previews.py: draws, compares pictures",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -37082,6 +37155,7 @@
 							}
 						}
 					],
+					"documentation": "Original box text:\ngallery_previews.py: draws each example through the app path and compares with the stored picture; --apply writes it",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -37111,7 +37185,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "The screen: dropdown and six filter groups read the index; the notice lists the left-out examples",
+					"name": "The screen: dropdown and six filter groups",
+					"documentation": "Original box text:\nThe screen: dropdown and six filter groups read the index; the notice lists the left-out examples",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -37141,7 +37216,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "Plot Preview shows the picture; Data Sample reads the TSV; YAML Example shows the recipe text; Guidance shows the markdown",
+					"name": "Four tabs: Plot Preview, Data, YAML, Guidance",
+					"documentation": "Original box text:\nPlot Preview shows the picture; Data Sample reads the TSV; YAML Example shows the recipe text; Guidance shows the markdown",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -37221,10 +37297,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 82.5,
-									"top": 720,
+									"left": 83,
+									"top": 760,
 									"width": 240,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7nxI9Wjuw="
 									}
@@ -37293,10 +37369,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 657.5,
-									"top": 720,
+									"left": 658,
+									"top": 760,
 									"width": 240,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7oTo9yw0Y="
 									}
@@ -37329,10 +37405,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 927.5,
-									"top": 720,
+									"left": 928,
+									"top": 760,
 									"width": 240,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7omo+A9HM="
 									}
@@ -37366,9 +37442,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 360,
+									"top": 400,
 									"width": 240,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7o/I+OWsA="
 									}
@@ -37402,9 +37478,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 165,
-									"top": 550,
+									"top": 585,
 									"width": 240,
-									"height": 110,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7pS4+c6NA="
 									}
@@ -37438,9 +37514,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 810,
-									"top": 545,
+									"top": 585,
 									"width": 500,
-									"height": 120,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7poY+qm1U="
 									}
@@ -37474,9 +37550,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 940,
-									"top": 370,
+									"top": 400,
 									"width": 240,
-									"height": 110,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7qNI+47Gc="
 									}
@@ -37509,10 +37585,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 72.5,
-									"top": 190,
+									"left": 73,
+									"top": 225,
 									"width": 300,
-									"height": 120,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7qxY/GRoY="
 									}
@@ -37545,10 +37621,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 1197.5,
-									"top": 725,
+									"left": 1198,
+									"top": 760,
 									"width": 240,
-									"height": 120,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7rh4/Xwc8="
 									}
@@ -37581,10 +37657,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 1467.5,
-									"top": 725,
+									"left": 1468,
+									"top": 760,
 									"width": 220,
-									"height": 120,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7sMI/oatU="
 									}
@@ -37617,10 +37693,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 927.5,
-									"top": 900,
+									"left": 928,
+									"top": 940,
 									"width": 240,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7su4/2Lnc="
 									}
@@ -37653,10 +37729,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 102.5,
-									"top": 20,
+									"left": 103,
+									"top": 55,
 									"width": 240,
-									"height": 120,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7tRpAElKw="
 									}
@@ -37690,9 +37766,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 435,
-									"top": 540,
+									"top": 580,
 									"width": 300,
-									"height": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q7t1pAS5jw="
 									}
@@ -109986,9 +110062,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
-									"top": 140,
+									"top": 195,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5GwncyPr0="
 									}
@@ -110026,9 +110102,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 140,
+									"top": 195,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5HBXdA2AM="
 									}
@@ -110066,9 +110142,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 140,
+									"top": 195,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5HTXdOKy4="
 									}
@@ -110106,9 +110182,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 60,
-									"top": 330,
+									"top": 385,
 									"width": 360,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5Hn3dcy2E="
 									}
@@ -110146,9 +110222,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
-									"top": 330,
+									"top": 385,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5H5XdqNzQ="
 									}
@@ -110186,9 +110262,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 330,
+									"top": 385,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5INXd4uCM="
 									}
@@ -110226,9 +110302,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 330,
+									"top": 385,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5IjHeGMjA="
 									}
@@ -110266,9 +110342,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 60,
-									"top": 520,
+									"top": 575,
 									"width": 360,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5JHHeUcWo="
 									}
@@ -110306,9 +110382,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
-									"top": 520,
+									"top": 575,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5JpHeis5g="
 									}
@@ -110346,9 +110422,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 520,
+									"top": 575,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5KNXewpGs="
 									}
@@ -110386,9 +110462,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 520,
+									"top": 575,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5Kyne+Q/8="
 									}
@@ -110506,9 +110582,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 710,
+									"top": 765,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5Mu3fopVA="
 									}
@@ -110546,9 +110622,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 710,
+									"top": 765,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5NS3f2/bI="
 									}
@@ -110626,9 +110702,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
-									"top": 900,
+									"top": 955,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5OyHgSWQU="
 									}
@@ -110666,9 +110742,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 900,
+									"top": 955,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5P83gghYs="
 									}
@@ -110706,9 +110782,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 900,
+									"top": 955,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5Q2ngu2Rk="
 									}
@@ -110746,9 +110822,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 60,
-									"top": 1090,
+									"top": 1145,
 									"width": 360,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5R3Xg8HkU="
 									}
@@ -110786,9 +110862,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
-									"top": 1090,
+									"top": 1145,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5SrHhK/kM="
 									}
@@ -110826,9 +110902,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1020,
-									"top": 1090,
+									"top": 1145,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5TsnhY/Cs="
 									}
@@ -110866,9 +110942,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 1540,
-									"top": 1090,
+									"top": 1145,
 									"width": 440,
-									"height": 150,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5UmXhmhFs="
 									}
@@ -110902,9 +110978,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 60,
-									"top": 1290,
+									"top": 1310,
 									"width": 1920,
-									"height": 80,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGh0G5WNnh0oHw="
 									}
@@ -111818,7 +111894,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "sha256 of every data file once per session (the only costly read), sha256 of the recipe files (small), E; then D, R, the parts and the expected key of every node that is read",
+							"name": "sha256 of data and recipe files; E, D, R",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111833,7 +111909,8 @@
 										"$ref": "AAAAAAGh0G5HBXc9zIQ="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nsha256 of every data file once per session (the only costly read), sha256 of the recipe files (small), E; then D, R, the parts and the expected key of every node that is read"
 						},
 						{
 							"_type": "FCProcess",
@@ -111841,7 +111918,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "stored key in the file = expected key? If not: rebuild that node and the nodes after it, and remove the stale file at once",
+							"name": "stored key = expected key? else rebuild",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111856,7 +111933,8 @@
 										"$ref": "AAAAAAGh0G5HTXdLmNY="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nstored key in the file = expected key? If not: rebuild that node and the nodes after it, and remove the stale file at once"
 						},
 						{
 							"_type": "FCProcess",
@@ -111864,7 +111942,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "the keys of the open view are kept in memory (the view's keys)"
+							"name": "the keys of the open view are kept in memory",
+							"documentation": "Original box text:\nthe keys of the open view are kept in memory (the view's keys)"
 						},
 						{
 							"_type": "FCTerminator",
@@ -111872,7 +111951,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "2  The recipe or the data changes while the app is open",
+							"name": "2  The recipe or the data changes while open",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111887,7 +111966,8 @@
 										"$ref": "AAAAAAGh0G5H5XdnXnI="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\n2  The recipe or the data changes while the app is open"
 						},
 						{
 							"_type": "FCProcess",
@@ -111895,7 +111975,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "sha256 of the changed recipe files (content, not size and time); D again only if the data changed",
+							"name": "sha256 of the changed recipe files",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111910,7 +111990,8 @@
 										"$ref": "AAAAAAGh0G5INXd18R0="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nsha256 of the changed recipe files (content, not size and time); D again only if the data changed"
 						},
 						{
 							"_type": "FCProcess",
@@ -111918,7 +111999,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "R, D, E against the view's: different means a notice to reload (F5); an export is refused",
+							"name": "R, D, E against the view's: notice to reload",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111933,7 +112014,8 @@
 										"$ref": "AAAAAAGh0G5IjHeDJBE="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nR, D, E against the view's: different means a notice to reload (F5); an export is refused"
 						},
 						{
 							"_type": "FCProcess",
@@ -111941,7 +112023,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "nothing is recorded; the user reloads and a new view has new keys"
+							"name": "nothing is recorded; the user reloads",
+							"documentation": "Original box text:\nnothing is recorded; the user reloads and a new view has new keys"
 						},
 						{
 							"_type": "FCTerminator",
@@ -111949,7 +112032,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "3  Audit: apply, or remove a step (any step; no remove-last, no remove-all, D-0314)",
+							"name": "3  Audit: apply, or remove a step (D-0314)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111964,7 +112047,8 @@
 										"$ref": "AAAAAAGh0G5JpHef3BI="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\n3  Audit: apply, or remove a step (any step; no remove-last, no remove-all, D-0314)"
 						},
 						{
 							"_type": "FCProcess",
@@ -111972,7 +112056,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "the part a of the node's step list; the new keys of the node and of everything after it; counts before and after each step (the attrition); c of T3 only for plots whose keys differ",
+							"name": "new part a, new keys, attrition, c of T3",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -111987,7 +112071,8 @@
 										"$ref": "AAAAAAGh0G5KNHetxoE="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nthe part a of the node's step list; the new keys of the node and of everything after it; counts before and after each step (the attrition); c of T3 only for plots whose keys differ"
 						},
 						{
 							"_type": "FCProcess",
@@ -111995,7 +112080,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "is a stored file with the new key available (undo states)? If not, apply the step to the stored original T1 or T2 and keep the result under the new key",
+							"name": "stored file with the new key available?",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112010,7 +112095,8 @@
 										"$ref": "AAAAAAGh0G5Kyne7b9Q="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nis a stored file with the new key available (undo states)? If not, apply the step to the stored original T1 or T2 and keep the result under the new key"
 						},
 						{
 							"_type": "FCProcess",
@@ -112018,7 +112104,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "the step with its reason, initials and date in the session record and the event log; the keys of the audit nodes"
+							"name": "step, reason, initials, date in the record",
+							"documentation": "Original box text:\nthe step with its reason, initials and date in the session record and the event log; the keys of the audit nodes"
 						},
 						{
 							"_type": "FCTerminator",
@@ -112072,7 +112159,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "R and D of the session = now? If not, a warning that does not block",
+							"name": "R and D of the session = now? Warning only",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112087,7 +112174,8 @@
 										"$ref": "AAAAAAGh0G5NS3fzfV8="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nR and D of the session = now? If not, a warning that does not block"
 						},
 						{
 							"_type": "FCProcess",
@@ -112095,7 +112183,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "steps, event log and keys; a restore recomputes the audit nodes from the stored originals"
+							"name": "steps, event log, keys; restore recomputes",
+							"documentation": "Original box text:\nsteps, event log and keys; a restore recomputes the audit nodes from the stored originals"
 						},
 						{
 							"_type": "FCTerminator",
@@ -112126,7 +112215,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "sha256 of every exported file; c of the exported T3 frames; A, Rec, AR; the keys of the exported nodes",
+							"name": "sha256 of exported files; c of T3; A, Rec, AR",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112141,7 +112230,8 @@
 										"$ref": "AAAAAAGh0G5P83gdABI="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nsha256 of every exported file; c of the exported T3 frames; A, Rec, AR; the keys of the exported nodes"
 						},
 						{
 							"_type": "FCProcess",
@@ -112149,7 +112239,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "R, D, E and the node keys of the view = now? If not, no export: EXPORT_NOT_CREATED.txt says what changed",
+							"name": "R, D, E, node keys = now? else no export",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112164,7 +112254,8 @@
 										"$ref": "AAAAAAGh0G5Q2ngrUcM="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nR, D, E and the node keys of the view = now? If not, no export: EXPORT_NOT_CREATED.txt says what changed"
 						},
 						{
 							"_type": "FCProcess",
@@ -112172,7 +112263,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "effective_run.yaml: E, D, R with file lists, AR, A, Rec, node keys (original and audit), file hashes. Detail: DM-KEYS-EXPORT"
+							"name": "effective_run.yaml: hashes, keys, file hashes",
+							"documentation": "Original box text:\neffective_run.yaml: E, D, R with file lists, AR, A, Rec, node keys (original and audit), file hashes. Detail: DM-KEYS-EXPORT"
 						},
 						{
 							"_type": "FCTerminator",
@@ -112180,7 +112272,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "6  Import a bundle (authorised, gated by the configuration)",
+							"name": "6  Import a bundle (authorised, gated)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112195,7 +112287,8 @@
 										"$ref": "AAAAAAGh0G5SrHhHXsw="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\n6  Import a bundle (authorised, gated by the configuration)"
 						},
 						{
 							"_type": "FCProcess",
@@ -112203,7 +112296,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "D of the bundle's data, R of its recipe, E of this machine, A and AR from the bundle; the attrition snapshot recomputed",
+							"name": "D, R, E, A and AR; attrition recomputed",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112218,7 +112311,8 @@
 										"$ref": "AAAAAAGh0G5TsnhVtWk="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nD of the bundle's data, R of its recipe, E of this machine, A and AR from the bundle; the attrition snapshot recomputed"
 						},
 						{
 							"_type": "FCProcess",
@@ -112226,7 +112320,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "each leg and each part of each node key: match, mismatch or not checked. Never blocks",
+							"name": "each leg and part: match or mismatch",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112241,7 +112335,8 @@
 										"$ref": "AAAAAAGh0G5UmXhj7yU="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\neach leg and each part of each node key: match, mismatch or not checked. Never blocks"
 						},
 						{
 							"_type": "FCProcess",
@@ -112249,7 +112344,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "a new recipe and session, selectable after a reload (ADR-093), never written into the live state; the verification report"
+							"name": "a new recipe and session; report (ADR-093)",
+							"documentation": "Original box text:\na new recipe and session, selectable after a reload (ADR-093), never written into the live state; the verification report"
 						},
 						{
 							"_type": "FCProcess",
@@ -112257,7 +112353,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "Recomputation is decided by the node keys only. R, D and E say whether the project state is the same; they never decide what to rebuild. Detail of the key: DM-KEYS-CHAIN. General picture: DM-KEYS."
+							"name": "Node keys alone decide what to recompute",
+							"documentation": "Original box text:\nRecomputation is decided by the node keys only. R, D and E say whether the project state is the same; they never decide what to rebuild. Detail of the key: DM-KEYS-CHAIN. General picture: DM-KEYS."
 						}
 					]
 				},
