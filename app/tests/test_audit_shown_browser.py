@@ -20,7 +20,7 @@ What a person does and sees, on the demo `1_test_data_ST22_dummy`:
 - Path of the data is open when Audit mode is entered; with nothing shown the band names the open plot's Result data (T3);
 - a choice changes nothing (band, title, preview rows, columns); the chosen place is listed with Show; Show changes all of them, and the column chooser and the filter form hold that table's columns;
 - two places in two graphs: "Show selection" shows the first clicked and the band says "1 other place chosen, not shown"; clicking in the other order shows the other;
-- a table no plot reads says so; a plot node shows its Result data; a click on another plot tab shows that plot and the lineage marks it "shown";
+- a table no plot reads says so; a plot node shows its Result data (there are no plot tabs in Audit mode, slice 3b: `test_audit_one_plot_browser.py`);
 - a staged condition survives showing the same table again and is cleared, with a notice, when another table is shown;
 - a selection that is not the table shown is refused at the Filters panel's "Send to Audit" with "Show your selection first", and nothing opens;
 - leaving Audit mode forgets the shown item; entering it again shows the open plot's table;
@@ -189,8 +189,8 @@ def test_choosing_changes_nothing_and_show_changes_the_preview_the_title_the_cho
     expect(_line(page, "T1:ResFinder")).to_have_class(re.compile(r"\bshown\b"))
     expect(_line(page, "T3:amr_heatmap")).not_to_have_class(re.compile(r"\bshown\b"))
     assert page.locator(f"#lineage_root .spv-lin-dot[data-id='T1:ResFinder']").evaluate("e => e.parentNode.querySelectorAll('.spv-lin-shownmark').length") >= 1
-    # the plot area still shows the open tab's plot
-    expect(page.locator("#plot_group_amr_heatmap")).to_be_visible(timeout=30_000)
+    # slice 3b: a table is not a figure: the plot area says so (the tests of the plot area are in `test_audit_one_plot_browser.py`)
+    expect(page.locator(".spv-audit-plot-area")).to_contain_text("No figure: ResFinder: Table, T1 is a table", timeout=30_000)
 
 
 @NEEDS_AUDIT
@@ -204,9 +204,9 @@ def test_a_table_no_plot_reads_and_a_plot_node_are_shown_with_their_own_words(re
     expect(page.locator("#shown_band_ui")).to_contain_text("Shown: MLST", timeout=30_000)
     assert "Result data, T3" in _band(page)
     expect(page.locator("#home_data_preview_title")).to_contain_text("Result data, T3", timeout=15_000)
-    # the open plot (AMR Heatmap) is not the plot shown: no audit step can be written from here until it is shown again
-    expect(page.locator("#filter_controls_ui")).to_contain_text("show the Result data (T3) of the open plot", timeout=15_000)
-    assert page.locator("#filter_send_to_audit").count() == 0
+    # slice 3b: the plot shown is the open plot (there are no tabs in Audit mode), so a step may be written at it
+    expect(page.locator(".spv-audit-plot-area")).to_contain_text("Plot shown: MLST Bar", timeout=30_000)
+    expect(page.locator("#filter_controls_ui")).not_to_contain_text("show the Result data (T3)", timeout=15_000)
 
 
 @NEEDS_AUDIT
@@ -238,27 +238,6 @@ def test_show_selection_shows_the_first_place_clicked_and_counts_the_others(read
         expect(page.locator("#shown_band_ui")).to_contain_text("1 other place chosen, not shown.")
         expect(_line(page, order[0])).to_have_class(re.compile(r"\bshown\b"))
         expect(_line(page, order[1])).not_to_have_class(re.compile(r"\bshown\b"))
-
-
-@NEEDS_AUDIT
-def test_a_click_on_a_plot_tab_shows_that_plot(ready: Page, tables):
-    page = ready
-    _enter_audit(page)
-    show_place(page, "T1:ResFinder")
-    expect(_line(page, "T1:ResFinder")).to_have_class(re.compile(r"\bshown\b"))
-    # another tab of the same group, then back: the second click is a change of tab, so it shows its plot
-    tabs = page.locator("[id^='subtabs_'] .nav-link")
-    names = [t.inner_text() for t in tabs.all() if t.is_visible()]
-    other = next(n for n in names if "AMR Heatmap" not in n)
-    page.locator("[id^='subtabs_'] .nav-link:visible", has_text=other).first.click()
-    _wait_shiny(page)
-    expect(page.locator("#shown_band_ui")).to_contain_text("Result data, T3", timeout=30_000)
-    assert "AMR Heatmap" not in _band(page).split("\n")[0]
-    page.locator("[id^='subtabs_'] .nav-link:has-text('AMR Heatmap')").first.click()
-    _wait_shiny(page)
-    expect(page.locator("#shown_band_ui")).to_contain_text("Shown: AMR Heatmap: Result data, T3", timeout=30_000)
-    expect(_line(page, "T3:amr_heatmap")).to_have_class(re.compile(r"\bshown\b"))
-    wait_preview_rows(page, tables["amr_heatmap"].height, timeout=60_000)
 
 
 @NEEDS_AUDIT

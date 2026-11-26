@@ -29,7 +29,7 @@ from app.modules.data_analysis_recipe_validator import validate_data_analysis_re
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import dialog_rows_signature, stored_table_identity, value_choices
 from app.tests.audit_nodes import audited_lf
-from app.tests.browser_view import set_mode, set_view, show_place
+from app.tests.browser_view import in_audit_mode, set_mode, set_view, show_place, show_plot
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly, _choose_operator
 from app.tests.test_shiny_smoke import _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
@@ -297,7 +297,10 @@ def _view(page: Page, tier: str) -> None:
     """Show the table of tier T1, T2 or T3 and wait until Shiny is idle; nothing is chosen again after it. In Audit mode (slice 3a) there is no data choice: T3 is the Result data of the open
     plot, and the table `t` of this recipe has no tier-2 steps, so its tier 2 is its tier 1: both are shown as the place `T1:t`."""
     if tier == "T3":
-        set_view(page, "T3")
+        if in_audit_mode(page):
+            show_plot(page, PLOT)      # Audit mode has no plot tabs (slice 3b): the plot's Result data is shown from the lineage
+        else:
+            set_view(page, "T3")
     else:
         show_place(page, "T1:t", keep_chosen=False)
 

@@ -14,7 +14,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_mode, set_view, show_place, wait_preview_rows
+from app.tests.browser_view import set_mode, set_view, show_place, show_plot, wait_preview_rows
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_audit_places_browser import REASON, _amr_plot, _send_filter, _tick, expected  # noqa: F401
 from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _open_filters_panel, _wait_shiny
@@ -73,8 +73,8 @@ def test_the_t1_view_shows_the_audited_table_in_audit_mode_and_the_original_in_e
         if page.locator("[id^='t3_delete_']").count():
             page.locator("[id^='t3_delete_']").first.click()
             _wait_shiny(page)
-            show_place(page, "T3:amr_heatmap", keep_chosen=False)      # the tab is open already (a click on it is no event): the plot's Result data is shown from the lineage
+            show_place(page, "T3:amr_heatmap", keep_chosen=False)      # the plot's Result data is shown from the lineage (Audit mode has no plot tabs)
             wait_preview_rows(page, before, timeout=60_000)
     show_place(page, "T1:ResFinder")
     expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
-    set_view(page, "T3")
+    show_plot(page, "amr_heatmap")

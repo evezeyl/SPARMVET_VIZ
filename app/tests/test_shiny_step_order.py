@@ -39,7 +39,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
-from app.tests.browser_view import set_mode, set_view, show_place, wait_preview_rows
+from app.tests.browser_view import set_mode, set_view, show_place, show_plot, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -388,12 +388,12 @@ def test_the_dialog_of_another_plot_is_not_emptied_by_a_drop_on_this_one(page: P
         const record = () => window.__dialogStates.push([...document.querySelectorAll('#fb_col option')].map(o => o.value).join(','));
         new MutationObserver(record).observe(document.body, {childList: true, subtree: true});
     }""")
-    page.locator(".nav-link:has-text('per score')").first.click()
+    show_plot(page, OTHER_PLOT)                                       # Audit mode has no plot tabs (slice 3b): the plot is shown from "Path of the data"
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
     _wait_shiny(page, 30_000)
     states = page.evaluate("() => window.__dialogStates")
     assert states and states[-1] == f"sample_id,year,score,{MARKER}", states
     assert "" not in states, f"the dialog was empty for a moment: {states}"
     # and back: plot A still has the drop
-    page.locator(".nav-link:has-text('per year')").first.click()
+    show_plot(page, PLOT)
     page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)

@@ -24,7 +24,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_mode, set_view
+from app.tests.browser_view import in_audit_mode, set_mode, set_view, show_plot
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _choose_fb_op, _load_data_analysis_recipe, _open_filters_panel, _wait_shiny)
@@ -203,6 +203,10 @@ def test_around_my_selection_keeps_fewer_dots_and_whole_recipe_brings_them_back(
 
 
 def _amr_plot(page: Page) -> None:
+    """The AMR Heatmap plot: its tab in Exploration; in Audit mode there are no plot tabs (slice 3b), it is shown from the lineage."""
+    if in_audit_mode(page):
+        show_plot(page, "amr_heatmap")
+        return
     page.locator(".nav-link:has-text('AMR')").first.click()
     _wait_shiny(page)
     page.locator("[id^='subtabs_'] .nav-link:has-text('AMR Heatmap')").first.click()
@@ -295,8 +299,7 @@ def test_a_step_at_a_result_table_no_plot_reads(ready: Page):
     expect(page.locator(NOTICE)).to_contain_text("No plot is built from Table Quality_metrics (tier 1): no figure changes", timeout=15_000)
     expect(_line(page, "T1:Quality_metrics").locator(".spv-lin-mark")).to_contain_text("audit step")
     # the step shows in the audit panel of another plot too, and its bin removes it and its mark
-    page.locator(".nav-link:has-text('Quality Control')").first.click()
-    _wait_shiny(page)
+    show_plot(page, "qc_reads_horizontal_barplot")
     expect(page.locator("[id^='t3_delete_']")).to_have_count(1, timeout=15_000)
     page.locator("[id^='t3_delete_']").first.click()
     _wait_shiny(page)

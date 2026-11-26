@@ -176,7 +176,7 @@ def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Pag
         assert snap["right_text"] == "" and not snap["apply_shown"], f"the right panel shows nothing of the previous recipe during the opening: {snap}"
         assert snap["left_old"] == [], f"the left panel bodies of the previous recipe are hidden: {snap}"
         assert snap["selector_shown"], snap   # the recipe selector stays (PROVISIONAL)
-        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
+        page.wait_for_selector(".spv-audit-plot-area", timeout=240_000)   # Audit mode has no group tabs (slice 3b): the plot area is what the opening brings back
         wait_shiny(page, 120_000)
         expect(page.locator("#home_opening_cover")).to_have_count(0)
         expect(page.locator("#btn_apply")).to_be_visible()   # after: back

@@ -93,9 +93,11 @@ def test_compare_is_one_switch_above_the_plots_in_audit_mode_only(page: Page, sh
         assert page.locator("input#audit_compare").count() == 1, "one switch for the whole plot area, not one per plot"
         expect(page.locator(".spv-compare-line")).to_contain_text("Compare with the original")
         assert page.locator("body").inner_text().count("Audit steps apply to the plot's table") == 0
-        line, tabs = page.locator(".spv-compare-line").bounding_box(), page.locator("#home_groups_nav").bounding_box()
-        assert line["x"] < tabs["x"] + 120, "left-aligned: it stays under the pointer when the right panel opens"
-        assert line["y"] + line["height"] <= tabs["y"] + 1, "the switch is above the group tabs"
+        # slice 3b: Audit mode has no group tabs; the switch is above the one plot area
+        line, area = page.locator(".spv-compare-line").bounding_box(), page.locator(".spv-audit-plot-area").bounding_box()
+        assert line["x"] < area["x"] + 120, "left-aligned: it stays under the pointer when the right panel opens"
+        assert line["y"] + line["height"] <= area["y"] + 1, "the switch is above the plot area"
+        expect(page.locator("#home_groups_nav")).to_have_count(0)
         set_compare(page, True)
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=20_000)
         body = page.locator("body")
