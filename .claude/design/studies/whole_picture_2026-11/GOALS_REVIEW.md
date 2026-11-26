@@ -112,7 +112,7 @@ For each goal: the conditions that must be true, whether the design as decided m
 
 **E3. Every recipe.** A measured effect works on any recipe; a rule read from the recipe works only where the rule holds. Decided: **partly**.
 
-**E4. The author and the user.** The author is helped to make a well-made recipe (key declared; one column name for one meaning), and BLUEPRINT never damages one. Decided: **yes** (D-0495, D-0498, D-0500). Today: **no**: BLUEPRINT drops parameters on Apply and loses comments on Save (`.claude/outdated/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, main tree) [inventory].
+**E4. The author and the user.** The author is helped to make a well-made recipe (key declared; one column name for one meaning), and BLUEPRINT never damages one. Decided: **yes** (D-0495, D-0498, D-0500). Today: **no**: BLUEPRINT drops parameters on Apply and loses comments on Save (`.claude/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, main tree) [inventory].
 
 **E5. The story.** Any table and its stages can be looked at. Decided: **yes** (D-0457, D-0508). Today: **no** (V2, V3 of `PARTS_TABLES.md (removed 2026-11-24 in the cleaning of the studies; see git history)`).
 
@@ -206,7 +206,7 @@ For the user's choice (not for the defence), the lineage shown as a propagation 
 
 ### 4.8 BLUEPRINT and the author (place 3 of D-0529)
 
-- The seven-point check found that BLUEPRINT can damage a recipe silently today: Apply drops a parameter the form does not show; a number becomes text; Save writes with no check and loses the comments; the preview drops a failing step (`.claude/outdated/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, items 1 to 4, main tree) [inventory]. A recipe damaged by its author gives wrong results to every user: this goes against G1 and E4 before any audit.
+- The seven-point check found that BLUEPRINT can damage a recipe silently today: Apply drops a parameter the form does not show; a number becomes text; Save writes with no check and loses the comments; the preview drops a failing step (`.claude/design/studies/scratch_records_2026-11/coordinator/blueprint_verify/REPORT.md` section 2, items 1 to 4, main tree) [inventory]. A recipe damaged by its author gives wrong results to every user: this goes against G1 and E4 before any audit.
 - The coordinator's build plan already moves "a save keeps the comments" and "Save never replaces a recipe by mistake" into its slice 1, after your D-0495 (`BUILD_PLAN.md` of the same folder) [inventory].
 - What the goals add (mine): the advice to declare the entity key (BUILD_PLAN item 5; D-0500); the advice from your words of D-0498; one lineage function shared with HOME's dialog (D-0065; `DIFFERENCES.md (removed 2026-11-24 in the cleaning of the studies; see git history)` A10).
 - When: you put BLUEPRINT after HOME and the Gallery ("we do changes to blueprint and lab after - we focus on home and gallery", D-0271). It is not needed for the demo of HOME and the Gallery; its safety slice is needed before anyone writes recipes with it.
