@@ -8,6 +8,7 @@
 EVE_WORK/
 presentation/
 .claude/conversations/
+.claude/outdated/
 
 # --- Data files (rows of data add no value to AI context) ---
 *.csv
@@ -57,6 +58,11 @@ apikeys.txt
 # --- Agent conversation & session state (ephemeral, no index value) ---
 .claude/logs/sessions/
 .claude/logs/handoffs/archive/
+
+# --- Outdated files (the archive is not the source of truth, 2026-11-26) ---
+# `.claude/outdated/` holds what the cleanup waves moved out of the live tree. Nothing there is current.
+# The manifests under `.claude/outdated/manifests/` may be read when a task names them.
+.claude/outdated/
 
 # --- Large binary / archive files ---
 *.tar.gz

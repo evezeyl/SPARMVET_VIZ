@@ -184,3 +184,6 @@ They cite `design/studies/` as the place where studies live (rule), the three ke
 | Pointer files left at old paths | 30 (plus the README of the kept scratch folder) |
 | Files in `.claude/design/studies/` now | 735 |
 Check: 1 + 8 + 115 + 78 + 657 = 859; 502 + 155 = 657.
+
+## Update of 2026-11-26 (wave 2)
+The kept count of `scratch_records_2026-11` above (502 files) is now 427: wave 2 moved 75 more files to `.claude/outdated/` after the task list was cleaned. See `.claude/outdated/manifests/wave_2_tasks.md`, part C.
