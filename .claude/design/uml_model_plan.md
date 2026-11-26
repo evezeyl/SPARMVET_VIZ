@@ -306,6 +306,8 @@ its sibling handlers (`filter_and_audit_handlers.py`, `audit_stack.py`, `session
 would likely be noisy — most individual inputs were never meant to be drawn. Needs a decision on
 scope (panel-level ids only? nav/accordion structure only?) before building it, so it isn't done.
 
+**Built (2026-11-26):** the names check (section 6b). Every named element that is not a view and not a diagram has a one-line name of at most 45 characters, or the tag `longname` with a reason; `app/tests/test_audit_uml_model.py` has a planted error for each rule.
+
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.
 
 ## 6. Working rules
@@ -314,6 +316,19 @@ It checks names and links. It does not prove that the code runs in the order a s
 - Commit the model file by name after each diagram.
 - Every difference found goes into the findings register. Findings that need work become issues.
 - Tags: `[opus/high]` for this plan and the architecture diagrams, `[sonnet/high]` for the HOME diagrams read from code, `[sonnet/medium]` for the script.
+
+### 6b. The names rule (owner, 2026-11-26)
+
+Why: in StarUML 8.1 a name with a line break spills over the rows below it in the Model Explorer, and a long name overflows its box. The rule, agreed by the owner after the pilot on EXP-MODES (2026-11-26, commit `001276ef`):
+
+- **No line break in any element name, at most 45 characters** (`NAME_MAX_LENGTH` in `assets/scripts/audit_uml_model.py`). The short name says what the element is.
+- **The full original text goes into the element's documentation**, under the line "Original box text:" (appended when the documentation already holds text). Nothing is lost.
+- A ledger number or a file name stays in the name when it is the point of the element.
+- **Boxes are resized** to the short text (centre and reading order kept; no re-layout). Changes are made through `app.engine.setProperty`, never by assigning fields.
+- **Exception:** an element whose long name is the point of it carries the tag `longname` with a short reason as its value (today: the four pytest identifiers in REQ-CORE, reason `test identifier`). The tag excuses the length only, never a line break; a tag with no reason is a finding.
+- **Wireframes:** the panels and texts of the UI-* diagrams are descriptions of the screen (what a panel holds, which flag gates it), not texts the screen shows, so they follow the rule and need no exception. If a wireframe box ever stands for a real text of the screen that must stay long, it takes the tag `longname` with the reason `screen text`.
+- **Check:** `audit_uml_model.py` fails on a name with a line break, on a name over the limit without the tag, and on a tag without a reason; it names the element id, its type, its length, its owner chain and the diagram that shows it.
+- Dated: 2026-11-26 pilot on EXP-MODES; 2026-11-26 the rest of the model (433 names over 45 characters and 50 with a line break before, 4 tagged and 0 after).
 
 ### 6a. Embedding a diagram in the Quarto book (ADR-096, 2026-11-08)
 
