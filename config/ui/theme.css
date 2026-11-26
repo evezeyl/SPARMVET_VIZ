@@ -1346,7 +1346,8 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 /* the open mode is told in text as well as in colour: a tick before the word */
 .spv-mode-row label.radio-inline:has(input:checked) > span::before { content: "\2713\00a0"; }
 .spv-mode-row label.radio-inline:focus-within { outline: 2px solid #1a1a1a; outline-offset: -2px; }
-.spv-mode-caption { display: block; margin-top: 2px; font-size: 0.75rem; }
-.spv-compare-line { display: flex; align-items: center; justify-content: flex-end; margin: 0 0 6px 0; font-size: 0.8rem; }
+.spv-mode-caption { display: block; margin-top: 2px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* left-aligned on purpose: the right panel opens when the mode becomes Audit (a width transition), and a switch at the right edge moves under a click made at that moment */
+.spv-compare-line { display: flex; align-items: center; justify-content: flex-start; margin: 0 0 6px 0; font-size: 0.8rem; }
 .spv-compare-line .shiny-input-container { margin-bottom: 0 !important; width: auto !important; }
 .spv-compare-panes { gap: 8px; }

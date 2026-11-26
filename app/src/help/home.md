@@ -2,13 +2,13 @@
 
 **Home** is the main analysis theater. Data analysis recipe-defined `analysis_groups` become tabs; each group's plots appear as sub-tabs.
 
-### The header strip
-Up to three rows; the first only when the audit is switched on in your setup.
+### The mode and the header strip
+The **mode** control "Exploration | Audit" sits at the right of the recipe title, in a row of its own; it exists only when the audit is switched on in your setup. Below it the strip has up to two rows ("Table to view", and the list of source tables while Source is chosen).
 
 | Choice | What it does |
 |---|---|
 | **Mode: Exploration** | Look at the data. One plot per plot tab: the **Result**, drawn from the plot's own table. Filters change the table you view and never the plot. Nothing here is saved or exported. |
-| **Mode: Audit** | Create audit steps (filters and column drops with a reason). The plot becomes the **audited plot**: the Result plus your audited steps. A **Compare** switch shows the original plot and the audited plot side by side. |
+| **Mode: Audit** | Create audit steps (filters and column drops with a reason). The plot becomes the **audited plot**: the Result plus your audited steps. The switch **Compare with the original** (above the plots) shows the original plot and the audited plot side by side. |
 
 | Table to view | What the data preview table shows |
 |---|---|

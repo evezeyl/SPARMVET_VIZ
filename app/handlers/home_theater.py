@@ -1350,8 +1350,8 @@ def define_server(input, output, session, *,
             return ui.div(
                 home_title_banner,
                 theater_header,
-                ui.output_ui("lineage_panel_ui"),
                 ui.output_ui("compare_switch_ui"),
+                ui.output_ui("lineage_panel_ui"),
                 groups_nav,
                 data_preview_section,
                 class_="theater-container-main"
@@ -1433,8 +1433,8 @@ def define_server(input, output, session, *,
         return ui.div(
             home_title_banner,
             theater_header,
-            ui.output_ui("lineage_panel_ui"),
             ui.output_ui("compare_switch_ui"),
+            ui.output_ui("lineage_panel_ui"),
             groups_nav,
             data_preview_section,
             class_="theater-container-main"
@@ -1531,12 +1531,13 @@ def define_server(input, output, session, *,
             text = "Audit: your steps change the plot and the export, and are saved with the session."
         else:
             text = "Exploration: look at the data. Filters change the table you view, never a plot. Nothing here is saved."
-        return ui.tags.small(text, class_="text-muted spv-mode-caption")
+        return ui.tags.small(text, class_="text-muted spv-mode-caption", title=text)
 
     @output
     @render.ui
     def compare_switch_ui():
-        """The Compare switch, ONE for the whole plot area (a line above the group tabs, shared by all plots): only in Audit mode and with
+        """The Compare switch, ONE for the whole plot area (a line above the group tabs, shared by all plots; above the lineage panel too, because that panel draws
+        a moment after the mode changes and would push a switch below it down while the user is clicking it): only in Audit mode and with
         `comparison_mode_enabled`; absent otherwise, never greyed. It is not in the per-plot cell: each cell reads the compare value, and one input
         id would be mounted once per plot (R4). The value is read isolated, so the switch does not redraw itself."""
         if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled")):
