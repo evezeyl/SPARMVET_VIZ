@@ -13,7 +13,7 @@ S4 `selection_problem` never refuses; S5 `view_change_notice` ignores the column
 import pytest
 
 from app.modules.audit_place_view import AUDIT, ORIGINAL, AUDITED, TableFacts, view_identity, viewed
-from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, first_plot_node, others_chosen, request_to_show, selection_problem, shown_node_of_tab)
+from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, others_chosen, request_to_show, selection_problem, shown_node_of_tab)
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.lineage_view import line_text
 from app.modules.t3_audit_engine import view_change_notice
@@ -111,10 +111,8 @@ def test_a_selection_without_the_place_shown_is_refused_with_show_your_selection
     assert "Show your selection first" in SHOW_SELECTION_FIRST
 
 
-def test_a_click_on_a_plot_tab_shows_that_plot_node_and_a_restored_session_the_first_plot(world):
+def test_a_click_on_a_plot_tab_shows_that_plot_node():
     assert shown_node_of_tab("amr_heatmap") == "T3:amr_heatmap" and shown_node_of_tab(None) is None and shown_node_of_tab("") is None
-    first = world.graph.plots()[0]
-    assert first_plot_node(world.graph) == f"T3:{first}"
 
 
 # -- the condition belongs to the table shown (key + notice) -------------------------------------------------------

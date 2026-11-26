@@ -12,15 +12,15 @@ This module holds the small decisions around that, so that they can be tested wi
 - `others_chosen(chosen, shown_place)`: how many chosen places are not the one shown (the band says "N other places chosen, not shown").
 - `band_lines(...)`: the words of the band above the preview.
 - `selection_problem(chosen, shown_place)`: "Show your selection first" when the places chosen do not include the place shown (item 9 of the brief; PROVISIONAL, see the handler for where it is asked).
-- `shown_node_of_tab(plot_id)` and `first_plot_node(graph)`.
+- `shown_node_of_tab(plot_id)`.
 
 PROVISIONAL (the builder's words and choices; the owner reads them): every sentence below; that "Show selection" shows the first place clicked (header-strip question 4 says so; the browser keeps the
-order of the clicks); that a restored session shows the first plot of the recipe (design page, "PROVISIONAL: the first plot of the recipe").
+order of the clicks).
 
 Consumed by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/tests/test_audit_shown.py. If deleted: HOME's Audit mode has no shown item.
 
 # @deps
-# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:shown_node_of_tab, function:first_plot_node, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
+# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:shown_node_of_tab, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
 # consumes: app/modules/audit_place_view.py (viewed, TableFacts), libs/utils/src/utils/lineage_data.py (Lineage), libs/utils/src/utils/recipe_graph.py (RecipeGraph)
 # consumed_by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/tests/test_audit_shown.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0653, D-0654, D-0655, D-0657)
@@ -107,9 +107,3 @@ def selection_problem(chosen: Sequence[str], shown_place: Optional[str]) -> Opti
 def shown_node_of_tab(plot_id: Optional[str]) -> Optional[str]:
     """The node of the plot a tab belongs to: a click on a plot tab shows it (interim, until the tabs go)."""
     return f"T3:{plot_id}" if plot_id else None
-
-
-def first_plot_node(graph: RecipeGraph) -> Optional[str]:
-    """The node of the first plot of the recipe (what a restored session shows first, PROVISIONAL), None when the recipe has no plot."""
-    plots = graph.plots()
-    return f"T3:{plots[0]}" if plots else None

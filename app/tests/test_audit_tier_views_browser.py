@@ -3,7 +3,7 @@
 Run (qa app features): PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_audit_tier_views_browser.py -q
 
 What a person sees on the demo `1_test_data_ST22_dummy`, plot "AMR Heatmap": a filter `identity < 99` written at tier 1 of ResFinder with a reason (Apply), then
-- in Audit mode the T1 view shows the AUDITED table (fewer rows than the original) and its badge says "Viewing: T1, audited";
+- in Audit mode the table shown at T1:ResFinder (chosen in Path of the data and shown, slice 3a) is the AUDITED table (fewer rows than the original) and its badge says "Viewing: T1, audited";
 - a table the step does not change keeps the original: the badge of the MLST plot's T1 view says "Viewing: T1, original" and "no audit step changes this table";
 - switching to Exploration shows the ORIGINAL table again (the original row count) and the old badge;
 - back in Audit mode the audited table is shown again, and removing the step gives the original back in Audit mode too.
@@ -14,7 +14,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_mode, set_view, wait_preview_rows
+from app.tests.browser_view import set_mode, set_view, show_place, wait_preview_rows
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_audit_places_browser import REASON, _amr_plot, _send_filter, _tick, expected  # noqa: F401
 from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _open_filters_panel, _wait_shiny
@@ -50,7 +50,7 @@ def test_the_t1_view_shows_the_audited_table_in_audit_mode_and_the_original_in_e
     _wait_shiny(page)
     try:
         wait_preview_rows(page, after, timeout=60_000)
-        set_view(page, "T1")
+        show_place(page, "T1:ResFinder")      # Audit mode (slice 3a): the table shown is the place chosen in Path of the data and shown, not a data choice
         wait_preview_rows(page, after, timeout=30_000)
         expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, audited", timeout=20_000)
         # Exploration: the originals, whatever steps exist
@@ -58,23 +58,23 @@ def test_the_t1_view_shows_the_audited_table_in_audit_mode_and_the_original_in_e
         set_view(page, "T1")
         wait_preview_rows(page, before, timeout=30_000)
         expect(page.locator("#home_data_preview_badge")).not_to_contain_text("audited")
-        # back in Audit mode: audited again
+        # back in Audit mode: nothing is shown yet, so the plot's Result data; showing the place again gives the audited table
         set_mode(page, "audit")
-        set_view(page, "T1")
+        show_place(page, "T1:ResFinder")
         wait_preview_rows(page, after, timeout=30_000)
-        # a plot beside ResFinder: its T1 view is the original and says so
-        page.locator(".nav-link:has-text('AMR')").first.click()
-        page.locator("[id^='subtabs_'] .nav-link:has-text('MLST Bar')").first.click()
+        # a table beside ResFinder: its T1 view is the original and says so
+        show_place(page, "T1:MLST")
         _wait_shiny(page)
         expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
         expect(page.locator("#home_data_preview_badge")).to_contain_text("no audit step changes this table")
     finally:
         _amr_plot(page)
         set_mode(page, "audit")
-        set_view(page, "T1")
         if page.locator("[id^='t3_delete_']").count():
             page.locator("[id^='t3_delete_']").first.click()
             _wait_shiny(page)
+            show_place(page, "T3:amr_heatmap", keep_chosen=False)      # the tab is open already (a click on it is no event): the plot's Result data is shown from the lineage
             wait_preview_rows(page, before, timeout=60_000)
+    show_place(page, "T1:ResFinder")
     expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
     set_view(page, "T3")

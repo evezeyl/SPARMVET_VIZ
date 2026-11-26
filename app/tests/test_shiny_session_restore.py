@@ -156,6 +156,8 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         _wait_reasons(page, "1 the saved step is in the audit panel", [SAVED_REASON])
         # P-B5 (PROVISIONAL): a restored session that holds audit steps opens Audit mode, where the audited plot those steps were made for is shown
         expect(page.locator("#home_mode input[value=audit]")).to_be_checked(timeout=10_000)
+        # slice 3a (PROVISIONAL): the band says that the restored steps are applied
+        expect(page.locator("#shown_band_ui")).to_contain_text("Restored session: 1 audit step is applied.", timeout=15_000)
 
         # 2. Restore the session that has no save: one notice, nothing restored, the steps of the view are unchanged
         _show_card(page, "restore_once_empty", f"#session_restore_{safe(key_empty)}")

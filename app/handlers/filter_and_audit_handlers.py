@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/audit_shown.py (selection_problem), app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -37,6 +37,7 @@ from app.modules.t3_audit_engine import (
 )
 from app.modules.audit_places import PLACES_BUCKET, choice_problem, line_label, own_place_line, own_plot_place, path_rows, place_lines, place_words, plots_below, reach_sentence
 from app.modules.audit_view import AUDIT_ERRORS
+from app.modules.audit_shown import selection_problem
 from app.modules.lineage_step import stage_nodes
 from utils import key_drop
 from utils.recipe_graph import RecipeGraphError, build_graph
@@ -129,7 +130,8 @@ def define_filter_audit_server(input, output, session, *,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, audit_nodes_for,
                                 _all_plot_subtab_ids, _plot_label, _table_identity,
-                                notification_log=None, recipe_raw=None, recipe_plans=None):
+                                notification_log=None, recipe_raw=None, recipe_plans=None,
+                                audit_write_ok=None, shown_place=None):
     """Register filter UI + T3 audit propagation handlers.
 
     Reactive deps (kwargs) — all shared with home_theater.define_server:
@@ -155,6 +157,10 @@ def define_filter_audit_server(input, output, session, *,
                                     key says which rows it holds (the rows signal is then never equal)
       recipe_raw()               → dict | None — the resolved dictionary of the open recipe, for the rule of a key drop (`utils.key_drop`); None: no drop is refused
       recipe_plans()             → PlanBook | None — the engine's plan book of the open recipe (`app/modules/plan_composer.py`), handed to the same rule
+      audit_write_ok()           → bool — slice 3a: True when the item shown in Audit mode is the Result data (T3) of the plot OPEN (the dialog and the drops write at the open plot);
+                                    without it only the data choice counts
+      shown_place()              → str | None — slice 3a: the place shown in Audit mode (the open plot's node when nothing was shown yet); with the places chosen in the lineage it decides
+                                    the refusal "Show your selection first" (`audit_shown.selection_problem`)
     """
 
     _in_audit = in_audit   # one function for HOME and these handlers: `home_theater._in_audit`
@@ -162,7 +168,17 @@ def define_filter_audit_server(input, output, session, *,
     def _can_write_audit_step() -> bool:
         """An audit step is written at the plot's table: Audit mode while T3 is viewed (P-B3, PROVISIONAL: the existing dialog writes at
         the plot's table only, so "a filter is built on the table of the view shown", D-0178, holds only there)."""
-        return _in_audit() and data_view.get() == "T3"
+        return _in_audit() and data_view.get() == "T3" and (audit_write_ok is None or audit_write_ok())
+
+    def _selection_problem():
+        """Slice 3a (PROVISIONAL, the design page's recommendation (a), D-0655 point 5): a condition is built on the table SHOWN. When places are chosen in the lineage and the place shown is
+        not among them, the entries that send the condition from the Filters panel say "Show your selection first" and send nothing. The lineage's own button ("Create an audit step here...")
+        is the act of writing at the places chosen and is not asked: it checks that the condition fits each place chosen (the dialog's own check)."""
+        if shown_place is None:
+            return None
+        chosen = safe_input(input, "lineage_chosen", [])
+        chosen = [chosen] if isinstance(chosen, str) else [c for c in (chosen or []) if isinstance(c, str)]
+        return selection_problem(chosen, shown_place())
 
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -730,7 +746,8 @@ def define_filter_audit_server(input, output, session, *,
         # Reminders (Eve, 2026-11-06; slice B): in Exploration a filter is a way to understand the data; only what is sent to audit (with a
         # reason) is exported. PROVISIONAL words (the coordinator's; the owner reads them).
         if audit and not can_send:
-            reminder = ui.tags.small("To create an audit step, view T3.", class_="text-warning d-block mt-1 spv-text-xxs")
+            reminder = ui.tags.small("To create an audit step, show the Result data (T3) of the open plot: press Show on its square in Path of the data, or click its tab.",
+                                     class_="text-warning d-block mt-1 spv-text-xxs")
         elif audit:
             reminder = ui.tags.small("Audit: a step you send changes the plot and is exported.", class_="text-warning d-block mt-1 spv-text-xxs")
         else:
@@ -835,6 +852,10 @@ def define_filter_audit_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.filter_send_to_audit)
     def _filter_send_to_audit():
+        problem = _selection_problem()
+        if problem:
+            _notify(problem, type="warning", duration=10)
+            return
         _send_staged_to_audit()
 
     @reactive.Effect
@@ -926,6 +947,10 @@ def define_filter_audit_server(input, output, session, *,
             propagation dialog.
         """
         if home_state is None or not _can_write_audit_step():
+            return
+        problem = _selection_problem()
+        if problem:
+            _notify(problem, type="warning", duration=10)
             return
 
         subtab = active_home_subtab.get()
