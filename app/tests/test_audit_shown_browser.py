@@ -318,7 +318,9 @@ def test_leaving_audit_mode_forgets_the_shown_item_and_entering_it_again_shows_t
 
 @NO_AUDIT
 def test_without_the_audit_there_is_no_band_no_lineage_and_the_data_choice_is_there(page: Page, shiny_app: ShinyAppProc):
-    _load_data_analysis_recipe(page, shiny_app.url, RECIPE)
+    page.goto(shiny_app.url)                       # the recipe is named by SPARMVET_DATA_ANALYSIS_RECIPE (these app features hide the selector)
+    page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=90_000)
+    _wait_shiny(page, 60_000)
     expect(page.locator("#data_view")).to_have_count(1, timeout=30_000)
     assert page.locator("#shown_band_ui").inner_text().strip() == ""
     assert page.locator("#lineage_root").count() == 0 and page.locator("#home_mode").count() == 0 and not in_audit_mode(page)
