@@ -30,14 +30,22 @@ WORDS (the owner, 2026-11-26): the last table is "Result data (T3)"; the table a
 PROVISIONAL (the builder's choices, not decided by the owner): the words returned (plain, for the screen to show or reword); that with several places chosen the FIRST valid one in the order
 given is shown and the others are counted (`others`), not shown (header-strip question 4 asks the owner to confirm "first clicked"); that a chosen place that is not valid is skipped and told
 (`refused`) while the next valid one is shown, and the default is shown when none is valid; that `from_open_plot` is None when no plot is open; that in Exploration the identity keeps
-today's rule (the data choice is in the key, so T1 and T2 of a table with no tier-2 steps are different views, which the contract marks PROVISIONAL); that the identity does not hold whether
-the table shown is audited or original (the columns are the same); that `condition_fits` takes the lineage (which already holds the plan's columns) and not the plan book; that a place
+today's rule (the data choice is in the key, so T1 and T2 of a table with no tier-2 steps are different views, which the contract marks PROVISIONAL); that the identity does not hold the state (original, audited, trial) but, when the caller gives the
+columns of the table shown, a digest of them (a column drop changes the columns); that `condition_fits` takes the lineage (which already holds the plan's columns) and not the plan book; that a place
 whose columns are not known answers "does not fit" with the reason.
 
 Raises: `viewed` raises KeyError for an open plot the recipe does not have (a bug of the caller, as `source_tables_of_plot`); `table_for` raises what the readers raise (an audit step that cannot
 run, a table that cannot be built: HOME shows it in the table's place, never a table of another tier in its stead), and `NothingToShow` only for a fault (a view with no table that is not the nothing-chosen state).
 
 Pure of Shiny and of any engine: no reactive value, no file, no global state.
+
+WHAT THE CALLER (SLICE 3) MUST DO
+- `viewed` needs the graph and the lineage of the OPEN recipe; an open plot that is not in the recipe is a caller bug (KeyError).
+- Pass the effective source table for the Source choice (`source_table`); with none, the value `nothing_chosen` with its note comes back (a plot that reads no source table).
+- Pass `plot_has_own_steps` to `view_identity` for `shown.shown_plot` (the plot whose table is shown), not for the open plot: with no tab open they differ.
+- In Audit mode pass `columns` (the schema of the table shown) to `view_identity`, and `columns` (the table present at the place, in the state the step will meet) to `condition_fits`.
+- The readers must raise for an audit step that cannot run, and the screen shows that error in the table's place: this module never turns an error into another table.
+- Show `TableFacts.words` in the title, and `Viewed.note`, `no_plot_reads` and `from_open_plot` as the design says.
 
 Consumed by: app/tests/test_audit_place_view.py (slice 3 wires it into app/handlers/home_theater.py). If deleted: nothing, until slice 3.
 
@@ -50,6 +58,8 @@ Consumed by: app/tests/test_audit_place_view.py (slice 3 wires it into app/handl
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Tuple
 
@@ -63,6 +73,7 @@ ORIGINAL, AUDITED, TRIAL = "original", "audited", "trial"
 STATE_WORDS = {ORIGINAL: "Original (as read)",
                AUDITED: "Audited: your applied steps",
                TRIAL: "TRIAL: with the step you are trying. Not applied, not saved, not exported."}   # PROVISIONAL words
+NO_SOURCE_NOTE = "This plot reads no source table, so there is no file to show as read."   # PROVISIONAL words
 CHOOSE_A_PLACE = "Choose a place in Path of the data to see a table."
 NO_PLOT_NOTE = "The recipe has no plot, so there is no table to show here. In Audit mode, choose a place in Path of the data."
 EXPLORATION = "exploration"
@@ -180,6 +191,9 @@ def viewed(mode: str, data_view: str, source_table: Optional[str], open_plot: Op
             plot = graph.plots()[0]          # what HOME does today with no tab open: `_resolve_active_spec` takes the first plot of the recipe (home_theater.py:311-316)
         if plot is None:
             return Viewed(EXPLORATION, tier, None, None, None, None, False, None, nothing_chosen=True, note=NO_PLOT_NOTE)
+        if tier == SOURCE and not source_table:
+            # a plot that reads no source table is a normal case (HOME says so in plain words today, `_read_source_lf`): a value, not an exception
+            return Viewed(EXPLORATION, tier, None, None, open_plot, None, False, True if open_plot else None, nothing_chosen=True, note=NO_SOURCE_NOTE)
         table = source_table if tier == SOURCE else graph.plot_target(plot)
         return Viewed(EXPLORATION, tier, table, None, open_plot, plot if tier == "T3" else None, False, True if open_plot else None)
     refused = []
@@ -237,19 +251,34 @@ def table_for(shown: Viewed, readers: Readers) -> Tuple[Any, TableFacts]:
     return original, facts(ORIGINAL, why)
 
 
-def view_identity(shown: Viewed, recipe_id: str, plot_has_own_steps: bool = False) -> tuple:
+def columns_digest(columns: Sequence[Tuple[str, Any]]) -> str:
+    """A stable digest of the names and types of a table's columns (type text as the engine prints it), independent of the order of the columns: the same columns in another order give the same digest."""
+    pairs = sorted((str(name), str(kind)) for name, kind in columns)
+    return hashlib.sha256(json.dumps(pairs).encode("utf-8")).hexdigest()[:16]
+
+
+def view_identity(shown: Viewed, recipe_id: str, plot_has_own_steps: bool = False, columns: Optional[Sequence[Tuple[str, Any]]] = None) -> tuple:
     """The key of the view for the filters (`t3_audit_engine.view_key`, built from what is shown): a filter is built on this table, and when it changes the filters are cleared (D-0311).
 
     It holds the TABLE shown, not the place: two places that show the same table (the tier 3 of two plots that read one table and have no tier-3 steps of their own) give the same key, so a
     filter built on it is kept (D-0505, D-0506); another table, another tier, another mode or the file as read gives another key. `plot_has_own_steps`: whether the recipe writes tier-3 steps for
-    `shown.shown_plot` (`view_badge.has_plot_steps`): such a plot reads a table of its own and keeps its own key. Between T1 and T2 of one table the key differs, also when the table has no tier-2
-    steps (today's rule, PROVISIONAL in the contract); in Audit mode a table without tier-2 steps has no T2 place, so only Exploration can meet it.
+    `shown.shown_plot` (`view_badge.has_plot_steps`), the plot whose table is shown: with no plot tab open that is the plot the view falls back to, NOT the open plot (which is None). Such a plot reads a
+    table of its own and keeps its own key. Between T1 and T2 of one table the key differs, also when the table has no tier-2 steps (today's rule, PROVISIONAL in the contract); in Audit mode a
+    table without tier-2 steps has no T2 place, so only Exploration can meet it.
 
-    The key does NOT hold the state (original, audited or trial): the columns are the same in the three states, so a filter stays valid when the state changes. The caller shows the state in the title
+    THE COLUMNS. `columns` is the names and types of the table SHOWN, as the caller reads them from that table's schema (a sequence of (name, type) pairs). When it is given, the key holds a digest of
+    them (`columns_digest`: sorted, so the order of the columns alone changes nothing), and a change of the shown table's columns or types gives another key, so the filters are cleared: an applied
+    column drop removes a column from the audited table, and a filter row built on that column must not survive. When it is not given, the key is exactly HOME's `view_key` of today. Slice 3 passes
+    `columns` in Audit mode, where the audit steps can change the columns; Exploration shows the original tables and passes nothing, so its key stays equal to HOME's current key.
+
+    The key does NOT hold the state (original, audited or trial) by itself: an applied row filter leaves the columns as they are, so a filter built on the original stays valid when the audited table is
+    shown, and nothing is cleared by the state alone. A step that changes the columns (a column drop) does change them, and then `columns` changes the key. The caller shows the state in the title
     (`TableFacts.words`)."""
     if shown.tier == SOURCE:
-        return view_key(recipe_id, shown.mode, "SRC", shown.table, None)
-    return view_key(recipe_id, shown.mode, shown.tier, None, viewed_table(shown.tier, shown.table, shown.shown_plot, plot_has_own_steps))
+        key = view_key(recipe_id, shown.mode, "SRC", shown.table, None)
+    else:
+        key = view_key(recipe_id, shown.mode, shown.tier, None, viewed_table(shown.tier, shown.table, shown.shown_plot, plot_has_own_steps))
+    return key if columns is None else key + (columns_digest(columns),)
 
 
 def _where(node) -> str:
@@ -258,19 +287,27 @@ def _where(node) -> str:
     return f"the table {node.name} after its tier {node.tier}"
 
 
-def condition_fits(place: str, column: str, dtype: Any, lineage: Lineage) -> Tuple[bool, str]:
-    """Whether a condition built on `column` (of type `dtype`, the text the engine prints or the type itself) fits `place`: the column must be there with the same type (the lineage holds the
-    engine's plan: never guessed from the recipe). Returns (True, "") or (False, one plain sentence): the place is not in the lineage, its columns are not known (the sentence says why), the column is
-    not there, or it has another type (both types named)."""
+def condition_fits(place: str, column: str, dtype: Any, lineage: Lineage, columns: Optional[Sequence[Tuple[str, Any]]] = None) -> Tuple[bool, str]:
+    """Whether a condition built on `column` (of type `dtype`, the text the engine prints or the type itself) fits `place`: the column must be there with the same type.
+
+    `columns` (optional) is the names and types of the table actually present at that place in the state the step will meet (the schema of the audited or tried table, as the caller reads it): when
+    given it decides. Without it the lineage decides, and the lineage holds the engine's plan of the ORIGINAL recipe: a column dropped by an applied or tried audit step still "fits" there. The caller
+    must therefore pass `columns` whenever audit steps exist. Returns (True, "") or (False, one plain sentence): the place is not in the lineage, its columns are not known (the sentence says why), the
+    column is not there, or it has another type (both types named)."""
     try:
         node = lineage.node(place)
     except KeyError:
         return False, f"'{place}' is not a place of the path of the data of this recipe."
-    if node.columns is None:
-        return False, f"The columns of {_where(node)} are not known ({node.columns_note}), so the condition cannot be checked there."
-    found = {name: kind for name, kind in node.columns}
+    if columns is None:
+        if node.columns is None:
+            return False, f"The columns of {_where(node)} are not known ({node.columns_note}), so the condition cannot be checked there."
+        columns = node.columns
+        where = _where(node)
+    else:
+        where = f"{_where(node)} as it is with the steps now applied or tried"
+    found = {str(name): str(kind) for name, kind in columns}
     if column not in found:
-        return False, f"The column {column} is not in {_where(node)}."
+        return False, f"The column {column} is not in {where}."
     if found[column] != str(dtype):
-        return False, f"The column {column} holds {found[column]} in {_where(node)}, not {dtype} as in the table the condition was built on."
+        return False, f"The column {column} holds {found[column]} in {where}, not {dtype} as in the table the condition was built on."
     return True, ""
