@@ -37,7 +37,7 @@ from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
-from app.modules.audit_places import PLACES_BUCKET, place_words, plots_below
+from app.modules.audit_places import PLACES_BUCKET, place_words, place_words_labelled, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -122,6 +122,23 @@ def _reaches_no_plot(node: dict, reach_of: dict) -> bool:
     """True for an audit step written at a table (not a plot) that no plot is built from: the place is known to the graph and its plots list is empty."""
     place = node.get("place") or ""
     return bool(place) and not place.startswith("T3:") and place in reach_of and not reach_of[place]
+
+
+def _place_banner(place: str, reach_of: dict, raw: dict):
+    """The line of every step card that says where the step was written, in plain words, always shown (the owner did not see it for a step on a plot, 2026-11-26): a plot's own
+    tier 3 ("Written at Plot Year Distribution (tier 3)."), or a table ("Written at Table X (tier 1): N plot(s) are built from there." or, with no plot, that no figure changes).
+    The name is the recipe's `ui_label` where there is one. PROVISIONAL words."""
+    if not place:
+        return ui.div("Written at: no place is recorded in this step.", class_="spv-audit-place spv-audit-place-missing")
+    words = place_words_labelled(place, raw)
+    if place.startswith("T3:"):
+        text = f"Written at {words}."
+    elif reach_of.get(place):
+        n = len(reach_of[place])
+        text = f"Written at {words}: {n} plot{'s are' if n != 1 else ' is'} built from there."
+    else:
+        text = (f"Written at {words}: no plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode).")
+    return ui.div(text, class_="spv-audit-place")
 
 
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
@@ -543,13 +560,7 @@ def define_server(input, output, session, *,
             ) if pk_warn else ui.span()
 
             place = node.get("place") or ""
-            # a step at the plot's own tier 3 needs no word of reach (it is this plot's); a step at a table says where and how many plots are built from there
-            place_banner = ui.div(
-                (f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there."
-                 if reach_of.get(place) else
-                 f"Written at {place_words(place)}: no plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode)."),
-                class_="spv-text-xxs text-muted",
-            ) if place and not place.startswith("T3:") else ui.span()
+            place_banner = _place_banner(place, reach_of, active_cfg().raw_config)
 
             id_suffix = _safe_input_suffix(nid)
 

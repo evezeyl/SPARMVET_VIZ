@@ -27,7 +27,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/filter_and_audit_handlers.py (the dialog), app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: the dialog offers no place upstream.
 
 # @deps
-# provides: function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_words_labelled, function:place_lines, function:own_place_line, function:path_rows, class:PathRow, function:reach_sentence, function:line_label, function:choice_problem, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
 # consumed_by: app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -286,6 +286,21 @@ def place_words(place: str) -> str:
     if tier in ("T1", "T2") and name:
         return f"Table {name} (tier {tier[1:]})"
     return f"Plot {name} (tier 3)" if tier == "T3" and name else str(place)
+
+
+def place_words_labelled(place: str, raw: Any) -> str:
+    """The place in plain words with the name the recipe gives it (`ui_label`) where there is one: `T3:year_distribution` is "Plot Year Distribution (tier 3)", a table
+    "Table AMR Profile Joint (tier 1)". A place with no `ui_label`, or a recipe that cannot be read, gives the words of `place_words` (the ids). PROVISIONAL words (the owner's remark of
+    2026-11-26: the audit card must say where a step was written)."""
+    tier, _, name = (place or "").partition(":")
+    if not name or tier not in ("T1", "T2", "T3") or not isinstance(raw, dict):
+        return place_words(place)
+    try:
+        body = recipe_tiers.plot_entry(raw, name) if tier == "T3" else recipe_tiers.collection_body(raw, name)
+    except (KeyError, TypeError, AttributeError):
+        return place_words(place)
+    label = str(body.get("ui_label") or "").strip() if isinstance(body, dict) else ""
+    return place_words(f"{tier}:{label}") if label else place_words(place)
 
 
 def t3_file_sentence(folder: str, plot_id: str, audited: bool, recipe_steps: bool) -> str:

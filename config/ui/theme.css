@@ -917,6 +917,9 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Audit node inline badges */
 .spv-badge-pending     { font-size: 0.65em; background: #ffc107; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
 .spv-badge-propagation { font-size: 0.65em; background: #eef0fb; color: #345beb; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
+/* Where an audit step was written, on every step card (PROVISIONAL, 2026-11-26): the plot's own tier 3 or a table; always shown, readable size, dark text */
+.spv-audit-place       { font-size: 0.8em; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
+.spv-audit-place-missing { color: #6c757d; font-weight: 400; }
 .spv-badge-pk-warn     { display: block; font-size: 0.72em; color: #856404; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; padding: 2px 6px; margin-top: 2px; }
 
 /* Label strip with uppercase */

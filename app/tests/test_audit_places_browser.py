@@ -155,7 +155,7 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     expect(page.locator("#plot_cell_amr_heatmap, [id^='plot_badge_amr_heatmap']").first).to_be_attached()
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("written at a table this plot is built from", timeout=20_000)
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed")
-    expect(page.locator("#audit_nodes_tier3")).to_contain_text("plot(s) are built from there")
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("plots are built from there")
     # D-0622: in Audit mode the T1 view of ResFinder shows the audited table (the step was written at its tier 1), and its badge says so
     set_view(page, "T1")
     wait_preview_rows(page, rows_after, timeout=30_000)
