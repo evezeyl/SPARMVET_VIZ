@@ -37,7 +37,7 @@ Her rule (ledger `D-0676`, block M710): a task that is not done and still actual
 | G | CANNOT JUDGE (stays) | 28 | 28 |
 | total | | 499 | 393 |
 
-Open tasks at the start: 499. Moved to the archive as done: 62 (verdict A) and the 90 ticked tasks. Removed as superseded: 28. Removed as duplicates: 16. Open at the end: 393 (before the five new tasks added the same evening, REMOVED-APPLIED-STEP-NOT-SAVED, DATA-PATHS-FULL-IN-EXPORT-AND-SESSION, RECIPE-SWITCH-AUDIT-RECIPE, AUDIT-STEPS-SURVIVE-RECIPE-CHANGE and BUNDLE-IMPORT-RELOAD-MESSAGE, which make it 398; the new top block is not a task).
+Open tasks at the start: 499. Moved to the archive as done: 62 (verdict A) and the 90 ticked tasks. Removed as superseded: 28. Removed as duplicates: 16. Open at the end: 393 (before the seven new tasks added the same evening, REMOVED-APPLIED-STEP-NOT-SAVED, DATA-PATHS-FULL-IN-EXPORT-AND-SESSION, RECIPE-SWITCH-AUDIT-RECIPE, AUDIT-STEPS-SURVIVE-RECIPE-CHANGE, BUNDLE-IMPORT-RELOAD-MESSAGE, WHOLE-PICTURE-SOURCES-MOVE-TO-OUTDATED and LINEAGE-SCOPE-STUDY-MOVE-TO-OUTDATED, which make it 400; the new top block is not a task).
 
 ## The tasks, by section of `tasks.md`
 
@@ -678,7 +678,7 @@ The folder `outdated/` (16 files, its README) holds old plan, test, build-brief 
 
 ## Part C: the scratch studies again, with the cleaned task list
 
-Rule (wave 1, applied again to the cleaned list): a group of `.claude/design/studies/scratch_records_2026-11/` stays only while an open task of `.claude/tasks/tasks.md` names its folder or its main page; a group that loses its last such task moves to `.claude/outdated/design/studies/scratch_records_2026-11/` with unchanged content (`git mv`; SHA-256 of all moved files compared before and after: equal). One-line pointers stay at the old path of the files that live files still cite (`.claude/design/decisions_2026-11-14/*`, `.claude/design/home_redesign_intent_and_consequences.md`). A script matched each group's path against the text of the 398 open tasks; it does not judge, task by task, whether the task waits on the group or only cites it as a source (all remaining tasks are of verdict D, E, F or G), so a group may be held by a task that only cites it; that is the safe side.
+Rule (wave 1, applied again to the cleaned list): a group of `.claude/design/studies/scratch_records_2026-11/` stays only while an open task of `.claude/tasks/tasks.md` names its folder or its main page; a group that loses its last such task moves to `.claude/outdated/design/studies/scratch_records_2026-11/` with unchanged content (`git mv`; SHA-256 of all moved files compared before and after: equal). One-line pointers stay at the old path of the files that live files still cite (`.claude/design/decisions_2026-11-14/*`, `.claude/design/home_redesign_intent_and_consequences.md`). A script matched each group's path against the text of the 400 open tasks; it does not judge, task by task, whether the task waits on the group or only cites it as a source (all remaining tasks are of verdict D, E, F or G), so a group may be held by a task that only cites it; that is the safe side.
 
 Totals: 71 groups before (502 files), 61 kept (427 files), 10 moved (75 files). Files in the scratch folder: 533 before, 465 after (the 75 moved, plus 7 new pointer files, plus the 30 pointers of wave 1 and the README, which stay).
 
@@ -763,5 +763,5 @@ Totals: 71 groups before (502 files), 61 kept (427 files), 10 moved (75 files). 
 | `panel/viz_rename` | 5 | VIZ-NOT-ADDABLE-15-1, VIZ-OWN-22-1 | kept |
 | `panel/write_test_at_start` | 2 | DEPLOYMENT-READ-WRITE-STUDY, DEPLOYMENT-STANDARD, WRITE-TEST-AT-START | kept |
 
-The three folders of wave 1 marked KEEP (`whole_picture_2026-11`, `lineage_scope_2026-11`, `staruml_text_practice`) are not part of this check.
+The three folders of wave 1 marked KEEP (`whole_picture_2026-11`, `lineage_scope_2026-11`, `staruml_text_practice`) are not part of this check. By the owner's approval (D-0691) `whole_picture_2026-11/sources/` (115 files) and `lineage_scope_2026-11/` (78 files) move to `.claude/outdated/` once what they describe is built and that build is merged; they are NOT moved now; the tasks WHOLE-PICTURE-SOURCES-MOVE-TO-OUTDATED and LINEAGE-SCOPE-STUDY-MOVE-TO-OUTDATED carry the condition. `.claude/outdated/` is in `.aiignore` since the same day (commit `7321ad6c`).
 
