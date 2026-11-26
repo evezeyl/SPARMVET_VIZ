@@ -22,7 +22,7 @@ from app.modules.id_check_run import id_log_folder, run_id_checks
 from app.modules.id_warning import (READ_IN_APP, ReadStatus, export_sentences, has_warning, log_place_text, mark_read, quiet_line, read_status,
                                     warning_lines)
 from app.modules.orchestrator import DataOrchestrator
-from app.tests.test_id_completion import DEMO, PIPELINES, ROOT, quiet, world
+from app.tests.test_id_completion_in_the_app import DEMO, PIPELINES, ROOT, quiet, world
 from utils.id_completion import added_line_words, starting_meaning
 from utils.id_log import AUTOMATIC, log_path, read_log
 

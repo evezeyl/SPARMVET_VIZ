@@ -14,7 +14,7 @@ PROVISIONAL (D-0613): the form of the block, the marker as a yes/no column, the 
 # doc: .claude/design/studies/whole_picture_2026-11/CAUSE_AND_SOLUTIONS_ZEROS.md
 # @end_deps
 
-Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_id_completion.py -q
+Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_id_completion_in_the_app.py -q
 """
 import contextlib
 import hashlib
