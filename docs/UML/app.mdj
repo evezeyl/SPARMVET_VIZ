@@ -107961,9 +107961,9 @@
 									"fontColor": "#000000",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 320,
+									"left": 313,
 									"top": 560,
-									"width": 260,
+									"width": 274,
 									"height": 64,
 									"nameLabel": {
 										"$ref": "AAAAAAGiFpzrhmTy9bI="
@@ -111368,7 +111368,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGiFpvf+2OnY7w="
 							},
-							"name": "Key of plot data (T3) = key(T2) . [s3] . [a3]",
+							"name": "Key of Result data (T3) = key(T2).[s3].[a3]",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -112239,7 +112239,7 @@
 									}
 								}
 							],
-							"documentation": "BUILT. README.txt and report.qmd list, per table, the tier 1 and tier 2 keys and the key of the plot data (T3) of a plot with its own tier-3 steps (export_handlers.py:1970-1980, 2356-2360); every picture and table file carries R, D and these keys in its metadata (:439-480). These are the ORIGINAL's keys; the keys of the audit tables (a1, a2, a3) are not recorded.",
+							"documentation": "BUILT. README.txt and report.qmd list, per table, the tier 1 and tier 2 keys and the key of the Result data (T3) of a plot with its own tier-3 steps (export_handlers.py:1970-1980, 2356-2360); every picture and table file carries R, D and these keys in its metadata (:439-480). These are the ORIGINAL's keys; the keys of the audit tables (a1, a2, a3) are not recorded.",
 							"tags": [
 								{
 									"_type": "Tag",
