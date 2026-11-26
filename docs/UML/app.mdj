@@ -108981,7 +108981,8 @@
 										"$ref": "AAAAAAGh0G09q3VCk8w="
 									}
 								}
-							]
+							],
+							"documentation": "Superseded for reading by DM-KEYS-HOME-AUDIT (2026-11-26); kept until the owner says. Stale: E is drawn with the plot engine and its version (the plot engine is in no table key, D-0240; E is cache version + polars + transformer + the effective data engine of each tier); the audit parts a1-a3 are drawn as not built (built for the audit copy); A, Rec, AR and c are drawn as decided and available (not built; not in the ledger except the audit recipe hash, D-0333, D-0331); the 'DECIDED (Eve)' box lists points the ledger line D-0025 does not carry (Rec, c, A, AR)."
 						},
 						{
 							"_type": "FCData",
@@ -110204,7 +110205,8 @@
 										"$ref": "AAAAAAGh0G3sk3Yr/Lc="
 									}
 								}
-							]
+							],
+							"documentation": "Superseded for reading by DM-KEYS-HOME-AUDIT (2026-11-26); kept until the owner says. Stale: the audit run is drawn 'TO BUILD' (the audit copy, its keys a1-a3 and its own tables are built: cache_keys.py, audit_run.py); the key letters are an illustration; 'undo or remove a step: the stored file is reused' is only partly true (a table that is the original's again is taken out of the audit folder, audit_run.py:331); the content hash c is drawn as the way to know if a plot is affected (the frames are compared directly, audit_run.py:309-323, no hash)."
 						},
 						{
 							"_type": "FCTerminator",
@@ -112429,7 +112431,8 @@
 										"$ref": "AAAAAAGh0G5duHkb4NQ="
 									}
 								}
-							]
+							],
+							"documentation": "Superseded for reading by DM-KEYS-HOME-AUDIT (2026-11-26); kept until the owner says. Stale: situation 3 (audit) records initials and an event log, and situations 5 and 6 compute and verify c, A, Rec, AR, a per-part check of node keys and the attrition (none built; the audit log is D-0478, not built); the export check compares R, D and the tier 1 keys of the tables in scope, not 'R, D, E and the node keys'."
 						},
 						{
 							"_type": "FCDocument",
@@ -114156,7 +114159,8 @@
 										"$ref": "AAAAAAGh0G6qDnsvoGU="
 									}
 								}
-							]
+							],
+							"documentation": "Superseded for reading by DM-KEYS-HOME-AUDIT (2026-11-26); kept until the owner says. Its status tag says implemented, which is wrong: it draws one sha256 per data file and per recipe file, AR, A, Rec, the series key of every exported node, the content hash c and the attrition as recorded and verified, and none is built (effective_run.yaml records R, D, t3_audit_steps_sha256, the engine fingerprint, git commit, uv.lock hash; the import has four legs, the steps leg always 'not checked'). Its status should be partial or planned."
 						},
 						{
 							"_type": "FCDocument",
@@ -114457,6 +114461,5244 @@
 							},
 							"name": "REPRODUCING: run the audit recipe on the data",
 							"documentation": "Original box text:\nREPRODUCING: someone with the bundle runs the audit recipe on the bundle's data; the node keys must match part by part. Detail of the key: DM-KEYS-CHAIN. When each hash is computed and checked: DM-KEYS-USE. General picture: DM-KEYS."
+						}
+					]
+				},
+				{
+					"_type": "FCFlowchart",
+					"_id": "AAAAAAGiFpvf+2OnY7w=",
+					"_parent": {
+						"$ref": "AAAAAAGht1wgIHFNP6I="
+					},
+					"name": "DM-KEYS-HOME-AUDIT",
+					"ownedElements": [
+						{
+							"_type": "FCFlowchartDiagram",
+							"_id": "AAAAAAGiFpvf+2OoQB4=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "DM-KEYS-HOME-AUDIT Keys and hashes: recipe files to audit export",
+							"documentation": "One diagram of the keys and hashes of HOME and the audit, from the recipe files to the export and import (2026-11-26). Every box says what it is: BUILT (white), DECIDED not built with its ledger number (grey), NOT DECIDED (yellow). Facts read from the code: tmpAI/uml/keys_facts.md. Replaces for reading DM-KEYS, DM-KEYS-CHAIN, DM-KEYS-USE and DM-KEYS-EXPORT, which are kept until the owner says.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n+GeuNGM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								}
+							],
+							"ownedViews": [
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrRmPJhwA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrRmPHp+M="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrRmPKPpI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrRmPJhwA="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 40,
+											"top": 40,
+											"width": 240,
+											"height": 17,
+											"text": "1  Inputs",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 30,
+									"top": 30,
+									"width": 260,
+									"height": 44,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrRmPKPpI="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrUGPbHHg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrUGPZFmI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrUGPcgKY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrUGPbHHg="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 40,
+											"width": 240,
+											"height": 17,
+											"text": "2  Keys of one table",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 30,
+									"width": 260,
+									"height": 44,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrUGPcgKY="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrVGPtUQc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrVGPr/Qg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrVWPul5w=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrVGPtUQc="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 40,
+											"width": 240,
+											"height": 19,
+											"text": "3  Session and stored tables",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 30,
+									"width": 260,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrVWPul5w="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrW2P/aUY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrW2P9F3k="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrXGQAkSY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrW2P/aUY="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 40,
+											"width": 240,
+											"height": 17,
+											"text": "4  Audit",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 30,
+									"width": 260,
+									"height": 44,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrXGQAkSY="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrYmQRyns=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrYmQPrEA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrYmQSNh4=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrYmQRyns="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 40,
+											"width": 240,
+											"height": 17,
+											"text": "5  Export",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 30,
+									"width": 260,
+									"height": 44,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrYmQSNh4="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpzrZ2QjozY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrZ2QhAJ0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrZ2Qkwtk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrZ2QjozY="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 40,
+											"width": 240,
+											"height": 17,
+											"text": "6  Refusal, import, ids",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 30,
+									"width": 260,
+									"height": 44,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrZ2Qkwtk="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGiFpzraWQ1A7M=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzraWQ2ERE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzraWQ1A7M="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 83,
+											"top": 110,
+											"width": 154,
+											"height": 26,
+											"text": "Recipe files (entry file and includes)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 30,
+									"top": 100,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzraWQ2ERE="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGiFpzrcGRLtiE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrcGRMewg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrcGRLtiE="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 83,
+											"top": 202,
+											"width": 154,
+											"height": 13,
+											"text": "Source data files",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 30,
+									"top": 192,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrcGRMewg="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGiFpzrc2RhXAk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrc2RiQEE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrc2RhXAk="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 83,
+											"top": 294,
+											"width": 154,
+											"height": 26,
+											"text": "Engine, cache version 6, tier data engine",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 30,
+									"top": 284,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrc2RiQEE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzrdmR6cSM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrdmR70co=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrdmR6cSM="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 110,
+											"width": 240,
+											"height": 13,
+											"text": "R  recipe file-set hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 100,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrdmR70co="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzreWSQwB4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzreWSRtOs=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzreWSQwB4="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 202,
+											"width": 240,
+											"height": 13,
+											"text": "D  data batch hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 192,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzreWSRtOs="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzrfGSmJKk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrfGSndI8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrfGSmJKk="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 294,
+											"width": 240,
+											"height": 13,
+											"text": "rC definition and dC data of one table",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 284,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrfGSndI8="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzrgGS/09s=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrgGTAJNE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrgGS/09s="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 386,
+											"width": 240,
+											"height": 13,
+											"text": "T1 key = E . rC . dC . [a1]",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 376,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrgGTAJNE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzrg2TYDRQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrg2TZOkE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrg2TYDRQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 478,
+											"width": 240,
+											"height": 13,
+											"text": "T2 key = key(T1) . [s2] . [a2]",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 468,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrg2TZOkE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFpzrhmTxKb4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpzrhmTy9bI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpzrhmTxKb4="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 330,
+											"top": 570,
+											"width": 240,
+											"height": 13,
+											"text": "Plot table key = key(T2) . [s3] . [a3]",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 320,
+									"top": 560,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpzrhmTy9bI="
+									}
+								},
+								{
+									"_type": "FCStoredDataView",
+									"_id": "AAAAAAGiFp0qdWUKXr8=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qdWUI8R0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qdWULTvI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qdWUKXr8="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 652,
+											"top": 740,
+											"width": 176,
+											"height": 26,
+											"text": "Stored table, key in its file footer",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 730,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qdWULTvI="
+									}
+								},
+								{
+									"_type": "FCDecisionView",
+									"_id": "AAAAAAGiFp0qeWUg3WM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qeWUhm6Y=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qeWUg3WM="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 675,
+											"top": 451,
+											"width": 130,
+											"height": 42,
+											"text": "Key in file = key now? (also at opening)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 430,
+									"width": 260,
+									"height": 84,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qeWUhm6Y="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGiFp0qfWU5TSI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qfWU6Lbg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qfWU5TSI="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 560,
+											"width": 240,
+											"height": 13,
+											"text": "No: stale file removed, table rebuilt",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 550,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qfWU6Lbg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qgWVPLpI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qgWVQGmI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qgWVPLpI="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 650,
+											"width": 240,
+											"height": 13,
+											"text": "Last check before a table is stored",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 640,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qgWVQGmI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qhGVlcMQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qhGVjCmQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qhGVmL2o=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qhGVlcMQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 830,
+											"width": 240,
+											"height": 13,
+											"text": "App start: other cache version removed",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 820,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qhGVmL2o="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qiGV7DYA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qiGV8tUg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qiGV7DYA="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 110,
+											"width": 240,
+											"height": 13,
+											"text": "Session key = R[:12] : D[:12]",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 100,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qiGV8tUg="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp0qi2WR/Dc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qi2WSOW0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qi2WR/Dc="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 200,
+											"width": 240,
+											"height": 34,
+											"text": "Session files: R, D, format 5, steps hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 190,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qi2WSOW0="
+									}
+								},
+								{
+									"_type": "FCDecisionView",
+									"_id": "AAAAAAGiFp0qj2WnXSQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qj2WlHL4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qj2WoFHY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qj2WnXSQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 675,
+											"top": 311,
+											"width": 130,
+											"height": 42,
+											"text": "Restore: recipe id, R, D checked",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 290,
+									"width": 260,
+									"height": 84,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qj2WoFHY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qk2W9NuI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qk2W7uTA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qk2W+ogw=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qk2W9NuI="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 110,
+											"width": 240,
+											"height": 13,
+											"text": "Committed audit steps, each at a place",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 100,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qk2W+ogw="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qlmXTXPU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0ql2XUYAc=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qlmXTXPU="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 200,
+											"width": 240,
+											"height": 13,
+											"text": "a1, a2, a3: audit operations only",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 190,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0ql2XUYAc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp0qm2XsOQc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qm2Xt2zQ=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qm2XsOQc="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 290,
+											"width": 240,
+											"height": 13,
+											"text": "Audit copy: recipe in memory, own hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 280,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qm2Xt2zQ="
+									}
+								},
+								{
+									"_type": "FCStoredDataView",
+									"_id": "AAAAAAGiFp0qnmYCJvw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qnmYDpVA=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qnmYCJvw="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 942,
+											"top": 380,
+											"width": 176,
+											"height": 26,
+											"text": "Audit tables: own folder, same key series",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 370,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qnmYDpVA="
+									}
+								},
+								{
+									"_type": "FCDecisionView",
+									"_id": "AAAAAAGiFp0qomYYRlM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qomYWreg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qomYZbZQ=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qomYYRlM="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 965,
+											"top": 481,
+											"width": 130,
+											"height": 42,
+											"text": "Plot affected? Compare content, no hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 460,
+									"width": 260,
+									"height": 84,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qomYZbZQ="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp0qp2Yxd3c=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp0qp2YvrZI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp0qp2YyUvA=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp0qp2Yxd3c="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 490,
+											"width": 240,
+											"height": 34,
+											"text": "Audit recipe file in the export, no hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 480,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp0qp2YyUvA="
+									}
+								},
+								{
+									"_type": "FCDecisionView",
+									"_id": "AAAAAAGiFp14MWZHEJE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14MWZI4h8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14MWZHEJE="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1255,
+											"top": 191,
+											"width": 130,
+											"height": 42,
+											"text": "Export check: R, D, tier 1 keys = view?",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 170,
+									"width": 260,
+									"height": 84,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14MWZI4h8="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGiFp14NmZg+GQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14NmZeoP0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14NmZhbm0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14NmZg+GQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 210,
+											"width": 240,
+											"height": 13,
+											"text": "EXPORT_NOT_CREATED.txt only",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 200,
+									"width": 260,
+									"height": 54,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14NmZhbm0="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp14OWZ27Oo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14OWZ39Gs=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14OWZ27Oo="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 310,
+											"width": 240,
+											"height": 34,
+											"text": "effective_run.yaml: R, D, E, steps hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 300,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14OWZ39Gs="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp14PmaP3Wk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14PmaQbdk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14PmaP3Wk="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 400,
+											"width": 240,
+											"height": 34,
+											"text": "README, report, files: keys of original",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 390,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14PmaQbdk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp14QGalqeQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14QGajG5M="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14QGamjoE=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14QGalqeQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 310,
+											"width": 240,
+											"height": 13,
+											"text": "Import: four legs, never blocks",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 300,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14QGamjoE="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp14Qma+NlQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp14Qma8CGo="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp14Qma/QLY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp14Qma+NlQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 400,
+											"width": 240,
+											"height": 34,
+											"text": "Id log: R and D of each entry (own chain)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 390,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp14Qma/QLY="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp2n2WbUEOw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n2WbS4a8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n2WbVQ+Q=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n2WbUEOw="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 910,
+											"width": 810,
+											"height": 14,
+											"text": "Decided, not built (ledger number)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 900,
+									"width": 830,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n2WbVQ+Q="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp2n3GbmcPM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n3Gbk12s="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n3GbnESk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n3GbmcPM="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#d9d9d9",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 1050,
+											"width": 810,
+											"height": 14,
+											"text": "Not decided (proposed only)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#d9d9d9",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 1040,
+									"width": 830,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n3GbnESk="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp2n3mb472s=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n3mb2Dxc="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n3mb556o=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n3mb472s="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#e3e3e3",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 960,
+											"width": 240,
+											"height": 34,
+											"text": "NOT BUILT D-0333: audit recipe hash, record",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#e3e3e3",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 950,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n3mb556o="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n4WcNh2Q=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n4WcLpPQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n4WcORmw=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n4WcNh2Q="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#e3e3e3",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 960,
+											"width": 240,
+											"height": 26,
+											"text": "NOT BUILT D-0331: edited recipe refused",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#e3e3e3",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 950,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n4WcORmw="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp2n5Wci+gU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n5Wcg0h4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n5WcjZJ4=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n5Wci+gU="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#e3e3e3",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 960,
+											"width": 240,
+											"height": 34,
+											"text": "NOT BUILT D-0478: audit log in every export",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#e3e3e3",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 950,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n5WcjZJ4="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n6Gc3/l0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n52c1MAY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n6Gc4rZw=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n6Gc3/l0="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#e3e3e3",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 960,
+											"width": 240,
+											"height": 26,
+											"text": "NOT BUILT D-0345: decision_hash retired",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#e3e3e3",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 950,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n6Gc4rZw="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n62dM4fY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n6mdKBs0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n62dNaXg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n62dM4fY="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#fff3cd",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 1100,
+											"width": 240,
+											"height": 13,
+											"text": "NOT DECIDED: sha256 of each file",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#fff3cd",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 1090,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n62dNaXg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n7mdh4nY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n7mdfnEM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n7mdil5I=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n7mdh4nY="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#fff3cd",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 910,
+											"top": 1100,
+											"width": 240,
+											"height": 13,
+											"text": "NOT DECIDED: content hash c of a table",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#fff3cd",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 900,
+									"top": 1090,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n7mdil5I="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n8Wd21jQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n8Gd0gSM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n8Wd3AAU=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n8Wd21jQ="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#fff3cd",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1490,
+											"top": 1100,
+											"width": 240,
+											"height": 26,
+											"text": "NOT DECIDED: steps hash A, record hash Rec",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#fff3cd",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1480,
+									"top": 1090,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n8Wd3AAU="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp2n82eL3Yg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n82eJ9mQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n82eMRO0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n82eL3Yg="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#fff3cd",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 620,
+											"top": 1100,
+											"width": 240,
+											"height": 26,
+											"text": "NOT DECIDED: audit table keys in the export",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#fff3cd",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 610,
+									"top": 1090,
+									"width": 260,
+									"height": 64,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n82eMRO0="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFp2n9megeJo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp2n9meeiYY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp2n9mehX6A=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp2n9megeJo="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 40,
+											"top": 910,
+											"width": 240,
+											"height": 84,
+											"text": "Legend: white built, grey and yellow not",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 30,
+									"top": 900,
+									"width": 260,
+									"height": 124,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp2n9mehX6A="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp8/vGvAk+k=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp8/vGvBzII=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp8/vGvAk+k="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1200,
+											"top": 106,
+											"width": 105,
+											"height": 26,
+											"text": "R  recipe file-set hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1190,
+									"top": 96,
+									"width": 125,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp8/vGvBzII="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGiFp8/vWvFVh0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFp8/vWvGYag=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp8/vWvFVh0="
+											},
+											"lineColor": "#555555",
+											"fillColor": "#ffffff",
+											"fontColor": "#000000",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1335,
+											"top": 106,
+											"width": 105,
+											"height": 26,
+											"text": "D  data batch hash",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#555555",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1325,
+									"top": 96,
+									"width": 125,
+									"height": 46,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp8/vWvGYag="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+ePG2x2VI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+ePG2vFSE="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+ePG2yQNo=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+ePG2x2VI="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+ePG2vFSE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 272,
+											"top": 111,
+											"width": 67.2216796875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+ePG2x2VI="
+											},
+											"edgePosition": 1,
+											"text": "hashed into"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrdmR6cSM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzraWQ1A7M="
+									},
+									"lineStyle": 1,
+									"points": "291:132;319:132",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+ePG2yQNo="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+ePm2/WrE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+ePm293KE="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+ePm3AD78=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+ePm2/WrE="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+ePm293KE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 272,
+											"top": 203,
+											"width": 67.2216796875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+ePm2/WrE="
+											},
+											"edgePosition": 1,
+											"text": "hashed into"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzreWSQwB4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrcGRLtiE="
+									},
+									"lineStyle": 1,
+									"points": "291:224;319:224",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+ePm3AD78="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eQG3NYaY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eP23LSOk="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eQG3ORe4=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eQG3NYaY="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eP23LSOk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 206,
+											"top": 263,
+											"width": 13.71728515625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eQG3NYaY="
+											},
+											"edgePosition": 1,
+											"text": "rC"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrfGSmJKk="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzraWQ1A7M="
+									},
+									"lineStyle": 1,
+									"points": "171:165;210:284;319:299",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eQG3ORe4="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eQW3bVEU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eQW3ZTNU="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eQW3cu1w=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eQW3bVEU="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eQW3ZTNU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 255,
+											"top": 263,
+											"width": 16.6181640625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eQW3bVEU="
+											},
+											"edgePosition": 1,
+											"text": "dC"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrfGSmJKk="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrcGRLtiE="
+									},
+									"lineStyle": 1,
+									"points": "216:257;261:284;319:294",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eQW3cu1w="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eQ23pxtg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eQ23n/Zo="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eQ23qVTk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eQ23pxtg="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eQ23n/Zo="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 246,
+											"top": 355,
+											"width": 34.68359375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eQ23pxtg="
+											},
+											"edgePosition": 1,
+											"text": "part E"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrgGS/09s="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrc2RhXAk="
+									},
+									"lineStyle": 1,
+									"points": "216:349;261:376;319:386",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eQ23qVTk="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eRW33vVE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eRW31Y+g="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eRW34O8g=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eRW33vVE="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eRW31Y+g="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 443,
+											"top": 355,
+											"width": 43.3544921875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eRW33vVE="
+											},
+											"edgePosition": 1,
+											"text": "parts of"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrgGS/09s="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrfGSmJKk="
+									},
+									"lineStyle": 1,
+									"points": "450:349;450:375",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eRW34O8g="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eR24FRCw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eR24DZzs="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eR24Glgo=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eR24FRCw="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eR24DZzs="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 432,
+											"top": 447,
+											"width": 64.3271484375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eR24FRCw="
+											},
+											"edgePosition": 1,
+											"text": "then s2, a2"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrg2TYDRQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrgGS/09s="
+									},
+									"lineStyle": 1,
+									"points": "450:441;450:467",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eR24Glgo="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eSW4T1Rs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eSG4Rmfs="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eSW4UTA8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eSW4T1Rs="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eSG4Rmfs="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 432,
+											"top": 539,
+											"width": 64.3271484375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eSW4T1Rs="
+											},
+											"edgePosition": 1,
+											"text": "then s3, a3"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpzrhmTxKb4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrg2TYDRQ="
+									},
+									"lineStyle": 1,
+									"points": "450:533;450:559",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eSW4UTA8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eSm4huI0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eSm4f6PU="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eSm4ijT0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eSm4huI0="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eSm4f6PU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 587,
+											"top": 542,
+											"width": 84.5380859375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eSm4huI0="
+											},
+											"edgePosition": 1,
+											"text": "compared with"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qeWUg3WM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrhmTxKb4="
+									},
+									"lineStyle": 1,
+									"points": "581:570;639:560;691:515",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eSm4ijT0="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eTG4vetE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eTG4tbrY="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eTG4wrRY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eTG4vetE="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eTG4tbrY="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 731,
+											"top": 525,
+											"width": 46.73779296875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eTG4vetE="
+											},
+											"edgePosition": 1,
+											"text": "different"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qfWU5TSI="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qeWUg3WM="
+									},
+									"lineStyle": 1,
+									"points": "740:515;740:549",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eTG4wrRY="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eTm497os=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eTm47w7M="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eTm4+Amg=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eTm497os="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eTm47w7M="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 728,
+											"top": 620,
+											"width": 52.76171875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eTm497os="
+											},
+											"edgePosition": 1,
+											"text": "then built"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qgWVPLpI="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qfWU5TSI="
+									},
+									"lineStyle": 1,
+									"points": "740:615;740:639",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eTm4+Amg="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eUG5L24A=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eT25JBn4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eUG5ME/4=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eUG5L24A="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eT25JBn4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 697,
+											"top": 710,
+											"width": 114.1943359375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eUG5L24A="
+											},
+											"edgePosition": 1,
+											"text": "stored if unchanged"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qdWUKXr8="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qgWVPLpI="
+									},
+									"lineStyle": 1,
+									"points": "740:705;740:729",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eUG5ME/4="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eUW5ZD9I=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eUW5XtIo="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eUW5aofo=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eUW5ZD9I="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eUW5XtIo="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 667,
+											"top": 800,
+											"width": 116.3271484375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eUW5ZD9I="
+											},
+											"edgePosition": 1,
+											"text": "removes old version"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qdWUKXr8="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qhGVlcMQ="
+									},
+									"lineStyle": 1,
+									"points": "740:819;740:795",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eUW5aofo="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eU25nC5A=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eU25laTc="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eU25ocUs=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eU25nC5A="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eU25laTc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 578,
+											"top": 111,
+											"width": 34.68359375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eU25nC5A="
+											},
+											"edgePosition": 1,
+											"text": "R[:12]"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qiGV7DYA="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzrdmR6cSM="
+									},
+									"lineStyle": 1,
+									"points": "581:132;609:132",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eU25ocUs="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eVW5125E=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eVW5zngM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eVW52Xtc=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eVW5125E="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eVW5zngM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 614,
+											"top": 173,
+											"width": 34.68359375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eVW5125E="
+											},
+											"edgePosition": 1,
+											"text": "D[:12]"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qiGV7DYA="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFpzreWSQwB4="
+									},
+									"lineStyle": 1,
+									"points": "581:202;639:192;684:165",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eVW52Xtc="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eVm6DbOY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eVm6BBaE="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eVm6EZgo=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eVm6DbOY="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eVm6BBaE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 717,
+											"top": 170,
+											"width": 75.14990234375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eVm6DbOY="
+											},
+											"edgePosition": 1,
+											"text": "names folder"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qi2WR/Dc="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qiGV7DYA="
+									},
+									"lineStyle": 1,
+									"points": "740:165;740:189",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eVm6EZgo="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eWG6RNjI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eWG6PUZM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eWG6ShYU=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eWG6RNjI="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eWG6PUZM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 710,
+											"top": 265,
+											"width": 89.603515625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eWG6RNjI="
+											},
+											"edgePosition": 1,
+											"text": "read at Restore"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qj2WnXSQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qi2WR/Dc="
+									},
+									"lineStyle": 1,
+									"points": "740:255;740:289",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eWG6ShYU="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eWm6f2ZM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eWm6dNX8="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eWm6gCE4=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eWm6f2ZM="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eWm6dNX8="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 979,
+											"top": 170,
+											"width": 131.54248046875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eWm6f2ZM="
+											},
+											"edgePosition": 1,
+											"text": "operations hashed into"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qlmXTXPU="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qk2W9NuI="
+									},
+									"lineStyle": 1,
+									"points": "1030:165;1030:189",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eWm6gCE4="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eXG6tavI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eXG6r7Uk="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eXG6ug8U=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eXG6tavI="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eXG6r7Uk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 998,
+											"top": 260,
+											"width": 93.93896484375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eXG6tavI="
+											},
+											"edgePosition": 1,
+											"text": "keys of the copy"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qm2XsOQc="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qlmXTXPU="
+									},
+									"lineStyle": 1,
+									"points": "1030:255;1030:279",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eXG6ug8U="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eXm67uMo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eXm65rTo="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eXm68ACk=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eXm67uMo="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eXm65rTo="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1013,
+											"top": 350,
+											"width": 62.14990234375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eXm67uMo="
+											},
+											"edgePosition": 1,
+											"text": "tables built"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qnmYCJvw="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qm2XsOQc="
+									},
+									"lineStyle": 1,
+									"points": "1030:345;1030:369",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eXm68ACk="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eYG7JD9A=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eYG7Hg9E="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eYG7Kmu8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eYG7JD9A="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eYG7Hg9E="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 996,
+											"top": 440,
+											"width": 96.10986328125,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eYG7JD9A="
+											},
+											"edgePosition": 1,
+											"text": "tables compared"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qomYYRlM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp0qnmYCJvw="
+									},
+									"lineStyle": 1,
+									"points": "1030:435;1030:459",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eYG7Kmu8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eYm7Xy98=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eYm7VwzA="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eYm7YbP8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eYm7Xy98="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eYm7VwzA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1263,
+											"top": 140,
+											"width": 55.6181640625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eYm7Xy98="
+											},
+											"edgePosition": 1,
+											"text": "R vs view"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14MWZHEJE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp8/vGvAk+k="
+									},
+									"lineStyle": 1,
+									"points": "1270:143;1289:169",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eYm7YbP8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eZG7l2uc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eZG7jxxM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eZG7m8QM=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eZG7l2uc="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eZG7jxxM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1345,
+											"top": 158,
+											"width": 55.6181640625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eZG7l2uc="
+											},
+											"edgePosition": 1,
+											"text": "D vs view"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14MWZHEJE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp8/vWvFVh0="
+									},
+									"lineStyle": 1,
+									"points": "1370:143;1351:169",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eZG7m8QM="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eZm7z+KI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eZm7xEYA="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eZm70KQ8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eZm7z+KI="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eZm7xEYA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1443,
+											"top": 198,
+											"width": 46.73779296875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eZm7z+KI="
+											},
+											"edgePosition": 1,
+											"text": "different"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14NmZg+GQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14MWZHEJE="
+									},
+									"lineStyle": 1,
+									"points": "1451:219;1479:220",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eZm70KQ8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eaG8BdUQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eaG7/vYU="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eaG8C3s8=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eaG8BdUQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eaG7/vYU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1282,
+											"top": 270,
+											"width": 104.06982421875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eaG8BdUQ="
+											},
+											"edgePosition": 1,
+											"text": "equal: recorded in"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14OWZ27Oo="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14MWZHEJE="
+									},
+									"lineStyle": 1,
+									"points": "1320:255;1320:299",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eaG8C3s8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eaW8PxTw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eaW8NduU="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eam8QcjI=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eaW8PxTw="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eaW8NduU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1323,
+											"top": 370,
+											"width": 23.1181640625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eaW8PxTw="
+											},
+											"edgePosition": 1,
+											"text": "with"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14PmaP3Wk="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14OWZ27Oo="
+									},
+									"lineStyle": 1,
+									"points": "1320:365;1320:389",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eam8QcjI="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+ea28droQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+ea28blg4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+ea28e2m0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+ea28droQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+ea28blg4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1436,
+											"top": 311,
+											"width": 59.2490234375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+ea28droQ="
+											},
+											"edgePosition": 1,
+											"text": "verified by"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14QGalqeQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14OWZ27Oo="
+									},
+									"lineStyle": 1,
+									"points": "1451:332;1479:332",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+ea28e2m0="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+ebW8rqkY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+ebW8pMv0="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+ebW8sc5I=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+ebW8rqkY="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+ebW8pMv0="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1438,
+											"top": 431,
+											"width": 52.01904296875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+ebW8rqkY="
+											},
+											"edgePosition": 1,
+											"text": "travels in"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp14PmaP3Wk="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14Qma+NlQ="
+									},
+									"lineStyle": 1,
+									"points": "1479:422;1451:422",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+ebW8sc5I="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFp+eb285au0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpvf+2OoQB4="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFp+eb283N0A="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFp+eb286zbY=",
+											"_parent": {
+												"$ref": "AAAAAAGiFp+eb285au0="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFp+eb283N0A="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1315,
+											"top": 460,
+											"width": 39.01904296875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFp+eb285au0="
+											},
+											"edgePosition": 1,
+											"text": "names"
+										}
+									],
+									"lineColor": "#333333",
+									"fillColor": "#ffffff",
+									"fontColor": "#000000",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFp0qp2Yxd3c="
+									},
+									"tail": {
+										"$ref": "AAAAAAGiFp14PmaP3Wk="
+									},
+									"lineStyle": 1,
+									"points": "1320:455;1320:479",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFp+eb286zbY="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrRmPHp+M=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "1  Inputs",
+							"documentation": "Column title. Read left to right: inputs, keys, stored tables, session, audit, export. Rows below the columns: decided not built, not decided."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrUGPZFmI=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "2  Keys of one table",
+							"documentation": "Column title."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrVGPr/Qg=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "3  Session and stored tables",
+							"documentation": "Column title."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrW2P9F3k=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "4  Audit",
+							"documentation": "Column title."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrYmQPrEA=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "5  Export",
+							"documentation": "Column title."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpzrZ2QhAJ0=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "6  Refusal, import, ids",
+							"documentation": "Column title."
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGiFpzraWQzzPE=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Recipe files (entry file and includes)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+ePG2vFSE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"name": "hashed into",
+									"source": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eP23LSOk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"name": "rC",
+									"source": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									}
+								}
+							],
+							"documentation": "BUILT. The input, made from nothing: the entry file and every file it includes (ConfigManager.loaded_files). Read by app/modules/cache_keys.py:492 load_data_analysis_recipe; kept in memory while no file changes (content digest, cache_keys.py:354 files_signature).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrbmRD/Z0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrb2RGLgA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzraWQzzPE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:load_data_analysis_recipe"
+								}
+							]
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGiFpzrcGRJG9Y=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Source data files",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+ePm293KE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"name": "hashed into",
+									"source": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eQW3ZTNU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"name": "dC",
+									"source": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									}
+								}
+							],
+							"documentation": "BUILT. The input: the source data files of the recipe. sha256 of the bytes of each file, MISSING:<id> when there is no file (cache_keys.py:140 dataset_file_hashes). Read once for each computation of the keys (app/modules/orchestrator.py:221-240).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrcmRZBoM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrcmRcWAs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrcGRJG9Y="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:dataset_file_hashes"
+								}
+							]
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGiFpzrc2Rfaz8=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Engine, cache version 6, tier data engine",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eQ23n/Zo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"name": "part E",
+									"source": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									}
+								}
+							],
+							"documentation": "BUILT. Made from: ENGINE_CACHE_VERSION '6' (cache_keys.py:81), the installed polars and transformer versions (cache_keys.py:130 engine_fingerprint) and the effective data engine of each tier (utils.engines.tier_engine; cache_keys.py:172-188). The plot engine and the plotnine version are in NO table key (D-0240). Protects from: serving a table made by other code.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrdGRveac=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrdWRylzk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:engine_fingerprint"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrdmR1WgU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrc2Rfaz8="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzrdmR4b0Y=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "R  recipe file-set hash",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eU25laTc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"name": "R[:12]",
+									"source": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eYm7VwzA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"name": "R vs view",
+									"source": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									}
+								}
+							],
+							"documentation": "BUILT. R, data_analysis_recipe_sha256. Made from: relative_path:sha256 of each recipe file, sorted, hashed again (cache_keys.py:340). Stored: session files, id log, export. Checked: Restore (warning), export key check, import recipe leg. Protects from: working or exporting from other recipe files than the ones you looked at. Never decides what to rebuild.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzreGSIiIs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzreGSLmbw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrdmR4b0Y="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:data_analysis_recipe_fileset_hash"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzreWSOME0=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "D  data batch hash",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eVW5zngM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"name": "D[:12]",
+									"source": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eZG7jxxM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"name": "D vs view",
+									"source": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									}
+								}
+							],
+							"documentation": "BUILT. D, data_batch_hash. Made from: id:sha256 lines of all data files, sorted by id, hashed again (cache_keys.py:151 batch_hash_of); empty when there is no file. Stored and checked like R. Protects from: a changed data file going unnoticed. Never decides what to rebuild.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzre2Sex2s=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzre2Sh894=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzreWSOME0="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:batch_hash_of"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzrfGSkFXk=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "rC definition and dC data of one table",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eRW31Y+g=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"name": "parts of",
+									"source": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									}
+								}
+							],
+							"documentation": "BUILT. rC = definition of the table and of everything upstream (recipe graph), the shared top-level parts and the id declarations of the tables that take part in the completion of the ids; dC = canonical hash of the data files the table reads (every file when the key is coarse, the fail-safe) (cache_keys.py:249 table_key_parts). Protects from: rebuilding a table when only another table changed, and from reusing one when its own input changed.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrfmS0GkY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrfmS346g=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:table_key_parts"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrf2S6fgk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrfGSkFXk="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzrgGS9TtQ=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "T1 key = E . rC . dC . [a1]",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eR24DZzs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"name": "then s2, a2",
+									"source": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									}
+								}
+							],
+							"documentation": "BUILT. Key of a stored tier 1 table (cache_keys.py:292 tier1_key). A series of labelled parts, label- and 32 hex characters each, joined with '.', not hashed again; a1 only when an audit step is at tier 1 of the table or upstream. Stored in the footer of the table's Parquet file (sparmvet_tier1_key). Protects from: a stale or foreign table being used.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrgWTNRKc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrgmTQDIM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:tier1_key"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrgmTTMvo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrgGS9TtQ="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzrg2TWxtI=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "T2 key = key(T1) . [s2] . [a2]",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eSG4Rmfs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"name": "then s3, a3",
+									"source": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									}
+								}
+							],
+							"documentation": "BUILT. Key of tier 2 (cache_keys.py:300 tier2_key, :305 collection_tier2_key). With no tier-2 steps and no audit step it is the T1 key and nothing is stored twice. Footer: sparmvet_tier2_key.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrhWTmWWQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrhWTpod0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:collection_tier2_key"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzrhmTsdZc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrg2TWxtI="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFpzrhmTvJcY=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Plot table key = key(T2) . [s3] . [a3]",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eSm4f6PU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"name": "compared with",
+									"source": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									}
+								}
+							],
+							"documentation": "BUILT. Key of the table a plot reads (cache_keys.py:321 tier3_key, :327 plot_tier3_key; DataAnalysisRecipeKeys.plot_key_of). With no tier-3 steps and no audit step it is the T2 key. The table is stored only for a plot with its own tier-3 steps (app/modules/orchestrator.py:820-855, D-0343): footer sparmvet_tier3_key.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzriGT/iFQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzriGUClrY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:plot_tier3_key"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFpzriWUF7oI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFpzrhmTvJcY="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCStoredData",
+							"_id": "AAAAAAGiFp0qdWUI8R0=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Stored table, key in its file footer",
+							"documentation": "BUILT. One Parquet file per table in <user_data>/anchors with its key in the footer: sparmvet_tier1_key, sparmvet_tier2_key, sparmvet_tier3_key and sparmvet_cache_version (orchestrator.py:28-32; cache_keys.py:97). The old name sparmvet_decision_hash is written with the same value (anchor.py:154); its retirement is D-0345, not built.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qd2UYu6c=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qdWUI8R0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qeGUb8sA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qdWUI8R0="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/orchestrator.py:TIER1_KEY_META"
+								}
+							]
+						},
+						{
+							"_type": "FCDecision",
+							"_id": "AAAAAAGiFp0qeGUe1jA=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Key in file = key now? (also at opening)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eTG4tbrY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"name": "different",
+									"source": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									}
+								}
+							],
+							"documentation": "BUILT. Checked: before a stored table is used, in tier 1, 2 and 3 (orchestrator.py:568, 718, 820) and so at the opening of a recipe. The key in the footer of the very file that is scanned (anchor.py:109 read_anchor_if_key) against the key computed now; never by file name alone (ADR-089). Equal: the stored table is read, nothing is rebuilt: a later opening with equal keys builds no table; every plot is drawn again as the proof (app/modules/opening_build.py:run_opening, D-0326).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qe2Uu0EY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qe2UxYG0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/transformer/src/transformer/anchor.py:read_anchor_if_key"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qfGU0uAI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qeGUe1jA="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-089"
+								}
+							]
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGiFp0qfWU3q68=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "No: stale file removed, table rebuilt",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eTm47w7M=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									},
+									"name": "then built",
+									"source": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									}
+								}
+							],
+							"documentation": "BUILT. A different key, another cache version or an unreadable file: the stored file is removed at once, then the table is built again (orchestrator.py:580-581, 722, 825); a table that lost its tier-2 or tier-3 steps removes its stale file (orchestrator.py:563, 810). Protects from: a leftover being served later by a bug (rules_verification_testing.md section 9).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qf2VHDcc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qgGVKRIc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qfWU3q68="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/orchestrator.py:TIER2_KEY_META"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qgGVNSIE=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Last check before a table is stored",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eT25JBn4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									},
+									"name": "stored if unchanged",
+									"source": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qdWUI8R0="
+									}
+								}
+							],
+							"documentation": "BUILT. STALE-KEY-STORE-1 (orchestrator.py:415 inputs_changed; write_anchor still_valid at :638, 662, 760, 854): the key is computed again just before storing; if the recipe or the data changed while the table was built, the table is returned but not stored and the caller says so. Protects from: a stored table that holds rows of two states.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qg2Vdesk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qhGVgVI4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qgGVNSIE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/orchestrator.py:InputsChanged"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qhGVjCmQ=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "App start: other cache version removed",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eUW5XtIo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qhGVjCmQ="
+									},
+									"name": "removes old version",
+									"source": {
+										"$ref": "AAAAAAGiFp0qhGVjCmQ="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qdWUI8R0="
+									}
+								}
+							],
+							"documentation": "BUILT. At the start of the app every stored table whose footer lacks the current cache version is removed, once, with one notice (app/src/bootloader.py:213-226; anchor.py:60; D-0240).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qhmVz2wE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qhGVjCmQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qh2V2gcw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qhGVjCmQ="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/transformer/src/transformer/anchor.py:remove_tables_of_other_version"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qiGV5vQU=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Session key = R[:12] : D[:12]",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eVm6BBaE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									},
+									"name": "names folder",
+									"source": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									}
+								}
+							],
+							"documentation": "BUILT. Made from: R and D (session_manager.py:345). Names the folder _sessions/<key>/. Protects from: mixing the saved work of two recipes or two data batches: the same recipe with other data, or an edited recipe with the same data, is another session.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qimWJNig=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qi2WMnHc=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qiGV5vQU="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/session_manager.py:compute_session_key"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp0qi2WPesA=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Session files: R, D, format 5, steps hash",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eWG6PUZM=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									},
+									"name": "read at Restore",
+									"source": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qj2WlHL4="
+									}
+								}
+							],
+							"documentation": "BUILT. assembly.json and t3_<time>.json hold R, D, the session key, per source file the path and sha256, the format number SESSION_FORMAT_VERSION = 5 (session_manager.py:229; another number is refused, D-0312) and t3_audit_steps_sha256 = one hash of the audit steps WITH reasons, ids and dates and the plot overrides (session_manager.py:577).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qjmWfYgg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qjmWillw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qi2WPesA="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/session_manager.py:SESSION_FORMAT_VERSION"
+								}
+							]
+						},
+						{
+							"_type": "FCDecision",
+							"_id": "AAAAAAGiFp0qj2WlHL4=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Restore: recipe id, R, D checked",
+							"documentation": "BUILT. Checked at Restore (session_handlers.py:573): another recipe id is refused (D-0317); the same id with another R: a warning that does not block (:598-606); another D: a warning that does not block (:608-617); a missing key is said, not skipped; the steps checksum is compared with the file's own content only (:650-668): a hand-edited file gives a warning. Protects from: applying steps to a recipe or data they were not made for, unawares.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qkWW15vU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qj2WlHL4="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qkmW4CX4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qj2WlHL4="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/session_handlers.py:_restore_session"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qk2W7uTA=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Committed audit steps, each at a place",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eWm6dNX8=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qk2W7uTA="
+									},
+									"name": "operations hashed into",
+									"source": {
+										"$ref": "AAAAAAGiFp0qk2W7uTA="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									}
+								}
+							],
+							"documentation": "BUILT. One node per place (T1:<table>, T2:<table>, T3:<plot>), each with a reason (audit_places.py). What decides the data of the copy is id, place, kind and parameters, NOT the reason (audit_places.py:254 nodes_signature). Kept in the session files (t3_audit_steps_sha256, session_manager.py:577) and in effective_run.yaml (t3_audit_steps_sha256, export_handlers.py:202): the same hash form, WITH reasons.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qlWXL8FU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qk2W7uTA="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qlmXONDo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qk2W7uTA="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/audit_places.py:nodes_signature"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qlmXRDAI=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "a1, a2, a3: audit operations only",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eXG6r7Uk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"name": "keys of the copy",
+									"source": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									}
+								}
+							],
+							"documentation": "BUILT. Made from: the audit operations of one tier, in list order, without id, reason or comment, and with no position among the author's steps (cache_keys.py:224 tier1_audit_part, :234 audit_part; libs/utils/src/utils/audit_copy.py:101 audit_operation). a1 follows dC, a2 follows s2, a3 follows s3. A copy with no audit step has exactly the keys of its original.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qmWXh9gk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qmWXkupo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:audit_part"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qmmXnIHk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qlmXRDAI="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp0qmmXqKU4=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Audit copy: recipe in memory, own hash",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eXm65rTo=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									},
+									"name": "tables built",
+									"source": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									}
+								}
+							],
+							"documentation": "PARTIAL. The audit copy is the recipe plus audit_steps lists, in memory (libs/utils/src/utils/audit_copy.py). Its own identity hash is canonical_hash of the resolved dictionary (cache_keys.py:422 loaded_from_resolved): PROVISIONAL, the identity of a copy written to a file is not decided. Its table keys come from the same functions as the original's.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qnWX6cIY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "partial"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qnWX9WDs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qmmXqKU4="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/cache_keys.py:loaded_from_resolved"
+								}
+							]
+						},
+						{
+							"_type": "FCStoredData",
+							"_id": "AAAAAAGiFp0qnmYAK8s=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Audit tables: own folder, same key series",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eYG7Hg9E=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									},
+									"name": "tables compared",
+									"source": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qomYWreg="
+									}
+								}
+							],
+							"documentation": "BUILT. A table whose key in the copy equals its key in the original is read from the original's stored table; a different key is built into <user_data>/audit_anchors under that key (audit_run.py:59-61, 205-226); a table that is the original's again is taken out of that folder at once (audit_run.py:331). The tier 3 table of a copy is stored nowhere (PROVISIONAL, orchestrator.py:808-818). Protects from: rebuilding what the audit did not touch, and from the audit changing the original.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qoWYQwoY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qoWYTJUY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qnmYAK8s="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/audit_run.py:run_audit"
+								}
+							]
+						},
+						{
+							"_type": "FCDecision",
+							"_id": "AAAAAAGiFp0qomYWreg=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Plot affected? Compare content, no hash",
+							"documentation": "BUILT. Equal keys mean the same table; different keys prove nothing (ADR-101 point 6): the two tables are built and compared by content (audit_run.py:309-323). No content hash is made or stored: the frames are compared directly. Protects from: saying a plot changed when a step removed no row.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qpWYmejg=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qomYWreg="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qpWYpR/w=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qomYWreg="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/audit_run.py:run_audit"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qpmYss7Q=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qomYWreg="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-101"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp0qp2YvrZI=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Audit recipe file in the export, no hash",
+							"documentation": "BUILT. In an export made in Audit mode: audit_recipe/<id>_audited.yaml, the original recipe with each audit step written as a plain step at its place, with its reason (audit_places.py:352 audit_recipe_of; export_handlers.py:1638-1655). No hash of the file is recorded (see D-0333 below).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qqWY/S54=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qp2YvrZI="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp0qqmZCGW0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp0qp2YvrZI="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/audit_places.py:audit_recipe_of"
+								}
+							]
+						},
+						{
+							"_type": "FCDecision",
+							"_id": "AAAAAAGiFp14MWZFTrY=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Export check: R, D, tier 1 keys = view?",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eZm7xEYA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"name": "different",
+									"source": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14NmZeoP0="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eaG7/vYU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"name": "equal: recorded in",
+									"source": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									}
+								}
+							],
+							"documentation": "BUILT. Checked before an export: R and D now against the keys of the open view, then the tier 1 key of each table in scope (export_handlers.py:257 changed_since_view; :1062). The tier 2 key, the plot keys and the audit keys are not compared separately. Protects from: an export built from other files than the ones on the screen.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14NGZVbSE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14NGZY5VA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:changed_since_view"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14NWZb5ho=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14MWZFTrY="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-089"
+								}
+							]
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGiFp14NmZeoP0=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "EXPORT_NOT_CREATED.txt only",
+							"documentation": "BUILT. The zip holds only EXPORT_NOT_CREATED.txt: what changed, what it means, both sets of keys (export_handlers.py:284 blocked_export_notice, :320 blocked_export_zip). Also used when a table changes while the export is built (:329-337).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14OGZuOBw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14NmZeoP0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14OWZxCX4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14NmZeoP0="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:blocked_export_zip"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp14OWZ0fSU=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "effective_run.yaml: R, D, E, steps hash",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eaW8NduU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"name": "with",
+									"source": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+ea28blg4=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"name": "verified by",
+									"source": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14QGajG5M="
+									}
+								}
+							],
+							"documentation": "BUILT. Written in every export (export_handlers.py:1747-1777): R, D, t3_audit_steps_sha256 (steps with reasons), engine fingerprint E, containerized, image_ref, sha256 of uv.lock (None when the file does not exist), git commit, software versions, data file paths, engines, seeds. No per-file sha256, no hash of the audit recipe.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14PGaEqFQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14PGaHosw=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:build_export_provenance"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14PWaKDYI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14OWZ0fSU="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-097"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp14PmaNazw=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "README, report, files: keys of original",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+eb283N0A=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									},
+									"name": "names",
+									"source": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp0qp2YvrZI="
+									}
+								}
+							],
+							"documentation": "BUILT. README.txt and report.qmd list, per table, the tier 1 and tier 2 keys and the key of the table of a plot with its own tier-3 steps (export_handlers.py:1970-1980, 2356-2360); every picture and table file carries R, D and these keys in its metadata (:439-480). These are the ORIGINAL's keys; the keys of the audit tables (a1, a2, a3) are not recorded.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14P2ad1Lk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14P2ag4PA=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/export_handlers.py:build_export_provenance"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp14QGajG5M=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Import: four legs, never blocks",
+							"documentation": "BUILT. Four legs, never blocking (bundle_importer.py:120 _verify): data (the bundle's data files against D), engine (this machine's fingerprint and git commit against the bundle's), recipe (only when the original recipe with that id is local), steps (always 'not checked': the value is only reported). Nothing is checked part by part.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14QWaz79A=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14QGajG5M="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14QWa2ytY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14QGajG5M="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/bundle_importer.py:_verify"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14QWa5tFI=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14QGajG5M="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-097"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp14Qma8CGo=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Id log: R and D of each entry (own chain)",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFp+ebW8pMv0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14Qma8CGo="
+									},
+									"name": "travels in",
+									"source": {
+										"$ref": "AAAAAAGiFp14Qma8CGo="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFp14PmaNazw="
+									}
+								}
+							],
+							"documentation": "BUILT. A separate small chain: the id log (libs/utils/src/utils/id_log.py:63 build_entry; app/modules/id_check_run.py:57) records R and D of the opening in each entry, adds a 'checks' entry only when R or D differs from the last one, and the click 'I have read this' is an entry with the same R and D (D-0582, D-0613). It decides nothing about tables (the table keys read the id declarations themselves). It travels in every export as id_log.yaml.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14Q2bMvqk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14Qma8CGo="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp14Q2bPBr0=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp14Qma8CGo="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/utils/src/utils/id_log.py:build_entry"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp2n2WbS4a8=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Decided, not built (ledger number)",
+							"documentation": "Row title. Grey boxes: decided by the owner (ledger line quoted), the code does not do it yet."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp2n3Gbk12s=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Not decided (proposed only)",
+							"documentation": "Row title. Yellow boxes: proposed in older diagrams or in ADR-101 point 5, with no ledger line (or none for the hash itself). Not to be built or drawn as built before the owner decides."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp2n3mb2Dxc=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT BUILT D-0333: audit recipe hash, record",
+							"documentation": "DECIDED, not built (D-0333). The hash of the audit recipe (the exact bytes of its files) is written in the run file of the bundle, with an audit record beside the audit recipe that carries the session key; the README says which file is the audit recipe and which the baseline. Today: no hash, no record.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n4GcGwrs=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n3mb2Dxc="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n4WcLpPQ=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT BUILT D-0331: edited recipe refused",
+							"documentation": "DECIDED, not built (D-0331). A hand-edited audit recipe is tampering: at reopening the app compares the hash of the audit recipe and refuses the recipe as invalid. It cannot stop a user who recomputes the hashes. Today: nothing checks.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n5GcbYp8=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n4WcLpPQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp2n5Wcg0h4=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT BUILT D-0478: audit log in every export",
+							"documentation": "DECIDED, not built (D-0478, D-0315). The log of added and removed steps, with the warnings shown at each scope choice, who and when, is always exported beside the audit recipe. The content of the log is decided; a hash of it is not (see NOT DECIDED).",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n52cwwvU=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n5Wcg0h4="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n52c1MAY=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT BUILT D-0345: decision_hash retired",
+							"documentation": "DECIDED, not built (D-0345, D-0025). The old name decision_hash (footer key sparmvet_decision_hash, picture metadata sparmvet:decision_hash, README text) is retired with the bundle texts of the audit export, after a test shows that nothing reads it. Today it is still written with the value of the tier 1 key.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n6WdFDFE=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n52c1MAY="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n6mdKBs0=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT DECIDED: sha256 of each file",
+							"documentation": "NOT DECIDED. Proposed in the old DM-KEYS-EXPORT: one sha256 per data file and per recipe file in effective_run.yaml. Today only the whole-set hashes R and D are recorded. Would protect: a reader who sees which single file differs (a sha256sum check by file). No ledger line.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n7WdaJxQ=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n6mdKBs0="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n7mdfnEM=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT DECIDED: content hash c of a table",
+							"documentation": "NOT DECIDED in the ledger (named in ADR-101 point 5 and in the hash model of 2026-11-12, not in D-0025). A hash of the columns and rows of a frame, to prove that a plot is really affected and to verify exported data. Today the frames are compared directly and no content hash is recorded. Would protect: the claim 'this table is the same' in an export.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n8GdvIzk=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n7mdfnEM="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n8Gd0gSM=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT DECIDED: steps hash A, record hash Rec",
+							"documentation": "NOT DECIDED in the ledger (ADR-101 point 5; hash model section 5 point 4). A = ordered audit operations without reasons; Rec = steps with reasons, initials, dates and the event log. Today t3_audit_steps_sha256 is one hash of the steps WITH reasons, ids and dates, close to Rec but with no initials and no event log. Would protect: a reader who sees that reasons were not edited after the export.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n8meEZ9w=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n8Gd0gSM="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGiFp2n82eJ9mQ=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "NOT DECIDED: audit table keys in the export",
+							"documentation": "NOT DECIDED. Record the series key of every exported audit table (T1, T2, T3 with a1, a2, a3) in the export and check them part by part at import, so that the first differing part names the leg (engine, recipe, data, tier-2 steps, audit steps). Today only the original's keys are recorded and the import has four legs. Would protect: finding which leg differs when an audited result is not reproduced.",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGiFp2n9WeZHZY=",
+									"_parent": {
+										"$ref": "AAAAAAGiFp2n82eJ9mQ="
+									},
+									"name": "status",
+									"kind": "string",
+									"value": "planned"
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFp2n9meeiYY=",
+							"_parent": {
+								"$ref": "AAAAAAGiFpvf+2OnY7w="
+							},
+							"name": "Legend: white built, grey and yellow not",
+							"documentation": "White box with a status tag implemented (or partial) = BUILT: the code does it, the file and symbol are in the code tag and the file:line in the documentation. Grey box (status planned) = DECIDED, not built, with its ledger number in the name. Yellow box (status planned) = NOT DECIDED, only proposed. The documentation of every box starts with BUILT, PARTIAL, DECIDED not built or NOT DECIDED. Not drawn as built: the old key letters A, Rec, AR and c."
 						}
 					]
 				}
