@@ -267,7 +267,7 @@ Every recipe declares `spec_version: 1`, the version of this specification it is
 
 **Format 1 was amended before its first release, on 2026-11-17, by decision of Eve (D-0236); there is no format 2.** The amendment is DEC50 to DEC57. A recipe written in the shape before the amendment carries `spec_version: 1` too: it is not told apart by the number but by its keys, and the checker refuses each old key with the new form and the rewrite tool (`assets/scripts/migrate_recipe_engine_keys.py`, section 12).
 
-An audit recipe is a recipe of format 1: it declares `spec_version: 1` and the format number stays 1 (D-0354). The keys `audit_steps`, `audit_comment` and `info.audit_of` are legal only in an audit recipe and refused in every other recipe; no shipped recipe changes. DECIDED, not built: the keys are not read from a file yet.
+An audit recipe is a recipe of format 1: it declares `spec_version: 1` and the format number stays 1 (D-0354). The keys `audit_steps`, `audit_comment` and `info.audit_of` are legal only in an audit recipe and refused in every other recipe; no shipped recipe changes. `info.audit_of` is built (section 7.1); DECIDED, not built: `audit_steps` and `audit_comment` are not read from a file yet (today the reason of an audit step is in the step's `comment`).
 
 The app reads **one** version. Any change of *structure* changes the number: a key added, removed or renamed, a change of required-ness or meaning, a change of a closed vocabulary. The engine names are an open list (DEC05, DEC53): a new engine name ships with an app release and an app without its library refuses it with "no library for this engine in this app". A new term in an *open* vocabulary (the gallery terms) does not: it ships with an app release, and an app that does not know the term refuses the recipe with "unknown term". With "unknown keys fail" a new optional key also breaks an older checker, so there is no "compatible minor version", and one integer is enough.
 
@@ -371,7 +371,7 @@ Columns: R required, o optional, a advice (never blocks).
 | `version` | o | text; the author's own version |
 | `comment` | o | the author's note (6.2) |
 | any other key | o | free-form, displayed in the Info panel, never executed. This is the only free-form block of the format |
-| `audit_of` | (audit only) | DECIDED, not built (D-0328, D-0339): in an audit recipe only, the original's name (`original_recipe`) and a fingerprint of what the original does (`original_content`); the user reads a sentence, never a hash; not a top-level key; refused in every other recipe (D-0354) |
+| `audit_of` | (audit only) | BUILT 2026-11-26 (the form is PROVISIONAL): the id of the original recipe, written by the app when it writes an audit recipe (`audit_places.audit_recipe_of`, in the export's `audit_recipe/`), never by hand. The check cannot tell an audit recipe from another except by this key, so it checks the value (I04: text, the form of a recipe id, not the recipe's own id) in every recipe. A recipe that names its original is a COPY of it: the set check (X5) does not count the plot ids it shares with that original as a clash (D-0690, the owner's direction of 2026-11-26; the switch of the recipe HOME reads is NOT built). DECIDED, not built: the fingerprint of what the original does (`original_content`, D-0328, D-0339) and the refusal of the key by profile (D-0354) |
 
 ### 7.2 `entity` (optional)
 
@@ -636,7 +636,7 @@ analysis_groups:
 | X2 | `target_dataset` of a plot exists; every `dataset_id` of an ingredient exists; every `right_ingredient` is an ingredient of its join |
 | X3 | `entity.population` exists and carries an entity key |
 | X4 | a schema's `tier2` is applied only if the schema is a plot's target; otherwise an error |
-| X5 | `id` equals the file name; plot ids are unique **across the recipes of a folder** (a project-level check, `check_recipe_set`) |
+| X5 | `id` equals the file name; plot ids are unique **across the recipes of a folder** (a project-level check, `check_recipe_set`); a recipe that names its original in `info.audit_of` is a copy: the ids it shares with that original (also with another copy of it) are no clash (D-0690, 2026-11-26) |
 | X6 | the key family: the entity-key columns of the schemas are linked by the join keys; the first version has one family (`home_audit_steps.md` 5a-13). Not a failure if absent |
 | X7 | a step or a `labels` entry that names a column the node does not have is an error (a dry run on column names). Needs the recipe graph (HOME's `utils.recipe_graph`; R10) |
 
@@ -665,6 +665,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | I01 | E / A | `info` not a mapping (E); `info.ui_label` missing (A: advice, the file name is shown; PROVISIONAL words, D-0470) | write `ui_label` |
 | I02 | A | `info.description` or `info.contact` missing | write it (section 13) |
 | I03 | E | `info.display_name`, `info.label`, `info.name`, `info.ui_title` | `ui_label` (a longer text goes in `description`) |
+| I04 | E | `info.audit_of` is not text, is empty, is not the form of a recipe id, or is the recipe's own id (PROVISIONAL words) | remove it: the app writes it in an audit recipe |
 | E01 | E | unknown key in `entity`; `noun`/`plural`/`population` missing | |
 | E02 | E | `population` unknown, or its table has no `is_entity_id` | |
 | E03 | E | a field marked `is_entity_id` (the sample id) has a number type (an integer, a float or a decimal); D-0225, D-0067 | declare it as `String` (or `Categorical`): a number as an id loses leading zeros, makes 001, 1 and 1.0 one sample, and gives join and type problems |
