@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -33,10 +33,12 @@ from utils import recipe_tiers
 from utils.fix_text import fix_label
 from utils.recipe_graph import RecipeGraphError, build_graph
 from app.modules.error_notice import notice
-from utils.na_choice import na_of, no_value_text
+from utils import display_names
+from utils.filter_words import no_value_words, value_text
+from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
-from app.modules.audit_places import PLACES_BUCKET, place_words, plots_below
+from app.modules.audit_places import PLACES_BUCKET, place_line, place_words, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -73,11 +75,11 @@ _OP_SYMBOL = {"eq": "=", "ne": "≠", "gt": ">", "ge": "≥",
 def _format_value(val) -> str:
     """Render a filter value compactly. Lists become {a, b, c}; long strings truncate."""
     if isinstance(val, (list, tuple)):
-        items = [str(v) for v in val]
+        items = [value_text(v) for v in val]
         if len(items) <= 3:
             return "{" + ", ".join(items) + "}"
         return "{" + ", ".join(items[:3]) + f", … +{len(items)-3}}}"
-    s = str(val)
+    s = value_text(val)
     return s if len(s) <= 30 else s[:30] + "…"
 
 
@@ -85,7 +87,8 @@ def _params_summary(node: dict) -> str:
     text = _condition_summary(node)
     if node.get("node_type") in ("filter_row", "exclusion_row"):
         # NA-RULE-63: a step without `na` (made before the choice) always removed the rows with no value
-        text += " · " + no_value_text(na_of(node.get("params")))
+        params = node.get("params") or {}
+        text += " · " + no_value_words(na_of(params), str(params.get("column", "?")))
     return text
 
 
@@ -103,7 +106,7 @@ def _condition_summary(node: dict) -> str:
             closed = p.get("closed", "both")
             lb = "[" if closed in ("both", "left") else "("
             rb = "]" if closed in ("both", "right") else ")"
-            return f"{col} ∈ {lb}{val[0]}, {val[1]}{rb}"
+            return f"{col} ∈ {lb}{value_text(val[0])}, {value_text(val[1])}{rb}"
         return f"{col} {op} {_format_value(val)}"
     if nt == "exclusion_row":
         col = p.get("column", "?")
@@ -120,6 +123,23 @@ def _reaches_no_plot(node: dict, reach_of: dict) -> bool:
     """True for an audit step written at a table (not a plot) that no plot is built from: the place is known to the graph and its plots list is empty."""
     place = node.get("place") or ""
     return bool(place) and not place.startswith("T3:") and place in reach_of and not reach_of[place]
+
+
+def _place_banner(place: str, reach_of: dict, raw: dict):
+    """The line of every step card that says at which table or plot, and tier, the step was written (the owner did not see it for a step on a plot, 2026-11-26; she meant the way the
+    recipe's own steps are listed under their tier). Always shown, for a pending and a committed step: "Written at ResFinder: Table, T1" (the same text as the lineage panel, `place_line`), and
+    under it, for a table, how many plots are built from there (or that no figure changes). PROVISIONAL words."""
+    if not place:
+        return ui.div(ui.div("Written at: no place is recorded in this step.", class_="spv-audit-place spv-audit-place-missing"))
+    head = ui.div("Written at ", ui.tags.b(place_line(place, raw)), class_="spv-audit-place")
+    if place.startswith("T3:"):
+        return ui.div(head)
+    if reach_of.get(place):
+        n = len(reach_of[place])
+        more = f"{n} plot{'s are' if n != 1 else ' is'} built from there."
+    else:
+        more = "No plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode)."
+    return ui.div(head, ui.div(more, class_="spv-text-xxs text-muted"))
 
 
 def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
@@ -483,19 +503,19 @@ def define_server(input, output, session, *,
         # Orphan/legacy nodes for this session
         orphaned = list(by_plot.get("__legacy__", []))
 
+        # The section of the audit steps, below the recipe's own steps (Inherited, Tier 2) and apart from them: its heading is always shown, with the name of the open plot, in the style of
+        # the heading of a recipe tier (`#audit_sidebar h6`). The heading words "My Adjustments" are the ones the panel already used.
+        plot_name = display_names.shown_name(display_names.shown_names(active_cfg().raw_config), display_names.PLOT, open_plot) if open_plot else "plot"
         if not all_nodes and not orphaned:
             return ui.div(
-                ui.div(
-                    f"No T3 adjustments for {active_subtab.removeprefix('subtab_') or 'this plot'} yet.",
-                    class_="text-muted spv-text-sm",
-                    style="padding:4px;",
-                ),
+                ui.h6(f"My Adjustments — {plot_name}"),
+                ui.div(f"No T3 adjustments for {plot_name} yet.", class_="text-muted spv-text-sm", style="padding:4px;"),
+                class_="spv-audit-mine",
             )
 
         blocked_ids = set(gatekeeper_blocked(pending_all + [n for nodes in by_plot.values() for n in nodes]))
         adj_header = ui.div(
-            ui.h6(f"My Adjustments — {active_subtab.removeprefix('subtab_') or 'plot'}",
-                  class_="m-0 spv-flex-1"),
+            ui.h6(f"My Adjustments — {plot_name}", class_="m-0 spv-flex-1"),
             ui.span(
                 f"{len(blocked_ids)} need reason",
                 class_="text-danger spv-text-xxs",
@@ -541,13 +561,7 @@ def define_server(input, output, session, *,
             ) if pk_warn else ui.span()
 
             place = node.get("place") or ""
-            # a step at the plot's own tier 3 needs no word of reach (it is this plot's); a step at a table says where and how many plots are built from there
-            place_banner = ui.div(
-                (f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there."
-                 if reach_of.get(place) else
-                 f"Written at {place_words(place)}: no plot is built from there, so no figure changes. The table changes, and its audited file is in the export (made in Audit mode)."),
-                class_="spv-text-xxs text-muted",
-            ) if place and not place.startswith("T3:") else ui.span()
+            place_banner = _place_banner(place, reach_of, active_cfg().raw_config)
 
             id_suffix = _safe_input_suffix(nid)
 
@@ -608,7 +622,7 @@ def define_server(input, output, session, *,
                 style="padding:2px 4px;",
             ))
 
-        return ui.div(adj_header, *node_els)
+        return ui.div(adj_header, *node_els, class_="spv-audit-mine")
 
     # ------------------------------------------------------------------
     # Reason inputs are NOT eagerly synced to home_state (would re-render the

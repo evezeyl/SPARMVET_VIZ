@@ -22,7 +22,7 @@ offered for ONE chosen result table no plot reads (not for several); that a step
 
 # @deps
 # provides: function:define_server (lineage_handlers), output:lineage_panel_ui, output:lineage_step_form_ui, output:lineage_step_op_ui, output:lineage_step_hint_ui, effect:_send_marks, effect:_add_step_at_leaf
-# consumes: app/modules/lineage_view.py (view_data), app/modules/lineage_step.py (form_columns, form_ops, step_params, stage_nodes, stage_sentence, PENDING_NOTE), libs/utils/src/utils/lineage_data.py (lineage_of), app/modules/audit_places.py (PLACES_BUCKET, place_words), app/src/www/lineage_view.js
+# consumes: app/modules/lineage_view.py (view_data), app/modules/lineage_step.py (form_columns, form_ops, step_params, stage_nodes, stage_sentence, PENDING_NOTE), libs/utils/src/utils/lineage_data.py (lineage_of), app/modules/audit_places.py (PLACES_BUCKET, place_words), app/src/www/lineage_view.js, libs/utils/src/utils/filter_words.py (no_value_words)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0627, D-0629, D-0634)
 # @end_deps
@@ -173,7 +173,8 @@ def define_server(input, output, session, *,
         if node is None:
             return ui.div()
         from app.modules.t3_audit_engine import control_hint
-        from utils.na_choice import default_na, no_value_text
+        from utils.filter_words import no_value_words
+        from utils.na_choice import default_na
         column = safe_input(input, "lineage_step_column", None)
         dtype = _dtype_of(node, column) if column else None
         op = safe_input(input, "lineage_step_op", None)
@@ -181,7 +182,7 @@ def define_server(input, output, session, *,
             return ui.div()
         lines = [control_hint(dtype)] if control_hint(dtype) else []
         if op:
-            lines.append(no_value_text(default_na(op)))
+            lines.append(no_value_words(default_na(op), column).capitalize() + ".")
         return ui.tags.small(" ".join(line for line in lines if line), class_="text-muted d-block mb-1")
 
     @reactive.Effect

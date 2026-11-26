@@ -3,17 +3,27 @@
 // Vanilla JS, no external dependencies, ADR-071 compliant (no CDN). First-party script, not a vendored asset.
 //
 // The server draws the container once per recipe (app/handlers/lineage_handlers.py) with the data of app/modules/lineage_view.py in a <script type="application/json"> tag;
-// this script builds the list and the map from it and handles hover, focus, keyboard and choice in the browser, so that a click never makes the server draw the panel again
-// (ui_implementation_contract.md section 14, R4). The server is told the choice with Shiny.setInputValue('lineage_chosen', [...ids], {priority:'event'}); it checks the choice again
-// at confirm (RecipeGraph.chosen_places_problem). The only rules kept here: one chosen place for each independent graph, and "all original tables of this group" (the first places
-// of the group). A choice that is a set of first places is accepted by the server's rule too (no place lies below another).
+// this script builds the list and the map from it and handles hover, focus, keyboard, choice, pan, zoom and the size of the parts in the browser, so that a click never makes the
+// server draw the panel again (ui_implementation_contract.md section 14, R4). The server is told the choice with Shiny.setInputValue('lineage_chosen', [...ids], {priority:'event'});
+// it checks the choice again at confirm (RecipeGraph.chosen_places_problem). The only rules kept here: one chosen place for each independent graph, and "all original tables of this
+// group" (the first places of the group). A choice that is a set of first places is accepted by the server's rule too (no place lies below another).
 // The marks of the places that hold an audit step come from the server (custom message 'lineage_marks': {place: number of steps}).
+//
+// THE SIZES (PROVISIONAL, the owner's remark of 2026-11-26): a drag handle between the list and the map (left and right arrows move it), one under the list and the map (up and down arrows:
+// their height) and one under the text area (its height); a double click on a handle gives its default back. The choice is kept in the browser's local storage (key
+// spv.lineage_layout.v1; every access inside try/catch; a missing or broken value gives the default silently), like the width of the side panels. Nothing is sent to the server.
+// THE MAP: drag the background to move, the buttons (and + and - and 0 on the keyboard, the arrows to move) to zoom and reset; the wheel zooms only with Ctrl held (it never steals the
+// scroll of the page). The list stays the accessible twin: everything the map does can be done in the list.
 // PROVISIONAL words and colours (D-0634: the exact colours and words are not decided).
 (function () {
   if (window.__spvLineage) return;
   window.__spvLineage = true;
   var NS = "http://www.w3.org/2000/svg";
   var HINT = "Hover, focus or choose a place to read what it is and what is built from it. Choose one place for each independent graph, or all its original tables.";
+  var STORE = "spv.lineage_layout.v1";
+  var DEFAULTS = { split: 0.45, bodyH: 360 };                 // the text area has no default height of its own (it grows with its words up to a limit)
+  var LIMITS = { split: [0.2, 0.8], bodyH: [140, 900], textH: [60, 600] };
+  var ZOOM = [0.5, 4];
   var lastMarks = {};
   var panels = [];
 
@@ -31,6 +41,64 @@
   function send(name, value) {
     if (window.Shiny && Shiny.setInputValue) Shiny.setInputValue(name, value, { priority: "event" });
   }
+  function clamp(v, lim) { return Math.max(lim[0], Math.min(lim[1], v)); }
+
+  // ---- the kept sizes: only a finite number inside its limits is used, anything else is ignored
+  function readPrefs() {
+    var out = {};
+    try {
+      var raw = JSON.parse(window.localStorage.getItem(STORE) || "{}");
+      Object.keys(LIMITS).forEach(function (k) {
+        var v = raw && raw[k];
+        if (typeof v === "number" && isFinite(v) && v >= LIMITS[k][0] && v <= LIMITS[k][1]) out[k] = v;
+      });
+    } catch (e) { /* a private window or a broken value: the defaults stay */ }
+    return out;
+  }
+  function writePrefs(prefs) {
+    try {
+      if (Object.keys(prefs).length) window.localStorage.setItem(STORE, JSON.stringify(prefs));
+      else window.localStorage.removeItem(STORE);
+    } catch (e) { /* not kept: the sizes still work for this page */ }
+  }
+
+  // ---- a drag handle: axis "x" (a vertical bar, left and right) or "y" (a horizontal bar, up and down). get() is the value now, set(v) applies it, reset() gives the default back
+  function makeHandle(cls, axis, label, hooks) {
+    var h = el("div", "spv-lin-handle " + cls);
+    h.setAttribute("role", "separator");
+    h.setAttribute("aria-orientation", axis === "x" ? "vertical" : "horizontal");
+    h.setAttribute("aria-label", label);
+    h.title = label + ". Drag, or use the arrow keys. Double-click to reset.";
+    h.tabIndex = 0;
+    var start = null;
+    function shown() { h.setAttribute("aria-valuenow", String(Math.round(hooks.get() * (axis === "x" ? 100 : 1)))); }
+    h.addEventListener("pointerdown", function (ev) {
+      if (ev.button !== 0) return;
+      ev.preventDefault();
+      h.setPointerCapture(ev.pointerId);
+      start = { p: axis === "x" ? ev.clientX : ev.clientY, v: hooks.get() };
+    });
+    h.addEventListener("pointermove", function (ev) {
+      if (!start) return;
+      var d = (axis === "x" ? ev.clientX : ev.clientY) - start.p;
+      hooks.set(hooks.fromPixels(start.v, d));
+      shown();
+    });
+    function stop() { if (start) { start = null; hooks.save(); } }
+    h.addEventListener("pointerup", stop);
+    h.addEventListener("pointercancel", stop);
+    h.addEventListener("keydown", function (ev) {
+      var back = axis === "x" ? "ArrowLeft" : "ArrowUp", fwd = axis === "x" ? "ArrowRight" : "ArrowDown";
+      if (ev.key !== back && ev.key !== fwd) return;
+      ev.preventDefault();
+      hooks.set(hooks.fromPixels(hooks.get(), ev.key === fwd ? 24 : -24));
+      shown(); hooks.save();
+    });
+    h.addEventListener("dblclick", function () { hooks.reset(); shown(); hooks.save(); });
+    shown();
+    h.refresh = shown;
+    return h;
+  }
 
   function build(root) {
     var script = root.querySelector("script[type='application/json']");
@@ -40,7 +108,9 @@
     root.setAttribute("data-built", "1");
     var byId = {};
     data.nodes.forEach(function (n) { byId[n.id] = n; });
-    var st = { chosen: {}, mode: "whole", hot: null, last: null };
+    var st = { chosen: {}, mode: "whole", hot: null, last: null, layoutKey: null, reveal: null };
+    var view = { k: 1, tx: 0, ty: 0 };
+    var prefs = readPrefs();
     var refs = {};
 
     var bar = el("div", "spv-lin-bar");
@@ -49,7 +119,8 @@
     [whole, around].forEach(function (b) { b.type = "button"; b.setAttribute("role", "radio"); });
     bar.appendChild(el("span", "spv-lin-switch-label", "Show:"));
     bar.appendChild(whole); bar.appendChild(around);
-    var chosenInfo = el("span", "spv-lin-chosen", "No place chosen.");
+    var chosenInfo = el("span", "spv-lin-chosen none", "No place chosen.");
+    chosenInfo.setAttribute("aria-live", "polite");
     bar.appendChild(chosenInfo);
     root.appendChild(bar);
 
@@ -57,12 +128,46 @@
     var list = el("div", "spv-lin-list");
     list.setAttribute("role", "list");
     list.setAttribute("aria-label", "The tables and plots of the recipe, in the order of the lineage");
+    var mapCol = el("div", "spv-lin-mapcol");
+    var tools = el("div", "spv-lin-tools");
+    var zoomOut = el("button", "spv-lin-zoom", "-"), zoomIn = el("button", "spv-lin-zoom", "+"), zoomReset = el("button", "spv-lin-zoom wide", "Reset view");
+    [[zoomOut, "Zoom out (the key -)"], [zoomIn, "Zoom in (the key +)"], [zoomReset, "Back to the first view (the key 0)"]].forEach(function (b) {
+      b[0].type = "button"; b[0].title = b[1]; b[0].setAttribute("aria-label", b[1]); tools.appendChild(b[0]);
+    });
+    tools.appendChild(el("span", "spv-lin-note", "Drag the map to move it. Ctrl and the wheel zoom."));
     var mapWrap = el("div", "spv-lin-map");
-    body.appendChild(list); body.appendChild(mapWrap);
+    mapWrap.tabIndex = 0;
+    mapWrap.setAttribute("role", "group");
+    mapWrap.setAttribute("aria-label", "Map of the lineage. The arrow keys move the map, + and - zoom, 0 resets. The list beside it holds the same places.");
+    mapCol.appendChild(tools); mapCol.appendChild(mapWrap);
+    var handleV = makeHandle("v", "x", "Width of the list against the map", {
+      get: function () { return prefs.split !== undefined ? prefs.split : DEFAULTS.split; },
+      fromPixels: function (v, d) { return clamp(v + d / Math.max(body.clientWidth, 1), LIMITS.split); },
+      set: function (v) { prefs.split = clamp(v, LIMITS.split); sizeParts(); },
+      reset: function () { delete prefs.split; sizeParts(); },
+      save: function () { writePrefs(prefs); }
+    });
+    body.appendChild(list); body.appendChild(handleV); body.appendChild(mapCol);
     root.appendChild(body);
+    var handleH = makeHandle("h", "y", "Height of the list and the map", {
+      get: function () { return prefs.bodyH !== undefined ? prefs.bodyH : DEFAULTS.bodyH; },
+      fromPixels: function (v, d) { return clamp(v + d, LIMITS.bodyH); },
+      set: function (v) { prefs.bodyH = clamp(v, LIMITS.bodyH); sizeParts(); },
+      reset: function () { delete prefs.bodyH; sizeParts(); },
+      save: function () { writePrefs(prefs); }
+    });
+    root.appendChild(handleH);
     var text = el("div", "spv-lin-text");
     text.setAttribute("aria-live", "polite");
     root.appendChild(text);
+    var handleT = makeHandle("h", "y", "Height of the text area", {
+      get: function () { return prefs.textH !== undefined ? prefs.textH : text.offsetHeight; },
+      fromPixels: function (v, d) { return clamp(v + d, LIMITS.textH); },
+      set: function (v) { prefs.textH = clamp(v, LIMITS.textH); sizeParts(); },
+      reset: function () { delete prefs.textH; sizeParts(); },
+      save: function () { writePrefs(prefs); }
+    });
+    root.appendChild(handleT);
     var actions = el("div", "spv-lin-actions");
     var create = el("button", "btn btn-primary spv-lin-create", "Create an audit step here...");
     create.type = "button"; create.disabled = true;
@@ -70,11 +175,22 @@
     actions.appendChild(create); actions.appendChild(createNote);
     root.appendChild(actions);
 
+    function sizeParts() {
+      var split = prefs.split !== undefined ? prefs.split : DEFAULTS.split;
+      list.style.flex = "0 0 " + (split * 100).toFixed(2) + "%";
+      body.style.height = (prefs.bodyH !== undefined ? prefs.bodyH : DEFAULTS.bodyH) + "px";
+      text.style.height = prefs.textH !== undefined ? prefs.textH + "px" : "";
+      text.style.maxHeight = prefs.textH !== undefined ? "none" : "";
+      [handleV, handleH, handleT].forEach(function (h) { if (h.refresh) h.refresh(); });
+    }
+    sizeParts();
+
     // ---- the list, grouped by independent graph
     var heads = [];
     data.groups.forEach(function (g) {
       var head = el("div", "spv-lin-group");
       heads.push({ el: head, nodes: g.nodes });
+      head.appendChild(el("span", "spv-lin-gnum", String(g.id + 1)));
       head.appendChild(el("span", "spv-lin-group-title", "Independent graph " + (g.id + 1) + " (" + g.nodes.length + (g.nodes.length === 1 ? " node)" : " nodes)")));
       var all = el("button", "spv-lin-all", "All original tables of this group");
       all.type = "button";
@@ -91,9 +207,12 @@
         line.setAttribute("role", "listitem");
         line.tabIndex = 0;
         line.setAttribute("data-id", id);
+        var chip = el("span", "spv-lin-gnum", String(n.gnum));
+        chip.title = "Independent graph " + n.gnum;
+        line.appendChild(chip);
         line.appendChild(el("span", "spv-lin-swatch " + n.cls));
         line.appendChild(el("span", "spv-lin-line-text", n.line));
-        if (n.no_plot) line.appendChild(el("span", "spv-lin-tag", "no plot"));
+        if (n.no_plot) { var tag = el("span", "spv-lin-tag", "no plot"); tag.title = "No plot reads this table."; line.appendChild(tag); }
         var mark = el("span", "spv-lin-mark");
         line.appendChild(mark);
         wire(line, id);
@@ -103,14 +222,17 @@
       });
     });
 
-    // ---- the map
+    // ---- the map: the headings stay at the top and follow the columns; the dots and arrows move and zoom together
     var map = svg("svg", { "class": "spv-lin-svg", role: "group", "aria-label": "Map of the lineage: one dot for each table or plot, arrows from a table to what is built from it" });
     var defs = svg("defs");
     var marker = svg("marker", { id: "spv-lin-arrow", viewBox: "0 0 6 6", refX: "6", refY: "3", markerWidth: "5", markerHeight: "5", orient: "auto" });
     marker.appendChild(svg("path", { d: "M0,0 L6,3 L0,6 z", "class": "spv-lin-arrowhead" }));
     defs.appendChild(marker); map.appendChild(defs);
-    var edgeLayer = svg("g"), dotLayer = svg("g");
-    map.appendChild(edgeLayer); map.appendChild(dotLayer);
+    var headLayer = svg("g", { "class": "spv-lin-heads" });
+    var vp = svg("g", { "class": "spv-lin-vp" });
+    var edgeLayer = svg("g"), dotLayer = svg("g"), numLayer = svg("g");
+    vp.appendChild(edgeLayer); vp.appendChild(dotLayer); vp.appendChild(numLayer);
+    map.appendChild(vp); map.appendChild(headLayer);
     mapWrap.appendChild(map);
     var edgeEls = data.edges.map(function (e) {
       var l = svg("line", { "class": "spv-lin-edge", "marker-end": "url(#spv-lin-arrow)" });
@@ -124,7 +246,7 @@
       d.setAttribute("data-id", n.id);
       d.setAttribute("tabindex", "0");
       d.setAttribute("role", "button");
-      d.appendChild(svg("title")).textContent = n.name + " - " + n.tier_word;
+      d.appendChild(svg("title")).textContent = n.line + " (graph " + n.gnum + ")";
       dotLayer.appendChild(d);
       var m = svg("text", { "class": "spv-lin-dotmark", "aria-hidden": "true" });
       m.textContent = "";
@@ -133,6 +255,14 @@
       refs[n.id] = refs[n.id] || {};
       refs[n.id].dot = d; refs[n.id].dotmark = m;
     });
+    var numEls = {};                    // one small number for each independent graph: the same N as the list heading
+    data.groups.forEach(function (g) {
+      var t = svg("text", { "class": "spv-lin-gnum-svg", "aria-hidden": "true", "text-anchor": "end" });
+      t.textContent = String(g.id + 1);
+      numLayer.appendChild(t);
+      numEls[g.id + 1] = t;
+    });
+    var headEls = [];                   // the headings of the columns of the layout now shown, rebuilt when the layout changes
 
     function wire(e, id) {
       e.addEventListener("mouseenter", function () { st.hot = id; paint(); });
@@ -161,7 +291,7 @@
 
     function choose(group, ids) {
       if (ids.length) st.chosen[group] = ids; else delete st.chosen[group];
-      if (ids.length) st.last = ids[0];
+      if (ids.length) { st.last = ids[0]; st.reveal = ids[0]; }
       root.setAttribute("data-chosen", JSON.stringify(flat()));
       send("lineage_chosen", flat());
       paint();
@@ -172,18 +302,112 @@
       var chosen = flat();
       if (st.mode === "around" && chosen.length) {
         if (chosen.length === 1) {
-          var ids = byId[chosen[0]].around, pos = data.layouts[chosen[0]], size = data.sizes[chosen[0]];
-          return { ids: ids, pos: pos, size: size };
+          var ids = byId[chosen[0]].around;
+          return { key: chosen[0], ids: ids, pos: data.layouts[chosen[0]], size: data.sizes[chosen[0]], union: false };
         }
         var keep = {};
         chosen.forEach(function (c) { byId[c].around.forEach(function (i) { keep[i] = true; }); });
-        return { ids: data.nodes.map(function (n) { return n.id; }).filter(function (i) { return keep[i]; }), pos: data.layouts[""], size: data.sizes[""] };
+        return { key: "", ids: data.nodes.map(function (n) { return n.id; }).filter(function (i) { return keep[i]; }), pos: data.layouts[""], size: data.sizes[""], union: true };
       }
-      return { ids: data.nodes.map(function (n) { return n.id; }), pos: data.layouts[""], size: data.sizes[""] };
+      return { key: "", ids: data.nodes.map(function (n) { return n.id; }), pos: data.layouts[""], size: data.sizes[""], union: false };
+    }
+
+    // ---- pan and zoom: a transform of the group of dots; the strokes keep their width (CSS vector-effect)
+    function applyView() {
+      vp.setAttribute("transform", "translate(" + view.tx.toFixed(1) + " " + view.ty.toFixed(1) + ") scale(" + view.k.toFixed(3) + ")");
+      headEls.forEach(function (h) {
+        var x = h.x * view.k + view.tx;
+        h.el.setAttribute("x", (x - 9).toFixed(1));
+        h.el.style.display = h.visible && x > -40 && x < mapWrap.clientWidth ? "" : "none";
+        h.tn.nodeValue = h.dx * view.k < 76 ? h.short : h.text;       // the text node only: the <title> child (the hover text) stays
+      });
+    }
+    function resetView() { view.k = 1; view.tx = 0; view.ty = 0; applyView(); }
+    function zoomAt(factor, cx, cy) {
+      var k = clamp(view.k * factor, ZOOM);
+      var f = k / view.k;
+      view.tx = cx - (cx - view.tx) * f; view.ty = cy - (cy - view.ty) * f; view.k = k;
+      applyView();
+    }
+    function centre() { return [mapWrap.clientWidth / 2, mapWrap.clientHeight / 2]; }
+    zoomIn.addEventListener("click", function () { var c = centre(); zoomAt(1.25, c[0], c[1]); });
+    zoomOut.addEventListener("click", function () { var c = centre(); zoomAt(0.8, c[0], c[1]); });
+    zoomReset.addEventListener("click", resetView);
+    var pan = null;
+    mapWrap.addEventListener("pointerdown", function (ev) {
+      if (ev.button !== 0 || (ev.target.closest && ev.target.closest(".spv-lin-dot"))) return;
+      mapWrap.setPointerCapture(ev.pointerId);
+      pan = { x: ev.clientX, y: ev.clientY, tx: view.tx, ty: view.ty };
+      mapWrap.classList.add("panning");
+    });
+    mapWrap.addEventListener("pointermove", function (ev) {
+      if (!pan) return;
+      view.tx = pan.tx + ev.clientX - pan.x; view.ty = pan.ty + ev.clientY - pan.y;
+      applyView();
+    });
+    function endPan() { pan = null; mapWrap.classList.remove("panning"); }
+    mapWrap.addEventListener("pointerup", endPan);
+    mapWrap.addEventListener("pointercancel", endPan);
+    mapWrap.addEventListener("wheel", function (ev) {
+      if (!ev.ctrlKey) return;                       // without Ctrl the wheel scrolls the page, as everywhere
+      ev.preventDefault();
+      var r = mapWrap.getBoundingClientRect();
+      zoomAt(ev.deltaY < 0 ? 1.15 : 1 / 1.15, ev.clientX - r.left, ev.clientY - r.top);
+    }, { passive: false });
+    mapWrap.addEventListener("keydown", function (ev) {
+      if (ev.target !== mapWrap) return;             // a dot keeps its own keys
+      var c = centre(), step = 40, handled = true;
+      if (ev.key === "ArrowLeft") view.tx += step;
+      else if (ev.key === "ArrowRight") view.tx -= step;
+      else if (ev.key === "ArrowUp") view.ty += step;
+      else if (ev.key === "ArrowDown") view.ty -= step;
+      else if (ev.key === "+" || ev.key === "=") zoomAt(1.25, c[0], c[1]);
+      else if (ev.key === "-") zoomAt(0.8, c[0], c[1]);
+      else if (ev.key === "0") resetView();
+      else handled = false;
+      if (handled) { ev.preventDefault(); applyView(); }
+    });
+
+    // the chosen place is brought into view in the other part too: a line chosen in the list is panned into the map, a dot chosen in the map is scrolled into the list
+    function revealInMap(id, pos) {
+      var p = pos[id];
+      if (!p) return;
+      var x = p[0] * view.k + view.tx, y = p[1] * view.k + view.ty, w = mapWrap.clientWidth, h = mapWrap.clientHeight, m = 28;
+      if (x < m || x > w - m) view.tx += w / 2 - x;
+      if (y < m + 20 || y > h - m) view.ty += h / 2 - y;
+      applyView();
+    }
+    function revealInList(id) {
+      var line = refs[id] && refs[id].line;
+      if (!line || line.style.display === "none") return;
+      var top = line.offsetTop, bottom = top + line.offsetHeight;
+      if (top < list.scrollTop) list.scrollTop = Math.max(top - 28, 0);
+      else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight + 8;
+    }
+
+    function drawHeadings(s) {
+      headLayer.textContent = "";
+      headEls = [];
+      var heads = data.heads[s.key] || [];
+      heads.forEach(function (h, i) {
+        var t = svg("text", { "class": "spv-lin-head", y: 13, "aria-hidden": "true" });
+        var tn = document.createTextNode(h.text);
+        t.appendChild(tn);
+        if (!s.union) t.appendChild(svg("title")).textContent = h.title;
+        headLayer.appendChild(t);
+        var next = heads[i + 1];
+        headEls.push({ el: t, tn: tn, x: h.x, text: h.text, short: h.short, dx: next ? next.x - h.x : 78, visible: true });
+      });
     }
 
     function paint() {
       var s = shown();
+      var layoutKey = s.key + "|" + (s.union ? s.ids.join(",") : "");
+      if (st.layoutKey !== layoutKey) {
+        st.layoutKey = layoutKey;
+        drawHeadings(s);
+        resetView();
+      }
       var visible = {};
       s.ids.forEach(function (i) { visible[i] = true; });
       var chosen = flat();
@@ -192,9 +416,6 @@
       var hot = st.hot;
       var hotBuilt = {};
       if (hot && byId[hot].choosable) byId[hot].built_from.forEach(function (b) { hotBuilt[b] = true; });
-      map.setAttribute("viewBox", "0 0 " + Math.max(s.size[0], 60) + " " + Math.max(s.size[1], 40));
-      map.setAttribute("width", Math.max(s.size[0], 60));
-      map.setAttribute("height", Math.max(s.size[1], 40));
       data.nodes.forEach(function (n) {
         var r = refs[n.id], on = !!visible[n.id];
         var cls = (chosenSet[n.id] ? " chosen" : "") + (built[n.id] ? " built" : "") + (hot === n.id ? " hot" : "") + (hotBuilt[n.id] && !built[n.id] ? " built-hint" : "") + (lastMarks[n.id] ? " marked" : "");
@@ -203,10 +424,9 @@
         r.line.setAttribute("aria-selected", chosenSet[n.id] ? "true" : "false");
         r.dot.style.display = on ? "" : "none";
         r.dotmark.style.display = on && lastMarks[n.id] ? "" : "none";
-        var base = (n.kind === "T3" ? "spv-lin-dot " : "spv-lin-dot ") + n.cls;
-        r.dot.setAttribute("class", base + cls);
+        r.dot.setAttribute("class", "spv-lin-dot " + n.cls + cls);
         r.dot.setAttribute("aria-pressed", chosenSet[n.id] ? "true" : "false");
-        r.dot.setAttribute("aria-label", n.line + (n.choosable ? "" : " (cannot be chosen)") + (chosenSet[n.id] ? ", chosen" : "") + (built[n.id] ? ", built from the chosen place" : "") + (lastMarks[n.id] ? ", holds audit step(s)" : ""));
+        r.dot.setAttribute("aria-label", n.line + (n.choosable ? "" : " (cannot be chosen)") + (chosenSet[n.id] ? ", chosen" : "") + (built[n.id] ? ", built from the chosen place" : "") + (lastMarks[n.id] ? ", holds audit step(s)" : "") + ", graph " + n.gnum);
         if (on) {
           var p = s.pos[n.id];
           if (n.kind === "T3") { r.dot.setAttribute("x", p[0] - 5.5); r.dot.setAttribute("y", p[1] - 5.5); }
@@ -229,6 +449,24 @@
         }
         e.el.setAttribute("class", "spv-lin-edge" + ((chosenSet[e.from] || built[e.from]) && built[e.to] ? " built" : ""));
       });
+      // the number of each independent graph, at its first dot among the dots shown (the rule of graph_labels in lineage_view.py: the lowest x, then the lowest y)
+      var firsts = {};
+      s.ids.forEach(function (i) {
+        var p = s.pos[i], g = byId[i].gnum;
+        if (!firsts[g] || p[0] < firsts[g][0] || (p[0] === firsts[g][0] && p[1] < firsts[g][1])) firsts[g] = p;
+      });
+      Object.keys(numEls).forEach(function (g) {
+        var t = numEls[g], p = firsts[g];
+        t.style.display = p ? "" : "none";
+        if (p) { t.setAttribute("x", p[0] - 10); t.setAttribute("y", p[1] + 4); }
+      });
+      // a column heading is drawn only over a column that has a dot shown
+      var cols = {};
+      s.ids.forEach(function (i) { cols[s.pos[i][0]] = true; });
+      headEls.forEach(function (h) { h.visible = !!cols[h.x]; });
+      applyView();
+      if (st.reveal && visible[st.reveal]) { revealInMap(st.reveal, s.pos); revealInList(st.reveal); }
+      st.reveal = null;
       // the text area: the hovered or focused node, else the last chosen place
       var shownId = hot || (chosen.length ? (chosenSet[st.last] ? st.last : chosen[0]) : null);
       text.textContent = "";
@@ -238,7 +476,8 @@
       } else {
         text.appendChild(el("div", "spv-lin-text-line", HINT));
       }
-      chosenInfo.textContent = chosen.length ? ("Chosen: " + chosen.map(function (c) { return byId[c].name; }).join(", ") + ".") : "No place chosen.";
+      chosenInfo.textContent = chosen.length ? ("Chosen: " + chosen.map(function (c) { return byId[c].shown; }).join(", ") + ".") : "No place chosen.";
+      chosenInfo.className = "spv-lin-chosen" + (chosen.length ? "" : " none");
       create.disabled = !chosen.length;
       createNote.textContent = chosen.length ? (st.mode === "around" ? "" : "The dialog opens with the chosen place(s) ticked, for the step you staged in the Filters panel (view T3).") : "Choose a place first.";
       whole.className = "spv-lin-switch" + (st.mode === "whole" ? " active" : "");

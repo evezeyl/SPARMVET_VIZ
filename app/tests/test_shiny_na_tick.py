@@ -58,12 +58,12 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     _pick_value(page, "2024")
     page.locator("#filter_add_row").click()
     expect(page.locator("#filter_remove_0")).to_be_visible(timeout=5_000)
-    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value removed")
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no year record are removed")
     page.locator("#filter_apply").click()
     _wait_shiny(page)
     _wait_rows(page, 25)
     # D-0383: the right panel is empty in Exploration; the applied filter is read in the LEFT panel, in its row
-    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value removed")
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no year record are removed")
     assert page.locator("#filter_inventory_ui").count() == 0
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
@@ -73,12 +73,12 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     _wait_shiny(page)
     expect(page.locator("#filter_na_text_ui")).to_contain_text("they are kept")
     page.locator("#filter_add_row").click()
-    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value kept", timeout=5_000)
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no year record are kept", timeout=5_000)
     page.locator("#filter_apply").click()
     _wait_shiny(page)
     # 25 rows equal 2024, 2 have no value: keep adds those 2, so the filter leaves all 27 and the badge says a filter is on
     expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_be_visible(timeout=15_000)
     assert _rows_in_grid(page) == 27
-    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value kept")
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no year record are kept")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)

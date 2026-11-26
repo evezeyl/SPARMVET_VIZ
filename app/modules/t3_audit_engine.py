@@ -14,7 +14,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:trim_typed, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
-# consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/filter_words.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
@@ -33,6 +33,7 @@ from utils.filter_values import (
     UNIT_NS, FilterValueError, duration_ns, filter_condition, kind_of, read_filter_value, type_words, unit_and_zone,
 )
 from utils.missing_values import keep_missing
+from utils.filter_words import no_value_words, value_text
 from utils.na_choice import default_na, na_of
 
 
@@ -155,12 +156,7 @@ def describe_filter(column: str, op: str, value, na: str | None = None, closed: 
         text += _CLOSED_SUFFIX[closed]
     if na is None:
         return text
-    return f"{text} ({na_phrase(na)})"
-
-
-def na_phrase(na: str) -> str:
-    """'rows with no value kept' / 'rows with no value removed': the choice `na` in a few words."""
-    return "rows with no value kept" if na == "keep" else "rows with no value removed"
+    return f"{text} ({no_value_words(na, column)})"
 
 
 def _describe_condition(column: str, op: str, value) -> str:
@@ -169,11 +165,11 @@ def _describe_condition(column: str, op: str, value) -> str:
         op, vals = {"in": "eq", "not_in": "ne"}.get(op, op), None
         value = value[0]
     if op == "between" and isinstance(value, (list, tuple)) and len(value) == 2:
-        return f"{column} between {value[0]} and {value[1]}"
+        return f"{column} between {value_text(value[0])} and {value_text(value[1])}"
     sym, words = OP_WORDS.get(op, (op, op))
     if vals is not None:
-        return f"{column} {words} {', '.join(str(v) for v in vals)}"
-    return f"{column} {sym} {value}"
+        return f"{column} {words} {', '.join(value_text(v) for v in vals)}"
+    return f"{column} {sym} {value_text(value)}"
 
 
 # -- the pure side of the HOME filter dialog (ADR-104 points 4, 7 and 8) ---------------------------------------------
@@ -198,7 +194,7 @@ def closed_phrase(closed: str) -> str:
 
 def between_prose(value, closed: str) -> str:
     """The report sentence of a `between`: 'between "89" and "91", both ends included'."""
-    return f'between "{value[0]}" and "{value[1]}", {closed_phrase(closed)}'
+    return f'between "{value_text(value[0])}" and "{value_text(value[1])}", {closed_phrase(closed)}'
 
 
 def column_types(lf) -> dict:
