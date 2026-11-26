@@ -399,7 +399,8 @@ def test_every_place_uses_the_same_plain_name(ready: Page):
     assert _line(page, "T3:amr_heatmap").locator(".spv-lin-line-text").inner_text() == "AMR Heatmap: Result data, T3"
     shown_text = __import__("re").sub(r"\([^)]*\)", "", page.locator("#lineage_root .spv-lin-list").inner_text())     # an id in brackets keeps its underscores: it tells two equal names apart
     assert "_" not in shown_text
-    assert "(table QA_L50_integer)" in page.locator("#lineage_root .spv-lin-list").inner_text(), "a table and a plot with the same name are told apart"
+    listed = page.locator("#lineage_root .spv-lin-list").inner_text()
+    assert "QA L50 integer (table)" in listed and "QA L50 Integer (plot)" in listed, "a table and a plot with the same name are told apart by their kind, not by an id that repeats the name"
     assert "table after its tier" not in page.locator("#lineage_root .spv-lin-list").inner_text()
     assert _dot(page, "T1:Summary_phenotype_length_fragmentation").get_attribute("aria-label").startswith(long)
     _dot(page, "T3:amr_heatmap").click()

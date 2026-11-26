@@ -36,7 +36,19 @@ def set_source(page: Page, table: str) -> None:
     expect(page.locator("#source_table")).to_have_value(table)
 
 
+_STILL_JS = """() => new Promise(resolve => {
+  const read = () => { const e = document.querySelector('#audit_compare'); if (!e) return null; const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height].map(Math.round).join(','); };
+  let last = read(), same = 0, ticks = 0;
+  const timer = setInterval(() => { const now = read(); same = (now === last) ? same + 1 : 0; last = now; ticks += 1;
+    if (same >= 4 || ticks > 60) { clearInterval(timer); resolve(same >= 4); } }, 100);
+})"""
+
+
 def set_compare(page: Page, on: bool) -> None:
+    """Click the Compare switch once the screen has stopped moving under it: entering Audit mode opens the right panel (a width transition) and the layout
+    above the switch settles a moment later; a click made while it moves lands beside the switch and changes nothing (found 2026-11-26)."""
+    page.locator("#audit_compare").wait_for(state="attached", timeout=15_000)
+    page.evaluate(_STILL_JS)
     page.locator("#audit_compare").set_checked(on, force=True)
     wait_shiny(page)
 

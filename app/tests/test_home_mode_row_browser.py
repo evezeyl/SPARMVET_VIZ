@@ -27,9 +27,23 @@ from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _wait_shiny
 
 
 
+_SETTLED_URLS: set = set()
+
+
 def _ready(page: Page, url: str) -> None:
     _load_data_analysis_recipe(page, url)
+    if url not in _SETTLED_URLS:                     # once per app: the first interaction must not meet the late redraw after the opening
+        _SETTLED_URLS.add(url)
+        _settled(page)
     set_mode(page, "exploration")
+
+
+def _settled(page: Page) -> None:
+    """A freshly started app builds its tables after the first page (the opening, D-0326) and draws HOME again when it is done: a click made in between is lost
+    (the control is drawn again from the server's value). Wait until the server is idle and the strip is there, then a moment more."""
+    page.wait_for_selector("#data_view", timeout=60_000)
+    _wait_shiny(page, 120_000)
+    page.wait_for_timeout(2_500)
 
 
 def _mark(page: Page, selector: str) -> None:
@@ -80,6 +94,7 @@ def test_compare_is_one_switch_above_the_plots_in_audit_mode_only(page: Page, sh
         expect(page.locator(".spv-compare-line")).to_contain_text("Compare with the original")
         assert page.locator("body").inner_text().count("Audit steps apply to the plot's table") == 0
         line, tabs = page.locator(".spv-compare-line").bounding_box(), page.locator("#home_groups_nav").bounding_box()
+        assert line["x"] < tabs["x"] + 120, "left-aligned: it stays under the pointer when the right panel opens"
         assert line["y"] + line["height"] <= tabs["y"] + 1, "the switch is above the group tabs"
         set_compare(page, True)
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=20_000)
@@ -147,6 +162,7 @@ def test_with_the_recipe_name_hidden_the_row_holds_the_control_alone(browser: Br
             page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
             _wait_shiny(page)
             expect(page.locator(".spv-mode-row #home_mode")).to_be_visible(timeout=30_000)
+            _settled(page)
             assert page.locator(".banner-title").count() == 0, "no recipe name is shown"
             box, row = page.locator("#home_mode").bounding_box(), page.locator(".spv-mode-row").bounding_box()
             assert box["x"] + box["width"] > row["x"] + row["width"] - 60, "the control sits at the right of its row"
