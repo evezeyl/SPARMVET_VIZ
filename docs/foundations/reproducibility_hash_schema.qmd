@@ -99,7 +99,7 @@ flowchart LR
   K2{{"tier2_key"}} --> P2[("Tier 2 parquet<br/>(none if tier2 is empty)")]
   K2 --> K3
   S3["Tier 3 steps of the plot"] --> K3
-  K3{{"key of the plot's table<br/>(the tier2_key when tier3 is empty)"}} --> T3R["The table the plot reads<br/>(never stored)"]
+  K3{{"key of the Result data (T3)<br/>(the tier2_key when tier3 is empty)"}} --> T3R["Result data (T3), the table the plot reads<br/>(stored when the plot has tier-3 steps of its own)"]
   P2 --> T3R
   T3R --> PL["Plot"]
   PS["Plot spec, plot_defaults,<br/>palette"] --> PL
