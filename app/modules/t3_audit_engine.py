@@ -92,7 +92,22 @@ _VIEW_CAUSES = (
     (2, "you changed the data you view"),
     (3, "you changed the source table"),
     (4, "you opened a plot that reads another table"),
+    (5, "the columns of the table you show changed"),
 )
+
+# In Audit mode the staged rows are the condition of an audit step, built on the table SHOWN (slice 3a, D-0654, D-0655): the notice speaks of the table shown, not of
+# "the data you view" or "a plot". PROVISIONAL words (the owner reads them).
+_AUDIT_CAUSES = {
+    2: "you showed another table",
+    3: "you showed another table",
+    4: "you showed another table",
+    5: "the columns of the table shown changed (an audit step added or removed a column)",
+}
+
+
+def _part(key: tuple, index: int):
+    """The part `index` of a view key, None when the key is shorter (an Exploration key has no digest of the columns; an Audit key has one)."""
+    return key[index] if len(key) > index else None
 
 
 def view_change_notice(old: tuple | None, new: tuple, n_pending: int, n_applied: int) -> str | None:
@@ -100,14 +115,18 @@ def view_change_notice(old: tuple | None, new: tuple, n_pending: int, n_applied:
     when it is the first view, or when nothing was cleared (no notice for nothing).
 
     A change of recipe keeps the recipe notice (`filters_cleared_notice`). When several things changed at once, the first cause in the order
-    recipe, mode, data, source table, plot is named. PROVISIONAL words (the owner reads them).
+    recipe, mode, data, source table, plot, columns is named. In Audit mode (slice 3a) the cause is worded for the table shown and the staged
+    rows are called the condition being built (D-0654). PROVISIONAL words (the owner reads them).
     """
     if old is None or old == new or (n_pending <= 0 and n_applied <= 0):
         return None
     if old[0] != new[0]:
         return filters_cleared_notice(n_pending, n_applied)
     for index, cause in _VIEW_CAUSES:
-        if old[index] != new[index]:
+        if _part(old, index) != _part(new, index):
+            if new[1] == "audit" and old[1] == "audit":
+                return (f"The condition you were building was removed because {_AUDIT_CAUSES[index]}. A condition is built on the table you show, "
+                        "so it is not kept when that table changes. Audited steps are kept.")
             why = cause.format(mode_name="Audit" if new[1] == "audit" else "Exploration",
                                mode=("Audit mode builds audit steps; exploration filters do not exist there" if new[1] == "audit"
                                      else "a filter belongs to the table it was built on"))
