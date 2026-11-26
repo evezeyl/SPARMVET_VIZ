@@ -853,9 +853,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 240,
-							"top": 110,
+							"top": 115,
 							"width": 433,
-							"height": 65,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1WIEtxV20o="
@@ -2296,9 +2296,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 240,
-							"top": 380,
+							"top": 385,
 							"width": 620,
-							"height": 65,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1WJad6Y5wc="
@@ -2780,9 +2780,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 240,
-							"top": 470,
+							"top": 479,
 							"width": 692,
-							"height": 74,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1WJ2d+nYOE="
@@ -3264,9 +3264,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 240,
-							"top": 560,
+							"top": 569,
 							"width": 578,
-							"height": 74,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1WKkOENjos="
@@ -3748,9 +3748,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 240,
-							"top": 650,
+							"top": 659,
 							"width": 697,
-							"height": 74,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht1WLMeKjrPA="
@@ -8128,9 +8128,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 1700,
-							"top": 140,
+							"top": 152,
 							"width": 615,
-							"height": 80,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhy/In+2kcxAk="
@@ -8620,9 +8620,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 1700,
-							"top": 250,
+							"top": 262,
 							"width": 638,
-							"height": 80,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhy/Iosml1Q5c="
@@ -9112,9 +9112,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 1700,
-							"top": 360,
+							"top": 372,
 							"width": 644,
-							"height": 80,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGhy/Ipb2nOa+4="
@@ -9593,9 +9593,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 1700,
-							"top": 470,
+							"top": 482,
 							"width": 905,
-							"height": 80,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzuudx0Z1jY="
@@ -10074,9 +10074,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 1700,
-							"top": 560,
+							"top": 572,
 							"width": 700,
-							"height": 80,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGiEzuuex1YN0Q="
@@ -10987,7 +10987,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Read the information of the data analysis recipe",
+					"name": "Read the recipe information",
+					"documentation": "Original box text:\nRead the information of the data analysis recipe",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -11047,7 +11048,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "See the plot: the Result (Exploration) or the audited plot (Audit mode)",
+					"name": "See the Result, or the audited plot",
+					"documentation": "Original box text:\nSee the plot: the Result (Exploration) or the audited plot (Audit mode)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -11067,7 +11069,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Exploration: filter the table viewed; never changes a plot, never exported",
+					"name": "Exploration: filter the table viewed",
+					"documentation": "Original box text:\nExploration: filter the table viewed; never changes a plot, never exported",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -11098,7 +11101,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Compare the original and the audited plot (Audit mode)",
+					"name": "Compare original and audited plot",
+					"documentation": "Original box text:\nCompare the original and the audited plot (Audit mode)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -11129,7 +11133,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Send a filter or drop to audit, at a place, with a reason",
+					"name": "Send a filter or drop to audit, with a reason",
+					"documentation": "Original box text:\nSend a filter or drop to audit, at a place, with a reason",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -28833,7 +28838,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Make an audit step at a place (dialog or lineage panel), reason, Apply",
+					"name": "Make an audit step at a place, then Apply",
+					"documentation": "Original box text:\nMake an audit step at a place (dialog or lineage panel), reason, Apply",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -28863,7 +28869,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Remove an audit step: any step, no remove-last, no remove-all (D-0314)",
+					"name": "Remove an audit step: any step (D-0314)",
+					"documentation": "Original box text:\nRemove an audit step: any step, no remove-last, no remove-all (D-0314)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -28893,7 +28900,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "See the path of the data: the lineage panel and what is built from a place",
+					"name": "See the path of the data (lineage panel)",
+					"documentation": "Original box text:\nSee the path of the data: the lineage panel and what is built from a place",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -30568,7 +30576,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Add an audit step at a result table no plot reads (small form of the lineage panel)",
+					"name": "Add an audit step at a result table, no plot",
+					"documentation": "Original box text:\nAdd an audit step at a result table no plot reads (small form of the lineage panel)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -30608,7 +30617,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "Read the id warning: lines added to a table, ids with no match; blocks nothing",
+					"name": "Read the id warning; blocks nothing",
+					"documentation": "Original box text:\nRead the id warning: lines added to a table, ids with no match; blocks nothing",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -32876,7 +32886,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "Browse examples by taxonomy (family, pattern, difficulty, geom, show, sample size)",
+					"name": "Browse examples by taxonomy (six axes)",
+					"documentation": "Original box text:\nBrowse examples by taxonomy (family, pattern, difficulty, geom, show, sample size)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -33114,10 +33125,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 699.128173828125,
-									"top": 1183,
-									"width": 132.7216796875,
-									"height": 241,
+									"left": 693,
+									"top": 1279,
+									"width": 144,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuifnQsgzpAA="
 									}
@@ -33814,10 +33825,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 629.92626953125,
-									"top": 469,
+									"left": 630,
+									"top": 519,
 									"width": 200,
-									"height": 150,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q1O/ovodeE="
 									}
@@ -33850,10 +33861,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 426.541259765625,
-									"top": 1261,
+									"left": 427,
+									"top": 1279,
 									"width": 242.5869140625,
-									"height": 85,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q1PGYvwhqk="
 									}
@@ -33922,10 +33933,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 332.645751953125,
-									"top": 321,
+									"left": 333,
+									"top": 345,
 									"width": 200,
-									"height": 98,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q1POYwA43U="
 									}
@@ -34030,10 +34041,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 539.7822265625,
-									"top": 900,
+									"left": 540,
+									"top": 924,
 									"width": 200,
-									"height": 98,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGh/Q1Pb4wY4Fg="
 									}
@@ -35016,7 +35027,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "'select all' boxes (x6): the page script gallery_select_all.js ticks the group; the effects only remember the box",
+					"name": "'select all' boxes (x6), page script",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -35044,7 +35055,8 @@
 								"$ref": "AAAAAAGh/Q1O/ovl1U4="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\n'select all' boxes (x6): the page script gallery_select_all.js ticks the group; the effects only remember the box"
 				},
 				{
 					"_type": "FCProcess",
@@ -36325,7 +36337,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "gallery_state (reactive value, server.py): applied filters, ticked terms, chosen example",
+					"name": "gallery_state: filters, ticked terms, example",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36353,7 +36365,8 @@
 								"$ref": "AAAAAAGh/Q1PTYwFKrM="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\ngallery_state (reactive value, server.py): applied filters, ticked terms, chosen example"
 				},
 				{
 					"_type": "FCProcess",
@@ -36361,7 +36374,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "bootloader.rejected_gallery_examples, gallery_index_status (fixed at start)",
+					"name": "rejected examples, gallery_index_status",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36376,7 +36389,8 @@
 								"$ref": "AAAAAAGh/Q1PKov1NFo="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nbootloader.rejected_gallery_examples, gallery_index_status (fixed at start)"
 				},
 				{
 					"_type": "FCProcess",
@@ -36446,7 +36460,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "_visible (examples matching the applied filters)",
+					"name": "_visible: examples matching the filters",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -36474,7 +36488,8 @@
 								"$ref": "AAAAAAGh/Q1PX4wNAes="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\n_visible (examples matching the applied filters)"
 				},
 				{
 					"_type": "FCProcess",
@@ -36528,7 +36543,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
-					"name": "gallery_left_out_notice (why examples are left out)"
+					"name": "gallery_left_out_notice: why left out",
+					"documentation": "Original box text:\ngallery_left_out_notice (why examples are left out)"
 				},
 				{
 					"_type": "FCProcess",
@@ -41880,9 +41896,9 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 20,
-							"top": 536,
+							"top": 545,
 							"width": 556,
-							"height": 74,
+							"height": 56,
 							"showProperty": false,
 							"nameCompartment": {
 								"$ref": "AAAAAAGht+R0MLDKCz0="
@@ -44994,7 +45010,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "Add or edit a wrangling, join or plot node through forms",
+					"name": "Add or edit a wrangling, join or plot node",
+					"documentation": "Original box text:\nAdd or edit a wrangling, join or plot node through forms",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -45074,7 +45091,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "Edit the data analysis recipe as raw YAML (escape hatch)",
+					"name": "Edit the recipe as raw YAML (escape hatch)",
+					"documentation": "Original box text:\nEdit the data analysis recipe as raw YAML (escape hatch)",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -45176,7 +45194,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "Import or export the data analysis recipe file",
+					"name": "Import or export the recipe file",
+					"documentation": "Original box text:\nImport or export the data analysis recipe file",
 					"tags": [
 						{
 							"_type": "Tag",
@@ -45390,10 +45409,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 742.08447265625,
-									"top": 805,
-									"width": 132.02978515625,
-									"height": 98,
+									"left": 734,
+									"top": 829,
+									"width": 148,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuinij8neYqA="
 									}
@@ -45426,10 +45445,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 1165.783447265625,
-									"top": 128.25,
+									"left": 1166,
+									"top": 159,
 									"width": 111.7744140625,
-									"height": 111,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuini18nm/Ko="
 									}
@@ -45498,10 +45517,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 1170.842529296875,
-									"top": 801,
+									"left": 1171,
+									"top": 838,
 									"width": 101.65625,
-									"height": 124,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuinjbMn2pYA="
 									}
@@ -46038,10 +46057,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 54.34716796875,
-									"top": 859,
-									"width": 97.32080078125,
-									"height": 111,
+									"left": 52,
+									"top": 890,
+									"width": 102,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuinoO8pu03g="
 									}
@@ -46326,10 +46345,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 258.063720703125,
-									"top": 977.5,
-									"width": 114.6689453125,
-									"height": 85,
+									"left": 236,
+									"top": 995,
+									"width": 158,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuinq8squAMc="
 									}
@@ -46362,10 +46381,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 764.139404296875,
-									"top": 933,
+									"left": 764,
+									"top": 970,
 									"width": 87.919921875,
-									"height": 124,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuinrTsq2qQQ="
 									}
@@ -49394,9 +49413,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 400,
-									"top": 1360,
+									"top": 1378,
 									"width": 130.5380859375,
-									"height": 85,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhurB8dNxa8nw="
 									}
@@ -49718,7 +49737,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "wrangle_studio state (logic_stack, active_path, selected_node_idx, joint_request)",
+					"name": "wrangle_studio state (logic_stack...)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -49850,7 +49869,8 @@
 								"$ref": "AAAAAAGhuinwlMsbnZY="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nwrangle_studio state (logic_stack, active_path, selected_node_idx, joint_request)"
 				},
 				{
 					"_type": "FCProcess",
@@ -49858,7 +49878,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "nav/select inputs (x4: sidebar_nav, stored_selector, node_clicked, btn_import)",
+					"name": "nav/select inputs (x4)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -49873,7 +49893,8 @@
 								"$ref": "AAAAAAGhuinjIcnrULQ="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nnav/select inputs (x4: sidebar_nav, stored_selector, node_clicked, btn_import)"
 				},
 				{
 					"_type": "FCProcess",
@@ -49956,7 +49977,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "data edit buttons (x4: normalize, upload x2, save_internal)",
+					"name": "data edit buttons (x4)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -49971,7 +49992,8 @@
 								"$ref": "AAAAAAGhuinjt8n7z9g="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\ndata edit buttons (x4: normalize, upload x2, save_internal)"
 				},
 				{
 					"_type": "FCProcess",
@@ -50308,7 +50330,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "agent session state (x3: session_id, conversation, in_flight)",
+					"name": "agent session state (x3)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -50323,7 +50345,8 @@
 								"$ref": "AAAAAAGhuino4cp7o50="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nagent session state (x3: session_id, conversation, in_flight)"
 				},
 				{
 					"_type": "FCProcess",
@@ -50501,7 +50524,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "_grp_modal_ctx / _groups_refresh (local state)",
+					"name": "_grp_modal_ctx / _groups_refresh (local)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -50516,7 +50539,8 @@
 								"$ref": "AAAAAAGhuinrqcq7JH8="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\n_grp_modal_ctx / _groups_refresh (local state)"
 				},
 				{
 					"_type": "FCProcess",
@@ -50524,7 +50548,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "CRUD buttons (x5: action, create, grp_submit, plt_submit, move_plt)",
+					"name": "CRUD buttons (x5)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -50539,7 +50563,8 @@
 								"$ref": "AAAAAAGhuinrqcq7JH8="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nCRUD buttons (x5: action, create, grp_submit, plt_submit, move_plt)"
 				},
 				{
 					"_type": "FCProcess",
@@ -52872,7 +52897,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
-					"name": "inline_errors (local state, scopes: import/yaml_hatch)",
+					"name": "inline_errors (local state)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -52900,7 +52925,8 @@
 								"$ref": "AAAAAAGhurB9QtxnK3c="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\ninline_errors (local state, scopes: import/yaml_hatch)"
 				},
 				{
 					"_type": "FCProcess",
@@ -55970,10 +55996,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 379.663818359375,
-									"top": 109,
-									"width": 95.14990234375,
-									"height": 111,
+									"left": 352,
+									"top": 140,
+									"width": 151,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui5zm82uetg="
 									}
@@ -56006,10 +56032,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 232.33984375,
-									"top": 45,
-									"width": 80.6962890625,
-									"height": 124,
+									"left": 227,
+									"top": 82,
+									"width": 92,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui5z6c22Zeg="
 									}
@@ -56042,10 +56068,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 32,
-									"width": 151.498046875,
-									"height": 150,
+									"left": 11,
+									"top": 82,
+									"width": 169,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui50Oc2+094="
 									}
@@ -56078,10 +56104,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 392.06396484375,
-									"top": 493,
-									"width": 70.349609375,
-									"height": 137,
+									"left": 362,
+									"top": 537,
+									"width": 130,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui50is3GnX8="
 									}
@@ -56114,10 +56140,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 237.51318359375,
-									"top": 422.5,
-									"width": 70.349609375,
-									"height": 124,
+									"left": 229,
+									"top": 460,
+									"width": 88,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui503M3Oo2c="
 									}
@@ -56150,10 +56176,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 55.75634765625,
-									"top": 416,
-									"width": 79.9853515625,
-									"height": 137,
+									"left": 11,
+									"top": 460,
+									"width": 169,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui51eM3WsOY="
 									}
@@ -56258,10 +56284,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 52.8681640625,
-									"top": 237,
-									"width": 85.76171875,
-									"height": 111,
+									"left": 20,
+									"top": 268,
+									"width": 151,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui52h83uliw="
 									}
@@ -56366,10 +56392,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 50.700439453125,
-									"top": 762,
-									"width": 90.09716796875,
-									"height": 111,
+									"left": 22,
+									"top": 793,
+									"width": 148,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui53js4G2cg="
 									}
@@ -56438,10 +56464,10 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 221.498046875,
-									"top": 611,
-									"width": 102.3798828125,
-									"height": 111,
+									"left": 194,
+									"top": 642,
+									"width": 158,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhui54PM4Wl14="
 									}
@@ -57342,7 +57368,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Reconcile: file uploads (x2) + precheck/run buttons",
+					"name": "Reconcile: file uploads (x2) + buttons",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -57357,7 +57383,8 @@
 								"$ref": "AAAAAAGhui5z6c2ztHg="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nReconcile: file uploads (x2) + precheck/run buttons"
 				},
 				{
 					"_type": "FCPredefinedProcess",
@@ -57365,7 +57392,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Reconcile: calc chain (file infos, cols, precheck, run)",
+					"name": "Reconcile: calc chain",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -57380,7 +57407,8 @@
 								"$ref": "AAAAAAGhui50Oc27ENM="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nReconcile: calc chain (file infos, cols, precheck, run)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57388,7 +57416,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Reconcile: outputs (x8 panels + match table + id_transformation.yaml download)"
+					"name": "Reconcile: outputs (x8 panels, table, yaml)",
+					"documentation": "Original box text:\nReconcile: outputs (x8 panels + match table + id_transformation.yaml download)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57396,7 +57425,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Scaffold: file uploads + meta upload + run button",
+					"name": "Scaffold: uploads and run button",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -57411,7 +57440,8 @@
 								"$ref": "AAAAAAGhui503M3Lh58="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nScaffold: file uploads + meta upload + run button"
 				},
 				{
 					"_type": "FCPredefinedProcess",
@@ -57419,7 +57449,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Scaffold: calc chain (file infos, meta info, run)",
+					"name": "Scaffold: calc chain",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -57434,7 +57464,8 @@
 								"$ref": "AAAAAAGhui51eM3TKxw="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nScaffold: calc chain (file infos, meta info, run)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57442,7 +57473,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Scaffold: outputs (ui panels + data analysis recipe download)"
+					"name": "Scaffold: outputs (panels, recipe download)",
+					"documentation": "Original box text:\nScaffold: outputs (ui panels + data analysis recipe download)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57496,7 +57528,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Synth: outputs (ui, data_frame preview, synthetic download)"
+					"name": "Synth: outputs (ui, preview, download)",
+					"documentation": "Original box text:\nSynth: outputs (ui, data_frame preview, synthetic download)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57550,7 +57583,8 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Anon: outputs (ui, data_frame preview, anonymised download)"
+					"name": "Anon: outputs (ui, preview, download)",
+					"documentation": "Original box text:\nAnon: outputs (ui, data_frame preview, anonymised download)"
 				},
 				{
 					"_type": "FCProcess",
@@ -57581,7 +57615,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
-					"name": "Reformat: calc chain (file info, is_xlsx, sheet_names)",
+					"name": "Reformat: calc chain (file info, sheets)",
 					"ownedElements": [
 						{
 							"_type": "FCFlow",
@@ -57596,7 +57630,8 @@
 								"$ref": "AAAAAAGhui54ks4bHmE="
 							}
 						}
-					]
+					],
+					"documentation": "Original box text:\nReformat: calc chain (file info, is_xlsx, sheet_names)"
 				},
 				{
 					"_type": "FCProcess",
@@ -78073,6 +78108,16 @@
 							"name": "status",
 							"kind": "string",
 							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFo6JXWDv0H8=",
+							"_parent": {
+								"$ref": "AAAAAAGht1levkXDW5c="
+							},
+							"name": "longname",
+							"kind": "string",
+							"value": "test identifier"
 						}
 					],
 					"stereotype": "test"
@@ -78207,6 +78252,16 @@
 							"name": "status",
 							"kind": "string",
 							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFo6JXWDy7mM=",
+							"_parent": {
+								"$ref": "AAAAAAGht1liikbLCyI="
+							},
+							"name": "longname",
+							"kind": "string",
+							"value": "test identifier"
 						}
 					],
 					"stereotype": "test"
@@ -78284,6 +78339,16 @@
 							"name": "status",
 							"kind": "string",
 							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFo6JXmD1Glk=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lkgkdSLbk="
+							},
+							"name": "longname",
+							"kind": "string",
+							"value": "test identifier"
 						}
 					],
 					"stereotype": "test"
@@ -78658,6 +78723,16 @@
 							"name": "status",
 							"kind": "string",
 							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGiFo6JX2D4ZNY=",
+							"_parent": {
+								"$ref": "AAAAAAGht1lt4klFQaw="
+							},
+							"name": "longname",
+							"kind": "string",
+							"value": "test identifier"
 						}
 					],
 					"stereotype": "test"
@@ -82441,7 +82516,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "SPARMVET_DEPLOYMENT, SPARMVET_APP_FEATURES, SPARMVET_DATA_ANALYSIS_RECIPE",
+									"name": "SPARMVET_DEPLOYMENT, _APP_FEATURES, _RECIPE",
+									"documentation": "Original box text:\nSPARMVET_DEPLOYMENT, SPARMVET_APP_FEATURES, SPARMVET_DATA_ANALYSIS_RECIPE",
 									"source": {
 										"$ref": "AAAAAAGht1vzOGa/Log="
 									},
@@ -82469,7 +82545,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "renamed_env_var_errors, an old variable stops the app",
+									"name": "renamed_env_var_errors: old variable stops",
+									"documentation": "Original box text:\nrenamed_env_var_errors, an old variable stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82483,7 +82560,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "_resolve_deployment_path, variable, ~/.sparmvet, /etc/sparmvet, local.yaml",
+									"name": "_resolve_deployment_path: variable, ~, /etc",
+									"documentation": "Original box text:\n_resolve_deployment_path, variable, ~/.sparmvet, /etc/sparmvet, local.yaml",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82497,7 +82575,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "_load_deployment_config, expand ~ and ${VAR}, an old key stops the app",
+									"name": "_load_deployment_config: old key stops",
+									"documentation": "Original box text:\n_load_deployment_config, expand ~ and ${VAR}, an old key stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82525,7 +82604,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "fetch_data, resolve_paths, a failure stops the app",
+									"name": "fetch_data, resolve_paths: failure stops",
+									"documentation": "Original box text:\nfetch_data, resolve_paths, a failure stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0qWcf4c8="
 									},
@@ -82540,7 +82620,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "_validate_deployment, a missing folder stops the app",
+									"name": "_validate_deployment: missing folder stops",
+									"documentation": "Original box text:\n_validate_deployment, a missing folder stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82554,7 +82635,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "app features from kwarg, variable, default_app_features, none stops the app",
+									"name": "app features: kwarg, variable, default",
+									"documentation": "Original box text:\napp features from kwarg, variable, default_app_features, none stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82568,7 +82650,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "_load_app_features_config, cascades, operator lock",
+									"name": "_load_app_features_config, cascades, lock",
+									"documentation": "Original box text:\n_load_app_features_config, cascades, operator lock",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82582,7 +82665,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "discover + validate every recipe (ADR-094), resolve default: hidden selector and no usable name stops the app",
+									"name": "discover and validate every recipe (ADR-094)",
+									"documentation": "Original box text:\ndiscover + validate every recipe (ADR-094), resolve default: hidden selector and no usable name stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},
@@ -82624,7 +82708,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "creates DataOrchestrator, VizFactory, SessionManager, shared reactive state",
+									"name": "creates orchestrator, VizFactory, sessions",
+									"documentation": "Original box text:\ncreates DataOrchestrator, VizFactory, SessionManager, shared reactive state",
 									"source": {
 										"$ref": "AAAAAAGht1v1sWdeB2w="
 									},
@@ -86088,7 +86173,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "load the recipe (kept in memory while its files don't change)",
+									"name": "load the recipe (kept in memory)",
+									"documentation": "Original box text:\nload the recipe (kept in memory while its files don't change)",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -86102,7 +86188,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "compute a fingerprint of the recipe and the data",
+									"name": "compute a fingerprint of recipe and data",
+									"documentation": "Original box text:\ncompute a fingerprint of the recipe and the data",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -86116,7 +86203,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "fingerprint (hash of the data and the recipe files)",
+									"name": "fingerprint (hash of data and recipe)",
+									"documentation": "Original box text:\nfingerprint (hash of the data and the recipe files)",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86131,7 +86219,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "build the tabs from the recipe's groups and plots",
+									"name": "build the tabs from the groups and plots",
+									"documentation": "Original box text:\nbuild the tabs from the recipe's groups and plots",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -86160,7 +86249,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "ask for the Result stage, with the fingerprint",
+									"name": "ask for the Result stage with fingerprint",
+									"documentation": "Original box text:\nask for the Result stage, with the fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -86188,7 +86278,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "check the fingerprint stored with the Raw stage",
+									"name": "check the stored Raw fingerprint",
+									"documentation": "Original box text:\ncheck the fingerprint stored with the Raw stage",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86202,7 +86293,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[fingerprint matches] reuse the Raw stage, move on to Result",
+									"name": "[matches] reuse Raw, move on to Result",
+									"documentation": "Original box text:\n[fingerprint matches] reuse the Raw stage, move on to Result",
 									"source": {
 										"$ref": "AAAAAAGht1v/vmmKTVQ="
 									},
@@ -86217,7 +86309,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] drop the outdated stored tables",
+									"name": "[missing/different] drop outdated tables",
+									"documentation": "Original box text:\n[missing or different] drop the outdated stored tables",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86231,7 +86324,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] load the data and run the recipe's steps",
+									"name": "[missing/different] load data, run steps",
+									"documentation": "Original box text:\n[missing or different] load the data and run the recipe's steps",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86260,7 +86354,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] save the Raw stage with its fingerprint",
+									"name": "[missing/different] save Raw stage",
+									"documentation": "Original box text:\n[missing or different] save the Raw stage with its fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86274,7 +86369,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[recipe has no Result steps] Raw stage is the Result too — nothing extra stored",
+									"name": "[no Result steps] Raw is the Result too",
+									"documentation": "Original box text:\n[recipe has no Result steps] Raw stage is the Result too — nothing extra stored",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -86289,7 +86385,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[fingerprint matches] reuse the stored Result stage",
+									"name": "[matches] reuse the stored Result stage",
+									"documentation": "Original box text:\n[fingerprint matches] reuse the stored Result stage",
 									"source": {
 										"$ref": "AAAAAAGht1v/vmmKTVQ="
 									},
@@ -86304,7 +86401,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] save the Result stage with its fingerprint",
+									"name": "[missing/different] save Result stage",
+									"documentation": "Original box text:\n[missing or different] save the Result stage with its fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -89225,7 +89323,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[exploration] Apply — filters the table viewed only",
+									"name": "[exploration] Apply: filters the table only",
+									"documentation": "Original box text:\n[exploration] Apply — filters the table viewed only",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -89253,7 +89352,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "the table viewed updates; the plot never changes; nothing is recorded or exported",
+									"name": "table updates; plot unchanged; not exported",
+									"documentation": "Original box text:\nthe table viewed updates; the plot never changes; nothing is recorded or exported",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -89282,7 +89382,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "warn: this filters a join key (primary-key warning)",
+									"name": "warn: this filters a join key",
+									"documentation": "Original box text:\nwarn: this filters a join key (primary-key warning)",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -89296,7 +89397,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "ask: apply to this plot, all plots, or all except...",
+									"name": "ask: this plot, all plots, or all except",
+									"documentation": "Original box text:\nask: apply to this plot, all plots, or all except...",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -89325,7 +89427,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "stage one audit step per chosen plot (linked by id)",
+									"name": "stage one audit step per chosen plot",
+									"documentation": "Original box text:\nstage one audit step per chosen plot (linked by id)",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -89367,7 +89470,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[a reason is missing] Apply stays blocked, names what's missing",
+									"name": "[reason missing] Apply stays blocked",
+									"documentation": "Original box text:\n[a reason is missing] Apply stays blocked, names what's missing",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -89382,7 +89486,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[all reasons given] record the audited steps, per plot",
+									"name": "[all reasons given] record the steps",
+									"documentation": "Original box text:\n[all reasons given] record the audited steps, per plot",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -89396,7 +89501,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "save this state to disk (a timestamped snapshot)",
+									"name": "save this state to disk (snapshot)",
+									"documentation": "Original box text:\nsave this state to disk (a timestamped snapshot)",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -89410,7 +89516,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "the audited plot and the audited tables show the steps",
+									"name": "audited plot and tables show the steps",
+									"documentation": "Original box text:\nthe audited plot and the audited tables show the steps",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -91435,7 +91542,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "changed_since_view, compare with the keys of the open view",
+									"name": "changed_since_view: compare the keys",
+									"documentation": "Original box text:\nchanged_since_view, compare with the keys of the open view",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91449,7 +91557,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "[something changed] zip with only EXPORT_NOT_CREATED.txt, and a notification",
+									"name": "[changed] zip with EXPORT_NOT_CREATED.txt",
+									"documentation": "Original box text:\n[something changed] zip with only EXPORT_NOT_CREATED.txt, and a notification",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91464,7 +91573,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "[nothing changed] materialize_tier1, materialize_tier2 with the session keys",
+									"name": "[unchanged] materialize T1, T2 with keys",
+									"documentation": "Original box text:\n[nothing changed] materialize_tier1, materialize_tier2 with the session keys",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91478,7 +91588,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "plot_content_rules, audited rows and drops only, exploration is not an argument",
+									"name": "plot_content_rules: audited rows and drops",
+									"documentation": "Original box text:\nplot_content_rules, audited rows and drops only, exploration is not an argument",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91492,7 +91603,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "render each plot in scope from T2 plus audited steps",
+									"name": "render each plot from T2 plus audited steps",
+									"documentation": "Original box text:\nrender each plot in scope from T2 plus audited steps",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91506,7 +91618,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "audited_frame, T3_data_plot.tsv for plots with audited steps",
+									"name": "audited_frame, T3_data_plot.tsv",
+									"documentation": "Original box text:\naudited_frame, T3_data_plot.tsv for plots with audited steps",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91520,7 +91633,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "t3_steps.yaml (audit trail) -- never the recipe or data",
+									"name": "t3_steps.yaml (audit trail), never data",
+									"documentation": "Original box text:\nt3_steps.yaml (audit trail) -- never the recipe or data",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -91534,7 +91648,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "report.qmd, README.txt, effective_run.yaml (legs and node keys, always written; detail: DM-KEYS-EXPORT)",
+									"name": "report.qmd, README.txt, effective_run.yaml",
+									"documentation": "Original box text:\nreport.qmd, README.txt, effective_run.yaml (legs and node keys, always written; detail: DM-KEYS-EXPORT)",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -93248,7 +93363,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wa1nAUZVE="
 									},
-									"name": "Not stored (empty step list: same key as the previous node)"
+									"name": "Not stored (empty step list: same key)",
+									"documentation": "Original box text:\nNot stored (empty step list: same key as the previous node)"
 								}
 							],
 							"transitions": [
@@ -93299,7 +93415,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wa1nAUZVE="
 									},
-									"name": "data or data analysis recipe changed: key differs",
+									"name": "data or recipe changed: key differs",
+									"documentation": "Original box text:\ndata or data analysis recipe changed: key differs",
 									"source": {
 										"$ref": "AAAAAAGht1wcDHBQLUY="
 									},
@@ -93616,9 +93733,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 30,
-									"top": 764,
+									"top": 767,
 									"width": 270,
-									"height": 46,
+									"height": 40,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1w/VnrIJ+I="
 									}
@@ -96013,7 +96130,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1w9cHp3KAU="
 							},
-							"name": "home_mode, data_view, source_table (replace tier_toggle)",
+							"name": "home_mode, data_view, source_table",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -96041,7 +96158,8 @@
 										"$ref": "AAAAAAGht1xExXtNmaQ="
 									}
 								}
-							]
+							],
+							"documentation": "Original box text:\nhome_mode, data_view, source_table (replace tier_toggle)"
 						},
 						{
 							"_type": "FCProcess",
@@ -106333,7 +106451,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhuug+V+Od5XI="
 							},
-							"name": "tier1, tier2: {data_engine, steps} (a tier is its own key)",
+							"name": "tier1, tier2: {data_engine, steps}",
+							"documentation": "Original box text:\ntier1, tier2: {data_engine, steps} (a tier is its own key)",
 							"type": ""
 						},
 						{
@@ -106342,7 +106461,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhuug+V+Od5XI="
 							},
-							"name": "completion: {marker, meaning}, required for a table that takes part (E04 to E07)",
+							"name": "completion: {marker, meaning}",
+							"documentation": "Original box text:\ncompletion: {marker, meaning}, required for a table that takes part (E04 to E07)",
 							"type": ""
 						},
 						{
@@ -106351,7 +106471,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhuug+V+Od5XI="
 							},
-							"name": "is_entity_id: marks the id column of the entity (on a field)",
+							"name": "is_entity_id: marks the entity id column",
+							"documentation": "Original box text:\nis_entity_id: marks the id column of the entity (on a field)",
 							"type": ""
 						}
 					]
@@ -106453,7 +106574,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhuug+tePg3zg="
 							},
-							"name": "metadata: joined only from a data table, how left, in tier 1 (J16)",
+							"name": "metadata: joined only from a data table",
+							"documentation": "Original box text:\nmetadata: joined only from a data table, how left, in tier 1 (J16)",
 							"type": ""
 						}
 					]
@@ -106622,7 +106744,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhuug/i+RXVfY="
 							},
-							"name": "target_dataset, mapping, theme, layers (no spec: key, D-0237)",
+							"name": "target_dataset, mapping, theme, layers",
+							"documentation": "Original box text:\ntarget_dataset, mapping, theme, layers (no spec: key, D-0237)",
 							"type": ""
 						}
 					]
@@ -128835,7 +128958,8 @@
 									"_parent": {
 										"$ref": "AAAAAAGhty/3u8EeQ5w="
 									},
-									"name": "test_lab (Bootstrapper, AquaSynthesizer, Anonymiser, Reformatter, Scaffolder, XlsxExtractor)",
+									"name": "test_lab (the six TEST_LAB tools)",
+									"documentation": "Original box text:\ntest_lab (Bootstrapper, AquaSynthesizer, Anonymiser, Reformatter, Scaffolder, XlsxExtractor)",
 									"tags": [
 										{
 											"_type": "Tag",
