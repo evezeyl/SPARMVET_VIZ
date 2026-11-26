@@ -39,7 +39,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
-from app.tests.browser_view import set_mode, set_view, wait_preview_rows
+from app.tests.browser_view import set_mode, set_view, show_place, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -325,8 +325,8 @@ def test_the_filter_dialog_does_not_offer_a_column_that_an_earlier_audit_step_dr
     _drop_step(page, 1)
     page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
     assert page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)") == ["sample_id", "year", MARKER]   # the marker of the ids completion is a column of the table
-    # the other views are the tables as they are: T2 still offers the column
-    set_view(page, "T2")
+    # the other tables are as they are (Audit mode has no data choice since slice 3a: the table is shown from Path of the data; this one has no tier-2 steps, so its tier 2 is its tier 1): T1 still offers the column
+    show_place(page, "T1:t", keep_chosen=False)
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
 
 

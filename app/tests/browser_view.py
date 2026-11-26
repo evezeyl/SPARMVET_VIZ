@@ -19,6 +19,7 @@ def wait_shiny(page: Page, timeout: int = 10_000) -> None:
 
 
 def set_mode(page: Page, mode: str) -> None:
+    wait_shiny(page)       # after a switch of user space the page is still drawing HOME again: a click made then can land on the old control
     page.locator(f"#home_mode input[value={mode}]").check(force=True)
     wait_shiny(page)
     expect(page.locator(f"#home_mode input[value={mode}]")).to_be_checked()

@@ -1696,13 +1696,15 @@ def define_server(input, output, session, *,
                     restored_steps.set(0)
 
     # AUDIT-STEPS-SURVIVE-RECIPE-CHANGE (found by `app/tests/test_audit_steps_survive_recipe_change.py`: the steps of recipe A showed in recipe B, 42 rows became 38): an audit step is written
-    # at a table or plot BY NAME, so the steps of the recipe that was open must not stay in the state when another recipe is selected: the other recipe may hold a table or plot of the
-    # same name, and its table would change without a word (D-0050). The steps are in the session of their own recipe (a step is saved when it is applied, D-0302) and Restore brings them
-    # back (D-0317). The words are PROVISIONAL.
+    # at a table or plot BY NAME, so the steps of the recipe that was open must not be in the state while another recipe is open: the other recipe may hold a table or plot of the same
+    # name, and its table would change without a word (D-0050). The steps are SET ASIDE for their own recipe and come back when the user returns to it (what
+    # `test_filters_cleared_on_recipe_change.py` has always expected: "the audited step of recipe A is back after returning"; the browser run found that this test and an emptying of the
+    # state disagree, and nothing is lost this way). They are also in the session of their own recipe (a step is saved when it is applied, D-0302; D-0317). The words are PROVISIONAL.
     _steps_recipe = {"id": None}
+    _steps_set_aside: dict = {}      # recipe id -> (applied steps, pending steps)
 
     @reactive.Effect
-    def _drop_audit_steps_on_recipe_change():
+    def _set_audit_steps_aside_on_recipe_change():
         recipe = safe_input(input, "data_analysis_recipe_id", None)
         if home_state is None or recipe is None:
             return
@@ -1711,12 +1713,16 @@ def define_server(input, output, session, *,
             if previous is None or previous == recipe:
                 return
             cur = home_state.get()
-            n = len({n.get("id") for n in place_nodes(cur.get("t3_audit_steps_by_plot", {}) or {})}) + len({n.get("id") for n in cur.get("_pending_t3_nodes", []) or []})
-            if not n:
-                return
-            home_state.set({**cur, "t3_audit_steps_by_plot": {}, "_pending_t3_nodes": []})
-            _notify(f"The audit steps of the recipe '{previous}' ({n}) were not carried over to '{recipe}': a step is written at a table or a plot by name, and another recipe "
-                    f"can hold one of the same name. They stay in the session of '{previous}': open that recipe and restore its session to get them back.", type="warning", duration=15)
+            leaving = (cur.get("t3_audit_steps_by_plot", {}) or {}, list(cur.get("_pending_t3_nodes", []) or []))
+            coming = _steps_set_aside.pop(recipe, ({}, []))
+            n = len({n.get("id") for n in place_nodes(leaving[0])}) + len({n.get("id") for n in leaving[1]})
+            if n:
+                _steps_set_aside[previous] = leaving
+            if n or coming[0] or coming[1]:
+                home_state.set({**cur, "t3_audit_steps_by_plot": coming[0], "_pending_t3_nodes": coming[1]})
+            if n:
+                _notify(f"The audit steps of the recipe '{previous}' ({n}) are not applied to '{recipe}': a step is written at a table or a plot by name, and another recipe can hold one of the "
+                        f"same name. They are kept for '{previous}' and are back when you return to it.", type="warning", duration=15)
 
     # A click on a plot tab in Audit mode shows that plot (interim: the tabs go in the next slice; D-0655 point 3, D-0657). The effect follows the open tab only, so entering
     # Audit mode on a tab shows that plot by default, and a click on the tab already open does nothing (a tab that does not change is not an event).

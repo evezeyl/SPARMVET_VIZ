@@ -14,8 +14,8 @@ columns and data: `1_test_data_ST22_dummy` and `3_test_no_joins`. A step of the 
 word.
 
 WHAT THE DESIGN EXPECTS (D-0317: a session belongs to its own recipe; nothing of one recipe's audit is applied to another's; D-0050, no silent change of a result): after the other recipe is selected, its
-table MLST has all its rows as the engine builds them, the Pipeline Audit panel lists no step, no audit step is committed in the state, and one plain notice says that the steps of the first recipe
-were not carried over. Selecting the first recipe again does not bring them back (a session of its own would: Restore).
+table MLST has all its rows as the engine builds them, the Pipeline Audit panel lists no step, and one plain notice says that the steps of the first recipe are not applied to it. The steps are set
+aside for their own recipe: selecting the first recipe again brings them back (what `test_filters_cleared_on_recipe_change.py` has always expected).
 
 The expected rows are computed in the test with polars from the same recipes and data, never typed in.
 """
@@ -108,11 +108,11 @@ def test_the_steps_of_one_recipe_are_not_applied_to_another_recipe_with_a_table_
     assert expected["b"] != expected["b_if_leaked"]
     expect(page.locator("#audit_nodes_tier3")).not_to_contain_text("Written at", timeout=15_000)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("The audit steps of the recipe", timeout=15_000)
-    assert "were not carried over" in page.locator("#shiny-notification-panel").inner_text()
+    assert "are not applied to" in page.locator("#shiny-notification-panel").inner_text()
     _close_notices(page)
-    # back to recipe A: the steps do not come back by themselves (Restore of its session would bring them)
+    # back to recipe A: its steps are back (set aside for it, not lost)
     _choose_recipe(page, A)
     page.wait_for_selector("#lineage_root .spv-lin-line[data-id='T1:MLST']", timeout=60_000)
     wait_shiny(page)
     show_place(page, "T1:MLST")
-    wait_preview_rows(page, expected["a"], timeout=60_000)
+    wait_preview_rows(page, expected["a_after"], timeout=60_000)
