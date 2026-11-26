@@ -1,5 +1,7 @@
 # The whole picture: how HOME is meant to work (actualised in place, 2026-11-24)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a study of its day. Where it speaks of tick lines of plots or of a dialog that asks the scope by plot, of "My view", of "the plot's table" or "plot data", or of a build order that the owner has since changed (the step bar, the review before the demo, no plot tabs in Audit mode), the page "what is true now" and the ledger lines D-0638 to D-0667 win; nothing below is edited.
+
 Updated 2026-11-24 after the build for the demo (merges `3b59d97b` to `b3889404`); checked by a second agent against the ledger.
 
 ## 0. Status, and where the truth lives

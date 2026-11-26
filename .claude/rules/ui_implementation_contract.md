@@ -107,6 +107,8 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 | **Filters panel "Send to Audit"** — Audit mode, T3 viewed, `t3_sandbox_enabled` | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
 | **Ref Table Drop**  in Tier 1 or Tier 2 Table              | Visual-only drop for inspection. | **NONE** (Transient) |
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The row "Filters panel Send to Audit ... via the propagation modal" above (the pop-up with the choices "This plot only / All plots / All plots except"): the scope of a step is the place chosen in "Path of the data", never a plot choice. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. The single entry that creates a step will be the step bar next to the preview title (D-0663), not this button. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 **Exploration filters and audit steps (D-0016, D-0178, D-0311, D-0327; built 2026-11-20, slice B).** An exploration filter (`applied_filters`) is built on the table viewed and carries the key of that view; it changes only that table and is never applied to a plot, to a stored table or to the export (D-0327). A filter built on another view is not applied (`t3_audit_engine.rows_built_on`, `home_theater._applied_for_view`). Audit-committed nodes (`_t3_filter_rows()`/`_t3_drop_columns()`) are applied only in Audit mode, on top of the T3 table; Source always shows the file as read, and T1 and T2 show the originals in Exploration and, in Audit mode, the audited tables where an audit step changes them (D-0622, built 2026-11-24: `PlaceAudit.table_lazy`; the same tables the export writes as `T<n>_data_audited.tsv`). Any new render function that reads either list MUST apply the same gates. This replaces the `tier_toggle` gate of ADR-085 and the rule of ADR-098 that exploration filters change the plots on My view (D-0179, D-0327).
 
 ## 5. The Theater Layout Model (Updated ADR-043, 2026-04-23; ADR-085, 2026-08-10)
@@ -252,6 +254,8 @@ t3_steps:
       committed_at: "..."
 ```
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The per-plot list `t3_steps` of `t3_steps.yaml` above (and the sentences of README and report that say "(plot: ...)"): only the per-place list `steps_by_place` is kept (decided 2026-11-26, D-0665; ON HOLD). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 **No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
 **Single Graph Export accordion removed.** Superseded by the "Active plot" scope option in the 3-way toggle (see §7.3).
@@ -285,6 +289,8 @@ Row filters live in the left sidebar (Home mode only). In Exploration they are b
 - **`filter_send_to_audit`** — rendered only in Audit mode while T3 is viewed (`t3_sandbox_enabled`).
   Promotes the staged rows into the audit steps via the propagation modal (primary-key stamping, this-plot /
   all-plots / all-except scope choice). In Audit mode on Source, T1 or T2 the panel says "To create an audit step, view T3."
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** `filter_send_to_audit` and its pop-up (the plot choices and the rule that it is offered only while T3 is viewed): the condition will be built on the table shown, the place is the one chosen in the lineage, and the entry is the step bar (D-0663). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
 
 **Each row:** `{column: str, op: "eq"|"ne"|"gt"|"ge"|"lt"|"le"|"in"|"not_in"|"between", value: the real value in the type of the column (number, True/False, text; a date as year-month-day text), or a list of them (for between: [low, high]), dtype: str, na: "keep"|"remove", closed: "both"|"left"|"right"|"none" (between only)}`. `na` is the tick of the dialog (keep the rows with no value in the column; preselected `keep` for `!=` and none-of, `remove` otherwise, NA-RULE-63); a row or audit step without it is read as `remove`, and an audit step is never written without it. **The words of a filter step (2026-11-26, PROVISIONAL; `utils.filter_words`, one function for the Filters panel, the audit cards, the dialog line, the lineage form and the export):** the choice reads "rows with no <column> record are removed" or "rows with no <column> record are kept" (it replaces "no value: removed"; the owner's own example, PROVISIONAL, one line in `utils.filter_words.no_value_words`; the lines of the filter dialog that count the rows still say "no value in <column>"); a value that is a whole number is shown without ".0" ("year >= 2024", not "2024.0": a column the recipe declares `Float64` holds 2024.0, which is right for it; only the display changes, what is stored and compared does not). `closed` says which ends of a `between` are included (`both`, the default, `left` = the lower end only, `right` = the upper end only, `none`); "Send to Audit" carries `na` and `closed` exactly as chosen, and the export writes them into the `modif_filter` step.
 
@@ -481,6 +487,8 @@ T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanen
 
 > **Plot Style panel not mounted (2026-11-05, fork issue #15).** The UI that authors `aesthetic_override` nodes (the "Plot Style" panel) is not shown in HOME for now: letting users change in HOME what the data analysis recipe defines is too much at this stage, and using it broke the plot (test plan HOM-47). The node type stays in this schema and the panel's code is kept, unused, in `audit_stack.py`. This does not change the T3 scope of ADR-082.
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The `aesthetic_override` node type, the Plot Style panel and the second pop-up for colour, shape and fill with its three plot choices (section 12g.9): REMOVED together with the other pop-up (decided 2026-11-26, D-0665; the panel is not mounted and cannot be reached today). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 **Gatekeeper rule:** `btn_apply` is **locked** if any `filter_row`, `exclusion_row`, `drop_column`, or `developer_raw_yaml` node has an empty `reason` field. `aesthetic_override` nodes never block apply.
 
 **`drop_column` is permanent within the session:** it physically removes the column from the working frame — it does not merely hide it in the UI. This is the unambiguous truth the export reflects. There is no "column_visibility" toggle that hides without dropping; any column removal in T3 must be justified and is permanent until the node is deactivated.
@@ -503,6 +511,8 @@ Each node in the audit steps is a YAML mapping:
   reason: "Exclude aquatic species — outside study scope."
 ```
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The field `plot_scope` of the example above and the names that speak of plots as the scope (`plot_scope`, `t3_audit_steps_by_plot`): every step carries its `place` (section 12g.1) and the one list is the bucket `__places__`; the names are renamed ONCE, with a new session format number, together with the removal of the pop-up (D-0665; the new names are not decided). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 For `aesthetic_override` nodes, `params` carries `{fill, colour, alpha, shape}` dicts keyed by plot sub-tab ID. For `developer_raw_yaml`, `params` carries `{yaml_fragment: "..."}`.
 
 `reason` is a free-text string. The UI renders it as a required text-input next to each Yellow node; the field border turns red if empty and `btn_apply` is locked.
@@ -514,6 +524,8 @@ There is **no separate FILTERS.txt** for T3. The T3 YAML audit trail is the comp
 - Every Yellow node has `id`, `created_at`, `plot_scope`, `params`, and `reason`.
 - **Design intent (not yet built, F-07):** the audit trail was designed to be append-only, with deletions marking nodes `active: false` rather than removing them, so the sequence of decisions is preserved. **As built,** there is no control that ever sets `active: false` — deletion is real removal from the list (`audit_stack.py:585`). The `active: false` / "deactivated node" path below describes the intended future behaviour once the Power-icon toggle (§1) is implemented; today it never triggers. Tracked as task STM-NODE.
 - **Export warning for deactivated nodes (not yet reachable, see above):** If any node has `active: false` at export time, the UI shows a blocking warning dialog: *"You have [N] deactivated filter(s) / exclusion(s) / column drop(s). Export reflects only active nodes. Deactivated nodes will NOT appear in the exported data or Methods section. Confirm you want to discard them from this export?"* The user must explicitly confirm. The export is the unambiguous truth — deactivated nodes are absent from the exported data and from the Methods section. They are listed in an appendix ("Decisions Considered and Discarded") for transparency only.
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The `plot_scope` field in the list above and the overrides stored per plot sub-tab (`t3_plot_overrides`) below: see 12b and 12g.9. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
 
 `aesthetic_override` nodes are stored **separately** from the wrangling steps as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13). They are included in the export report but do not block `btn_apply`.
 
@@ -550,26 +562,27 @@ Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files f
 
 ```json
 {
-  "session_key": "my_pipeline_v2:c4d29e1a3f80",
+  "session_key": "a3f9c81b04e2:c4d29e1a3f80",
   "data_analysis_recipe_id": "my_pipeline_v2",
-  "data_analysis_recipe_sha256": "a3f9...",
+  "data_analysis_recipe_sha256": "a3f9c81b04e2...",
   "data_batch_hash": "c4d29e1a3f80...",
   "assembled_at": "2026-04-24T14:00:00",
+  "label": "",
+  "schema_version": 5,
   "source_files": {
     "fastq_metadata": {"path": "assets/test_data/.../metadata.tsv", "sha256": "c4d2..."},
     "amr_results":    {"path": "assets/test_data/.../amr.tsv",      "sha256": "9e1a..."}
   },
-  "parquet_paths": {
-    "assembly":   "tmp/EVE_assembly_my_pipeline_v2_c4d29e1a.parquet",
-    "contracted": "tmp/EVE_contracted_my_pipeline_v2_c4d29e1a.parquet"
-  }
+  "parquet_paths": {}
 }
 ```
+
+The session key is the first 12 characters of the recipe hash, a colon and the first 12 of the data hash: it holds no recipe name (`SessionManager.compute_session_key`, `app/modules/session_manager.py:345`); the recipe id is a field of the file. Written by `write_assembly_ghost` (`session_manager.py:364-436`). `parquet_paths` is written empty by the app today (`app/handlers/home_theater.py:1629`, `app/modules/bundle_importer.py:319`): the restore then falls back to re-assembling when no stored file is named (`home_theater.py:1618-1619`); the tables themselves are stored by key (`rules_data_engine.md`, Tier 1 cache key; ADR-101), not named in this file.
 
 #### T1/T2 Restore Logic (the "Prepped Chef" check at startup)
 
 1. Scan `_sessions/` for all `assembly.json` files. Compute the current `data_batch_hash` from the active data analysis recipe's source files.
-2. Find the matching session by `session_key` (data_analysis_recipe_id + data_batch_hash).
+2. Find the matching session by `session_key` (the first 12 characters of the recipe hash and of the data hash).
 3. **Match found AND Parquet files exist on disk** → short-circuit: load existing Parquet, skip re-assembly. Normal fast path.
 4. **Match found BUT Parquet files missing** (e.g., tmp/ cleared, server restart) → re-assemble silently from source files listed in the ghost. Rewrite Parquet paths after completion. No user action required.
 5. **No match** (new batch or new data analysis recipe) → full assembly, write new session ghost.
@@ -583,13 +596,13 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 ```json
 {
-  "session_key": "my_pipeline_v2:c4d29e1a3f80",
+  "session_key": "a3f9c81b04e2:c4d29e1a3f80",
   "data_analysis_recipe_id": "my_pipeline_v2",
-  "data_analysis_recipe_sha256": "a3f9...",
+  "data_analysis_recipe_sha256": "a3f9c81b04e2...",
   "data_batch_hash": "c4d29e1a3f80...",
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
-  "schema_version": 3,
+  "schema_version": 5,
   "t3_audit_steps": [],
   "t3_audit_steps_by_plot": {},
   "t3_plot_overrides": {},
@@ -600,7 +613,7 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 3 today): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
+There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`, `session_manager.py:525-585`). `t3_audit_steps` is a flat copy of the same steps, kept for readers that do not know the per-plot form; `t3_audit_steps_by_plot` holds the one bucket `__places__` (section 12g.1: the name is the old one, each step carries its `place`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 5 today, `session_manager.py:229`): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
 
 **Session of another recipe:** Restore of a session saved against another recipe is refused with a plain line (it belongs to another recipe; open that recipe first); nothing is applied (D-0317; built, `session_manager.session_recipe_refusal`, compared by recipe id).
 
@@ -678,6 +691,8 @@ t3_audit_steps_sha256: "b7c1..."  # SHA256 of the serialized audit steps
 
 ### 12g. Per-Plot Audit Scoping & Join-Key Propagation (Phase 22-J, 2026-04-25)
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The whole idea of this section that a step is scoped by PLOT (a per-plot stack, a propagation choice at promotion time, "Applied to N plots", "un-propagate from one plot"): the scope of a step is the PLACE (a table at T1, at T2, or the Result data (T3) of a plot) chosen in "Path of the data"; what the place reaches is shown as information; what the user verifies is the table at the place (D-0662). The sub-sections 12g.1 to 12g.10 below describe what is built; each carries its own marker where it speaks of plots as scope. Only 12g.2 (the primary-key set), 12g.3 (column targeting), 12g.11 (the marker in the report) and the storage by place of 12g.1 are not old thinking. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 **Why this exists**
 
 A T3 audit decision (filter, exclusion, drop) is rarely "global" in a meaningful sense — it usually applies to *one plot's analytical context*. Two examples motivate per-plot scoping:
@@ -696,6 +711,8 @@ Every committed audit step is a node in ONE list (the bucket `__places__`, in th
 ```
 
 A decision written for several places or plots is one node per place, all with **the same `id`**: removal by that id removes every copy, from the list and from the pending steps.
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The name `t3_audit_steps_by_plot` of this store (one list, every tier; the name is wrong) and the field `plot_scope`: renamed once with a new session format number (D-0665; the new names are not decided; only the per-place list is kept in `t3_steps.yaml`, the per-plot list goes). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
 
 #### 12g.2. Primary-key set
 
@@ -725,7 +742,7 @@ Both true primary keys (`sample_id`) and secondary/accessory keys used in long-f
 
 | User action | Targeted column | Result |
 |---|---|---|
-| Drop column | non-key | `drop_column` AuditStep, per-plot propagation dialog |
+| Drop column | non-key | `drop_column` AuditStep, written at the place chosen (as built: through the pop-up of 12g.4, deprecated) |
 | Drop column | **join key that a later join still uses** | **BLOCKED by place** (built 2026-11-20, merge `8772f368`, `libs/utils/src/utils/key_drop.py`): the refusal names the join that needs the column and says to use a row filter or row exclusion instead. Where no later join uses the column (for example a drop in a plot's own steps) the drop is allowed. A recipe's own steps are never refused (D-0358, D-0371). A declared entity key that no later join uses is not refused for being declared (decided 2026-11-21, ledger `D-0448`; the mark PROVISIONAL in the code is to be removed when that code is next touched). |
 | Filter row (value condition) | non-key column | `filter_row` AuditStep |
 | Filter row | join key, any operator | `filter_row` AuditStep with `primary_key_warning=True`. **No silent conversion.** The user's operator is preserved verbatim. The PK warning banner appears in the modal and the audit panel. |
@@ -734,6 +751,10 @@ Both true primary keys (`sample_id`) and secondary/accessory keys used in long-f
 **Rationale (amended 2026-04-30, AUDIT-1)**: the original spec silently converted `eq`/`in` on a PK column to `ne`/`not_in` (filter_row → exclusion_row), aiming to bias the audit-report wording toward "removed". Live testing (Phase 22-J) showed this broke user mental model — `sample_id == S2` is a *select*, not a *remove*, and the silent flip surprised users. New rule: **the operator is the truth**, the `primary_key_warning` banner is the safety rail. Users who want exclusion semantics author `ne` or `not_in` directly. The warning still flows into the exported report ("⚠️ \[Primary key affected\]") so methods sections remain explicit about PK-touching decisions.
 
 #### 12g.4. Propagation dialog
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The propagation dialog of this sub-section: the radio "This plot only / All plots / All plots except...", the multiselect of plots, the rule "S3b" that skips plots without the column, the pop-up that is shown for drops, exclusions and colour or shape (`filter_and_audit_handlers._open_propagation_modal`, `_handle_propagation_confirm`, `_column_presence_per_plot`). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
+**CURRENT TARGET (DECIDED, not built, ON HOLD until the owner has read the behaviour page; corrected 2026-11-26 from the paragraph "DECIDED, not built: the Create audit step dialog that replaces this one" below; D-0662, D-0663, D-0655, D-0553, D-0451, D-0346, D-0351 to D-0353, D-0650):** There is no scope pop-up and no tick line of plots. The place is chosen in the panel "Path of the data": at most one place on a path (D-0553), the first places of several original tables together, a table that no plot reads is a place (D-0451), the metadata is not (D-0632); choosing only stages and a button shows (D-0655). The condition is built on the table shown, in the single entry, the step bar next to the preview title (D-0663), which also carries the column drop. What the step reaches (the tables and plots built from the place, and the rows removed at the place, PROVISIONAL, D-0650) is shown as information, never ticked. The user tries the step first (a trial: never saved, never exported; applying reuses its result, D-0656) and verifies the table at the place (the mark; its word, and what an unverified place means at "Add to audit pipeline", are NOT decided, D-0662). The places are found by asking the engine for the plan of every place (names and types) and by a walk of the lineage; a place where the column has another type is shown with its type; the walk may read a short list of what a step itself writes, each reading checked against the plan, and a column shown grey with the reason when they disagree, never guessed (D-0351); a column is judged at the tier it is on (D-0352; a rename across two tiers is not decided); a column recomputed under its own name is the same column, with a note (D-0353).
 
 Shown at promotion time when:
 - a `drop_column` node targets a non-key column (per-plot decision worth confirming; a drop of a key that a later join uses is refused by place, see 12g.3, and gets no dialog), OR
@@ -749,6 +770,8 @@ Three scope options:
 3. **All plots except…** — multiselect picker showing every other plot subtab. Node copied into selected plots only. Captures "Case A" (exclude S2 from analysis but keep visible on the QC contamination plot).
 
 **S3b — column-presence check at propagation**: when copying to other plots, skip plots whose data schema lacks the targeted column. Show a notification listing skipped plots. The audit accurately reflects which plots actually had the column to act on.
+
+> **HISTORICAL (replaced on 2026-11-26 by the CURRENT TARGET at the top of this sub-section; kept as it stood; D-0316 and D-0359, "every place ticked when the dialog opens", would be replaced, TO BE CONFIRMED, D-0649):**
 
 **DECIDED, not built: the Create audit step dialog that replaces this one (D-0316, D-0318, D-0325, D-0337, D-0346, D-0347, D-0451).** Every place the step can reach is ticked when the dialog opens; the user unticks what she does not want; the dialog shows the rows and plots affected before she confirms. Only distinct tables are lines (an empty tier is not a separate place: the line is the lowest level of the lineage that really has steps), each with its reach (how many tables and plots depend on it), plus a line for one plot only; a table that no plot reads but that the walk reaches is a line too (decided 2026-11-21, ledger `D-0451`); whether it is ticked when the dialog opens is not decided (the review session's reading "ticked like the others" is to be confirmed by the owner, D-0451; it replaces the earlier 'a join that no plot reads is not offered'). The places are found by asking the engine for the plan of every place (names and types) and by a walk of the lineage back, forward and back again; a place where the column has another type starts ticked and its line says what the type is there. The walk may read, beside the engine's plan, a short fixed list of what a step itself writes (the mapping of a rename, the keys and the suffix of a join, the columns of a drop or a select); each reading is checked against the plan; when they disagree the column is shown grey with the reason, never guessed, and a test on every shipped recipe fails; the plan stays the authority for what exists and its type (D-0351). A column is judged at the tier it is on: when both renames are within the same tier it is the same column (D-0352). [not decided: a rename across two tiers] A column recomputed under its own name (for example a mean per group that keeps the name, values recoded in place) is the same column, with a note: its place is offered and ticked and its line says plainly what happened there (for example one row per group after this step); the rows affected are shown per line before she confirms (D-0353). Each affected plot reads "table changed" and, separately, "picture changed". The three scope options above are what is built today. Built for the demo, in addition: the choice "At a table this plot is built from" of section 2 (one node per decision with its `place`, shared id when several original tables are chosen).
 
@@ -769,6 +792,8 @@ Two new optional fields on every node:
 ```
 
 - `primary_key_warning: bool` — set to `true` (default `false`) when authoring touched a join key. Persists in the ghost. Renders as a banner on the audit card and as a marker in the export report.
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The field `plot_scope` described in the next bullet. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 - `plot_scope: str` — the plot subtab this *copy* lives in. Replaces the previous "global / per-plot" string. Each propagated copy records its own plot_scope, but copies share `id`.
 
 #### 12g.6. Right-sidebar audit panel
@@ -787,6 +812,8 @@ The banner explains "this filter targets a join key — removing rows here chang
 
 #### 12g.7. Pending nodes (uncommitted)
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The two-step way of this sub-section: a step is staged as a pending card with no reason and then "Apply" writes it (`_pending_t3_nodes`, `btn_apply`, `audit_stack.handle_apply`) and the choice "This plot only / All plots / All plots except". Whether the staged cards and the separate Apply go is NOT decided (the owner's open point, D-0662). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 `_pending_t3_nodes` stays a flat list. At promotion time the user picks where the step is written (`filter_and_audit_handlers._handle_propagation_confirm`, `_confirm_places`, `_stage_nodes`); one pending node is staged for each chosen place (`T3:<plot>` for each plot of "This plot only", "All plots" and "All plots except"; the ticked tables for "At a table this plot is built from"), all with the id of the decision, no reason yet. On `btn_apply` (`audit_stack.handle_apply`):
 1. The reasons typed are read (one reason for all copies of an id); a node with no reason blocks the whole Apply.
 2. Each pending node is appended, in the order staged, to `t3_audit_steps_by_plot["__places__"]`.
@@ -796,11 +823,15 @@ This keeps the pending area readable (one entry per user decision, not N entries
 
 #### 12g.8. Ghost save & restore
 
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The bucket `__legacy__`, the orphaned nodes per plot subtab and the names `t3_audit_steps_by_plot` and `plot_scope` below (a session file saved by an older version is refused, not converted, D-0312; the rename comes with a new format number, D-0665). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+
 T3 ghost format stores `t3_audit_steps_by_plot: {plot_scope: [nodes]}` directly. Backward-compat: if an old ghost contains a flat `t3_audit_steps: [...]`, treat all nodes as targeting `__legacy__` (orphaned bucket); show a notification on restore: "*Loaded a legacy T3 ghost — N nodes are orphaned and will not apply until you re-target them. Open the Audit panel to review.*"
 
 **Orphaned nodes after data analysis recipe restructure**: if a saved ghost has `plot_scope: "subtab_qc_box_v1"` but the current data analysis recipe only has `subtab_qc_box_v2`, those nodes are flagged at restore time and listed under an "Orphaned" section in each affected plot's audit panel. The user manually re-targets or deletes them.
 
 #### 12g.9. Aesthetic propagation
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** This whole sub-section, the colour, shape and fill pop-up with the three plot choices and the `aesthetic_override` node: REMOVAL DECIDED 2026-11-26 (D-0665), together with the pop-up of "Send to Audit"; the rule text goes with it, and the panel that authors the nodes is not mounted today. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
 
 `aesthetic_override` nodes:
 
@@ -816,6 +847,8 @@ No primary-key warning ever applies to aesthetic nodes.
 **Render-side behaviour (designed 2026-05-10):** `aesthetic_override` nodes are recorded and exported today, but **were never applied to the rendered plot** until VIZFAC-T3-OVERRIDE-1 ships. They participate as **L5 (the highest tier)** in the plot configuration cascade defined at [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md) §6, which fixes the schema as: `fill_color` ⊕ `fill_palette` (mutex with notification warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id; cross-plot propagation is achieved by creating one node per plot via the dialog above (the propagation modal duplicates the node with linked id). The cascade rendering path is single-pass — overrides apply at the existing `VizFactory.render()` call site once VIZFAC-RESOLVER-1 + VIZFAC-RENDER-WIRE-1 + VIZFAC-T3-OVERRIDE-1 ship.
 
 #### 12g.10. Undo & re-include
+
+> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The sentences on linked-id propagation across plots and "un-propagate from one plot only": a step lives at places, each with the id of the decision; removing it by that id removes every copy, and a step wanted at fewer places is removed and written again at the places wanted. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
 
 There is no "re-include" node type. The user undoes by deleting the audit node; the data reappears because the audit trail no longer removes it. With linked-id propagation, deleting a node from one plot deletes it from every plot. To "un-propagate from one plot only" the user must delete and re-author with a smaller scope.
 
@@ -851,7 +884,7 @@ home_state = reactive.Value({
     "applied_filters": [],             # list of {column, op, value, ...} — exploration rows applied on filter_apply, for the view they were built on
 
     # audit steps (wrangling nodes — filter, exclusion, drop_column, developer_raw_yaml)
-    # Phase 22-J: per-plot stacks. Replaces the flat t3_audit_steps list. See §12g.
+    # DEPRECATED (2026-11-26, D-0665; removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold): the names below speak of plots as scope; one list, every tier, each step with its place; renamed once with a new session format number. See §12g.
     "t3_audit_steps_by_plot": {},           # {"__places__": list[AuditStep]} — the committed steps of every tier, each with its place (the key is the old name; §12g.1)
     "_pending_t3_nodes": [],           # pending nodes: one per chosen place, each with its `place` (§12g.7)
     "primary_keys": [],                # list of column names — union of all assembly join keys (§12g.2)

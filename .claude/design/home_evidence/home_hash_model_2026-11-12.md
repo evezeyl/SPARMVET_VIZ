@@ -1,5 +1,7 @@
 # The hash model: what exists, what each hash answers, what the redesign needs (2026-11-12)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status: inventory VERIFIED (code read and run); the model in section 4 was DECIDED by Eve on 2026-11-12, points (1) to (5) of section 5 (also `home_audit_reading_guide.md:99`, group D).** Eve asked: a hash per node (T1, T2, T3) to see changes (audit), a hash of the whole recipe for recomputation in every deployment mode; verify how the series of hashes (a chain of content-addressed keys) works for stored data, sessions and exports, and whether a UML must change.
 
 ## 1. What exists today (verified: `cache_keys.py`, `session_manager.py`, `orchestrator.py`, `export_handlers.py`, `bundle_importer.py`, `docs/foundations/reproducibility_hash_schema.qmd`, ADR-089, ADR-097)
@@ -34,7 +36,7 @@ Eve's reading ("node hashes see changes, whole-recipe hashes decide recomputatio
 5. Two mechanisms (`decision_hash` and the keys); the plot input key is documented and not built.
 6. The documents (`reproducibility_hash_schema.qmd`, ADR-089, the diagrams) describe the three-hash, T1/T2 model.
 
-## 4. Proposed model, designed from the needs and not from the code (MINE; drawn in UML `DM-KEYS` and its details)
+## 4. Proposed model, designed from the needs and not from the code (MINE; drawn in UML `DM-KEYS` and its details on 2026-11-12; those four diagrams were deleted on 2026-11-26 and replaced by `DM-KEYS-HOME-AUDIT`, which marks what is only proposed as "not decided")
 **Where the time goes.** Only reading files costs time: the data files (once per session) and the recipe files (small). Everything else hashes a few short strings. So the model must not multiply hashes of files, and it should not hash a hash again when a concatenation is enough.
 **Engines (decided 2026-11-12):** `E` is made from the recipe's declared `data_engine` and `plot_engine` with their versions and the cache version (5a point 21 of the audit file); the export always records them.
 **Leaves (read from disk, once, kept in a table in memory):** `d(file)` for every source data file, `r(file)` for every recipe file. **Engine** `E`: a short text (cache version, Polars, transformer), no disk.
@@ -52,5 +54,7 @@ Eve's reading ("node hashes see changes, whole-recipe hashes decide recomputatio
 **(3) decided (Eve, 2026-11-12):** the data hash stays the **full content, once per session** (reopening reuses the stored tables, verified; the hashing took 150 ms for the 4.6 MB of test data); **no stat cache** now, because the data changes little; later, maybe a **pre-hash automation** that hashes new data when it arrives. A file that is imported or replaced changes its hash: the nodes of the collections that use it are rebuilt, the others are kept; the session key changes, so audit steps of the old data stay with the old session (restoring them warns).
 
 ## 6. UML and documents (done 2026-11-12 for the UML, with Eve's general OK to change what must change)
+> **HISTORICAL (2026-11-26):** the four diagrams named below were deleted from the model on 2026-11-26 (owner's order M700); the one diagram `DM-KEYS-HOME-AUDIT` replaces them.
+
 **New diagrams** (folder "Data and configuration"): `DM-KEYS` (the general picture: what each hash is made from, what it answers, the cost), with details `DM-KEYS-CHAIN` (the series of node keys, original and audit, illustrative example), `DM-KEYS-USE` (when each hash is computed, checked and recorded, by situation) and `DM-KEYS-EXPORT` (what the export records and what the import verifies). **Changed:** `HOME-AUDIT-CACHE` (the series key, audit T1 = original T1 plus the step, T3 cached by key), `EXP-MODES` (the legs and the content of effective_run.yaml), `STM-STAGE` (a stored stage is not stored when the step list is empty), `SEQ-EXPORT` (the message about the legs). `audit_uml_model.py`: no discrepancy. PNG files in `docs/UML/diagrams/`.
 **Documents amended with a "to be amended" note 2026-11-12:** `docs/foundations/reproducibility_hash_schema.qmd`, ADR-089, `docs/UML/cross_cutting_concepts.md`. **Still to do:** the plot-level diagrams of the audit redesign (UML-HOME-REDRAW-1).

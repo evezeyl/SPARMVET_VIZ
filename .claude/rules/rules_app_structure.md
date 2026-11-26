@@ -67,7 +67,7 @@ app/
 │   ├── __init__.py
 │   ├── home_theater.py         # Home mode: tabs, sidebar, plots, tables, panel dispatch.
 │   ├── audit_stack.py          # Pipeline Audit: T2/T3 nodes, Apply gate, Revert.
-│   ├── filter_and_audit_handlers.py # Filter builder, Send to Audit, propagation dialog.
+│   ├── filter_and_audit_handlers.py # Filter builder, Send to Audit, propagation dialog (DEPRECATED 2026-11-26, D-0662: removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold).
 │   ├── session_handlers.py     # Session panel: import, restore, delete.
 │   ├── export_handlers.py      # Export panel and bundle; the key check (ADR-089).
 │   ├── data_import_handlers.py # Data Import panel: upload, assign, replace metadata.

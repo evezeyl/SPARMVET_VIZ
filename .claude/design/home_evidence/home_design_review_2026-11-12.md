@@ -1,5 +1,7 @@
 # Independent review of the decided HOME design (one pass before Eve reviews it)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written:** 2026-11-12. **Method:** `.claude/workflows/design_review_personas.md` (rules 1-8): scientist, data scientist, software developer, software architect; each finding says what was run. **Evidence classes:** verified (run, or read at `file:line`), reasoned, external, assumed.
 **What was reviewed:** the design as decided in P1-P9: `home_preview_filters.md`, `home_audit_steps.md` (sections 3, 5a, 11, 19), ADR-099 points 11-14, the reading guide. **Status:** findings and remedies; the decisions are Eve's. No code, configuration or diagram was changed. Scratch scripts: `tmpAI/architect/`.
 

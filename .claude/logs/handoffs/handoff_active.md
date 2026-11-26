@@ -1,8 +1,42 @@
-# Handoff: active state (last update 2026-11-25)
+# Handoff: active state (last update 2026-11-26)
 
-Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE below; one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
+## READ THIS FIRST: what is true now about HOME, the audit and the lineage (2026-11-26)
 
-## OPEN STATE 2026-11-25, at the close of coordinator session sparmvet-viz-98 (3ce2c163) — READ THIS FIRST
+The full one-page version, trusted over any older text on the same subject: `.claude/design/home_audit_what_is_true_now.md`. The model in six sentences:
+1. An audit step is applied in data, never "in a plot"; a plot's own drawing steps are not changed.
+2. Where it is applied is a place: a table after its tier 1 (T1), after its tier 2 (T2), or the Result data (T3) of a plot (the last data table, the data that arrives at that plot).
+3. The scope of a step is the place or places the user chooses in the panel "Path of the data"; nothing else says where a step goes.
+4. What is built from a place follows by the recipe and is shown as information ("what the step reaches"); it is not chosen and not ticked.
+5. At most one place on a path; the metadata is not a place; a step in several plots separately means choosing the Result data (T3) of each.
+6. What the user verifies is the table at the place; Exploration never changes a plot and is never exported; the export holds the Result plus the applied audit steps.
+
+| Say | Do not say |
+|---|---|
+| Result data (T3) | plot data, the plot's table |
+| the table the plot reads (T1, T2 or T3) | the plot's table |
+| place; the places chosen; what the step reaches | "This plot only", "All plots", "All plots except" (old thinking of ADR-049; still built in the pop-up, to be removed) |
+| applied step, audit step, trial | "My view" (gone since 2026-11-20) |
+
+
+Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE 2026-11-26 below (the section of 2026-11-25 after it is kept as history); one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
+
+## OPEN STATE 2026-11-26 (coordinator session sparmvet-viz-44; records round of branch `task/records-2026-11-26`) — READ THIS FIRST
+
+1. **Git.** `dev` head is `043a0c5c` (the merge that holds the one reader, `app/modules/audit_place_view.py`, merged and not yet wired into HOME); not pushed, the owner pushes, agents never push. The ledger on `dev` runs to D-0637; this records branch adds D-0638 to D-0671 (the owner's decisions of 2026-11-25 and 2026-11-26, including D-0663 the step bar, D-0664 records first, D-0665 the removal of the colour pop-up and one rename, D-0666 the review before the demo, D-0667 the marks of replaced lines) and is not merged yet. The page "what is true now" is `.claude/design/home_audit_what_is_true_now.md` (same branch).
+2. **On `dev` since the close of 2026-11-25:**
+   - the every-recipe test (`app/tests/test_every_recipe_follows_the_spec.py`, merge `1f0da79c`) and the recipe fixes (merge `c7d5998d`: empty `test_logic.yaml` deleted, plot ids unique, example data for three templates, refusals on purpose declared beside the recipes; the table of exceptions is empty; D-0638);
+   - the UML model cleaned (Mermaid shells and the default Model removed, GALLERY-BUNDLE moved; every element a build or a decision), the names rule (no line break, at most 45 characters, check in `assets/scripts/audit_uml_model.py`; D-0642), the one diagram `DM-KEYS-HOME-AUDIT`, the four old key diagrams deleted (D-0643, D-0659), "Result data (T3)" in the diagrams (D-0646); `audit_uml_model.py` finds no discrepancy;
+   - the lineage panel look (merge `0a6965ae`: resizable areas, a visible "Chosen" line, list and map in sync, pan and zoom, graph numbers, level headings, plain names) and the section "My adjustments" with table and tier on every audit step (D-0644, D-0647).
+3. **In progress (worktrees, not merged):** `task/strip-toggle-compare` (`../SPARMVET_VIZ_wt_lineage_look`: the toggle beside the recipe title and the Compare switch, slice 1 of the demo plan); `task/records-2026-11-26` (`../SPARMVET_VIZ_wt_records`: this round); `task/outdated-wave1` (the coordinator's cleanup wave 1). The one reader (slice 2, branch `task/audit-place-reader`) is merged.
+4. **Where the plan and the questions are (all in `tmpAI/`, not in git):** the build plan `tmpAI/status/DEMO_BUILD_PLAN_2026-11-26.md` (about ten days; the review list is built before the demo, D-0658, to be confirmed); the questions for the owner `tmpAI/status/QUESTIONS_HOME_2026-11-26.md` and `QUESTIONS_GALLERY_2026-11-26.md`; the header-strip design `tmpAI/panel/header_strip_audit/DESIGN_FOR_THE_OWNER.md` (its two UPDATE sections hold her answers, D-0652 to D-0657); the review-list study `tmpAI/panel/review_queue/DESIGN_FOR_THE_OWNER.md`.
+5. **ON HOLD (owner's correction M702, D-0662):** the behaviour page `tmpAI/panel/review_queue/BEHAVIOUR.md` replaces the flow of the study page in the same folder. The scope of a step is the place (a table at T1, a table at T2, or the Result data T3 of a plot), applied in data, never "in a plot"; a mark means the table at that place was verified; the dialog choices "this plot only / all plots / all plots except" go. Everything that depends on the open points is on hold: the confirmation form (slice 4), the trial before applying (Q2), the checked marks (Q3), the staged cards and the separate Apply, the pop-up of "Send to Audit". The single entry that creates a step is the step bar next to the preview title (she chose C, D-0663), built last. Decided since (relays, not yet in a channel block): at "Add to audit pipeline" the step is written at all the chosen places (D-0669); the mark is called "User verified" and is written in the log (D-0670); Compare beside a trial shows "before this step" on the left with a switch to the original (D-0671). Still open: whether the separate Apply with the staged cards goes; what "who" holds in `user_verified` (the app has no user identity); a recipe of tables only. Going on: slices 1, 3a, Q1 (the effect of a pending step, pure code) and the records. She reviews the remaining questions after the behaviour page.
+6. **New tasks of the records round** (in `tasks.md`): AUDIT-OLD-SCOPE-REMOVE-1 (on hold) and the slices HOME-SLICE-1, 2, 3A, 3B, Q1, 4, Q2, Q3, S-BAR; also DECISION-HASH-REMOVE-1, METADATA-DUPLICATE-ID-MULTIPLIES-ROWS, RECIPE-UPLOAD-HANDLER-OVERWRITES, DATED-COPIES-VS-UNIQUE-PLOT-IDS, HOME-PREVIEW-FALLBACK-FIRST-PLOT, RECIPE-OF-TABLES-ONLY-REFUSED, AUDIT-DIALOG-TABLE-NO-PLOT-READS, PLOT-ID-ACROSS-RECIPES-APP-CHECK. Closed with evidence: GALLERY-RECIPES-1, RECIPES-SMALL-1, GALLERY-SUBMIT-EXAMPLE-UNUSED, GALLERY-STUDY-RECHECK, LINEAGE-UML-SYNC, AUDIT-UML-STALE-TAGS.
+7. **Found, for others:** one test file name is used twice (`app/tests/test_id_completion.py` and `libs/utils/tests/test_id_completion.py`), so `pytest libs app/tests` in one run aborts at collection (the documented command of `rules_verification_testing.md` and `rules_toolchain.md`); the four old pictures `docs/UML/diagrams/DM-KEYS*.png` were removed from git in the second records pass (nothing referenced them); two decided lines disagree (dated copies of a recipe, D-0390 and D-0393, against plot ids unique across a deployment, D-0534).
+8. **Records that were wrong and are corrected** (commits of this branch): `rules_data_engine.md`, the session examples of the contract section 12d, ADR-101 (status, and which points have no ledger line: they stay "not decided"), `decision_hash` (retired in the design, still written; marker and removal task), the notes on D-0358 and D-0501, the Gallery rule file and cheatsheet, the pointers to the deleted key diagrams.
+
+## CLOSED STATE 2026-11-25 (history; replaced by the section above)
+
+The state as it was at the close of coordinator session sparmvet-viz-98 (3ce2c163), kept unchanged except where a note says it is out of date:
 
 1. **Git.** `dev` head is the closing record commit after `09db4e42`. Not pushed; the owner pushes. Agents never push. Ledger runs to D-0637.
 2. **Done 2026-11-24 and 2026-11-25** (merges `80443853` and `578d69d2`, decisions D-0618 to D-0637):
@@ -18,11 +52,11 @@ Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE b
    2. Open points (tasks in `tasks.md`): LINEAGE-OLD-SESSION-META-STEP; LINEAGE-STEP-AT-TABLE-NO-PLOT-LISTING; LINEAGE-SMALL-FORM-TYPES; LINEAGE-INCOMPARABLE-PLACES; HOME-MODE-SWITCH-SCROLL; METADATA-NO-JOIN-LISTS-IT (not decided, D-0637); EQUALITY-DIRTY-DATA-GENERATOR; the panel's words and three tier colours (PROVISIONAL); row order of `figshare_integration` (to confirm).
    3. The files she changed herself, still uncommitted (she decides): `CLAUDE.md`, `.claude/hooks/coordinator_guard.py`, `.claude/agents/panel-*.md`, `.claude/workflows/agent_dispatch_howto.md`, `.vscode/extensions.json`.
    4. Older: HOME-TABS-DRAWN-TWICE; AUDIT-ONE-FAILING-STEP-BREAKS-ALL-PLOTS; REMOVE-FROM-ALL-MISSES-TABLES; AUDIT-RECIPE-BESIDE-ORIGINAL; DATA-IMPORT-OVERWRITE.
-6. **Next step for a new session:** UML: the 5 stale tags of `audit_uml_model.py` and the new panel (LINEAGE-UML-SYNC). Then the open points above, as she decides. BLUEPRINT held. Test Lab left alone (D-0637).
+6. **Next step for a new session:** [done 2026-11-26: the UML sync and the stale tags] UML: the 5 stale tags of `audit_uml_model.py` and the new panel (LINEAGE-UML-SYNC). Then the open points above, as she decides. BLUEPRINT held. Test Lab left alone (D-0637).
 7. **Standing notes:**
    - BLUEPRINT held; Test Lab left alone (D-0637).
    - Incident: one builder ran `pkill -f "shiny run app/src/main.py"` once; it may have stopped another session's app; no file affected. Briefs must forbid `pkill -f` and `pgrep -f`.
-   - Test state at close: app headless 5959 passed, 0 failed; browser run before the last three commits 534 passed, 3 failed (two load-sensitive, passing alone; one fixed in `25b5116c`), not rerun in full. `audit_uml_model.py` FAILS (5 stale tags). `audit_old_words.py --check` fails since before.
+   - Test state at close: app headless 5959 passed, 0 failed; browser run before the last three commits 534 passed, 3 failed (two load-sensitive, passing alone; one fixed in `25b5116c`), not rerun in full. `audit_uml_model.py` FAILS (5 stale tags) [out of date: it finds no discrepancy since 2026-11-26]. `audit_old_words.py --check` fails since before.
 
 ## EVERYTHING STILL OPEN at the close of 2026-11-25 (one list; each item says where its detail lives)
 
@@ -45,7 +79,7 @@ Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE b
    - `trial/axis-text` (0fb0b61e): trial of axis-text behaviours; its question waits for the owner. No worktree.
    - `trial/path-check` (f9f066bd): trial of the allowed-folders check; no task or ledger line closes it. Worktree `.claude/worktrees/path-check`.
    - `trial/stat-function-polars` (6f9b9def): deferred by the owner (D-0275). No worktree.
-7. Two failing audits: `assets/scripts/audit_uml_model.py --project-root .` (5 stale tags: 3 cite ADR-098; `_clear_filters_on_recipe_change`; `test_audited_rows_and_drops_are_exported`) and `assets/scripts/audit_old_words.py --check` (fails since before merge 578d69d2).
+7. Two failing audits [the first passes since 2026-11-26]: `assets/scripts/audit_uml_model.py --project-root .` (5 stale tags: 3 cite ADR-098; `_clear_filters_on_recipe_change`; `test_audited_rows_and_drops_are_exported`) and `assets/scripts/audit_old_words.py --check` (fails since before merge 578d69d2).
 8. The table `figshare_triple_join` of `figshare_integration`: same content, other column and row order after D-0636 (golden records renewed, commit f47d52bc in merge 578d69d2); accepted by the coordinator; the owner to confirm.
 9. The lineage tasks in `tasks.md`: LINEAGE-OLD-SESSION-META-STEP, LINEAGE-STEP-AT-TABLE-NO-PLOT-LISTING, LINEAGE-SMALL-FORM-TYPES, LINEAGE-INCOMPARABLE-PLACES, LINEAGE-UML-SYNC, HOME-MODE-SWITCH-SCROLL, METADATA-NO-JOIN-LISTS-IT, EQUALITY-DIRTY-DATA-GENERATOR; the words and the three tier colours of the panel are PROVISIONAL.
 10. Files changed by the owner, not committed, hers to decide: `CLAUDE.md`, `.claude/hooks/coordinator_guard.py`, `.claude/agents/panel-*.md`, `.claude/workflows/agent_dispatch_howto.md`, `.vscode/extensions.json`.

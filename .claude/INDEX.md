@@ -6,7 +6,8 @@
 
 1. `CLAUDE.md` (project root, Eve's file) and `.claude/rules/workspace_standard.md`: the rules.
 2. `.claude/tasks/tasks.md`: the live task list, sorted 2026-11-13: only open and current tasks, in four groups (HOME audit build, recipe format, configuration stage, backlog).
-3. `.claude/design/home_audit_reading_guide.md`: the HOME redesign: order of work, decision register, reading list.
+3. `.claude/design/home_audit_what_is_true_now.md`: **read first for HOME, the audit and the lineage** (2026-11-26): the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject.
+3a. `.claude/design/home_audit_reading_guide.md`: the HOME redesign: order of work, decision register, reading list (HISTORY where it differs from the page above).
 4. `.claude/design/spaces/HOME.md`: the whole of HOME in one place (built or target).
 5. `.claude/design/home_stage2_mechanism_spec.md`: the build plan P0-P12.
 6. `.claude/design/recipe_format_spec.md`: the recipe format (the recipe session).
@@ -45,6 +46,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `engine_boundary_map.md` | AS BUILT (stage 0 of the engine boundary) | 2026-11-21 | Engine boundary map: the marks, the list, the test, the seams, the ten hardest places |
 | `export_specification.md` | AS BUILT (cleaned 2026-11-13); extended by the audit redesign (ADR-099) | 2026-11-13 | Export Specification |
 | `functionality_dependency_map.md` | AS BUILT / reference | 2026-11-07 | Functionality Dependency Map |
+| `home_audit_what_is_true_now.md` | IN FORCE (read first) | 2026-11-26 | WHAT IS TRUE NOW: HOME, the audit and the lineage |
 | `home_audit_reading_guide.md` | RECENT (redesign) | 2026-11-13 | HOME filters and audit: reading guide (start here) |
 | `home_audit_steps.md` | RECENT (redesign) | 2026-11-13 | HOME: audit steps and audit mode |
 | `home_observations_and_future.md` | RECENT (redesign) | 2026-11-12 | HOME redesign: am I blocked? Observations on the model, and the future (2026-11-12) |
