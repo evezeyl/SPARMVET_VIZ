@@ -746,6 +746,8 @@ The current Mermaid.js + svg-pan-zoom stack works but has limitations:
 
 ## ADR-043: Unified Home Theater — Elimination of Redundant "Analysis Theater" Nav Mode
 
+> **Note 2026-11-26 (records pass; ledger D-0657, DECIDED, not built):** the tabs that come from the plot groups of the recipe stay in Exploration. In Audit mode there are no tabs for all the plots: one item at a time (a plot with its Compare, or a table at a place), chosen from the lineage; whether this replaces the tab rule of this ADR for Audit mode is to be confirmed by the owner. The tabs are still built in Audit mode today (slice 3b of the demo plan).
+
 > **Partly stale (2026-11-14, ADR-SYNC-1):** the tier toggle and comparison model below were replaced by ADR-086 (2026-11-05), whose target is in turn replaced by ADR-099 and ADR-105 (Exploration and audit mode). Collapsible plot and data panels stay.
 
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-A through 21-H complete. All sub-phases verified (21-H headless: 76/76 PASS).
@@ -1253,6 +1255,8 @@ prefer_discovery: true
 ---
 
 ## ADR-049: Per-Plot T3 Audit Scoping & Join-Key Propagation (Phase 22-J, 2026-04-25)
+
+> **Note 2026-11-26 (records pass; ledger D-0662, D-0665, D-0667): SUPERSEDED by ADR-105 and D-0662.** The scope of a step is the place chosen in "Path of the data" (a table at T1, at T2, or the Result data (T3) of a plot), never "this plot only / all plots / all plots except" (these words are in no ledger line; they come from this ADR and from the rule file). The pop-up this ADR describes, the plot choices, `plot_scope` and the per-plot stack are STILL BUILT today; they are scheduled for removal with the colour and shape pop-up and one rename of the stored names (task AUDIT-OLD-SCOPE-REMOVE-1, on hold until the owner has read the behaviour page). ADR-049a (a filter on a key column is allowed, with a warning) stays. The body below is history.
 
 > **To be amended by ADR-099 (not yet built):** the propagation dialog "this plot / all plots / all except" is replaced by a reach selector and a stage that follows from the kind of step; plot-level steps become level 3.
 > **Correction (2026-11-14, ADR-SYNC-1):** the reach selector and levels of the banner above were themselves superseded on 2026-11-12: the target is ADR-105 (a filter on a field, tick lines on every node of the lineage that has it, written at T1, T2 or T3). Per-plot stacks, the propagation dialog and `plot_scope` are history once it is built. ADR-049a (a filter on a key column is allowed, with a warning) stays.
@@ -5054,6 +5058,8 @@ Note 2026-11-15 (Eve): the seed is fixed at 0 by default; HOME draws no seed per
 
 
 ## ADR-099: Exploration and audit mode — original and audit data, four levels of audit step, no draft (2026-11-11)
+
+> **Note 2026-11-26 (records pass; ledger D-0652 to D-0657, D-0663): point 2, the position of the mode switch.** "Mode switch at the left of the group-tabs row" is replaced by the toggle "Exploration | Audit" in a row beside the recipe title, with "Table to view" in Exploration only and "Compare with the original" as a switch above the plot area (decided 2026-11-26, to be confirmed as a whole, D-0652; in build: slice 1 on branch `task/strip-toggle-compare`). The single entry that creates an audit step is the step bar next to the preview title (D-0663). Read `.claude/design/home_audit_what_is_true_now.md` first.
 
 > **Status note (2026-11-20, ledger D-0350):** BUILT in part. Slice A: a key per stored table, the plot's T3 reader, the audit copy in memory. Slice B: Exploration with the data choice Source | T1 | T2 | T3 (D-0310 supersedes the "Raw and Result" choice of point 1), Audit mode with Compare, the flag rule of point 8 (fatal, D-0018). Refined on 2026-11-20 by D-0310 to D-0347: filters cleared on a view change (D-0311); old and other-recipe sessions refused (D-0312, D-0317); one undo control "Remove step" (D-0314); the audit log (D-0315); the dialog: all places ticked, table and picture changed, distinct tables with their reach, the lineage walk (D-0316, D-0318, D-0337, D-0346, D-0347); the entity key and the join columns (D-0313); only filters and drops (D-0322); the audit recipe file: folder, comments kept, id counter, `info.audit_of`, `audit_comment`, `audit_steps`, tamper check, audit record (D-0319, D-0320, D-0321, D-0328, D-0329, D-0331, D-0332, D-0333, D-0339, D-0340); places by the engine's plan (D-0325); the build at opening (D-0326, D-0334, D-0335, D-0336, D-0343); exploration never changes a plot (D-0327); the export of an audit (D-0324). NOT BUILT: the audit recipe file and its record, the new dialog and its walk, the opening build, the export of an audit.
 
