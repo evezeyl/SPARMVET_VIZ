@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -33,7 +33,8 @@ from utils import recipe_tiers
 from utils.fix_text import fix_label
 from utils.recipe_graph import RecipeGraphError, build_graph
 from app.modules.error_notice import notice
-from utils.na_choice import na_of, no_value_text
+from utils.filter_words import no_value_words, value_text
+from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
 from app.modules.audit_places import PLACES_BUCKET, place_words, plots_below
@@ -73,11 +74,11 @@ _OP_SYMBOL = {"eq": "=", "ne": "≠", "gt": ">", "ge": "≥",
 def _format_value(val) -> str:
     """Render a filter value compactly. Lists become {a, b, c}; long strings truncate."""
     if isinstance(val, (list, tuple)):
-        items = [str(v) for v in val]
+        items = [value_text(v) for v in val]
         if len(items) <= 3:
             return "{" + ", ".join(items) + "}"
         return "{" + ", ".join(items[:3]) + f", … +{len(items)-3}}}"
-    s = str(val)
+    s = value_text(val)
     return s if len(s) <= 30 else s[:30] + "…"
 
 
@@ -85,7 +86,8 @@ def _params_summary(node: dict) -> str:
     text = _condition_summary(node)
     if node.get("node_type") in ("filter_row", "exclusion_row"):
         # NA-RULE-63: a step without `na` (made before the choice) always removed the rows with no value
-        text += " · " + no_value_text(na_of(node.get("params")))
+        params = node.get("params") or {}
+        text += " · " + no_value_words(na_of(params), str(params.get("column", "?")))
     return text
 
 
@@ -103,7 +105,7 @@ def _condition_summary(node: dict) -> str:
             closed = p.get("closed", "both")
             lb = "[" if closed in ("both", "left") else "("
             rb = "]" if closed in ("both", "right") else ")"
-            return f"{col} ∈ {lb}{val[0]}, {val[1]}{rb}"
+            return f"{col} ∈ {lb}{value_text(val[0])}, {value_text(val[1])}{rb}"
         return f"{col} {op} {_format_value(val)}"
     if nt == "exclusion_row":
         col = p.get("column", "?")

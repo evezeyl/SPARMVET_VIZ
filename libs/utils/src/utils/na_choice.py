@@ -4,9 +4,9 @@ Stdlib only (no Polars), so the audit translator, the session store and the HOME
 audit step written before the choice existed has no `na`; it always removed those rows, so it is carried as "remove".
 """
 # @deps
-# provides: constant:NA_CHOICES, function:na_of, function:default_na, function:with_na, function:no_value_text
+# provides: constant:NA_CHOICES, function:na_of, function:default_na, function:with_na
 # consumes: -
-# consumed_by: libs/utils/src/utils/missing_values.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/modules/session_manager.py, app/handlers/filter_and_audit_handlers.py
+# consumed_by: libs/utils/src/utils/filter_words.py, libs/utils/src/utils/missing_values.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/modules/session_manager.py, app/handlers/filter_and_audit_handlers.py
 # doc: .claude/tasks/tasks.md#NA-RULE-63
 # @end_deps
 from typing import Optional
@@ -38,7 +38,3 @@ def with_na(params: dict) -> dict:
     """A copy of `params` with `na` written (an old step without it becomes "remove")."""
     return {**params, "na": na_of(params)}
 
-
-def no_value_text(na: str) -> str:
-    """The choice in a few words for a list or a card: "no value: kept" or "no value: removed"."""
-    return "no value: kept" if na_of({"na": na}) == "keep" else "no value: removed"

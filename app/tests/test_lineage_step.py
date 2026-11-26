@@ -100,7 +100,7 @@ def test_na_is_the_default_of_the_operator_and_is_told():
     remove = step_params("s", "eq", "String", "x")
     assert keep["na"] == "keep" and remove["na"] == "remove"
     assert keep["op"] == "not_in" and keep["dtype"] == "String" and keep["column"] == "s"
-    assert "no value kept" in stage_sentence(keep) and "no value removed" in stage_sentence(remove)
+    assert "rows with no s are kept" in stage_sentence(keep) and "rows with no s are removed" in stage_sentence(remove)
 
 
 # ---------------------------------------------------------------- the staging
