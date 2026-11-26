@@ -110,14 +110,14 @@ def discovery_problems(folder: Path):
     return messages
 
 
-def set_check_problems(files):
-    """The set check (X5) over the recipes at `files`; plain messages."""
+def set_check_problems(files, **options):
+    """The set check (X5) over the recipes at `files`; plain messages. `options` go to `check_recipe_set` (`named_copies_are_copies`, off by default)."""
     recipes = {}
     for path in files:
         raw, _ = load_recipe(path)
         if isinstance(raw, dict):
             recipes[Path(path).stem] = raw
-    return [p.text("recipes") for p in check_recipe_set(recipes)]
+    return [p.text("recipes") for p in check_recipe_set(recipes, **options)]
 
 
 def declared_refusals(folders=None):
@@ -282,6 +282,32 @@ def test_two_recipes_with_the_same_plot_id_are_reported_by_the_set_check(tmp_pat
     shutil.copy(work / "3_test_no_joins.yaml", work / "3_copy.yaml")
     problems = set_check_problems([work / "3_test_no_joins.yaml", work / "3_copy.yaml"])
     assert problems and all("plot id" in p for p in problems)
+
+
+def test_an_audit_recipe_beside_its_original_passes_the_check_and_is_a_copy_for_the_set_check(tmp_path):
+    """The audit recipe as `audit_recipe_of` writes it (with a step at tier 1 of ResFinder) passes the recipe check with `info.audit_of`; the set check counts the plot ids it shares with its
+    original as a clash by default (D-0534 stands), gives none with the exemption switched on explicitly, and with the key removed it clashes again (D-0354, D-0690)."""
+    import yaml
+    from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of
+    from app.modules.cache_keys import load_data_analysis_recipe
+    from app.modules.session_manager import make_audit_step
+    work = _copy_pipelines(tmp_path)
+    original = work / "1_test_data_ST22_dummy.yaml"
+    raw = load_data_analysis_recipe(original).raw
+    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, plot_scope=PLACES_BUCKET, reason="a test reason", place="T1:ResFinder",
+                           started_from="subtab_amr_heatmap")
+    recipe = audit_recipe_of(raw, [node], "1_test_data_ST22_dummy", "2026-11-26")
+    assert recipe["info"]["audit_of"] == "1_test_data_ST22_dummy"
+    target = work / f"{recipe['id']}.yaml"
+    target.write_text(yaml.safe_dump(recipe, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    assert run_check("recipe_check", target) == []
+    # By default `info.audit_of` changes nothing: side by side in ONE folder the original and its audit recipe clash today (X5). That is the open question the later switch of the
+    # recipe HOME reads (D-0690, parked) will answer; the exemption is built but off, and no caller turns it on.
+    assert any("plot id" in p for p in set_check_problems([original, target]))
+    assert set_check_problems([original, target], named_copies_are_copies=True) == []
+    del recipe["info"]["audit_of"]
+    target.write_text(yaml.safe_dump(recipe, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    assert any("plot id" in p for p in set_check_problems([original, target], named_copies_are_copies=True))
 
 
 def test_an_empty_yaml_file_in_a_recipe_folder_is_reported(tmp_path):

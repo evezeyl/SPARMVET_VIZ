@@ -130,6 +130,12 @@ CASES = [
     ("I02", "A", lambda r: r["info"].pop("description"), "run"),
     ("I02", "A", lambda r: r["info"].pop("contact"), "run"),
     ("I03", "E", lambda r: r["info"].update(display_name="x"), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of=""), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of="   "), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of=5), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of=["a"]), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of="a b/c"), "run"),
+    ("I04", "E", lambda r: r["info"].update(audit_of="r"), "run"),
     ("E01", "E", lambda r: r.update(entity={"noun": "s", "plural": "ss", "population": "A", "x": 1}), "run"),
     ("E01", "E", lambda r: r.update(entity={"noun": "s"}), "run"),
     ("E02", "E", lambda r: r.update(entity={"noun": "s", "plural": "ss", "population": "Nope"}), "run"),
@@ -434,6 +440,109 @@ def test_the_same_plot_id_in_two_recipes_is_x5():
     assert problems and problems[0].code == "X5"
     two["analysis_groups"]["g"]["plots"] = {"q": two["analysis_groups"]["g"]["plots"]["p"]}
     assert check_recipe_set({"one": one, "two": two}) == []
+
+
+def test_audit_of_naming_another_recipe_is_accepted_and_absent_is_accepted():
+    assert [p.code for p in check(valid()).problems if p.code == "I04"] == []
+    named = valid()
+    named["info"]["audit_of"] = "1_test-data_ST22"
+    assert [p.code for p in check(named).problems if p.code == "I04"] == []
+
+
+def make_set(**ids):
+    """{name: recipe}: each name gets the plot ids given; `<name>_of` (kwargs key `x__of`) is not used: copies are set by `copy_of`."""
+    out = {}
+    for name, plots in ids.items():
+        raw = valid()
+        raw["id"] = name
+        raw["analysis_groups"]["g"]["plots"] = {pid: {"ui_label": pid} for pid in plots}
+        out[name] = raw
+    return out
+
+
+def copy_of(recipes, name, original):
+    recipes[name]["info"]["audit_of"] = original
+    return recipes
+
+
+def x5(recipes, on=True):
+    """X5 problems; the five cases below switch the named-copy exemption on explicitly (it is off by default and no caller turns it on)."""
+    return [p for p in check_recipe_set(recipes, named_copies_are_copies=on) if p.code == "X5"]
+
+
+def test_set_a_recipe_and_the_audit_recipe_that_names_it_share_ids_without_x5():
+    recipes = copy_of(make_set(orig=["p", "q"], orig_audited=["p", "q"]), "orig_audited", "orig")
+    assert x5(recipes) == []
+    del recipes["orig_audited"]["info"]["audit_of"]
+    assert x5(recipes), "without the key it is a clash, as before"
+
+
+def test_set_b_two_audit_recipes_of_one_original_share_ids_with_it_without_x5():
+    recipes = make_set(orig=["p"], orig_v1=["p"], orig_v2=["p"])
+    copy_of(recipes, "orig_v1", "orig"), copy_of(recipes, "orig_v2", "orig")
+    assert x5(recipes) == []
+    # an id the two copies share that the original does not have is still a clash (case e)
+    recipes["orig_v1"]["analysis_groups"]["g"]["plots"]["z"] = {"ui_label": "z"}
+    recipes["orig_v2"]["analysis_groups"]["g"]["plots"]["z"] = {"ui_label": "z"}
+    assert [p.path for p in x5(recipes)] and "'z'" in x5(recipes)[0].message
+
+
+def test_set_c_a_copy_sharing_an_id_with_a_recipe_that_is_not_its_original_is_x5():
+    recipes = copy_of(make_set(orig=["p"], other=["p"], orig_audited=["p"]), "orig_audited", "orig")
+    problems = x5(recipes)
+    assert problems and all("'p'" in p.message for p in problems)
+    recipes = copy_of(make_set(orig=["p"], other=["p"]), "other", "elsewhere")
+    assert x5(recipes), "naming an original that does not hold the id is no exemption"
+
+
+def test_set_d_a_copy_whose_original_is_not_in_the_set_is_checked_like_any_recipe_and_nothing_is_added():
+    recipes = copy_of(make_set(a_audited=["p"], b=["p"]), "a_audited", "a")
+    assert x5(recipes), "its ids clash with others as any recipe's"
+    alone = copy_of(make_set(a_audited=["p"]), "a_audited", "a")
+    assert check_recipe_set(alone, named_copies_are_copies=True) == [], "a missing original is no refusal"
+    two = copy_of(copy_of(make_set(a_v1=["p"], a_v2=["p"]), "a_v1", "a"), "a_v2", "a")
+    assert x5(two), "with no original in the set nothing is exempt"
+
+
+def test_set_e_an_id_the_copy_has_and_its_original_lacks_clashes_with_a_third_recipe():
+    recipes = copy_of(make_set(orig=["p"], third=["extra"], orig_audited=["p", "extra"]), "orig_audited", "orig")
+    problems = x5(recipes)
+    assert problems and "'extra'" in problems[0].message and "'p'" not in problems[0].message
+
+
+def test_set_a_bad_audit_of_gives_no_exemption_even_when_the_exemption_is_on():
+    recipes = make_set(orig=["p"], copy=["p"])
+    for bad in ("copy", 7, "", "orig b", "orig/x", ["orig"], None):
+        recipes["copy"]["info"]["audit_of"] = bad
+        assert x5(recipes), bad
+
+
+def test_set_a_value_of_a_bad_form_gives_no_grouping_even_when_it_names_a_recipe_of_the_set():
+    """Pins `audit_original_of`: the value must have the form of a recipe id, even if a recipe of that exact name is in the set."""
+    for bad in ("orig b", "orig/x", "Orig!"):
+        recipes = make_set(**{bad: ["p"], "copy": ["p"]})
+        recipes["copy"]["info"]["audit_of"] = bad
+        assert x5(recipes), bad
+
+
+def test_set_by_default_audit_of_changes_nothing_a_forged_key_does_not_share_ids():
+    """D-0534 stands: with the default, a key nothing verifies exempts nothing, for every case a to e."""
+    for recipes in (copy_of(make_set(orig=["p", "q"], forged=["p", "q"]), "forged", "orig"),
+                    copy_of(copy_of(make_set(orig=["p"], v1=["p"], v2=["p"]), "v1", "orig"), "v2", "orig"),
+                    copy_of(make_set(orig=["p"], other=["p"], c=["p"]), "c", "orig")):
+        with_key = [(p.path, p.message) for p in check_recipe_set(recipes)]
+        for raw in recipes.values():
+            raw["info"].pop("audit_of", None)
+        assert with_key and with_key == [(p.path, p.message) for p in check_recipe_set(recipes)], "the same X5 lines as with no key"
+    assert x5(copy_of(make_set(orig=["p"], c=["p"]), "c", "orig"), on=False)
+
+
+def test_the_gallery_profile_refuses_audit_of():
+    raw = gallery_recipe()
+    assert "GP07" not in [p.code for p in check(raw, profile="gallery").problems]
+    raw["info"]["audit_of"] = "some_other"
+    found = [p for p in check(raw, profile="gallery").problems if p.code == "GP07"]
+    assert found and found[0].path == "info.audit_of" and found[0].fix
 
 
 def gallery_recipe():

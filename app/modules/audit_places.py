@@ -361,7 +361,7 @@ def _step_comment(node: dict) -> str:
 
 def audit_recipe_of(raw: dict, nodes: Iterable[dict], original_id: str, made_on: str) -> dict:
     """The AUDIT RECIPE of an export made in Audit mode (D-0622; PROVISIONAL form): the original recipe with every audit step at its place (`bake_place_steps`, each step carrying its
-    reason), under the id `<original id>_audited` (the id equals the file name, ADR-092) and an `info` that says in plain words that it is the audit recipe of the original. It is an
+    reason), under the id `<original id>_audited` (the id equals the file name, ADR-092) and an `info` that says in plain words that it is the audit recipe of the original and names it in `info.audit_of`. It is an
     ordinary recipe of format 1: the app opens it and runs it like any recipe, with the same data references as the original, and running it gives the audited tables and plots.
     The argument is not changed. Raises what `bake_place_steps` raises."""
     audit = bake_place_steps(raw, nodes)
@@ -369,6 +369,7 @@ def audit_recipe_of(raw: dict, nodes: Iterable[dict], original_id: str, made_on:
     info = dict(audit.get("info") or {})
     label = str(info.get("ui_label") or original_id)
     info["ui_label"] = f"{label} (audited)"
+    info["audit_of"] = original_id   # D-0354, D-0690: the audit recipe names its original; the set check then reads it as a copy of it (not a clash of plot ids)
     said = f"This is the audit recipe of '{original_id}', made on {made_on}: the original recipe with the audit steps written at their places, each with its reason in its own comment. Running it gives the audited tables and plots of the export it came with."
     info["description"] = f"{said} {info['description']}" if info.get("description") else said
     audit["info"] = info
