@@ -19,20 +19,25 @@ Her rule (ledger `D-0676`, block M710): a task that is not done and still actual
 3. I re-checked a sample of the A (done) verdicts against the branch (commits are ancestors of HEAD, files and symbols exist) and corrected what failed: **979** (BLUEPRINT-DUPLICATE-PLOT-ID-SHOWN-WRONG: the BLUEPRINT part is on branch `task/blueprint-duplicate-id`, which is not on `dev`: now D, stays), **992** (REVIEWS-D0534-TO-REDO: its commits `349d1474` and `fdc6380f` are not on `dev`, and the task says no merge before the reviews are redone: now F, stays), **621** (DEMO-BRANCH-PLAN-1: only the plan page is done, the branch is cut later: now F, stays). I downgraded to G (stays, verdict needed) three B verdicts that rested on a reading the reviewer did not complete: **470** AUDIT-RULES (six questions unread), **858** AUDIT-FOLDER-WARNING-AND-DOCS (she may still want the warning file), **1012** LINEAGE-UNFOLLOWED-JOIN-WARNING (she may still want the red lines in the lineage panel).
 4. The owner's extra rule of M710 (D-0675: the place model replaces D-0316, D-0359, D-0451) makes **935** AUDIT-DEFAULT-TICKS-REVIEW and **936** AUDIT-DIALOG-TABLE-NO-PLOT-READS, and **1009** LINEAGE-UNREAD-TABLES-ARE-LINES, B. What is left of 935 and 936 is carried by the slice tasks (see the table).
 
+5. CORRECTIONS after the check of the branch (2026-11-26, the coordinator's list; each is one line; the tables below show the corrected verdict, marked CORRECTED): restored to `tasks.md`: S2-3 (D-0088 stands), RECIPE-OVERVIEW-2, EXPORT-RECIPE-REFUSE-1 (all three now E, waits for the owner); un-archived with done and missing lines: AUDIT-VIEW-1, RECIPE-RULE-ONE-NAME-ONE-MEANING, AUDIT-SAVE-RULE-TEXT-1, ENTITY-DECL-1, FILTER-PICKERS-1, FILTER-CONTROLS-TYPE; APPLY-REASON-FALLBACK is not restored (one line in AUDIT-OLD-SCOPE-REMOVE-1 carries it, evidence `audit_stack.py:175, 210, 253-254, 540, 666-667`); UML-CHECK is folded into UML-TASKS (two lines); UML-STALE-TEST-TAG-1 is archived as done (audit_uml_model.py finds no discrepancy; the model does not contain the test name).
+6. STAGE2-SPEC-1 point 7 ("if the recipe steps become dictionaries, refuse duplicate keys in the loader") is MOOT and stays removed: in recipe format 1 the steps of a tier are a list (`.claude/design/recipe_format_spec.md` section 5), and the loader already refuses a repeated key of any mapping: `libs/utils/src/utils/strict_yaml.py:17-36` (`DuplicateKeyError`, check T10), used by `libs/utils/src/utils/recipe_loader.py:28`, tested in `libs/utils/tests/test_strict_yaml.py`. No new task.
+7. Two different tasks share the id N7-4: the one at line 351 was REMOVED as superseded (verdict B: remove from all the data is now a choice of places, D-0499, D-0531, D-0662); the one at line 387 was ARCHIVED as done (verdict A: the library step `libs/utils/src/utils/remove_from_all.py`; the screen is tracked by AUDIT-REMOVE-FROM-ALL-DATA).
+8. The ledger line D-0151 is a RELAYED line (not hers); the rule it points at is D-0088 (DECIDED). A FACT note in the ledger says the task list was corrected on this point.
+
 ## Totals
 
 | Verdict | Meaning | Count (open tasks before) | Count after the wave |
 |---|---|---|---|
-| A | DONE (moved to the archive) | 67 | 0 |
-| B | SUPERSEDED (removed) | 33 | 0 |
-| C | DUPLICATE (removed or the better one stays) | 15 | 1 |
-| D | OPEN, actionable | 108 | 108 |
-| E | OPEN, waits for the owner | 139 | 139 |
+| A | DONE (moved to the archive) | 62 | 0 |
+| B | SUPERSEDED (removed) | 28 | 0 |
+| C | DUPLICATE (removed or the better one stays) | 17 | 1 |
+| D | OPEN, actionable | 110 | 110 |
+| E | OPEN, waits for the owner | 146 | 146 |
 | F | OPEN, deferred or held | 108 | 108 |
-| G | CANNOT JUDGE (stays) | 29 | 29 |
-| total | | 499 | 385 |
+| G | CANNOT JUDGE (stays) | 28 | 28 |
+| total | | 499 | 393 |
 
-Open tasks at the start: 499. Moved to the archive as done: 67 (verdict A) and the 90 ticked tasks. Removed as superseded: 33. Removed as duplicates: 14. Open at the end: 385 (before the two new tasks of the evening and the new top block).
+Open tasks at the start: 499. Moved to the archive as done: 62 (verdict A) and the 90 ticked tasks. Removed as superseded: 28. Removed as duplicates: 16. Open at the end: 393 (before the five new tasks added the same evening, REMOVED-APPLIED-STEP-NOT-SAVED, DATA-PATHS-FULL-IN-EXPORT-AND-SESSION, RECIPE-SWITCH-AUDIT-RECIPE, AUDIT-STEPS-SURVIVE-RECIPE-CHANGE and BUNDLE-IMPORT-RELOAD-MESSAGE, which make it 398; the new top block is not a task).
 
 ## The tasks, by section of `tasks.md`
 
@@ -40,7 +45,7 @@ Columns: task id, the line in `tasks.md` before the wave, verdict, evidence, wha
 
 ### 1. HOME audit build (stage 2)
 
-Verdicts: A 15, B 5, C 1, D 6, E 2, F 7, G 7 (43 open tasks).
+Verdicts: A 13, B 5, C 1, D 7, E 3, F 7, G 7 (43 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -58,13 +63,13 @@ Verdicts: A 15, B 5, C 1, D 6, E 2, F 7, G 7 (43 open tasks).
 | HOME-EXPLORE-2 | 69 | B | key extraction replaced by the entity key (D-0034, D-0313); libs/utils/src/utils/join_keys.py, key_drop.py exist | removed from tasks.md (history in git) |
 | KEYS-NODE-1 | 73 | G | app/modules/cache_keys.py:292-305 tier1_key and tier2_key | stays; Verdict needed line added |
 | STAGE2-SPEC-1 | 77 | B | stage-2 spec of 2026-11-13 replaced by the places model (D-0662, D-0672) | removed from tasks.md (history in git) |
-| AUDIT-VIEW-1 | 78 | A | app/modules/audit_view.py and libs/utils/src/utils/audit_copy.py implement the audit copy | archived (moved to the done archive of its unit) |
+| AUDIT-VIEW-1 | 78 | D | CORRECTED (was A, archived): restored with done and missing lines; done: the audit copy is the source of truth (app/modules/audit_view.py; audit_copy.py:270); missing: the re-base after a change of the original (S2-3) and the badg | stays |
 | HOME-EXPLORE-4 | 82 | B | D-0311, D-0505, D-0506: the filter belongs to the viewed table; built | removed from tasks.md (history in git) |
 | HOME-EXPLORE-5 | 83 | G | test_filter_operators.py, test_step_order.py exist | stays; Verdict needed line added |
 | HOME-EXPLORE-6 | 84 | G | - | stays; Verdict needed line added |
 | AUDIT-USABILITY-1 | 88 | F | depends on the dialog that D-0672 reworks; demo priority | stays |
 | AUDIT-REPLACE-1 | 89 | B | places model (D-0662, D-0665, D-0672) replaces the per-plot stack, pop-up and Apply; contract: __places__ | removed from tasks.md (history in git) |
-| FILTER-PICKERS-1 | 91 | A | merge a386422a; pickers built; P1 to P8 provisional choices need her reading | archived (moved to the done archive of its unit) |
+| FILTER-PICKERS-1 | 91 | E | CORRECTED (was A, archived): restored; the eight provisional choices still wait for her; the text on time and duration columns is corrected to what ops_for_column offers today (t3_audit_engine.py:330-357) | stays; Waits for line added |
 | TIME-NANOSECONDS-DRAW-1 | 102 | G | t3_audit_engine.py:220 handles nanoseconds in filter values | stays; Verdict needed line added |
 | HOME-DESIGN-REVIEW-1 | 106 | G | almost all decided | stays; Verdict needed line added |
 | ACTION-MUST-ACT-1 | 110 | A | polars_calls.py:35 imports step_problems; data_wrangler.py:26; no xfail left in test_actions_must_act.py | archived (moved to the done archive of its unit) |
@@ -90,7 +95,7 @@ Verdicts: A 15, B 5, C 1, D 6, E 2, F 7, G 7 (43 open tasks).
 
 ### 2. Recipe format (the recipe session; parent issue #73; package P2)
 
-Verdicts: A 9, B 2, C 1, D 3, E 1, G 2 (18 open tasks).
+Verdicts: A 8, B 2, C 1, D 4, E 1, G 2 (18 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -103,7 +108,7 @@ Verdicts: A 9, B 2, C 1, D 3, E 1, G 2 (18 open tasks).
 | RECIPE-TYPES-1 | 158 | B | the task says superseded by DEC27 = D-0035, D-0057 | removed from tasks.md (history in git) |
 | RECIPE-FORMULAS-1 | 159 | A | libs/utils/src/utils/formula_check.py; test_formula_check.py | archived (moved to the done archive of its unit) |
 | UNKNOWN-KEYS-1 | 160 | A | recipe_check.py:180,235,337,395,437,845 (unknown_keys; T03, E01, S01, S05, J01); D-0033 | archived (moved to the done archive of its unit) |
-| ENTITY-DECL-1 | 161 | A | recipe_check.py:330-337 entity() E01 (the Blueprint form part is held) | archived (moved to the done archive of its unit) |
+| ENTITY-DECL-1 | 161 | D | CORRECTED (was A, archived): restored; done: recipe_check.py:330-337 (E01); missing: the BLUEPRINT form part (held) and the docs appendix (no entry for the key entity: in docs/) | stays |
 | RECIPE-DATASET-TIER2-1 | 162 | A | commits ef63bc27 (J14), 533a0880, c141934c; recipe_check.py:361,419-420 S07; app/tests/test_schema_tier2.py | archived (moved to the done archive of its unit) |
 | RECIPE-FORMAT-1 | 163 | A | libs/utils/src/utils/engine_keys_migration.py; recipe_migration.py:40; D-0033, D-0034, D-0024 | archived (moved to the done archive of its unit) |
 | RECIPE-MIGRATE-1 | 167 | A | app/tests/test_every_recipe_follows_the_spec.py:40-42 (exceptions empty); D-0638 | archived (moved to the done archive of its unit) |
@@ -210,7 +215,7 @@ Verdicts: A 2, B 2, D 8, G 1 (13 open tasks).
 
 ### 7. Eve's decisions of 2026-11-15, evening (channel blocks M101 to M118 and M119 to M129 of the review session)
 
-Verdicts: A 13, B 6, C 3, D 12, E 8, F 2, G 4 (48 open tasks).
+Verdicts: A 12, B 2, C 4, D 12, E 12, F 2, G 4 (48 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -222,7 +227,7 @@ Verdicts: A 13, B 6, C 3, D 12, E 8, F 2, G 4 (48 open tasks).
 | CLEAN-SAVED-1 | 378 | D | M105 decided; no commit found; a builder should check whether it was done with D-0312 | stays |
 | S2-5 | 379 | E | depends on CLEAN-SAVED-1 | stays; Waits for line added |
 | S2-2 | 383 | C | same subject as READING-ERRORS-1 (443) | removed from tasks.md, merged into READING-ERRORS-1 |
-| S2-3 | 384 | B | re-base of applied/not concerned/broken steps is the old per-plot audit model; D-0662, D-0672 | removed from tasks.md (history in git) |
+| S2-3 | 384 | E | CORRECTED (was B, removed): restored; D-0088 DECIDED (the export is refused until a re-base; a broken step blocks it) and D-0151 (RELAYED, the rule is D-0088) are not superseded by D-0662, D-0672 or D-0675, and no kept task, page  | stays; Waits for line added |
 | S2-3-Q | 385 | D | investigation only; no decision needed | stays |
 | S2-4 | 386 | B | build order of the old stage-2 packages; audit rebuilt as places (D-0535, D-0662, D-0672) | removed from tasks.md (history in git) |
 | N7-4 | 387 | A | libs/utils/src/utils/remove_from_all.py exists; contract: DECIDED, built as a library step (D-0499, D-0531); the screen is tracked by AUDIT-REMOVE-FROM-ALL-DATA | archived (moved to the done archive of its unit) |
@@ -230,7 +235,7 @@ Verdicts: A 13, B 6, C 3, D 12, E 8, F 2, G 4 (48 open tasks).
 | AUDIT-ADVICE | 389 | D | M112 decided; advice text for the dialog, help and docs still wanted (the flow changes under D-0672) | stays |
 | AUDIT-WARN | 390 | E | the fourth point is open | stays; Waits for line added |
 | AUDIT-ERROR-Q | 391 | E | options go to her | stays; Waits for line added |
-| RECIPE-OVERVIEW-2 | 394 | B | display replaced by the lineage panel "Path of the data" (D-0629, D-0634; contract section 2) | removed from tasks.md (history in git) |
+| RECIPE-OVERVIEW-2 | 394 | E | CORRECTED (was B, removed): restored; her wishes recorded in the task (one ordered list of recipe steps and audit steps, different colours, the insertion point visible, an accordion per table with counts and a check line) are not  | stays; Waits for line added |
 | PY-RESEARCH | 397 | F | start only after the visualisation library is done | stays |
 | CATEG-1 | 400 | A | merge 78c620bf (CATEGORICAL-MIGRATION-1); D-0098, D-0057 | archived (moved to the done archive of its unit) |
 | STANDARD-POLARS-TYPES | 401 | A | D-0057; rules_data_analysis_recipe_structure.md section 9 | archived (moved to the done archive of its unit) |
@@ -242,14 +247,14 @@ Verdicts: A 13, B 6, C 3, D 12, E 8, F 2, G 4 (48 open tasks).
 | AUDIT-RAWYAML-REMOVE-1 | 409 | A | commit 8bf8a8fc; app/modules/renamed_keys.py:237 refuses it | archived (moved to the done archive of its unit) |
 | AUDIT-RECIPE-RULE | 410 | A | app/tests/test_audit_recipe_runs_alone.py; contract section 7.2 rules 8 and 10; D-0535 | archived (moved to the done archive of its unit) |
 | TWO-RECIPES | 411 | D | decided M125; the check waits for UML-CHECK; the build exists (contract 7.2 rule 10) | stays |
-| UML-CHECK | 412 | B | checks diagrams of the old per-plot audit model replaced by D-0535, D-0662, D-0672; D-0012 needs a UML check of the new model (fold into UML-TASKS) | removed from tasks.md (history in git) |
+| UML-CHECK | 412 | C | CORRECTED (was B): folded into UML-TASKS for real: (1) the check of the audit diagrams after the place model (D-0012), (2) the paragraph Original recipe and audit recipe; both are lines of UML-TASKS now | removed from tasks.md, merged into UML-TASKS |
 | DOC-CONTROL-STOPPED | 415 | G | - | stays; Verdict needed line added |
 | RULE-PATHS-R1 | 416 | C | kept as the better written; absorbs RULE-LINKS-R1 | stays |
 | AGENT-PROBE-1 | 422 | E | BLUEPRINT agent, also held | stays; Waits for line added |
 | GATE-NOTICE-TESTS-1 | 423 | D | no test fails under the mutation always announce (test_recipe_gate_handlers.py:89-92) | stays |
 | RULE-LINKS-R1 | 424 | C | same subject as RULE-PATHS-R1 (416) | removed from tasks.md, merged into RULE-PATHS-R1 |
-| FILTER-CONTROLS-TYPE | 429 | A | merged in a386422a (dev contains it) | archived (moved to the done archive of its unit) |
-| EXPORT-RECIPE-REFUSE-1 | 432 | B | contract 7.2 rules 8 and 10: a step that cannot be written stops the reproducibility part with ERROR.txt; the per-plot fork is gone (D-0535) | removed from tasks.md (history in git) |
+| FILTER-CONTROLS-TYPE | 429 | E | CORRECTED (was A, archived): restored with FILTER-PICKERS-1 (the same eight choices) | stays; Waits for line added |
+| EXPORT-RECIPE-REFUSE-1 | 432 | E | CORRECTED (was B, removed): restored; the refusal is built and PROVISIONAL (contract 7.2 rules 8 and 10), she has not confirmed it | stays; Waits for line added |
 | TWO-RECIPE-NAMES-1 | 433 | D | decided 2026-11-15; the ADR texts wait for her | stays |
 | SEED-POOL-TIMEOUT-1 | 434 | D | grep timeout in libs/viz_factory/tests/test_reproducible_render.py found nothing | stays |
 | SEED-GATE-TEXT-1 | 435 | G | grep Tip: finds only tests | stays; Verdict needed line added |
@@ -265,7 +270,7 @@ Verdicts: A 13, B 6, C 3, D 12, E 8, F 2, G 4 (48 open tasks).
 
 ### 8. Tasks from 2026-11-16 (verification, decisions D-0143 to D-0193)
 
-Verdicts: A 6, B 2, D 13, E 23, F 7, G 1 (52 open tasks).
+Verdicts: A 6, B 1, C 1, D 13, E 23, F 7, G 1 (52 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -302,7 +307,7 @@ Verdicts: A 6, B 2, D 13, E 23, F 7, G 1 (52 open tasks).
 | EXPORT-REPORT-FIGURE-LINKS | 490 | E | bundle layout is her choice | stays; Waits for line added |
 | EXPORT-ANCHOR-FOLDERS | 491 | E | waits for Eve | stays; Waits for line added |
 | SAFE-INPUT-DEFAULTS | 492 | E | waits for Eve | stays; Waits for line added |
-| APPLY-REASON-FALLBACK | 493 | B | audit_stack.py:167 no longer holds that code; D-0672 removed the separate Apply | removed from tasks.md (history in git) |
+| APPLY-REASON-FALLBACK | 493 | C | CORRECTED (was B): the fallback kept_reasons is still in app/handlers/audit_stack.py (:175, :210, :253-254, :540, :666-667); not restored as its own task; one line in AUDIT-OLD-SCOPE-REMOVE-1 says it goes with the old Apply and th | removed from tasks.md, merged into AUDIT-OLD-SCOPE-REMOVE-1 |
 | EXPORT-PROVENANCE-SILENT | 494 | D | export_handlers.py:92-154 not opened | stays |
 | DELETE-ALL-HALF-DELETED | 495 | D | not verified | stays |
 | GATE-NOTICE-IN-EFFECT | 496 | D | recipe_gate_handlers.py:186 area read; low | stays |
@@ -324,7 +329,7 @@ Verdicts: A 6, B 2, D 13, E 23, F 7, G 1 (52 open tasks).
 
 ### 9. Tasks from 2026-11-17 (records of 18:40; coordinator's list; tags marked [records] were not given by the brief)
 
-Verdicts: A 10, B 10, C 4, D 26, E 45, F 31, G 5 (131 open tasks).
+Verdicts: A 10, B 10, C 4, D 26, E 46, F 31, G 4 (131 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -421,9 +426,9 @@ Verdicts: A 10, B 10, C 4, D 26, E 45, F 31, G 5 (131 open tasks).
 | EXPORT-SVG-SIZE-CHECK-1 | 687 | D | measurement task | stays |
 | EXPORT-MODES-QUESTION-1 | 688 | E | D-0298, D-0301 settled ticks and warning | stays; Waits for line added |
 | EXPORT-DOCS-AFTER-SIMPLIFY-1 | 689 | D | docs sync after D-0292 to D-0296; rule and ADR passages wait for her yes | stays |
-| UML-STALE-TEST-TAG-1 | 690 | G | 0 hits in docs/UML/app.mdj | stays; Verdict needed line added |
+| UML-STALE-TEST-TAG-1 | 690 | A | CORRECTED (was G): audit_uml_model.py --project-root . prints No discrepancy found; docs/UML/app.mdj contains no test_audited_rows_and_drops_are_exported (grep count 0) | archived (moved to the done archive of its unit) |
 | UML-AUDIT-SAME-NAME-TAGS-1 | 691 | D | task says it does not wait; audit script not read | stays |
-| AUDIT-SAVE-RULE-TEXT-1 | 692 | A | rules_ui_dashboard.md:15, ui_implementation_contract.md:183,555 say no save on a panel switch (D-0302); UML, ADR, docs copies not checked | archived (moved to the done archive of its unit) |
+| AUDIT-SAVE-RULE-TEXT-1 | 692 | E | CORRECTED (was A, archived): restored; done: rules_ui_dashboard.md:15, ui_implementation_contract.md:183, :555; missing: the UML, ADR and docs copies were not checked | stays; Waits for line added |
 | CONFIG-REVIEW-1 | 693 | F | its own condition (just before her HOME testing) not met | stays |
 | TEST-RUNS-STATE-THEIR-FLAGS-1 | 694 | F | standing rule until CONFIG-REVIEW-1 | stays |
 | BLUEPRINT-PLOT-PREVIEW-NOT-MOUNTED-1 | 695 | F | BLUEPRINT held; wrangle_studio.py:721 | stays |
@@ -462,7 +467,7 @@ Verdicts: A 10, B 10, C 4, D 26, E 45, F 31, G 5 (131 open tasks).
 
 ### HOME audit redesign, slice B: two modes on screen, Exploration is clean (DONE and controlled 2026-11-20, dev `3bfb0050`)
 
-Verdicts: A 11, B 6, C 3, D 37, E 49, F 25, G 9 (140 open tasks).
+Verdicts: A 10, B 6, C 3, D 37, E 50, F 25, G 9 (140 open tasks).
 
 | Task id | Line | Verdict | Evidence | What happens |
 |---|---|---|---|---|
@@ -504,7 +509,7 @@ Verdicts: A 11, B 6, C 3, D 37, E 49, F 25, G 9 (140 open tasks).
 | WHOLE-PICTURE-DESIGN | 859 | A | DELIVERED (merge 0c41fa28); .claude/design/studies/whole_picture_2026-11/ exists; D-0538 to D-0569 | archived (moved to the done archive of its unit) |
 | DEMO-VIRULENCEFINDER-TO-DATA-SCHEMAS | 888 | A | config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml:148 under data_schemas; commits 10cc2706, af0080c5 (D-0524, D-0525) | archived (moved to the done archive of its unit) |
 | AUDIT-REMOVE-FROM-ALL-DATA | 889 | E | step 1 DONE (merged 9af81573, 882983c6); the screen was built on the old dialog | stays; Waits for line added |
-| RECIPE-RULE-ONE-NAME-ONE-MEANING | 897 | A | docs/user_guide/good_practice_recipes.qmd:31 and :37; is_entity_id (D-0562); the recipe-check advice is not built | archived (moved to the done archive of its unit) |
+| RECIPE-RULE-ONE-NAME-ONE-MEANING | 897 | E | CORRECTED (was A, archived): restored with done and missing lines; done: docs/user_guide/good_practice_recipes.qmd:31, :37; missing: the recipe-check advice, the BLUEPRINT prompt (D-0500), the proposal she was to see | stays; Waits for line added |
 | DATA-CHECK-IDS-WITHOUT-METADATA | 899 | D | D-0568, D-0569; id checks built (merge 1f6cb913; app/modules/id_check_run.py:57); the data-check channel that only informs is missing | stays |
 | DOCS-ID-RULES-IN-GUIDELINES | 905 | F | HELD by D-0580, D-0583; the cheat sheet and the static-deployment sentence (D-0585) are missing | stays |
 | NAMES-ACROSS-THE-APP-STUDY | 908 | A | names pass merged (b0c64e1b); ui_label everywhere (D-0407 to D-0412); app/handlers/home_theater.py:113-118 | archived (moved to the done archive of its unit) |
@@ -673,7 +678,7 @@ The folder `outdated/` (16 files, its README) holds old plan, test, build-brief 
 
 ## Part C: the scratch studies again, with the cleaned task list
 
-Rule (wave 1, applied again to the cleaned list): a group of `.claude/design/studies/scratch_records_2026-11/` stays only while an open task of `.claude/tasks/tasks.md` names its folder or its main page; a group that loses its last such task moves to `.claude/outdated/design/studies/scratch_records_2026-11/` with unchanged content (`git mv`; SHA-256 of all moved files compared before and after: equal). One-line pointers stay at the old path of the files that live files still cite (`.claude/design/decisions_2026-11-14/*`, `.claude/design/home_redesign_intent_and_consequences.md`). A script matched each group's path against the text of the 387 open tasks; it does not judge, task by task, whether the task waits on the group or only cites it as a source (all remaining tasks are of verdict D, E, F or G), so a group may be held by a task that only cites it; that is the safe side.
+Rule (wave 1, applied again to the cleaned list): a group of `.claude/design/studies/scratch_records_2026-11/` stays only while an open task of `.claude/tasks/tasks.md` names its folder or its main page; a group that loses its last such task moves to `.claude/outdated/design/studies/scratch_records_2026-11/` with unchanged content (`git mv`; SHA-256 of all moved files compared before and after: equal). One-line pointers stay at the old path of the files that live files still cite (`.claude/design/decisions_2026-11-14/*`, `.claude/design/home_redesign_intent_and_consequences.md`). A script matched each group's path against the text of the 398 open tasks; it does not judge, task by task, whether the task waits on the group or only cites it as a source (all remaining tasks are of verdict D, E, F or G), so a group may be held by a task that only cites it; that is the safe side.
 
 Totals: 71 groups before (502 files), 61 kept (427 files), 10 moved (75 files). Files in the scratch folder: 533 before, 465 after (the 75 moved, plus 7 new pointer files, plus the 30 pointers of wave 1 and the README, which stay).
 
