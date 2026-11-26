@@ -19544,7 +19544,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "drop column: plot level, with a warning (detail: HOME-AUDIT-EFFECT)",
+							"name": "drop column: at the place chosen in the dialog; a drop of a column that a later join still uses is refused (detail: HOME-AUDIT-EFFECT)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -19588,7 +19588,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "step list: kind, reach, reason, initials, status, delete; undo / revert to step N / remove all"
+							"name": "step list of the Pipeline Audit panel: the steps the open plot is built from, with the reason and a bin to remove any step (no remove-last, no remove-all, D-0314)"
 						},
 						{
 							"_type": "FCProcess",
@@ -19652,7 +19652,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "after a PRE-EXPORT REVIEW: steps with reasons, original and audit data, attrition table, coverage check, forked recipe (detail: HOME-AUDIT-FLOW)",
+							"name": "export (Audit mode): steps with reasons, the audited table files beside the originals, the audit recipe that runs alone (detail: HOME-AUDIT-EFFECT). DECIDED, not built: the audit log in the export (D-0478)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -23884,7 +23884,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "Limit: current state + last N-1 states, N = 5 (setting). Missing entry: rebuild from the step list. Recipe or data change: dependent entries removed"
+							"name": "Limit of N recent states and removal of dependent entries: from the first plan, NOT decided and not drawn as built. The audit run does roll back its folder when a run fails (audit_run._rollback)"
 						},
 						{
 							"_type": "FCProcess",
@@ -23892,7 +23892,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "Tests: a key starts with its upstream key; different operations never share a key; the reason does not change the key; an empty list adds no part; equal keys give equal content; originals are never written"
+							"name": "Tests of the first plan (not checked on 2026-11-26): a key starts with its upstream key; different operations never share a key; the reason does not change the key; originals are never written"
 						},
 						{
 							"_type": "FCProcess",
@@ -23900,7 +23900,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "TO BUILD: all of the audit cache. Today only the original cache exists"
+							"name": "BUILT (PROVISIONAL, demo 2026-11-24): the audit copy of the recipe is run by audit_run with its own stored tables and keys in a folder of its own (app/modules/audit_run.py: run_audit). Not checked against the code on 2026-11-26: the chained key parts a1, a2, a3 as drawn here"
 						},
 						{
 							"_type": "FCTerminator",
@@ -23916,7 +23916,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "AUDIT CACHE (separate folder audit/), new. Only an audit step writes here"
+							"name": "AUDIT CACHE (a separate folder, audit_anchors, built, PROVISIONAL). Only an audit run writes here"
 						}
 					]
 				},
@@ -26633,8 +26633,8 @@
 											"left": 426,
 											"top": 686,
 											"width": 668,
-											"height": 65,
-											"text": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply",
+											"height": 52,
+											"text": "DIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26697,8 +26697,8 @@
 											"left": 1176,
 											"top": 56,
 											"width": 318,
-											"height": 52,
-											"text": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: kind | reach | reason | initials | date | status (applied, not concerned, broken) | delete",
+											"height": 78,
+											"text": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26826,7 +26826,7 @@
 											"top": 316,
 											"width": 318,
 											"height": 39,
-											"text": "Lineage chain of the selected step (vertical): original T1, audit T1, audit T2, audit T3 (plot = xx); changed stages in bold and colour",
+											"text": "Where each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26890,7 +26890,7 @@
 											"top": 446,
 											"width": 318,
 											"height": 26,
-											"text": "What is affected: datasets, plots, rows before / after. A broken step is shown in red and blocks the export",
+											"text": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26907,70 +26907,6 @@
 									"height": 182,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9U1z2a6tLw="
-									}
-								},
-								{
-									"_type": "WFPanelView",
-									"_id": "AAAAAAGhy9U2AWbBwhY=",
-									"_parent": {
-										"$ref": "AAAAAAGhy9UugmWYaSs="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy9U2AWa/0zw="
-									},
-									"containedViews": [
-										{
-											"$ref": "AAAAAAGhy9U2L2bGgSg="
-										}
-									],
-									"fillColor": "$blue5",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"containerChangeable": true,
-									"left": 1170,
-									"top": 560,
-									"width": 330,
-									"height": 60
-								},
-								{
-									"_type": "WFTextView",
-									"_id": "AAAAAAGhy9U2L2bGgSg=",
-									"_parent": {
-										"$ref": "AAAAAAGhy9UugmWYaSs="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy9U2L2bE8Jg="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy9U2L2bHzxk=",
-											"_parent": {
-												"$ref": "AAAAAAGhy9U2L2bGgSg="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 1176,
-											"top": 566,
-											"width": 318,
-											"height": 26,
-											"text": "Button: Project overview (opens a dialog: collections x steps, coverage check)",
-											"horizontalAlignment": 0,
-											"wordWrap": true
-										}
-									],
-									"containerView": {
-										"$ref": "AAAAAAGhy9U2AWbBwhY="
-									},
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"containerChangeable": true,
-									"left": 1176,
-									"top": 566,
-									"width": 318,
-									"height": 117,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy9U2L2bHzxk="
 									}
 								},
 								{
@@ -27239,7 +27175,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Filters: the same shared form (column, operator, value). Button: Create audit step (sandbox flag). Opens the New audit step dialog"
+							"name": "Filters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
 						},
 						{
 							"_type": "WFText",
@@ -27247,7 +27183,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Filters: the same shared form (column, operator, value). Button: Create audit step (sandbox flag). Opens the New audit step dialog"
+							"name": "Filters: the same shared form (column, operator, value). Button: Send to Audit (sandbox flag, T3 viewed). Opens the Send to Audit dialog"
 						},
 						{
 							"_type": "WFPanel",
@@ -27488,7 +27424,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audit data table: audit T3 of the plot (first 100 rows), column selector for plot-level drops (with a warning)"
+							"name": "Audit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
 						},
 						{
 							"_type": "WFText",
@@ -27496,7 +27432,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audit data table: audit T3 of the plot (first 100 rows), column selector for plot-level drops (with a warning)"
+							"name": "Audit data table: audit T3 of the plot (first 100 rows), column chooser: an unselected column is only a candidate for an audit drop"
 						},
 						{
 							"_type": "WFPanel",
@@ -27504,7 +27440,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply"
+							"name": "DIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
 						},
 						{
 							"_type": "WFText",
@@ -27512,7 +27448,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply"
+							"name": "DIALOG Send to Audit (opens over the screen; it stages the steps, the reasons are typed in the Pipeline Audit panel). Asks where the step is written: This plot only | All plots | All plots except... | At a table this plot is built from. A clash of places is refused in one plain line. DECIDED, not built (D-0316, D-0325): rows and plots affected shown before confirm. Cancel | Stage"
 						},
 						{
 							"_type": "WFPanel",
@@ -27520,7 +27456,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: kind | reach | reason | initials | date | status (applied, not concerned, broken) | delete"
+							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
 						},
 						{
 							"_type": "WFText",
@@ -27528,7 +27464,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: kind | reach | reason | initials | date | status (applied, not concerned, broken) | delete"
+							"name": "Pipeline Audit panel (right panel: opens when Audit mode starts, D-0385). Step list: the steps the open plot is built from, with the place, the reason, the bin to remove the step, Apply (locked while a reason is empty). DECIDED, not built: date and initials, the audit log (D-0315)"
 						},
 						{
 							"_type": "WFPanel",
@@ -27552,7 +27488,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Lineage chain of the selected step (vertical): original T1, audit T1, audit T2, audit T3 (plot = xx); changed stages in bold and colour"
+							"name": "Where each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
 						},
 						{
 							"_type": "WFText",
@@ -27560,7 +27496,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Lineage chain of the selected step (vertical): original T1, audit T1, audit T2, audit T3 (plot = xx); changed stages in bold and colour"
+							"name": "Where each step is written: T1:<table>, T2:<table> or T3:<plot>, and the badge \"Applied to N plots\" for a step written at several plots"
 						},
 						{
 							"_type": "WFPanel",
@@ -27568,7 +27504,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "What is affected: datasets, plots, rows before / after. A broken step is shown in red and blocks the export"
+							"name": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
 						},
 						{
 							"_type": "WFText",
@@ -27576,23 +27512,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "What is affected: datasets, plots, rows before / after. A broken step is shown in red and blocks the export"
-						},
-						{
-							"_type": "WFPanel",
-							"_id": "AAAAAAGhy9U2AWa/0zw=",
-							"_parent": {
-								"$ref": "AAAAAAGhy9UugmWXWBE="
-							},
-							"name": "Button: Project overview (opens a dialog: collections x steps, coverage check)"
-						},
-						{
-							"_type": "WFText",
-							"_id": "AAAAAAGhy9U2L2bE8Jg=",
-							"_parent": {
-								"$ref": "AAAAAAGhy9UugmWXWBE="
-							},
-							"name": "Button: Project overview (opens a dialog: collections x steps, coverage check)"
+							"name": "A step that cannot run: one plain error that names the step id and its place, shown at every plot it breaks"
 						},
 						{
 							"_type": "WFPanel",
@@ -27600,7 +27520,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "No Apply button in this panel: Apply is in the dialog, after the user has read the information. No draft list. Today the panel also has Inherited (Tier 2) nodes, the filter inventory and a pending badge: to review what stays"
+							"name": "Apply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps (no preview Apply). To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
 						},
 						{
 							"_type": "WFText",
@@ -27608,7 +27528,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "No Apply button in this panel: Apply is in the dialog, after the user has read the information. No draft list. Today the panel also has Inherited (Tier 2) nodes, the filter inventory and a pending badge: to review what stays"
+							"name": "Apply is in the Pipeline Audit panel and is locked while a step has no reason; the dialog \"Send to Audit\" only stages the steps. To review: the Inherited (Tier 2) nodes, the filter inventory and the pending badge of the panel"
 						},
 						{
 							"_type": "WFPanel",
@@ -27811,6 +27731,7 @@
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
 							"name": "HOME-AUDIT-GUARDRAILS The software informs, warns and lets the user decide",
+							"documentation": "OUTDATED IN PART since 2026-11-25: drawn before the places design. The checks are not built (status of 2026-11-25). The level CONFIRM WITH A REASON is not in D-0026 (three levels). Kept for the owner's decision.",
 							"ownedViews": [
 								{
 									"_type": "FCTerminatorView",
@@ -28756,7 +28677,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
-							"name": "The software makes good data science possible and the choice informed. It does not decide for the user. A risky choice needs a recorded reason. Only technical problems block. Data-science practice (do not clean with the audit, state criteria in advance, report every exclusion) is taught in the help: with great power comes great responsibility, think before you do"
+							"name": "The software makes good data science possible and the choice informed. It does not decide for the user. STATUS 2026-11-26: NOT BUILT. Decided: three levels, info, warning, block, and a first list of checks (D-0026). This diagram has a fourth level, CONFIRM WITH A REASON with an \"I understand\" tick, that the ledger line does not show: listed for the owner. Only technical problems block"
 						}
 					]
 				},
@@ -28774,7 +28695,8 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "HOME-AUDIT-COMPONENTS Planned components of audit mode (software view)",
+							"name": "HOME-AUDIT-COMPONENTS Components of audit mode: built and not built (software view)",
+							"documentation": "Redrawn 2026-11-26: built components marked BUILT, the draft components of 2026-11-15 marked NOT BUILT, NOT confirmed.",
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -29300,7 +29222,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "Audit mode screen: mode switch, Filters form, 3-step dialog, step list, lineage map, project overview, pre-export review"
+							"name": "Audit mode screen (built, PROVISIONAL): mode switch, Filters form, the dialog \"Send to Audit\" with its choice of places, the step list of the Pipeline Audit panel, the panel \"Path of the data\". Not decided: project overview, pre-export review"
 						},
 						{
 							"_type": "FCProcess",
@@ -29316,7 +29238,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "recipe_graph: ONE graph of the recipe (schemas, joins, steps, plots, keys, columns per stage, population-statistic flags). Every other component asks it, none re-reads the recipe"
+							"name": "BUILT: recipe_graph (libs/utils/src/utils/recipe_graph.py): one graph of the recipe; the places, the lineage data and the audit copy ask it"
 						},
 						{
 							"_type": "FCProcess",
@@ -29324,7 +29246,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "audit_events: append-only event log (step created, removed, reverted, warning acknowledged, override). The step list is derived from it"
+							"name": "NOT BUILT, NOT confirmed (draft of 2026-11-15): audit_events, an append-only event log. Decided, not built: the audit log of added and removed steps kept in the session (D-0315)"
 						},
 						{
 							"_type": "FCProcess",
@@ -29332,7 +29254,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "audit_compiler: a step compiles to existing registered recipe actions. One output: hashed (audit_cache), executed, exported as the forked recipe, lineage highlight, impact. Reads recipe_graph, writes events"
+							"name": "NOT BUILT as drawn. Built instead: audit_copy (libs/utils/src/utils/audit_copy.py) writes a step as a plain step of a tier of a copy of the recipe; audit_places and audit_view (app/modules) choose the places and read the audit copy; audit_run runs the copy"
 						},
 						{
 							"_type": "FCProcess",
@@ -29340,7 +29262,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "audit_guard_rails: registry of checks (id, trigger, level, message, help anchor, test), reads recipe_graph and audit_policy. Feeds the dialog, the help and the export"
+							"name": "NOT BUILT: audit_guard_rails, a registry of checks. Three levels (info, warning, block) and a first list of checks are decided (D-0026); see HOME-AUDIT-GUARDRAILS"
 						},
 						{
 							"_type": "FCProcess",
@@ -29348,7 +29270,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "audit_policy: thresholds, reason categories, minimum reason length, who may override (configuration)"
+							"name": "NOT BUILT, NOT confirmed (draft of 2026-11-15): audit_policy, thresholds and reason categories as configuration"
 						},
 						{
 							"_type": "FCProcess",
@@ -29356,7 +29278,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhzDaF8mziR0o="
 							},
-							"name": "audit_cache: separate folder, chained keys, canonical hash, atomic writes, N recent states"
+							"name": "BUILT, PROVISIONAL (different from the draft): the audit copy is run by audit_run (app/modules/audit_run.py) with its own stored tables in a folder of its own; see HOME-AUDIT-CACHE"
 						},
 						{
 							"_type": "FCProcess",
@@ -109084,7 +109006,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "3  Audit: apply, undo, remove or revert a step",
+							"name": "3  Audit: apply, or remove a step (any step; no remove-last, no remove-all, D-0314)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
