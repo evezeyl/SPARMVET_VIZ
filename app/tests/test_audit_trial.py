@@ -507,3 +507,15 @@ def test_the_start_of_the_app_removes_every_trial_folder_a_killed_process_left_a
     assert not (user_data / TRIAL_FOLDER).exists()
     assert (audit_folder / "kept.txt").read_text() == "the applied steps' tables are not scratch"
     Bootloader()                                       # a start with no trial folder is not an error
+
+
+def test_after_apply_the_audited_reader_does_not_serve_the_run_of_the_old_list(world, tmp_path):
+    audit, trial = fresh(world, tmp_path)
+    earlier = applied_step("T1:ResFinder", value=world.ids[0])
+    old_run = audit.run_of(RECIPE_ID, [earlier], world.plans)
+    tried = [step("T1:ResFinder", value=world.ids[1])]
+    trial.try_step(RECIPE_ID, [earlier], tried, world.plans)
+    stored = trial.apply_trial(RECIPE_ID, [earlier], tried, "second", world.plans)
+    assert audit.run_of(RECIPE_ID, [earlier], world.plans) is not old_run          # the memo is gone; the old list is computed again, not served
+    compare_with_scratch(world, tmp_path, audit, [earlier])
+    compare_with_scratch(world, tmp_path, audit, stored)

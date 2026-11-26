@@ -313,6 +313,7 @@ class PlaceTrial:
             t1 = self.trial_dir / f"{table}.parquet"
             self._move_if_key(t1, TIER1_KEY_META, wanted.tier1_key_of(table))
             self._move_if_key(tier2_path_for(t1), TIER2_KEY_META, wanted.tier2_key_of(table))
+        self.audited.forget()                           # a run held for the old list must not be served: the files it names now hold the new state
         self.discard()
         return stored_list
 
