@@ -550,26 +550,27 @@ Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files f
 
 ```json
 {
-  "session_key": "my_pipeline_v2:c4d29e1a3f80",
+  "session_key": "a3f9c81b04e2:c4d29e1a3f80",
   "data_analysis_recipe_id": "my_pipeline_v2",
-  "data_analysis_recipe_sha256": "a3f9...",
+  "data_analysis_recipe_sha256": "a3f9c81b04e2...",
   "data_batch_hash": "c4d29e1a3f80...",
   "assembled_at": "2026-04-24T14:00:00",
+  "label": "",
+  "schema_version": 5,
   "source_files": {
     "fastq_metadata": {"path": "assets/test_data/.../metadata.tsv", "sha256": "c4d2..."},
     "amr_results":    {"path": "assets/test_data/.../amr.tsv",      "sha256": "9e1a..."}
   },
-  "parquet_paths": {
-    "assembly":   "tmp/EVE_assembly_my_pipeline_v2_c4d29e1a.parquet",
-    "contracted": "tmp/EVE_contracted_my_pipeline_v2_c4d29e1a.parquet"
-  }
+  "parquet_paths": {}
 }
 ```
+
+The session key is the first 12 characters of the recipe hash, a colon and the first 12 of the data hash: it holds no recipe name (`SessionManager.compute_session_key`, `app/modules/session_manager.py:345`); the recipe id is a field of the file. Written by `write_assembly_ghost` (`session_manager.py:364-436`). `parquet_paths` is written empty by the app today (`app/handlers/home_theater.py:1629`, `app/modules/bundle_importer.py:319`): the restore then falls back to re-assembling when no stored file is named (`home_theater.py:1618-1619`); the tables themselves are stored by key (`rules_data_engine.md`, Tier 1 cache key; ADR-101), not named in this file.
 
 #### T1/T2 Restore Logic (the "Prepped Chef" check at startup)
 
 1. Scan `_sessions/` for all `assembly.json` files. Compute the current `data_batch_hash` from the active data analysis recipe's source files.
-2. Find the matching session by `session_key` (data_analysis_recipe_id + data_batch_hash).
+2. Find the matching session by `session_key` (the first 12 characters of the recipe hash and of the data hash).
 3. **Match found AND Parquet files exist on disk** → short-circuit: load existing Parquet, skip re-assembly. Normal fast path.
 4. **Match found BUT Parquet files missing** (e.g., tmp/ cleared, server restart) → re-assemble silently from source files listed in the ghost. Rewrite Parquet paths after completion. No user action required.
 5. **No match** (new batch or new data analysis recipe) → full assembly, write new session ghost.
@@ -583,13 +584,13 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 ```json
 {
-  "session_key": "my_pipeline_v2:c4d29e1a3f80",
+  "session_key": "a3f9c81b04e2:c4d29e1a3f80",
   "data_analysis_recipe_id": "my_pipeline_v2",
-  "data_analysis_recipe_sha256": "a3f9...",
+  "data_analysis_recipe_sha256": "a3f9c81b04e2...",
   "data_batch_hash": "c4d29e1a3f80...",
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
-  "schema_version": 3,
+  "schema_version": 5,
   "t3_audit_steps": [],
   "t3_audit_steps_by_plot": {},
   "t3_plot_overrides": {},
@@ -600,7 +601,7 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 3 today): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
+There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`, `session_manager.py:525-585`). `t3_audit_steps` is a flat copy of the same steps, kept for readers that do not know the per-plot form; `t3_audit_steps_by_plot` holds the one bucket `__places__` (section 12g.1: the name is the old one, each step carries its `place`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 5 today, `session_manager.py:229`): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
 
 **Session of another recipe:** Restore of a session saved against another recipe is refused with a plain line (it belongs to another recipe; open that recipe first); nothing is applied (D-0317; built, `session_manager.session_recipe_refusal`, compared by recipe id).
 
