@@ -465,8 +465,9 @@ def copy_of(recipes, name, original):
     return recipes
 
 
-def x5(recipes):
-    return [p for p in check_recipe_set(recipes) if p.code == "X5"]
+def x5(recipes, on=True):
+    """X5 problems; the five cases below switch the named-copy exemption on explicitly (it is off by default and no caller turns it on)."""
+    return [p for p in check_recipe_set(recipes, named_copies_are_copies=on) if p.code == "X5"]
 
 
 def test_set_a_recipe_and_the_audit_recipe_that_names_it_share_ids_without_x5():
@@ -498,7 +499,7 @@ def test_set_d_a_copy_whose_original_is_not_in_the_set_is_checked_like_any_recip
     recipes = copy_of(make_set(a_audited=["p"], b=["p"]), "a_audited", "a")
     assert x5(recipes), "its ids clash with others as any recipe's"
     alone = copy_of(make_set(a_audited=["p"]), "a_audited", "a")
-    assert check_recipe_set(alone) == [], "a missing original is no refusal"
+    assert check_recipe_set(alone, named_copies_are_copies=True) == [], "a missing original is no refusal"
     two = copy_of(copy_of(make_set(a_v1=["p"], a_v2=["p"]), "a_v1", "a"), "a_v2", "a")
     assert x5(two), "with no original in the set nothing is exempt"
 
@@ -509,12 +510,31 @@ def test_set_e_an_id_the_copy_has_and_its_original_lacks_clashes_with_a_third_re
     assert problems and "'extra'" in problems[0].message and "'p'" not in problems[0].message
 
 
-def test_set_a_bad_audit_of_gives_no_exemption():
+def test_set_a_bad_audit_of_gives_no_exemption_even_when_the_exemption_is_on():
     recipes = make_set(orig=["p"], copy=["p"])
-    recipes["copy"]["info"]["audit_of"] = "copy"
-    assert x5(recipes)
-    recipes["copy"]["info"]["audit_of"] = 7
-    assert x5(recipes)
+    for bad in ("copy", 7, "", "orig b", "orig/x", ["orig"], None):
+        recipes["copy"]["info"]["audit_of"] = bad
+        assert x5(recipes), bad
+
+
+def test_set_by_default_audit_of_changes_nothing_a_forged_key_does_not_share_ids():
+    """D-0534 stands: with the default, a key nothing verifies exempts nothing, for every case a to e."""
+    for recipes in (copy_of(make_set(orig=["p", "q"], forged=["p", "q"]), "forged", "orig"),
+                    copy_of(copy_of(make_set(orig=["p"], v1=["p"], v2=["p"]), "v1", "orig"), "v2", "orig"),
+                    copy_of(make_set(orig=["p"], other=["p"], c=["p"]), "c", "orig")):
+        with_key = [(p.path, p.message) for p in check_recipe_set(recipes)]
+        for raw in recipes.values():
+            raw["info"].pop("audit_of", None)
+        assert with_key and with_key == [(p.path, p.message) for p in check_recipe_set(recipes)], "the same X5 lines as with no key"
+    assert x5(copy_of(make_set(orig=["p"], c=["p"]), "c", "orig"), on=False)
+
+
+def test_the_gallery_profile_refuses_audit_of():
+    raw = gallery_recipe()
+    assert "GP07" not in [p.code for p in check(raw, profile="gallery").problems]
+    raw["info"]["audit_of"] = "some_other"
+    found = [p for p in check(raw, profile="gallery").problems if p.code == "GP07"]
+    assert found and found[0].path == "info.audit_of" and found[0].fix
 
 
 def gallery_recipe():

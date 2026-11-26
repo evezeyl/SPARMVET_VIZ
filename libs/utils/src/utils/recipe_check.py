@@ -1332,6 +1332,8 @@ class _Check:
         plots = [p for g in groups.values() if isinstance(g, dict) for p in (g.get("plots") or {}).values()] if isinstance(groups, dict) else []
         if len(groups) != 1 or len(plots) != 1:
             self.add("GP01", "analysis_groups", "a gallery example has exactly one group and one plot", "keep one group with one plot")
+        if isinstance(raw.get("info"), dict) and "audit_of" in raw["info"]:
+            self.add("GP07", "info.audit_of", "a gallery example is never an audit recipe, so it may not carry info.audit_of (PROVISIONAL words)", "remove info.audit_of")
         if self.file_stem is not None and raw.get("id") != self.file_stem:
             self.add("GP04", "id", f"the id must equal the example's folder name {self.file_stem!r}", f"write id: {self.file_stem}")
         for plot in plots:
@@ -1371,24 +1373,27 @@ def audit_original_of(raw: Any, own_name: str) -> Optional[str]:
     return None
 
 
-def plot_id_groups(recipes: Dict[str, Any], plot_ids: Dict[str, Set[str]], pid: str) -> Dict[str, List[str]]:
+def plot_id_groups(recipes: Dict[str, Any], plot_ids: Dict[str, Set[str]], pid: str, named_copies_are_copies: bool = False) -> Dict[str, List[str]]:
     """The recipes that write the plot id `pid`, grouped by who owns it: {group key: [recipe names in order]}. Two groups mean a clash (X5).
-    A recipe that names its original (`info.audit_of`) is a COPY of it: when the original is in the set and has the id, the copy joins the original's group, so the ids they share
-    are no clash, and neither are the ids two audit recipes of one original share with that original. Any other case is a group of its own: an id the copy has and its original lacks,
-    an original that is not in the set, a recipe that is not the original. This exemption is the owner's direction of 2026-11-26 (D-0690, parked: the switch of the recipe HOME reads is
-    NOT built); it changes how D-0534 (plot ids unique across the recipes of a deployment) is checked for such copies and nothing else."""
+    By DEFAULT every recipe is its own group: `info.audit_of` changes nothing, the rule of D-0534 (a plot id is unique over the recipes of a deployment) stands as it was.
+    With `named_copies_are_copies=True` a recipe that names its original (`info.audit_of`) joins the original's group when the original is in the set and has the id, so the ids they
+    share are no clash (nor the ids two copies of one original share with it); any other case is a group of its own.
+    The switch exists for the later switch of the recipe HOME reads (D-0690, the owner's direction of 2026-11-26, parked; not built). It must be turned on only where the copy is VERIFIED
+    (a fingerprint of the original in the copy, the copy's plot ids a subset of the original's, the original in the same set, no chains): that verification is not built, so NO caller
+    turns it on today. A key that nothing verifies must not weaken D-0534."""
     groups: Dict[str, List[str]] = {}
     for name in recipes:
         if pid not in plot_ids[name]:
             continue
-        original = audit_original_of(recipes[name], name)
+        original = audit_original_of(recipes[name], name) if named_copies_are_copies else None
         key = original if original is not None and original in recipes and pid in plot_ids[original] else name
         groups.setdefault(key, []).append(name)
     return groups
 
 
-def check_recipe_set(recipes: Dict[str, Any]) -> List[Problem]:
-    """X5 across the recipes of a folder: a plot id must be unique over all of them (the app registers plots by id). A recipe that names its original is a copy (`plot_id_groups`)."""
+def check_recipe_set(recipes: Dict[str, Any], named_copies_are_copies: bool = False) -> List[Problem]:
+    """X5 across the recipes of a folder: a plot id must be unique over all of them (the app registers plots by id). `info.audit_of` changes nothing unless
+    `named_copies_are_copies=True` (see `plot_id_groups`: off, and used by no caller)."""
     plot_ids: Dict[str, Set[str]] = {}
     order: List[str] = []
     for name, raw in recipes.items():
@@ -1402,7 +1407,7 @@ def check_recipe_set(recipes: Dict[str, Any]) -> List[Problem]:
         plot_ids[name] = found
     problems: List[Problem] = []
     for pid in order:
-        groups = list(plot_id_groups(recipes, plot_ids, pid).values())
+        groups = list(plot_id_groups(recipes, plot_ids, pid, named_copies_are_copies).values())
         for later in groups[1:]:
             problems.append(Problem("X5", "E", f"{later[0]}:analysis_groups.*.plots.{pid}", f"the plot id {pid!r} is also used in {groups[0][0]}", "plot ids are unique over all recipes: rename one"))
     return problems

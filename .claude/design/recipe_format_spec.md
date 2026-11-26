@@ -371,7 +371,7 @@ Columns: R required, o optional, a advice (never blocks).
 | `version` | o | text; the author's own version |
 | `comment` | o | the author's note (6.2) |
 | any other key | o | free-form, displayed in the Info panel, never executed. This is the only free-form block of the format |
-| `audit_of` | (audit only) | BUILT 2026-11-26 (the form is PROVISIONAL): the id of the original recipe, written by the app when it writes an audit recipe (`audit_places.audit_recipe_of`, in the export's `audit_recipe/`), never by hand. The check cannot tell an audit recipe from another except by this key, so it checks the value (I04: text, the form of a recipe id, not the recipe's own id) in every recipe. A recipe that names its original is a COPY of it: the set check (X5) does not count the plot ids it shares with that original as a clash (D-0690, the owner's direction of 2026-11-26; the switch of the recipe HOME reads is NOT built). DECIDED, not built: the fingerprint of what the original does (`original_content`, D-0328, D-0339) and the refusal of the key by profile (D-0354) |
+| `audit_of` | (audit only) | BUILT 2026-11-26 (PROVISIONAL form): the id of the original recipe, written by the APP in the audit recipe of an export (`audit_places.audit_recipe_of`), never by hand. The check cannot tell an audit recipe from another except by this key, so it checks the value (I04: text, the form of a recipe id, not the recipe's own id); the Gallery profile refuses the key (GP07: a Gallery example is never an audit recipe). The set check does NOT exempt a named copy today: D-0534 stands unchanged. `check_recipe_set(..., named_copies_are_copies=True)` groups a copy with its original, for the later switch of the recipe HOME reads (D-0690, parked); it is off by default and no caller turns it on, because nothing yet verifies a copy (a fingerprint of the original, the copy's plot ids a subset of the original's, the original in the set, no chains). DECIDED, not built: that verification, the fingerprint (`original_content`, D-0328, D-0339), the refusal of the key in every other profile (D-0354) |
 
 ### 7.2 `entity` (optional)
 
@@ -636,7 +636,7 @@ analysis_groups:
 | X2 | `target_dataset` of a plot exists; every `dataset_id` of an ingredient exists; every `right_ingredient` is an ingredient of its join |
 | X3 | `entity.population` exists and carries an entity key |
 | X4 | a schema's `tier2` is applied only if the schema is a plot's target; otherwise an error |
-| X5 | `id` equals the file name; plot ids are unique **across the recipes of a folder** (a project-level check, `check_recipe_set`); a recipe that names its original in `info.audit_of` is a copy: the ids it shares with that original (also with another copy of it) are no clash (D-0690, 2026-11-26) |
+| X5 | `id` equals the file name; plot ids are unique **across the recipes of a folder** (a project-level check, `check_recipe_set`); `info.audit_of` changes nothing in it today (the exemption of a named copy exists as an argument, off, for the later switch, D-0690) |
 | X6 | the key family: the entity-key columns of the schemas are linked by the join keys; the first version has one family (`home_audit_steps.md` 5a-13). Not a failure if absent |
 | X7 | a step or a `labels` entry that names a column the node does not have is an error (a dry run on column names). Needs the recipe graph (HOME's `utils.recipe_graph`; R10) |
 
@@ -744,6 +744,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | X1-X7 | E | the rules of section 10 | |
 | CM01 | E | `comment` is not text | |
 | GP01-GP06 | E | gallery profile rules (section 9) | |
+| GP07 | E | a Gallery example carries `info.audit_of` (PROVISIONAL words) | remove it |
 
 The data check (a dataset that cannot be built, an `input_fields` entry with no column in the file) is **not** in this table: it needs the data and stays separate (`validate_data_analysis_recipe_data`).
 
