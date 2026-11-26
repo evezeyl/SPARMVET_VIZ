@@ -31,7 +31,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
 # consumes: libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
@@ -1017,6 +1017,15 @@ def define_server(input, output, session, *,
                                         upstream_steps=_upstream_step_count(f"subtab_{p_id}"),
                                         table_changed=_plot_table_changed(p_id) if audit and _audited_step_count(f"subtab_{p_id}") else None))
 
+        @output(id=f"plot_cmp_label_{p_id}")
+        @render.ui
+        def _plot_cmp_label_ui():
+            """The label of the audited pane of Compare: "Audited (after N steps)", N = the committed audit steps that reach this plot (at its own
+            tier 3 or at a table it is built from). Its own output, so that a new step relabels the pane and never redraws the plot."""
+            n = _audited_step_count(f"subtab_{p_id}")
+            words = "no steps yet" if n == 0 else ("after 1 step" if n == 1 else f"after {n} steps")
+            return ui.tags.div(f"Audited ({words})", class_="badge mb-1 spv-text-xs", style="background:#ffc107; color:#212529;")
+
         @output(id=f"plot_cell_{p_id}")
         @render.ui
         def _plot_cell_ui():
@@ -1038,21 +1047,18 @@ def define_server(input, output, session, *,
                 content = ui.div(ui.output_ui(f"plot_seed_{p_id}"), ui.layout_columns(
                     ui.div(
                         ui.tags.div(
-                            # PROVISIONAL P-B7: the labels of the two panes of Compare
-                            "Original",
+                            # PROVISIONAL (slice 1, 2026-11-26): the labels of the two panes of Compare
+                            "Original (before your audit steps)",
                             class_="badge bg-secondary mb-1 spv-text-xs",
                         ),
                         ui.output_plot(f"plot_group_{p_id}_cmp_base", height="440px"),
                     ),
                     ui.div(
-                        ui.tags.div(
-                            "Audited",
-                            class_="badge mb-1 spv-text-xs",
-                            style="background:#ffc107; color:#212529;",
-                        ),
+                        ui.output_ui(f"plot_cmp_label_{p_id}"),
                         ui.output_plot(f"plot_group_{p_id}", height="440px"),
                     ),
                     col_widths=[6, 6],
+                    class_="spv-compare-panes",
                 ))
             else:
                 content = ui.div(
@@ -1197,9 +1203,35 @@ def define_server(input, output, session, *,
         # --- the recipe banner: info.ui_label (the file name when there is none), hidden by branding.show_recipe_name: false in the
         # deployment file (D-0410, D-0470, D-0474). It reads nothing from the app features file and not info.subtitle (D-0482).
         _title_text = recipe_banner_title(cfg.raw_config.get("info"), data_analysis_recipe_id, bootloader.show_recipe_name())
-        if _title_text:
+
+        # --- The mode row (slice 1, 2026-11-26, PROVISIONAL words): with the audit on, the title and the mode control "Exploration | Audit" sit in a
+        # row of their own that exists also when the deployment hides the recipe name (the row then holds the toggle alone). Without the audit
+        # (no `t3_sandbox_enabled`, or no interactivity) there is no toggle and the banner is the title alone, as it was.
+        # HOM-08: the current mode is read isolated, so that a rebuild of this output (a workspace switch) does not forget it.
+        with reactive.isolate():
+            _cur_mode = home_mode.get()
+        _title_span = ui.tags.span(_title_text, class_="banner-title", title=_title_text) if _title_text else None
+        if bootloader.is_enabled("interactivity_enabled") and _audit_available():
+            mode_choices = {
+                "exploration": ui.HTML('<span title="Exploration: one plot, the Result. Filters change the table you view, never the plot. '
+                                       'Nothing here is saved or exported.">Exploration</span>'),
+                "audit": ui.HTML('<span title="Audit: filters and column drops become audit steps with a reason. They change the plot, '
+                                 'are saved with the session and are exported.">Audit</span>'),
+            }
             home_title_banner = ui.div(
-                ui.tags.span(_title_text, class_="banner-title"),
+                ui.div(
+                    _title_span if _title_span is not None else ui.span(),
+                    ui.input_radio_buttons(
+                        "home_mode", label=ui.span("Mode", class_="visually-hidden"), choices=mode_choices,
+                        selected=_cur_mode if _cur_mode in mode_choices else "exploration", inline=True),
+                    class_="spv-mode-row-line",
+                ),
+                ui.output_ui("mode_caption_ui"),
+                class_="view-title-banner spv-mode-row",
+            )
+        elif _title_span is not None:
+            home_title_banner = ui.div(
+                _title_span,
                 class_="view-title-banner",
                 style="margin-bottom: 8px;",
             )
@@ -1226,53 +1258,30 @@ def define_server(input, output, session, *,
             "T1": _tier_label(
                 "T1",
                 "after tier 1",
-                "T1: the plot's table after the tier-1 steps of the recipe (cleaning, joins).",
+                "T1: the table the open plot reads, after the tier-1 steps of the recipe (cleaning, joins).",
             ),
             "T2": _tier_label(
                 "T2",
                 "after tier 2",
-                "T2: the plot's table after the tier-2 steps of the recipe. If the recipe has none, T2 = T1.",
+                "T2: the same table after the tier-2 steps of the recipe. If the recipe has none, T2 = T1.",
             ),
             "T3": _tier_label(
                 "T3",
                 "the table the plot shows",
-                "T3: the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. If it has none, T3 = T2.",
+                "T3: the Result data, the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. If it has none, T3 = T2.",
             ),
         }
-        mode_choices = {
-            "exploration": _tier_label(
-                "Exploration",
-                "look at the data; nothing is saved",
-                "Exploration: one plot, the Result. Filters change the table you view, never the plot. Nothing here is saved or exported.",
-            ),
-            "audit": _tier_label(
-                "Audit",
-                "create audit steps",
-                "Audit: filters and column drops become audit steps with a reason. They change the plot, are saved with the session "
-                "and are exported. Compare shows the original and the audited plot.",
-            ),
-        }
-
         # HOM-08 (Eve, 2026-11-08): dynamic_tabs rebuilds this strip for reasons unrelated to the choices themselves
         # (e.g. a workspace switch, Home -> Gallery -> Home), and a hardcoded default silently discarded what the user had
         # picked. The current choices are read, isolated (a live subscription would re-render the whole tab structure on every
         # click), from the reactive values the radios feed (`home_mode`, `data_view`).
         with reactive.isolate():
-            _cur_mode = home_mode.get()
             _cur_data_view = data_view.get()
 
         # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no choices at all: the strip is absent. The plots show
         # the Result and the table shows T3, the table the plot is drawn from (the starting value of `data_view`).
         if bootloader.is_enabled("interactivity_enabled"):
             rows = []
-            if _audit_available():
-                rows.append(ui.div(
-                    ui.tags.span("Mode:", class_="fw-semibold me-3 spv-strip-label"),
-                    ui.input_radio_buttons(
-                        "home_mode", label=None, choices=mode_choices,
-                        selected=_cur_mode if _cur_mode in mode_choices else "exploration", inline=True),
-                    class_="d-flex align-items-center",
-                ))
             rows.append(ui.div(
                 ui.tags.span("Table to view:", class_="fw-semibold me-3 spv-strip-label"),
                 ui.input_radio_buttons(
@@ -1281,7 +1290,6 @@ def define_server(input, output, session, *,
                 class_="d-flex align-items-center",
             ))
             rows.append(ui.output_ui("source_table_ui"))
-            rows.append(ui.output_ui("audit_strip_ui"))
             theater_header = ui.div(*rows, class_="theater-header-strip spv-header-strip-rows")
         else:
             theater_header = ui.div()
@@ -1295,7 +1303,7 @@ def define_server(input, output, session, *,
                         ui.tags.span(
                             ui.output_text("home_data_preview_title", inline=True),
                             ui.output_ui("home_data_preview_badge", inline=True),
-                            title="Preview the active plot dataset at the selected tier",
+                            title="Preview the Result data (T3) or the table of the selected tier of the open plot",
                             class_="me-3",
                         ),
                         # PREVIEW-ALLROWS-1: "Show all rows" toggle — off by default (100-row cap).
@@ -1342,6 +1350,7 @@ def define_server(input, output, session, *,
             return ui.div(
                 home_title_banner,
                 theater_header,
+                ui.output_ui("compare_switch_ui"),
                 ui.output_ui("lineage_panel_ui"),
                 groups_nav,
                 data_preview_section,
@@ -1424,6 +1433,7 @@ def define_server(input, output, session, *,
         return ui.div(
             home_title_banner,
             theater_header,
+            ui.output_ui("compare_switch_ui"),
             ui.output_ui("lineage_panel_ui"),
             groups_nav,
             data_preview_section,
@@ -1514,22 +1524,30 @@ def define_server(input, output, session, *,
 
     @output
     @render.ui
-    def audit_strip_ui():
-        """The row of the strip that exists in Audit mode only: the Compare switch, and one plain line that says what audit steps apply to."""
-        if not _in_audit():
+    def mode_caption_ui():
+        """One line under the title and the mode control that says what the open mode does. Its own output (R4): it reads the mode, which the
+        control it sits beside feeds, and the control itself is not redrawn by it."""
+        if _in_audit():
+            text = "Audit: your steps change the plot and the export, and are saved with the session."
+        else:
+            text = "Exploration: look at the data. Filters change the table you view, never a plot. Nothing here is saved."
+        return ui.tags.small(text, class_="text-muted spv-mode-caption", title=text)
+
+    @output
+    @render.ui
+    def compare_switch_ui():
+        """The Compare switch, ONE for the whole plot area (a line above the group tabs, shared by all plots; above the lineage panel too, because that panel draws
+        a moment after the mode changes and would push a switch below it down while the user is clicking it): only in Audit mode and with
+        `comparison_mode_enabled`; absent otherwise, never greyed. It is not in the per-plot cell: each cell reads the compare value, and one input
+        id would be mounted once per plot (R4). The value is read isolated, so the switch does not redraw itself."""
+        if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled")):
             return ui.div()
-        rows = []
-        if bootloader.is_enabled("comparison_mode_enabled"):
-            with reactive.isolate():
-                compare_on = _audit_compare.get()
-            rows.append(ui.div(
-                ui.tags.span("Compare:", class_="fw-semibold me-3 spv-strip-label"),
-                ui.input_switch("audit_compare", "the original and the audited plot side by side", value=compare_on),
-                class_="d-flex align-items-center",
-            ))
-        # PROVISIONAL P-B3 text (slice B): until the audit dialog of slice C, a step is written at the plot's table only
-        rows.append(ui.tags.small("Audit steps apply to the plot's table (T3) for now.", class_="text-muted spv-text-meta"))
-        return ui.div(*rows)
+        with reactive.isolate():
+            compare_on = _audit_compare.get()
+        return ui.div(
+            ui.input_switch("audit_compare", "Compare with the original", value=compare_on),
+            class_="spv-compare-line",
+        )
 
     # ADR-045 R1: anchor_path.set() must not live inside dynamic_tabs render.
     # This effect reacts to the same inputs and writes with an idempotent guard.
@@ -1794,11 +1812,11 @@ def define_server(input, output, session, *,
             return "Data Preview"
         return f"Data Preview (max. first {PREVIEW_ROW_LIMIT} rows)"
 
-    # Phase 21-D/F: Data preview — scoped to active plot's dataset, with filters + col selector.
+    # Phase 21-D/F: Data preview — scoped to the table the active plot reads, with filters + col selector.
     @output
     @render.data_frame
     def home_data_preview():
-        """Preview for the active plot's dataset. Applies committed filters + col selector.
+        """Preview for the table the active plot reads. Applies committed filters + col selector.
         PREVIEW-ALLROWS-1: capped at 100 rows by default; toggle 'preview_all_rows' to uncap."""
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None

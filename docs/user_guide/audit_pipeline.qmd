@@ -88,7 +88,7 @@ When you export while you are in **Audit** mode, every table that an audit step 
 
 ### The audit recipe of an export made in Audit mode
 
-An export made in **Audit** mode also holds the **audit recipe**, in the folder `audit_recipe/`, as `<recipe id>_audited.yaml`. It is the original recipe with every audit step written at its place (the end of the tier you wrote it at), each step with its reason, its audit id and its day in its own comment, so no step is hidden. It is a recipe like any other: put the file in the recipes folder with the data it reads (its data references are the original's, the data files are not copied) and the app opens it and runs it on its own, with no session. Running it gives the audited tables at every tier and the audited plot tables of that export. The README and the report say where it is.
+An export made in **Audit** mode also holds the **audit recipe**, in the folder `audit_recipe/`, as `<recipe id>_audited.yaml`. It is the original recipe with every audit step written at its place (the end of the tier you wrote it at), each step with its reason, its audit id and its day in its own comment, so no step is hidden. It is a recipe like any other: put the file in the recipes folder with the data it reads (its data references are the original's, the data files are not copied) and the app opens it and runs it on its own, with no session. Running it gives the audited tables at every tier and the audited Result data (T3) of every plot of that export. The README and the report say where it is.
 
 ### Propagation preview — read it before you confirm
 
@@ -97,8 +97,8 @@ Before you click *Add to audit pipeline*, the modal shows a per-plot preview of 
 > 📍 **Propagation preview:** ✅ 5 apply  •  ⚠️ 2 skip (col missing)
 >
 > ▶ Show details
->   ⚠️ *Plasmid Prevalence by Country* — column not in plot data; will be SKIPPED
->   ⚠️ *Phenotype Genome Length* — column not in plot data; will be SKIPPED
+>   ⚠️ *Plasmid Prevalence by Country* — column not in the Result data (T3) of this plot; will be SKIPPED
+>   ⚠️ *Phenotype Genome Length* — column not in the Result data (T3) of this plot; will be SKIPPED
 >
 > 👉 Apply filters one at a time and verify each plot before stacking. A skipped plot is **NOT filtered** — it shows the unfiltered data.
 
@@ -106,7 +106,7 @@ Before you click *Add to audit pipeline*, the modal shows a per-plot preview of 
 
 - ✅ **column present** → the filter will apply
 - ⚠️ **column absent** → the filter is silently skipped on that plot (the plot shows unfiltered data; verify it's what you want)
-- ❓ **dataset unknown** → SPARMVET couldn't resolve that plot's data; verify by hand after applying
+- ❓ **dataset unknown** → SPARMVET couldn't find the table that plot reads; verify by hand after applying
 
 **Why "apply one at a time"?** When you author multiple filters and propagate them in batch, every skipped plot becomes a question: *did the user mean to skip it, or did they not realise their filter wouldn't take effect there?* By applying one filter, switching tabs, and verifying the effect before authoring the next, you build an honest, defensible audit trail.
 
@@ -116,7 +116,7 @@ This is the recommended sequence for building a clean audit trail:
 
 1. **Stage one filter** in the Filters accordion. Don't stage others yet.
 2. **Click "➜ Send to Audit (1)"**. The propagation modal opens.
-3. **Read the preview**. Check which plots show ✅, which show ⚠️ (column absent). If a plot you expected to be affected shows ⚠️, that means the column name differs in that plot's dataset — fix the source data or author the filter separately for that plot with the correct column name.
+3. **Read the preview**. Check which plots show ✅, which show ⚠️ (column absent). If a plot you expected to be affected shows ⚠️, that means the column name differs in the table that plot reads — fix the source data or author the filter separately for that plot with the correct column name.
 4. **Choose scope** — "This plot only", "All plots", or "All plots except…". When in doubt, start with "This plot only" and expand scope once you've confirmed the effect.
 5. **Fill in the reason** in the right sidebar audit panel (see [Writing good reasons](#writing-good-reasons) below). The Apply button stays locked until a reason is entered.
 6. **Click Apply**. The node commits. Verify the data preview and the plot on the current plot sub-tab.

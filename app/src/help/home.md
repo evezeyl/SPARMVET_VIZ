@@ -2,22 +2,22 @@
 
 **Home** is the main analysis theater. Data analysis recipe-defined `analysis_groups` become tabs; each group's plots appear as sub-tabs.
 
-### The header strip
-Up to three rows; the first only when the audit is switched on in your setup.
+### The mode and the header strip
+The **mode** control "Exploration | Audit" sits at the right of the recipe title, in a row of its own; it exists only when the audit is switched on in your setup. Below it the strip has up to two rows ("Table to view", and the list of source tables while Source is chosen).
 
 | Choice | What it does |
 |---|---|
 | **Mode: Exploration** | Look at the data. One plot per plot tab: the **Result**, drawn from the plot's own table. Filters change the table you view and never the plot. Nothing here is saved or exported. |
-| **Mode: Audit** | Create audit steps (filters and column drops with a reason). The plot becomes the **audited plot**: the Result plus your audited steps. A **Compare** switch shows the original plot and the audited plot side by side. |
+| **Mode: Audit** | Create audit steps (filters and column drops with a reason). The plot becomes the **audited plot**: the Result plus your audited steps. The switch **Compare with the original** (above the plots) shows the original plot and the audited plot side by side. |
 
 | Table to view | What the data preview table shows |
 |---|---|
 | **Source** | One source table as read from its file, before any step of the recipe. A second list names the source tables that feed the open plot (one table: the list still shows it) |
-| **T1** | The plot's table after the tier-1 steps of the recipe |
-| **T2** | The plot's table after the tier-2 steps (T2 = T1 if the recipe has none) |
-| **T3** | The table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe (T3 = T2 if it has none). In Audit mode, T3 also carries your audited steps |
+| **T1** | The table the open plot reads, after the tier-1 steps of the recipe |
+| **T2** | The same table after the tier-2 steps (T2 = T1 if the recipe has none) |
+| **T3** | The Result data, the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe (T3 = T2 if it has none). In Audit mode, T3 also carries your audited steps |
 
-The badge next to the table says which table it is and when two tables are the same. In Audit mode, audit steps apply to the plot's table (T3) for now; T1, T2 and Source stay the original tables.
+The badge next to the table says which table it is and when two tables are the same. In Audit mode a step can be written at any table of "Path of the data" or at the Result data (T3) of a plot; T1 and T2 show the audited table where a step changes it, and Source stays the file as read.
 
 ### Filters (left sidebar)
 **A filter is built on the table you are viewing, and it is cleared when that table changes.**

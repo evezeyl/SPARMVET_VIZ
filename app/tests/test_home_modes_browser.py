@@ -62,7 +62,7 @@ def test_the_strip_starts_in_exploration_on_t3_with_no_compare(page: Page, shiny
 
 def test_source_lists_the_tables_that_feed_the_plot_and_shows_the_table_as_read(page: Page, shiny_app: ShinyAppProc):
     _ready(page, shiny_app.url)
-    assert page.locator("#source_table").count() == 0, "the second list appears only with Source"
+    expect(page.locator("#source_table")).to_have_count(0, timeout=10_000)   # "the second list appears only with Source" (the removal after a change of view is not instant)
     set_view(page, "SRC")
     expect(page.locator("#source_table")).to_be_visible(timeout=10_000)
     tables = page.locator("#source_table option").evaluate_all("els => els.map(e => e.value)")
@@ -73,7 +73,7 @@ def test_source_lists_the_tables_that_feed_the_plot_and_shows_the_table_as_read(
         expect(page.locator("#home_data_preview_badge")).to_contain_text(f"table '{table}'")
         expect(page.locator("#home_data_preview tbody tr").first).to_be_visible(timeout=20_000)
     set_view(page, "T3")
-    assert page.locator("#source_table").count() == 0
+    expect(page.locator("#source_table")).to_have_count(0, timeout=10_000)
 
 
 @pytest.mark.parametrize("change", ["data", "plot", "mode"])
@@ -113,7 +113,7 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
     set_mode(page, "audit")
     try:
         expect(page.locator("#audit_compare")).to_be_attached(timeout=10_000)
-        expect(page.locator("body")).to_contain_text("Audit steps apply to the plot's table (T3) for now.")
+        expect(page.locator("body")).not_to_contain_text("Audit steps apply to the plot's table (T3) for now.")
         # Compare on: the original and the audited plot side by side; off: the audited plot alone
         set_compare(page, True)
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=20_000)

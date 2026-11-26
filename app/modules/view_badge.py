@@ -12,7 +12,7 @@ The Home header strip has the data choice (Source, T1, T2, T3; D-0310) and, with
 Next to the data table a small badge says which table it shows ("Viewing: T2"), and when two views are the same data it says so, so that
 "the button does nothing" is not a surprise:
 
-  T2=T1       the plot's dataset has no tier-2 steps, so T2 is identical to T1
+  T2=T1       the table the plot reads has no tier-2 steps, so T2 is identical to T1
   T3=T2       the plot has no steps of its own in the recipe, so T3 is identical to T2
   T3=T2=T1    ... and T2 is itself identical to T1
 
@@ -100,7 +100,7 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
     """The badge of the data table.
 
     view            "SRC" (Source), "T1", "T2" or "T3"
-    has_tier2       the plot's dataset has tier-2 steps in the data analysis recipe
+    has_tier2       the table the plot reads has tier-2 steps in the data analysis recipe
     plot_has_steps  the recipe writes tier-3 steps for this plot (`has_plot_steps`): its T3 is then not equal to T2
     preview_filters how many exploration filters are applied (they change the table only; none exist in Audit mode)
     mode            "exploration" or "audit"; in Audit mode T3 carries the audited steps of the plot
@@ -145,7 +145,7 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
 def plot_badge(mode: str, plot_has_steps: bool, has_tier2: bool, preview_filters: int = 0, audited_steps: int = 0, upstream_steps: int = 0, table_changed: Optional[bool] = None) -> ViewBadge:
     """The badge of a plot. In Exploration the plot is the Result (D-0019, D-0180): never changed by an exploration filter. In Audit mode it
     is the audited plot: the Result plus the audit steps this plot is built from, at any tier (Apply-gated). `upstream_steps` are the ones of `audited_steps` that were written at a table
-    the plot is built from, not at its own tier 3 (demo step 3; PROVISIONAL words); `table_changed` says whether the steps changed this plot's table (None: not told).""" 
+    the plot is built from, not at its own tier 3 (demo step 3; PROVISIONAL words); `table_changed` says whether the steps changed the table this plot reads (None: not told).""" 
     if mode == "audit":
         if audited_steps:
             notes = (f"{audited_steps} audited step(s) on this plot",) + ((f"{upstream_steps} of them written at a table this plot is built from",) if upstream_steps else ())

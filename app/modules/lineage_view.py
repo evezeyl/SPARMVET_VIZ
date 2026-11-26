@@ -17,7 +17,7 @@ the tier 2 of an original table share a level, and plots sit at the level after 
 the text (list heading "Independent graph N"); the map shows the same N at the left of the first dot of that graph.
 
 THE NAMES (the owner, 2026-11-26): a line, a dot, the text area and the "Chosen" line show the same name, from `utils.display_names` (the recipe's `ui_label`, else the id with spaces; the id in
-brackets only where two names would be equal), then "Table" or "Plot data" and the tier as one short tag: "Summary phenotype length fragmentation: Table, T1". `line_text` is the one function.
+brackets only where two names would be equal), then "Table" or "Result data" and the tier as one short tag: "Summary phenotype length fragmentation: Table, T1". `line_text` is the one function.
 THE CLASSES: `tier1` (a table after its tier 1), `tier2` (after its tier 2), `result` (a plot, or a result table nothing is built from). The colour of a class is
 in `config/ui/theme.css` section 29; the words and the colours are PROVISIONAL (D-0634: "NOT decided: the exact colours and words").
 
@@ -45,7 +45,7 @@ TOP = 26         # pixels above the first row of dots: the headings of the colum
 
 
 def line_text(node: LineageNode) -> str:
-    """The one text of a node for every place that names it: "<shown name>: Table, T1" (a plot: "<shown name>: Plot data, T3"), with " [+ meta]" for a table that takes the metadata in.
+    """The one text of a node for every place that names it: "<shown name>: Table, T1" (a plot: "<shown name>: Result data, T3"), with " [+ meta]" for a table that takes the metadata in.
     The tier is the node's own (a result table is a tier 1). PROVISIONAL words."""
     return display_names.tagged_name(node.shown, node.kind == "T3", node.tier) + (" [+ meta]" if node.brings_metadata else "")
 

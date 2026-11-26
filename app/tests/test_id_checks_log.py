@@ -22,7 +22,7 @@ import yaml
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.id_check_run import ID_LOG_FOLDER, export_log_text, id_log_folder, run_id_checks
 from app.modules.orchestrator import DataOrchestrator
-from app.tests.test_id_completion import DEMO, PIPELINES, ROOT, NOT_IN_ORIGINAL, quiet, world
+from app.tests.test_id_completion_in_the_app import DEMO, PIPELINES, ROOT, NOT_IN_ORIGINAL, quiet, world
 from utils.id_log import AUTOMATIC, log_path, read_log, record_read
 
 WHEN = "2026-11-24T10:00:00+01:00"

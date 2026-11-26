@@ -98,7 +98,7 @@ def test_the_words_of_the_nodes(world):
     assert leaves == sorted(["Quality_metrics", "Detailed_summary", "FastP_with_metadata", "Bracken_with_metadata", "ResFinder_with_metadata", "AR1_MLST_Serotype_Virulence"])
     assert Counter(n["cls"] for n in data["nodes"]) == {"tier1": 21, "tier2": 7, "result": 23}
     plot = next(n for n in data["nodes"] if n["kind"] == "T3")
-    assert plot["choosable"] and plot["built_from"] == [] and plot["line"].endswith(": Plot data, T3")
+    assert plot["choosable"] and plot["built_from"] == [] and plot["line"].endswith(": Result data, T3")
     assert all(n["line"] and n["detail"] and n["shown"] for n in data["nodes"])
 
 
@@ -258,13 +258,13 @@ def test_a_line_is_a_plain_name_the_word_table_or_plot_data_and_a_short_tier_tag
     lin, data = world
     by = {n["id"]: n for n in data["nodes"]}
     assert by["T1:Summary_phenotype_length_fragmentation"]["line"] == "Summary phenotype length fragmentation: Table, T1"
-    assert by["T3:amr_heatmap"]["line"] == "AMR Heatmap: Plot data, T3"
+    assert by["T3:amr_heatmap"]["line"] == "AMR Heatmap: Result data, T3"
     assert by["T1:ST22_Anchor"]["line"] == "ST22 Anchor: Table, T1 [+ meta]"
     t2 = next(n for n in data["nodes"] if n["kind"] == "T2")
     assert t2["line"].endswith(": Table, T2")
     for n in data["nodes"]:
         assert n["line"].startswith(n["shown"] + ": ") and "table after its tier" not in n["line"] and "(tier" not in n["line"]
-        assert n["line"].split(": ")[1].split(" [")[0] in ("Table, T1", "Table, T2", "Plot data, T3")
+        assert n["line"].split(": ")[1].split(" [")[0] in ("Table, T1", "Table, T2", "Result data, T3")
 
 
 def test_the_name_without_a_label_is_the_id_with_spaces_and_the_same_name_is_in_the_text_area(world):
@@ -293,6 +293,16 @@ def test_a_table_and_a_plot_with_the_same_label_and_id_get_their_kind():
     raw = {"data_schemas": {"x": {"ui_label": "Same"}}, "analysis_groups": {"g": {"ui_label": "G", "plots": {"x": {"ui_label": "Same", "target_dataset": "x"}}}}}
     got = shown_names(raw)
     assert got[("table", "x")] == "Same (table x)" and got[("plot", "x")] == "Same (plot x)"
+
+
+def test_when_the_bracket_would_only_repeat_the_name_the_kind_is_shown_instead():
+    from utils.display_names import shown_names
+    raw = {"data_schemas": {"A": {}, "b_table": {"ui_label": "A"}}, "analysis_groups": {"g": {"ui_label": "G", "plots": {"A": {"target_dataset": "A"}}}}}
+    got = shown_names(raw)
+    assert got[("table", "A")] == "A (table)" and got[("plot", "A")] == "A (plot)", "no 'A (A)'"
+    assert got[("table", "b_table")] == "A (b_table)", "an id that tells something stays"
+    assert shown_names({"data_schemas": {"year_data": {}}, "analysis_groups": {"g": {"ui_label": "G", "plots": {"year_data": {}}}}}) == {
+        ("table", "year_data"): "year data (table)", ("plot", "year_data"): "year data (plot)"}
 
 
 def test_names_without_labels_and_a_recipe_that_is_not_a_mapping():

@@ -27,7 +27,7 @@ from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_a
 from app.modules.data_analysis_recipe_validator import check_data_analysis_recipe_data
 from app.modules.id_check_run import run_id_checks
 from app.modules.plan_composer import compose_plan_book
-from app.tests.test_id_completion import DEMO, PIPELINES, ROOT, quiet, world
+from app.tests.test_id_completion_in_the_app import DEMO, PIPELINES, ROOT, quiet, world
 from utils.errors import DataAnalysisRecipeError
 from utils.recipe_check import check_recipe
 from utils.recipe_factory import write_recipe

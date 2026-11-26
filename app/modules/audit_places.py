@@ -289,7 +289,7 @@ def place_words(place: str) -> str:
 
 
 def place_line(place: str, raw: Any) -> str:
-    """The place of an audit step as the lineage panel writes a node: "ResFinder: Table, T1", "Year Distribution: Plot data, T3" (the same names, `utils.display_names`). A place the recipe does
+    """The place of an audit step as the lineage panel writes a node: "ResFinder: Table, T1", "Year Distribution: Result data, T3" (the same names, `utils.display_names`). A place the recipe does
     not have keeps its readable id; an empty or unreadable place is returned as it is. PROVISIONAL words."""
     tier, _, name = (place or "").partition(":")
     if not name or tier not in ("T1", "T2", "T3"):

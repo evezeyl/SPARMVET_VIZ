@@ -71,7 +71,7 @@ def field(label="Group"):
 
 
 def schema(*, steps=(), tier2=()):
-    """A table of the shared recipe: it declares no entity id, so it takes part in no completion of the ids (that coupling of the keys is tested in test_id_completion.py)."""
+    """A table of the shared recipe: it declares no entity id, so it takes part in no completion of the ids (that coupling of the keys is tested in test_id_completion_in_the_app.py)."""
     return {"source": {"type": "local_tsv", "path": "/nowhere.tsv"}, "null_values": [], "strip": False,
             "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample"},
                              "group": field()},

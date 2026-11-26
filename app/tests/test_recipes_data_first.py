@@ -29,7 +29,7 @@ import pytest
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.data_analysis_recipe_validator import check_data_analysis_recipe_data, validate_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator
-from app.tests.test_id_completion import DEMO, NOT_IN_ORIGINAL, PIPELINES, ROOT, quiet
+from app.tests.test_id_completion_in_the_app import DEMO, NOT_IN_ORIGINAL, PIPELINES, ROOT, quiet
 
 TEMPLATES = ROOT / "config" / "data_analysis_recipes" / "templates"
 METADATA = "metadata_schema"

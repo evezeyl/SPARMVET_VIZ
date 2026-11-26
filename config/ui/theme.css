@@ -30,6 +30,7 @@
  *  27. HOME warning of the ids (D-0582)
  *  28. Audit dialog: the places as the path of the lineage (D-0553)
  *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
+ *  30. HOME mode row (title and Exploration | Audit) and the Compare line
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -920,7 +921,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Where an audit step was written, on every step card (PROVISIONAL, 2026-11-26): the plot's own tier 3 or a table; always shown, readable size, dark text */
 /* The section of the audit steps ("My Adjustments"), below the recipe's own steps: its own block, set apart by a rule and a little space (PROVISIONAL, 2026-11-26) */
 .spv-audit-mine        { margin-top: 6px; padding-top: 2px; border-top: 2px solid #dee2e6; }
-.spv-audit-place       { font-size: 0.8em; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
+.spv-audit-place       { font-size: 0.8rem; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
 .spv-audit-place-missing { color: #6c757d; font-weight: 400; }
 .spv-badge-pk-warn     { display: block; font-size: 0.72em; color: #856404; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; padding: 2px 6px; margin-top: 2px; }
 
@@ -1258,8 +1259,8 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-lin-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
 .spv-lin-switch-label, .spv-lin-note { font-size: 0.75rem; color: #6c757d; }
 /* the line "Chosen: ...": bold and in the dark teal on the amber tint of the notices (#0b6358 on #fff3cd: contrast 6.45 to 1; the teal #10a395 gives 2.83 and is not used); with nothing chosen it stays the quiet grey note */
-.spv-lin-chosen { font-size: 0.8rem; font-weight: 700; color: #0b6358; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; padding: 1px 8px; overflow-wrap: anywhere; }
-.spv-lin-chosen.none { font-size: 0.75rem; font-weight: 400; color: #6c757d; background: transparent; border-color: transparent; padding: 0; }
+.spv-lin-chosen { font-size: 0.8rem; font-weight: 700; color: #0b6358; background: #fff3cd; border: 0; border-left: 3px solid #0b6358; border-radius: 4px; padding: 1px 8px; overflow-wrap: anywhere; }
+.spv-lin-chosen.none { font-size: 0.75rem; font-weight: 400; color: #6c757d; background: transparent; border-left-color: transparent; padding: 0; }
 .spv-lin-switch, .spv-lin-all, .spv-lin-clear { border: 1px solid #dee2e6; background: #ffffff; color: #345beb; border-radius: 6px; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; }
 .spv-lin-switch.active { background: #345beb; color: #ffffff; border-color: #345beb; }
 .spv-lin-all:disabled, .spv-lin-clear:disabled { color: #6c757d; }
@@ -1329,3 +1330,24 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-lin-create { height: 32px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; padding: 0 14px; }
 .spv-lin-form { margin-top: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #ffffff; }
 .spv-lin-error { font-size: 0.8rem; }
+
+/* ── 30. HOME mode row and Compare line (slice 1, 2026-11-26; PROVISIONAL) ──── */
+/* The row beside the recipe title: the title is cut with an ellipsis before the control ever wraps; the control stays at the right, also when the title is hidden. */
+.view-title-banner.spv-mode-row { padding: 8px 14px; margin-bottom: 8px; }
+.spv-mode-row-line { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; }
+.spv-mode-row .banner-title { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0; }
+.spv-mode-row-line > span:empty { flex: 1 1 0; }
+.spv-mode-row .shiny-input-container { margin: 0 !important; width: auto !important; flex: 0 0 auto; }
+.spv-mode-row .shiny-options-group { display: inline-flex; border: 1px solid #345beb; border-radius: 6px; overflow: hidden; }
+.spv-mode-row label.radio-inline { position: relative; display: flex; margin: 0 !important; padding: 0 !important; cursor: pointer; }
+.spv-mode-row label.radio-inline input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0 !important; opacity: 0; cursor: pointer; }
+.spv-mode-row label.radio-inline > span { padding: 5px 12px; font-size: 0.8rem; font-weight: 600; color: #345beb; background: #ffffff; white-space: nowrap; }
+.spv-mode-row label.radio-inline:has(input:checked) > span { background: #345beb; color: #ffffff; }
+/* the open mode is told in text as well as in colour: a tick before the word */
+.spv-mode-row label.radio-inline:has(input:checked) > span::before { content: "\2713\00a0"; }
+.spv-mode-row label.radio-inline:focus-within { outline: 2px solid #1a1a1a; outline-offset: -2px; }
+.spv-mode-caption { display: block; margin-top: 2px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* left-aligned on purpose: the right panel opens when the mode becomes Audit (a width transition), and a switch at the right edge moves under a click made at that moment */
+.spv-compare-line { display: flex; align-items: center; justify-content: flex-start; margin: 0 0 6px 0; font-size: 0.8rem; }
+.spv-compare-line .shiny-input-container { margin-bottom: 0 !important; width: auto !important; }
+.spv-compare-panes { gap: 8px; }
