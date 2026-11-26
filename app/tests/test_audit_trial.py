@@ -18,7 +18,9 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_trial.py -q
 """
 import hashlib
 import json
+import os
 import shutil
+import types
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,11 +29,15 @@ import yaml
 
 from app.modules.audit_place_view import AUDIT, Readers, table_for, viewed
 from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of, bake_place_steps, place_step_records
+from app.modules import audit_trial as audit_trial_module
+from app.modules.audit_run import compare_tables, same_table
 from app.modules.audit_trial import (NO_ROW_CHANGED, TABLE_CHANGED, TRIAL_FOLDER, TRIAL_REASON, PlaceTrial, TrialRefused, clean_trials, with_applied_at)
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
+from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META
 from app.modules.session_manager import make_audit_step
 from app.tests.test_audit_view import PIPELINES, RECIPE_ID, World
+from transformer.anchor import open_anchor
 from utils import recipe_tiers
 from utils.lineage_data import lineage_of
 
@@ -519,3 +525,271 @@ def test_after_apply_the_audited_reader_does_not_serve_the_run_of_the_old_list(w
     assert audit.run_of(RECIPE_ID, [earlier], world.plans) is not old_run          # the memo is gone; the old list is computed again, not served
     compare_with_scratch(world, tmp_path, audit, [earlier])
     compare_with_scratch(world, tmp_path, audit, stored)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Fix round: all or nothing at apply, rows before, clean_trials that cannot hurt, no placeholder in a sentence, a folder emptied by someone else, ids, one read
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def footer_keys(folder: Path):
+    """{file name: the keys in its footer} of every stored table of the folder."""
+    found = {}
+    for path in sorted(folder.glob("*.parquet")):
+        footer = open_anchor(path)[0]
+        found[path.name] = {footer.get(TIER1_KEY_META), footer.get(TIER2_KEY_META)} - {None}
+    return found
+
+
+def assert_a_reader_of_the_old_list_sees_only_the_old_list(world, tmp_path, audit, trial, applied):
+    """The reader of the list that is still the stored one computes the same as from scratch, nothing of the tried step is on disk and the trial folder is gone."""
+    assert not trial.trial_dir.exists()
+    run = audit.run_of(RECIPE_ID, applied, world.plans)
+    wanted = {k for t in run.tables.values() for k in (t.t1_key_audit, t.t2_key_audit)}
+    for name, keys in footer_keys(audit.audit_dir).items():
+        assert keys <= wanted, f"{name} holds the key of a step that was never applied"
+    compare_with_scratch(world, tmp_path, audit, applied)
+
+
+def failing_second_replace(real_replace):
+    calls = []
+
+    def replace(source, target):
+        calls.append(target)
+        if len(calls) == 2:
+            raise OSError("disk full (made by the test)")
+        return real_replace(source, target)
+    return types.SimpleNamespace(replace=replace), calls
+
+
+def prepared(world, tmp_path):
+    """A applied at ResFinder (its run held), B tried at MLST and ResFinder's neighbour: B moves several files."""
+    audit, trial = fresh(world, tmp_path)
+    a = applied_step("T1:ResFinder", value=world.ids[0])
+    held = audit.run_of(RECIPE_ID, [a], world.plans)
+    tried = [step("T1:ResFinder", value=world.ids[1], node_id="b-1"), step("T1:MLST", value=world.ids[1], node_id="b-1")]
+    assert trial.try_step(RECIPE_ID, [a], tried, world.plans).error is None
+    return audit, trial, a, held, tried
+
+
+def test_a_move_that_fails_halfway_leaves_no_mix_the_old_list_is_computed_again_and_nothing_of_the_tried_step_is_on_disk(world, tmp_path, monkeypatch):
+    audit, trial, a, held, tried = prepared(world, tmp_path)
+    fake, calls = failing_second_replace(os.replace)
+    monkeypatch.setattr(audit_trial_module, "os", fake)
+    with pytest.raises(TrialRefused) as refused:
+        trial.apply_trial(RECIPE_ID, [a], tried, "second", world.plans)
+    monkeypatch.undo()
+    assert len(calls) == 2 and "could not be added" in str(refused.value) and "Nothing was applied" in str(refused.value) and "Try the step again" in str(refused.value)
+    assert audit.run_of(RECIPE_ID, [a], world.plans) is not held                    # the memo was forgotten: no old run is served
+    assert_a_reader_of_the_old_list_sees_only_the_old_list(world, tmp_path, audit, trial, [a])
+    with pytest.raises(TrialRefused):
+        trial.apply_trial(RECIPE_ID, [a], tried, "second", world.plans)               # the trial is gone: try again
+
+
+def test_a_held_run_never_shows_the_tried_step_after_a_failed_apply(world, tmp_path, monkeypatch):
+    audit, trial, a, held, tried = prepared(world, tmp_path)
+    expected = held.audited_table_lazy("ResFinder", "T1").collect()
+    fake, _ = failing_second_replace(os.replace)
+    monkeypatch.setattr(audit_trial_module, "os", fake)
+    with pytest.raises(TrialRefused):
+        trial.apply_trial(RECIPE_ID, [a], tried, "second", world.plans)
+    monkeypatch.undo()
+    try:
+        seen = held.audited_table_lazy("ResFinder", "T1").collect()
+    except (OSError, Exception):                                                       # the file is gone: an error, never another table
+        return
+    assert seen.equals(expected)
+
+
+@pytest.mark.parametrize("what", ["the clean-up after the moves", "the memo forgetting at the start"])
+def test_a_failure_after_the_moves_or_before_them_is_all_or_nothing_for_the_reader(world, tmp_path, monkeypatch, what):
+    audit, trial, a, held, tried = prepared(world, tmp_path)
+    boom = {"n": 0}
+    if what.startswith("the clean-up"):
+        real = PlaceTrial.discard
+
+        def discard(self):
+            boom["n"] += 1
+            if boom["n"] == 1:
+                raise RuntimeError("clean-up failed (made by the test)")
+            return real(self)
+        monkeypatch.setattr(PlaceTrial, "discard", discard)
+    else:
+        real_forget = audit.forget
+
+        def forget():
+            boom["n"] += 1
+            if boom["n"] == 1:
+                raise RuntimeError("forget failed (made by the test)")
+            return real_forget()
+        monkeypatch.setattr(audit, "forget", forget)
+    with pytest.raises(TrialRefused) as refused:
+        trial.apply_trial(RECIPE_ID, [a], tried, "second", world.plans)
+    monkeypatch.undo()
+    assert "Nothing was applied" in str(refused.value) and boom["n"] >= 1
+    assert audit.run_of(RECIPE_ID, [a], world.plans) is not held                    # the memo was forgotten whatever failed
+    assert_a_reader_of_the_old_list_sees_only_the_old_list(world, tmp_path, audit, trial, [a])
+
+
+def test_rows_before_at_a_place_is_the_audited_state_not_the_original_and_an_identical_step_changes_no_row(world, tmp_path):
+    audit, trial = fresh(world, tmp_path)
+    original = world.orch.materialize_tier1(RECIPE_ID, "ResFinder", world.anchors / "ResFinder.parquet").collect().height
+    first = applied_step("T1:ResFinder", value=world.ids[0])
+    audited = audit.run_of(RECIPE_ID, [first], world.plans).audited_table_lazy("ResFinder", "T1").collect().height
+    assert audited < original
+    result = trial.try_step(RECIPE_ID, [first], [step("T1:ResFinder", value=world.ids[1])], world.plans)
+    effect = result.effects[0]
+    assert effect.rows_before == audited != original and effect.rows_removed == audited - effect.rows_after > 0
+    same = trial.try_step(RECIPE_ID, [first], [step("T1:ResFinder", value=world.ids[0])], world.plans)      # the same condition, another id
+    assert same.error is None and same.effects[0].state == NO_ROW_CHANGED and same.effects[0].rows_removed == 0 and same.effects[0].rows_before == audited
+    assert same.reaches and all(item.state == NO_ROW_CHANGED for item in same.reaches)
+    assert trial.trial_table("ResFinder", "T1") is None and trial.trial_plot("amr_heatmap") is None
+
+
+# -- clean_trials
+
+def test_clean_trials_never_stops_for_an_unreadable_folder_and_the_start_of_the_app_goes_on(tmp_path, monkeypatch):
+    root = tmp_path / TRIAL_FOLDER
+    (root / "token").mkdir(parents=True)
+    root.chmod(0o000)
+    try:
+        assert clean_trials(root) == []
+        assert clean_trials(root, "token") == []                  # cannot be removed or read: not named, not raised
+    finally:
+        root.chmod(0o755)
+    assert (root / "token").exists()
+    from app.tests.test_cache_version_6 import REPO, _deployment
+    for var in ("SPARMVET_DEPLOYMENT", "SPARMVET_APP_FEATURES", "SPARMVET_PERSONA", "SPARMVET_PROFILE", "SPARMVET_CONNECTOR", "SPARMVET_DATA_ANALYSIS_RECIPE"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    (tmp_path / "home").mkdir()
+    monkeypatch.chdir(REPO)
+    deployment, anchors = _deployment(tmp_path / "dep")
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(deployment))
+    unreadable = anchors.parent / TRIAL_FOLDER
+    (unreadable / "x").mkdir(parents=True)
+    unreadable.chmod(0o000)
+    from app.src.bootloader import Bootloader
+    try:
+        Bootloader()                                                      # the folder cannot be read: the app still starts
+        monkeypatch.setattr(audit_trial_module, "clean_trials", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("made by the test")))
+        Bootloader()                                                      # whatever clean_trials raises, the app still starts
+    finally:
+        unreadable.chmod(0o755)
+
+
+def test_clean_trials_never_follows_a_link(tmp_path):
+    target = tmp_path / "important_folder"
+    target.mkdir()
+    (target / "kept.txt").write_text("not scratch")
+    link_root = tmp_path / "linked" / TRIAL_FOLDER
+    link_root.parent.mkdir()
+    link_root.symlink_to(target, target_is_directory=True)
+    assert clean_trials(link_root) == [] and clean_trials(link_root, "kept.txt") == [] and (target / "kept.txt").read_text() == "not scratch"
+    real_root = tmp_path / "real" / TRIAL_FOLDER
+    real_root.mkdir(parents=True)
+    (real_root / "token").symlink_to(target, target_is_directory=True)
+    (real_root / "other").mkdir()
+    assert clean_trials(real_root, "token") == [] and (target / "kept.txt").read_text() == "not scratch"
+    assert clean_trials(real_root) == ["other"] and (target / "kept.txt").exists() and (real_root / "token").is_symlink()
+
+
+def test_clean_trials_names_only_what_is_really_gone(tmp_path):
+    root = tmp_path / TRIAL_FOLDER
+    stuck = root / "stuck"
+    (stuck / "inner").mkdir(parents=True)
+    (stuck / "inner" / "file.parquet").write_bytes(b"x")
+    (root / "free").mkdir()
+    (stuck / "inner").chmod(0o500)                                         # the file inside cannot be deleted
+    try:
+        assert clean_trials(root) == ["free"]
+        assert stuck.exists()
+    finally:
+        (stuck / "inner").chmod(0o755)
+    assert clean_trials(root) == ["stuck"]
+
+
+# -- the sentence the user sees
+
+@pytest.mark.parametrize("what, make", [
+    ("a column that is not there", lambda w: step("T1:ResFinder", params={"column": "no_such_column", "op": "eq", "value": "a", "na": "keep"})),
+    ("a value of a type that does not fit", lambda w: step("T1:ResFinder", params={"column": "identity", "op": "eq", "value": "not a number", "na": "keep"})),
+    ("an unknown kind of step", lambda w: step("T1:ResFinder", node_type="not_a_kind", params={"column": "sample_id"})),
+    ("a step that lacks what it needs", lambda w: step("T1:ResFinder", params={"column": "sample_id"})),
+    ("a key dropped where a later join reads it", lambda w: step("T1:ResFinder", node_type="drop_column", params={"column": "sample_id"})),
+    ("a place the recipe does not have", lambda w: step("T1:NoSuchTable", value="a")),
+])
+def test_the_placeholder_reason_is_never_in_a_sentence_the_user_sees(world, tmp_path, what, make):
+    audit, trial = fresh(world, tmp_path)
+    result = trial.try_step(RECIPE_ID, [], [make(world)], world.plans)
+    assert result.error, what
+    assert TRIAL_REASON not in result.error and "Trial: this step" not in result.error, result.error
+    with pytest.raises(TrialRefused) as refused:
+        trial.apply_trial(RECIPE_ID, [], [make(world)], "a reason", world.plans)
+    assert TRIAL_REASON not in str(refused.value)
+
+
+# -- a folder emptied by someone else
+
+def test_a_trial_whose_folder_was_emptied_by_someone_else_is_no_trial(world, tmp_path):
+    audit, trial = fresh(world, tmp_path)
+    tried = [step("T1:ResFinder", value=world.victim)]
+    first = trial.try_step(RECIPE_ID, [], tried, world.plans)
+    assert trial.trial_table("ResFinder", "T1") is not None
+    clean_trials(trial.trial_root, trial.token)                                  # the owner did not call discard()
+    assert trial.trial_table("ResFinder", "T1") is None and trial.trial_plot("amr_heatmap") is None
+    with pytest.raises(TrialRefused) as refused:
+        trial.apply_trial(RECIPE_ID, [], tried, "a reason", world.plans)
+    assert "Try the step again" in str(refused.value)
+    trial.try_step(RECIPE_ID, [], tried, world.plans)
+    clean_trials(trial.trial_root, trial.token)
+    again = trial.try_step(RECIPE_ID, [], tried, world.plans)                    # the same signature: computed again, not the stored result with no files
+    assert again is not first and trial.trial_table("ResFinder", "T1").collect().height == again.effects[0].rows_after
+    assert trial.apply_trial(RECIPE_ID, [], tried, "a reason", world.plans)
+
+
+def test_a_trial_one_file_of_which_was_removed_is_no_trial_either(world, tmp_path):
+    audit, trial = fresh(world, tmp_path)
+    tried = [step("T1:MLST", value=world.ids[1])]
+    trial.try_step(RECIPE_ID, [], tried, world.plans)
+    (trial.trial_dir / "MLST.parquet").unlink()
+    assert trial.trial_table("MLST", "T1") is None
+    with pytest.raises(TrialRefused):
+        trial.apply_trial(RECIPE_ID, [], tried, "r", world.plans)
+
+
+# -- one id, one step
+
+def test_a_tried_step_with_the_id_of_an_applied_step_is_refused_at_the_trial(world, tmp_path):
+    audit, trial = fresh(world, tmp_path)
+    earlier = applied_step("T1:ResFinder", value=world.ids[0])
+    tried = [step("T1:MLST", value=world.ids[1], node_id=earlier["id"])]
+    result = trial.try_step(RECIPE_ID, [earlier], tried, world.plans)
+    assert result.error and earlier["id"] in result.error and "removed together" in result.error and result.effects == ()
+    assert not trial.trial_dir.exists()
+    with pytest.raises(TrialRefused):
+        trial.apply_trial(RECIPE_ID, [earlier], tried, "r", world.plans)
+    two_places = [step("T1:MLST", value=world.ids[1], node_id="same-decision"), step("T1:Bracken", value=world.ids[1], node_id="same-decision")]
+    assert trial.try_step(RECIPE_ID, [earlier], two_places, world.plans).error is None          # one decision at two places is one id and is allowed
+
+
+# -- one read of each table
+
+class _Counted:
+    def __init__(self, frame):
+        self.frame, self.collects = frame, 0
+
+    def collect(self):
+        self.collects += 1
+        return self.frame
+
+
+def test_two_tables_are_compared_with_one_read_each_and_the_counts_first():
+    import polars as pl
+    base = pl.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
+    cases = [(base, base.clone(), (3, 3, True)), (base, base.head(2), (3, 2, False)), (base, base.with_columns(a=pl.Series([1, 2, 4])), (3, 3, False)),
+             (base, base.select("a"), (3, 3, False)), (base, base.reverse(), (3, 3, False)), (base.head(0), base.head(0), (0, 0, True))]
+    for left, right, expected in cases:
+        a, b = _Counted(left), _Counted(right)
+        assert compare_tables(a, b) == expected and (a.collects, b.collects) == (1, 1)
+        assert same_table(_Counted(left), _Counted(right)) is expected[2]

@@ -216,9 +216,13 @@ class Bootloader:
             print(f"[Bootloader] Removed the leftover temporary file of a killed writer: anchors/{removed}")
 
         # 5b. Tried audit steps (the review of a step before it is applied): the trial folders are scratch, never read after a restart; a process killed in the middle leaves them here.
-        from app.modules.audit_trial import TRIAL_FOLDER, clean_trials
-        for removed in clean_trials(self.get_location("user_data") / TRIAL_FOLDER):
-            print(f"[Bootloader] Removed the leftover trial folder of an audit step that was tried: {TRIAL_FOLDER}/{removed}")
+        # Scratch only: whatever goes wrong here (an unreadable folder, a link, an import) must never stop the start.
+        try:
+            from app.modules.audit_trial import TRIAL_FOLDER, clean_trials
+            for removed in clean_trials(self.get_location("user_data") / TRIAL_FOLDER):
+                print(f"[Bootloader] Removed the leftover trial folder of an audit step that was tried: {TRIAL_FOLDER}/{removed}")
+        except Exception as error:
+            print(f"[Bootloader] The leftover trial folders of tried audit steps could not be cleaned ({type(error).__name__}: {error}); the app starts anyway.")
 
         # 6. Stored tables of another cache version (D-0240): removed here, once, and the user is told in one sentence. A second
         # start finds none (they are gone), and a folder with nothing stored, or only tables of this version, says nothing.

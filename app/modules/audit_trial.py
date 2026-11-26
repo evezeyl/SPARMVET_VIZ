@@ -32,8 +32,12 @@ data (T3) of a plot of an audit copy is stored nowhere (`orchestrator.materializ
 NOTHING LEFT BEHIND: the folder is emptied at discard, at apply and at every change of signature (`PlaceTrial.discard`), and `clean_trials` does it for the callers of "leaving Audit mode",
 "restore", "change of recipe" (own folder) and "app start" (every folder: a killed process leaves files until the next start).
 
+WHO OWNS WHAT: the owner of a `PlaceTrial` calls `discard()`; `clean_trials(root, token)` is for a trial whose object is gone. A table taken from `trial_table` or `trial_plot` is never kept across a discard, a new
+try or an apply (it is read from the trial folder, which these empty). If the folder was emptied by someone else the object notices (`_alive`): the readers answer None, `try_step` computes again and
+`apply_trial` refuses with "Try the step again". Apply is all or nothing for a reader: any failure while moving removes what was moved in and discards the trial (`TrialRefused`, the caller's list is not changed).
+
 `applied_at`: the moment a step was APPLIED, set by `apply_trial` and `with_applied_at` (the staging time is `created_at`). The export's "committed at" reads it and falls back to `created_at` for steps
-stored before (`audit_places.place_step_records`); it is an optional key of a step, so the format number of the session file does not change (an older file has no such key and is read as before).
+stored before (`audit_places.place_step_records`); it is an optional key of a step, written in UTC to the second with NO zone suffix, like `created_at` (a known point: the audit-log design will set one form with the zone, until then the stored form is not changed); so the format number of the session file does not change (an older file has no such key and is read as before).
 
 PROVISIONAL (the builder's choices): the words of the sentences; the names; that the content comparison collects both tables (as `audit_run` does for a plot); that a trial that failed is kept as a result
 with its error (so a second click does not run again) and is refused at apply; that a stale trial is discarded when `apply_trial` refuses; that the trial folder is named by a token per `PlaceTrial`.
@@ -58,7 +62,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Optional, Set, Tuple
 
 from app.modules.audit_places import audit_copy_for, nodes_signature, place_words
-from app.modules.audit_run import AuditRun, row_count, same_table
+from app.modules.audit_run import AuditRun, compare_tables, same_table
 from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
 from app.modules.cache_keys import load_data_analysis_recipe, loaded_from_resolved
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, tier2_path_for
@@ -119,6 +123,11 @@ class _Stored:
     changed: Set[str]          # the node ids (`T1:<table>`, `T2:<table>`, `T3:<plot>`) whose table the tried step changes
 
 
+def _plain(text: str) -> str:
+    """The sentence of an error with the placeholder reason taken out: the trial copy carries `TRIAL_REASON`, and an error that quotes the step's reason must not show it to the user."""
+    return text.replace(f', reason: "{TRIAL_REASON}"', "").replace(TRIAL_REASON, "").replace("  ", " ")
+
+
 def new_token() -> str:
     """A short name for one session's trial folder."""
     return uuid.uuid4().hex[:12]
@@ -136,29 +145,45 @@ def with_applied_at(nodes: Iterable[dict], when: Optional[str] = None) -> List[d
 
 
 def clean_trials(trial_root: Path, token: Optional[str] = None) -> List[str]:
-    """Empty trial folders: the one of `token` when given (leaving Audit mode, restore, a change of recipe), every one when not (the start of the app: a killed process leaves its files until then).
-    Returns the names removed. `trial_root` must be a folder named `audit_trial` (anything else is a bug of the caller: a recursive delete must never reach another folder). A folder that
-    is not there is not an error. Never touches the audit folder or the original's folder."""
+    """Empty trial folders: the one of `token` when given, every one when not (the start of the app: a killed process leaves its files until then).
+    Returns the names that are really gone (a folder that could not be removed is not named). `trial_root` must be a folder named `audit_trial` (anything else is a bug of the caller: a
+    recursive delete must never reach another folder). A folder that is not there is not an error. Never touches the audit folder or the original's folder.
+
+    It never raises for the state of the disk (a folder that cannot be read or removed is left and not named: the start of the app must not stop for it). It never follows a link: when
+    `audit_trial` is a symbolic link, or the folder of the token is one, nothing is done (a recursive delete of a link's target must not happen); a link inside `audit_trial` is left too.
+
+    WHO CALLS IT. The owner of a `PlaceTrial` calls `PlaceTrial.discard()` (leaving Audit mode, restore, a change of recipe). `clean_trials(root, token)` is for a trial whose object is gone.
+    WITHOUT a token it removes EVERY folder, as the start of the app needs; two app processes that share one user place would therefore remove each other's trials when one of them
+    starts (a decision for the owner: separate user places, or a process mark in the folder name)."""
     root = Path(trial_root)
     if root.name != TRIAL_FOLDER:
         raise ValueError(f"The trial folder is called '{TRIAL_FOLDER}', not '{root.name}': nothing was removed.")
     if token is not None and (not token or Path(token).name != token or token in (".", "..")):
         raise ValueError(f"'{token}' is not the name of a trial folder: nothing was removed.")
-    if not root.is_dir():
+    try:
+        if root.is_symlink() or not root.is_dir():
+            return []
+        victims = ([root / token] if (root / token).exists() or (root / token).is_symlink() else []) if token is not None else sorted(root.iterdir())
+    except OSError:
         return []
-    if token is not None:
-        victims = [root / token] if (root / token).exists() else []
-    else:
-        victims = sorted(root.iterdir())
-    removed = []
+    removed: List[str] = []
     for path in victims:
-        shutil.rmtree(path, ignore_errors=True) if path.is_dir() else path.unlink(missing_ok=True)
-        removed.append(path.name)
-    if token is None or not any(root.iterdir()):
         try:
-            root.rmdir()
+            if path.is_symlink():
+                continue
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                path.unlink(missing_ok=True)
         except OSError:
             pass
+        if not path.exists() and not path.is_symlink():
+            removed.append(path.name)
+    try:
+        if not any(root.iterdir()):
+            root.rmdir()
+    except OSError:
+        pass
     return removed
 
 
@@ -185,6 +210,23 @@ class PlaceTrial:
         keys = self.orch.compute_data_analysis_recipe_keys(recipe_id)
         return ("trial", recipe_id, keys.data_analysis_recipe_sha256, keys.data_batch_hash, nodes_signature(list(applied)), nodes_signature(list(tried)))
 
+    # -- is the stored trial still there
+    def _alive(self) -> bool:
+        """Whether there is a stored trial AND its files are still there. Someone else may have emptied the folder (`clean_trials(token)`, a start of the app, a person): a stored result
+        whose tables are gone is "no trial", never a table that fails when it is read."""
+        stored = self._stored
+        if stored is None:
+            return False
+        if stored.run is None:
+            return True                                           # the result of a step that could not run holds no table
+        if not self.trial_dir.is_dir():
+            return False
+        for table_run in stored.run.tables.values():
+            for stage, path in ((table_run.t1, table_run.t1_path), (table_run.t2, table_run.t2_path)):
+                if stage in ("built", "audit store") and (path is None or not Path(path).is_file()):
+                    return False
+        return True
+
     # -- discard
     def discard(self) -> None:
         """Forget the trial and empty its folder (idempotent)."""
@@ -203,9 +245,13 @@ class PlaceTrial:
         if not tried_list:
             raise ValueError("A trial needs at least one tried step.")
         signature = self.signature(recipe_id, applied_list, tried_list)
-        if self._stored is not None and self._stored.signature == signature:
+        if self._stored is not None and self._stored.signature == signature and self._alive():
             return self._stored.result
         self.discard()
+        shared = sorted({str(n.get("id")) for n in tried_list} & {str(n.get("id")) for n in applied_list})
+        if shared:
+            return TrialResult(signature, error=f"This step cannot be tried: its id ({', '.join(shared)}) is already the id of an applied step, and two steps with one id would be removed together. "
+                                                f"Nothing was tried. Make the step again.")
         trial_nodes = [{**node, "reason": TRIAL_REASON} for node in tried_list]
         try:
             run = self._reader.run_of(recipe_id, applied_list + trial_nodes, plans)
@@ -215,7 +261,7 @@ class PlaceTrial:
             effects, reaches, changed = self._compare(build_graph(original.raw), run, audited_run, [n["place"] for n in tried_list])
         except AUDIT_ERRORS as error:
             self.discard()
-            result = TrialResult(signature, error=str(error))
+            result = TrialResult(signature, error=_plain(str(error)))
             self._stored = _Stored(signature, None, result, set())
             return result
         result = TrialResult(signature, tuple(effects), tuple(reaches))
@@ -228,10 +274,10 @@ class PlaceTrial:
         chosen = list(dict.fromkeys(places))
         for place in chosen:
             before, after = self._pair(graph, run, audited_run, place)
-            differs = not same_table(before, after)
-            if differs:
+            rows_before, rows_after, same = compare_tables(before, after)
+            if not same:
                 changed.add(place)
-            effects.append(PlaceEffect(place, place_words(place), row_count(before), row_count(after), TABLE_CHANGED if differs else NO_ROW_CHANGED))
+            effects.append(PlaceEffect(place, place_words(place), rows_before, rows_after, NO_ROW_CHANGED if same else TABLE_CHANGED))
         reached: Set[str] = set()
         for place in chosen:
             reached.update(graph.below(place))
@@ -270,7 +316,7 @@ class PlaceTrial:
     def trial_table(self, table: str, tier: str) -> Optional[Any]:
         """The lazy table `table` at `tier` ("T1" or "T2") with the tried step, or None when there is no trial or the tried step does not change that table (the audited or the original answer then
         stands). A table with no tier-2 steps has no tier 2 of its own: its tier 2 is its tier 1."""
-        if self._stored is None or self._stored.run is None:
+        if not self._alive() or self._stored.run is None:
             return None
         run = self._stored.run
         table_run = run.tables.get(table)
@@ -281,7 +327,7 @@ class PlaceTrial:
 
     def trial_plot(self, plot_id: str) -> Optional[Any]:
         """The lazy table a plot reads (its Result data, T3) with the tried step, or None when there is no trial or the tried step does not change it."""
-        if self._stored is None or self._stored.run is None or f"T3:{plot_id}" not in self._stored.changed:
+        if not self._alive() or self._stored.run is None or f"T3:{plot_id}" not in self._stored.changed:
             return None
         return self._stored.run.plot_table(plot_id)
 
@@ -295,6 +341,9 @@ class PlaceTrial:
         applied_list, tried_list = list(applied), list(tried)
         if self._stored is None:
             raise TrialRefused("There is no trial of this step. Try the step first.")
+        if not self._alive():
+            self.discard()
+            raise TrialRefused("The tables of the trial are gone (the trial folder was emptied). Nothing was applied. Try the step again.")
         if self.signature(recipe_id, applied_list, tried_list) != self._stored.signature:
             self.discard()
             raise TrialRefused("Something changed since you tried this step (the step, its places, the steps already applied, the recipe or the data). Nothing was applied. Try the step again.")
@@ -304,22 +353,53 @@ class PlaceTrial:
             raise TrialRefused("A step needs a reason before it is applied. Nothing was applied.")
         final = with_applied_at([{**node, "reason": reason} for node in tried_list], when)
         stored_list = applied_list + final
-        original = load_data_analysis_recipe(self.orch.data_analysis_recipes_dir / f"{recipe_id}.yaml")
-        wanted = self.orch.compute_data_analysis_recipe_keys(recipe_id, loaded=loaded_from_resolved(original, audit_copy_for(original.raw, stored_list, plans).recipe, plans))
         run = self._stored.run
         assert run is not None
-        self.audit_dir.mkdir(parents=True, exist_ok=True)
-        for table in run.tables:
-            t1 = self.trial_dir / f"{table}.parquet"
-            self._move_if_key(t1, TIER1_KEY_META, wanted.tier1_key_of(table))
-            self._move_if_key(tier2_path_for(t1), TIER2_KEY_META, wanted.tier2_key_of(table))
-        self.audited.forget()                           # a run held for the old list must not be served: the files it names now hold the new state
-        self.discard()
+        moved: List[Path] = []
+        try:
+            original = load_data_analysis_recipe(self.orch.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+            wanted = self.orch.compute_data_analysis_recipe_keys(recipe_id, loaded=loaded_from_resolved(original, audit_copy_for(original.raw, stored_list, plans).recipe, plans))
+            self.audited.forget()                       # before the first move: a run held for the old list must not be served while the files change
+            self.audit_dir.mkdir(parents=True, exist_ok=True)
+            for table in run.tables:
+                t1 = self.trial_dir / f"{table}.parquet"
+                self._move_if_key(t1, TIER1_KEY_META, wanted.tier1_key_of(table), moved)
+                self._move_if_key(tier2_path_for(t1), TIER2_KEY_META, wanted.tier2_key_of(table), moved)
+            self.discard()
+        except BaseException as error:
+            left = self._undo(moved)
+            if not isinstance(error, Exception):
+                raise
+            tail = f" These files could not be removed from the audit folder: {', '.join(left)}." if left else ""
+            raise TrialRefused(f"The step could not be added: {_plain(str(error)) or type(error).__name__}. Nothing was applied.{tail} Try the step again.") from error
+        finally:
+            self.audited.forget()                       # whatever happened: the next read computes from keys, it never serves the memo of the old run
         return stored_list
 
-    def _move_if_key(self, source: Path, meta_key: str, key: str) -> bool:
-        """Move one stored table of the trial folder into the audit folder when the key in its footer is `key`; never by file name alone (ADR-089)."""
+    def _undo(self, moved: List[Path]) -> List[str]:
+        """All or nothing for a reader: take out of the audit folder every file this apply moved in (they were tried tables; a table that was there before and was overwritten is rebuilt
+        from its key at the next read, which is correct and costs only time), then discard the trial. Returns the names that could not be removed (empty when all went)."""
+        left: List[str] = []
+        for path in moved:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                left.append(path.name)
+        self._stored = None
+        self._reader = PlaceAudit(self.orch, self.original_dir, self.trial_dir)
+        try:
+            clean_trials(self.trial_root, self.token)
+        except Exception:
+            pass
+        shutil.rmtree(self.trial_dir, ignore_errors=True)
+        return left
+
+    def _move_if_key(self, source: Path, meta_key: str, key: str, moved: List[Path]) -> bool:
+        """Move one stored table of the trial folder into the audit folder when the key in its footer is `key`; never by file name alone (ADR-089). The target is added to `moved` as soon as
+        the move is made (a move that fails halfway is undone by `_undo`)."""
         if not source.is_file() or read_anchor_if_key(source, meta_key, key) is None:
             return False
-        os.replace(source, self.audit_dir / source.name)
+        target = self.audit_dir / source.name
+        os.replace(source, target)
+        moved.append(target)
         return True
