@@ -183,6 +183,8 @@ The decision recorded in the original task ("Path B (two-pass render) correct lo
 
 T3 nodes have free-shape `params` today. For L5 to be reliable, `aesthetic_override` nodes get a fixed sub-schema that the resolver knows how to merge.
 
+> **DEPRECATED (2026-11-26, records pass; D-0662, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663):** the field `plot_scope` and the authoring of `aesthetic_override` nodes in HOME (the Plot Style pop-up with its three plot choices) are REMOVED (D-0665, on hold; the panel is not mounted today). The tier L5 of the cascade is not decided to go; only its authoring in HOME is removed. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD).
+
 ```yaml
 - node_type: aesthetic_override
   id: "t3_node_xxx"
@@ -207,6 +209,8 @@ Resolution rules:
 - `fill_color` (solid) translates to a `scale_fill_manual(values=[colour])` layer injected by L5.
 - `color`, `alpha`, `size`, `shape` from L5 translate to layer params on the **first geom layer** in the resolved layer list (the geom is what consumes these aesthetics statically — non-mapped values).
 - `aesthetic_override` nodes target exactly one plot (`plot_scope` is a plot_id, never `__all__`). Cross-plot propagation, if needed, is achieved by creating multiple nodes (one per plot) — the propagation modal in audit_stack handles this transparently.
+
+> **DEPRECATED (2026-11-26, records pass; D-0662, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663):** the field `plot_scope` and the authoring of `aesthetic_override` nodes in HOME (the Plot Style pop-up with its three plot choices) are REMOVED (D-0665, on hold; the panel is not mounted today). The tier L5 of the cascade is not decided to go; only its authoring in HOME is removed. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD).
 
 **Why a fixed schema for L5 only:** other T3 node types (`filter_row`, `drop_column`, etc.) operate on the data frame, not on visual config; they have their own application path and don't go through the cascade. Only `aesthetic_override` flows through the visual config layer.
 

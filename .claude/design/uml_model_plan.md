@@ -65,7 +65,7 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process | ✅ |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process | ✅ |
 | SEQ-OPEN | Data analysis recipe to Raw stage, Result stage, plot, with the fingerprint checks — plain language, redrawn 2026-11-08 | Sequence | process, for users | ✅ |
-| SEQ-AUDIT | Exploration filter against Send to Audit and Apply, current ADR-085/086 naming ("My view") — plain language, redrawn 2026-11-08 | Sequence | process, for users | ✅ |
+| SEQ-AUDIT | Exploration filter against Send to Audit and Apply; AS BUILT; drawn 2026-11-08 with the ADR-085/086 naming ("My view"), which is gone (D-0179, D-0180): to redraw to the place model (a step is written at a place, D-0662), see `.claude/design/home_audit_what_is_true_now.md` | Sequence | process, for users | ✅ |
 | SEQ-EXPORT | From click to bundle, with the key check | Sequence | process | ✅ |
 | STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process | ✅ |
 | **GALLERY** — what the user does, then the screen, then how it works | | | | |
