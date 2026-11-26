@@ -11,3 +11,7 @@ What is NOT here (left in the original folder in `tmpAI/`, listed in `tmpAI/KEEP
 Nothing in this folder is a decision by itself. A decision is a line of `.claude/knowledge/decision_ledger.md` taken by the owner; these files are panel answers, reports of builders and reviewers, checks and briefs. Files that a panel or a builder wrote may contain proposals that the owner did not take.
 
 Two groups were put in the studies they belong to: the documents of the whole-picture work in `whole_picture_2026-11/sources/` and the lineage documents in `lineage_scope_2026-11/sources/`.
+
+## Wave 2 (2026-11-26)
+
+Ten more groups moved here (75 files; `coordinator/WHAT_BLOCKS_THE_BUILD.md`, `coordinator/app_features_name`, `coordinator/gallery_fixes_review`, `coordinator/gallery_picture_key_review`, `coordinator/names_pass_plan`, `panel/adr`, `panel/audit_redesign`, `panel/axis_text`, `panel/names_whole_app`, `panel/viz`), because the cleaned task list no longer names them. Manifest: `.claude/outdated/manifests/wave_2_tasks.md`.

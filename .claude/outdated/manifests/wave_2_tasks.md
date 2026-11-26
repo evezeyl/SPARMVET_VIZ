@@ -671,3 +671,92 @@ TEST-ORDER-1 (34), EXPORT-FILTER-VALUE-1 (41), OPERATORS-SCREENS-1 (49), POLARS-
 
 The folder `outdated/` (16 files, its README) holds old plan, test, build-brief and rename files marked OUTDATED; it is covered by the rule at the top of `tasks.md` (superseded material goes to `outdated/`), so it stays where it is. `archives/` holds the task archives of earlier phases; the `tasks_archive_*.md` files beside `tasks.md` hold the archives of the November work. `test_plan_*.md`, `uml_findings.md` and `home_exploration_build_brief.md` are live working files, not tasks.
 
+## Part C: the scratch studies again, with the cleaned task list
+
+Rule (wave 1, applied again to the cleaned list): a group of `.claude/design/studies/scratch_records_2026-11/` stays only while an open task of `.claude/tasks/tasks.md` names its folder or its main page; a group that loses its last such task moves to `.claude/outdated/design/studies/scratch_records_2026-11/` with unchanged content (`git mv`; SHA-256 of all moved files compared before and after: equal). One-line pointers stay at the old path of the files that live files still cite (`.claude/design/decisions_2026-11-14/*`, `.claude/design/home_redesign_intent_and_consequences.md`). A script matched each group's path against the text of the 387 open tasks; it does not judge, task by task, whether the task waits on the group or only cites it as a source (all remaining tasks are of verdict D, E, F or G), so a group may be held by a task that only cites it; that is the safe side.
+
+Totals: 71 groups before (502 files), 61 kept (427 files), 10 moved (75 files). Files in the scratch folder: 533 before, 465 after (the 75 moved, plus 7 new pointer files, plus the 30 pointers of wave 1 and the README, which stay).
+
+### Moved
+
+| Group | Files | The task that held it | Verdict | Moved or kept |
+|---|---|---|---|---|
+| `coordinator/WHAT_BLOCKS_THE_BUILD.md` | 1 | (named by the coordinator; ledger names it) | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `coordinator/app_features_name` | 4 | NAMES-UI-LABEL-EVERYWHERE | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `coordinator/gallery_fixes_review` | 4 | GALLERY-TWO-NAMES | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `coordinator/gallery_picture_key_review` | 40 | MAP-A-GALLERY-1 | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `coordinator/names_pass_plan` | 4 | NAMES-UI-LABEL-EVERYWHERE | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `panel/adr` | 4 | ADRS-FOR-DECISIONS-WITHOUT-ONE | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `panel/audit_redesign` | 3 | HOME-AUDIT-REDESIGN-SLICES-1 | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `panel/axis_text` | 3 | FORMULA-BUILD-D-1]** , PATH-BASE-1]** , PATH-CHECK-1]** , DATA-IMPORT-OVERWRITE | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `panel/names_whole_app` | 8 | NAMES-ACROSS-THE-APP-STUDY, NAMES-UI-LABEL-EVERYWHERE, TEXTS-FOLLOW-UP | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+| `panel/viz` | 4 | VIZ-NOT-ADDABLE-15-1, VIZ-OWN-22-1 | no open task names it now (the task was moved, removed or no longer cites it) | moved |
+
+### Kept (with the open tasks that name it)
+
+| Group | Files | Open task(s) | Moved or kept |
+|---|---|---|---|
+| `controls_8f951761` | 3 | JOIN-GROWTH-CAUTION-1, ST22-DUPLICATE-ROWS-1 | kept |
+| `coordinator/QUESTIONS_FOR_THE_STOP.md` | 1 | AUDIT-QUESTIONS-FOR-THE-STOP | kept |
+| `coordinator/blueprint_verify` | 7 | BLUEPRINT-PREVIEW-READS-HOME-TABLE, BLUEPRINT-VERIFY-SEVEN-POINTS | kept |
+| `coordinator/data_file_cut` | 1 | DATA-FILE-CUT-ACCEPTED | kept |
+| `coordinator/data_import_check` | 1 | DATA-IMPORT-OVERWRITE | kept |
+| `coordinator/data_import_questions` | 1 | CONNECT-TEMPLATE-DATA-LOOKUP | kept |
+| `coordinator/default_data` | 3 | RECIPE-DEFAULT-DATA-FALLBACK-TEST | kept |
+| `coordinator/home_data_picker` | 2 | DATA-IMPORT-OVERWRITE | kept |
+| `coordinator/ledger_words_check` | 2 | LEDGER-WORDS-CHECK | kept |
+| `coordinator/panel_statistician_draft` | 1 | PANEL-STATISTICIAN-AGENT | kept |
+| `coordinator/permanent_documents` | 1 | PERMANENT-DOCUMENTS-OUT-OF-TMP | kept |
+| `coordinator/plot_rows_dropped` | 1 | PLOT-ROWS-NOT-DRAWN | kept |
+| `coordinator/recipe_name_rule` | 1 | DEPLOYMENT-READ-WRITE-STUDY, DEPLOYMENT-STANDARD, RECIPE-NAME-RULE | kept |
+| `coordinator/remove_from_all_review` | 1 | AUDIT-REMOVE-FROM-ALL-DATA | kept |
+| `coordinator/remove_from_all_review2` | 1 | AUDIT-REMOVE-FROM-ALL-DATA | kept |
+| `coordinator/report_by_group` | 1 | EXPORT-REPORT-BY-GROUP | kept |
+| `coordinator/uncertainty_catalogue` | 1 | AUDIT-LIMITS-DOCUMENTED, AUDIT-UNCERTAINTY-CATALOGUE | kept |
+| `engine_keys` | 29 | BLUEPRINT-DESIGN-FINDINGS-1, BLUEPRINT-NODE-CLICK-WRONG-TABLE-1, BLUEPRINT-PLOT-PREVIEW-NOT-MOUNTED-1, BLUEPRINT-REMOVED-BUTTON-AND-HINT-1, BLUEPRINT-SAVE-COMMENTS-1, INCLUDE-WATCH-LIST-1, LOADER-WRAPPER-UNWRAP-1, QUESTIONS-PARKED-UNTIL-REFACTOR-STEP, RECIPE-ORPHAN-FILES-1, RULE-SENTENCES-AFTER-RECIPE-CHANGE-1, TIER3-WORDS-MIXUP-CHECK-1 | kept |
+| `panel/adr_history` | 110 | ADRS-FOR-DECISIONS-WITHOUT-ONE, DEPLOYMENT-READ-WRITE-STUDY | kept |
+| `panel/audit_docs` | 1 | AUDIT-HELP-TEXT | kept |
+| `panel/audit_model` | 22 | AUDIT-RULES | kept |
+| `panel/audit_rules` | 1 | AUDIT-RULES | kept |
+| `panel/author_manifest` | 1 | CONTACT-AUTHOR-MANIFEST-1 | kept |
+| `panel/check_on_select` | 1 | CHECK-ON-SELECT | kept |
+| `panel/data_ids` | 4 | ID-TEST-REFERENCE-TABLES-1 | kept |
+| `panel/data_import_words` | 1 | DATA-IMPORT-SILENT-FACTS, HOME-DATA-IMPORT-MESSAGES-WORDS | kept |
+| `panel/deployment_io` | 13 | DEPLOYMENT-READ-WRITE-STUDY, DEPLOYMENT-STANDARD | kept |
+| `panel/deployment_no_user` | 9 | DATA-FILE-CUT-ACCEPTED, DEPLOYMENT-NO-USER-STUDY | kept |
+| `panel/deployment_standard` | 6 | DEPLOYMENT-STANDARD, PERMANENT-DOCUMENTS-OUT-OF-TMP | kept |
+| `panel/dialog_preview` | 2 | AUDIT-DIALOG-PREVIEWS | kept |
+| `panel/engine_boundary` | 6 | ENGINE-BOUNDARY-STUDY | kept |
+| `panel/engines` | 8 | STALE-RECORDS-1 | kept |
+| `panel/export_modes` | 2 | EXP-MODES-DIAGRAM, EXPORT-MODES | kept |
+| `panel/export_simplify` | 8 | EXPORT-DOCS-AFTER-SIMPLIFY-1, EXPORT-MODE-TWO-TICKS-1, EXPORT-MODES-QUESTION-1, EXPORT-PDF-REPORT-PNG-SILENT-1, EXPORT-REPORT-FIGURE-LINKS, EXPORT-SVG-SIZE-CHECK-1, EXPORT-SVG-TEXT-AS-SHAPES-1, REVIEW2-OPEN-POINTS-FOR-EVE | kept |
+| `panel/formula_d` | 11 | FORMULA-BUILD-D-1, FORMULA-D-STUDY-1, FORMULA-RULE-TESTS-1, ROW-ORDER-PROJECTION-1 | kept |
+| `panel/formula_night` | 2 | FORMULA-FIELD-PLAIN-ERROR | kept |
+| `panel/formula_safety` | 3 | FORMULA-D-STUDY-1 | kept |
+| `panel/gallery_check` | 3 | GALLERY-LEFTOVERS-1 | kept |
+| `panel/gallery_study` | 9 | GALLERY-CHART-TYPE-AXIS, GALLERY-CONTENT-CORRECTIONS, GALLERY-NAMES-HEADINGS | kept |
+| `panel/gallery_taxonomy` | 5 | GALLERY-TAXONOMY-REVIEW | kept |
+| `panel/gallery_verify` | 9 | GALLERY-CONTENT-CORRECTIONS, GALLERY-VERIFY-ALL-34 | kept |
+| `panel/help_beside` | 8 | HELP-BESIDE-THE-SCREEN-STUDY | kept |
+| `panel/id_vs_key` | 1 | ENTITY-DECL-SHIPPED-1 | kept |
+| `panel/key_types` | 2 | KEY-WORDING-OPTIONS-1 | kept |
+| `panel/label_trace` | 6 | BLUEPRINT-SAVE-COMMENTS-1, JOIN-LABEL-REBUILD-1 | kept |
+| `panel/lookup_table` | 1 | LOOKUP-TABLE-1 | kept |
+| `panel/name_fields` | 1 | NAME-FIELDS-PURPOSE-TABLE | kept |
+| `panel/one_python` | 4 | INTERPRETER-ONE-PYTHON-1, ONE-PYTHON-RULE-WORDING-1, OTHER-PYTHON-PATHS-1 | kept |
+| `panel/path_use_cases` | 4 | DATA-IMPORT-OVERWRITE, EXPORT-SOURCE-RECORD-1, PATH-BASE-1, PATH-CHECK-1, PATH-USE-CASES-STUDY-1 | kept |
+| `panel/recipe_arguments` | 6 | SECURITY-FINDINGS-2026-11-17, VIZ-SEED-DICT-POSITION-1 | kept |
+| `panel/recipe_places` | 6 | RECIPE-PLACES-SAFE-STEPS, STUDY-RECIPE-PLACES | kept |
+| `panel/recipe_versions` | 7 | DEPLOYMENT-READ-WRITE-STUDY, STUDY-RECIPE-VERSIONS | kept |
+| `panel/round7` | 46 | AGENT-PROBE-1, READING-ERRORS-1 | kept |
+| `panel/session_import` | 7 | SESSION-IMPORT-KEY-EXISTS-1 | kept |
+| `panel/sessions` | 2 | SESSIONS-MANY-DATASETS | kept |
+| `panel/steps_position_help` | 1 | VIEWPOINTS-O13-O14 | kept |
+| `panel/test_speed` | 1 | TEST-SPEED-STUDY-1 | kept |
+| `panel/uploaded_data_place` | 4 | DATA-IMPORT-OVERWRITE, DEPLOYMENT-READ-WRITE-STUDY, DEPLOYMENT-STANDARD | kept |
+| `panel/verification` | 18 | RULE-EDITS-15 | kept |
+| `panel/viz_rename` | 5 | VIZ-NOT-ADDABLE-15-1, VIZ-OWN-22-1 | kept |
+| `panel/write_test_at_start` | 2 | DEPLOYMENT-READ-WRITE-STUDY, DEPLOYMENT-STANDARD, WRITE-TEST-AT-START | kept |
+
+The three folders of wave 1 marked KEEP (`whole_picture_2026-11`, `lineage_scope_2026-11`, `staruml_text_practice`) are not part of this check.
+
