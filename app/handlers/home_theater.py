@@ -2002,7 +2002,8 @@ def define_server(input, output, session, *,
                 audited = repr(nodes_signature(_committed_place_nodes()))
             except Exception:
                 audited = "?"
-            return "|".join((recipe_part, "audit", repr(_current_view_key()), audited))
+            # no quotation mark in the key: it travels in an HTML attribute (the chooser emits it with itself)
+            return "|".join((recipe_part, "audit", repr(_current_view_key()).replace("'", ""), audited.replace("'", "")))
         view = data_view.get()
         try:
             table = _effective_source_table(p_id) if view == "SRC" else ""

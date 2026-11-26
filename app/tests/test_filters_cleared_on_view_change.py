@@ -180,8 +180,10 @@ def test_apply_does_not_exist_in_audit_mode_even_if_called(tmp_path, monkeypatch
 
 def test_the_buttons_follow_the_mode_and_the_view(tmp_path, monkeypatch):
     """Exploration: Apply, no Send to Audit. Audit mode on T3: Send to Audit, no Apply. Audit mode on another view: neither, and one plain line."""
-    def buttons(mode, view):
+    def buttons(mode, view, shown=None):
         run = Run(tmp_path / f"{mode}{view}", monkeypatch, mode=mode, view=view)
+        if shown:
+            run.home.show(shown)     # Audit mode (slice 3a): the table is the place shown, not a data choice
         with reactive.isolate():
             return str(run.home.outputs["filter_controls_ui"]())
     exploration = buttons("exploration", "T2")
@@ -189,8 +191,8 @@ def test_the_buttons_follow_the_mode_and_the_view(tmp_path, monkeypatch):
     assert "never a plot" in exploration
     audit_t3 = buttons("audit", "T3")
     assert 'id="filter_send_to_audit"' in audit_t3 and 'id="filter_apply"' not in audit_t3
-    audit_t2 = buttons("audit", "T2")
-    assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, view T3." in audit_t2
+    audit_t2 = buttons("audit", "T2", shown="T2:J")
+    assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, show the Result data (T3) of the open plot" in audit_t2
 
 
 def test_one_function_says_whether_the_app_is_in_audit_mode(tmp_path, monkeypatch):
