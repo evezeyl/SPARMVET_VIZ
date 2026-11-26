@@ -15534,6 +15534,257 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGiFmA9UlT+ZB0="
 									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpC3HGNxzdQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3HGNvuO0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpC3HGNyrzU=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3HGNxzdQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": -285,
+											"top": 1167,
+											"width": 170,
+											"height": 30,
+											"text": "lineage/lineage_graph.json (shared-node DAG)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": -295,
+									"top": 1157,
+									"width": 190,
+									"height": 59,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3HGNyrzU="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpC3HWN36y4=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3HWN1HuQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpC3HWN4KR0=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3HWN36y4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 25,
+											"top": 711,
+											"width": 170,
+											"height": 40,
+											"text": "report.<ext>: the rendered report",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 15,
+									"top": 701,
+									"width": 190,
+									"height": 72,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3HWN4KR0="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGiFpC3HmN9kr4=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3HmN77UY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGiFpC3HmN+0XA=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3HmN9kr4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 660,
+											"top": 1460,
+											"width": 180,
+											"height": 51,
+											"text": "EXPORT_NOT_CREATED.txt, instead of the zip",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 650,
+									"top": 1450,
+									"width": 200,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3HmN+0XA="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFpC3H2ODKOA=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3H2OBC/w="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFpC3IGOEJBQ=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3H2ODKOA="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFpC3H2OBC/w="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 226,
+											"top": 1170,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFpC3H2ODKOA="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpC3HGNxzdQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"lineStyle": 3,
+									"points": "278:1091;226:1162;-104:1181",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3IGOEJBQ="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFpC3IWOLLvs=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3IWOJZH4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFpC3IWOMhwM=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3IWOLLvs="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFpC3IWOJZH4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 50,
+											"top": 778,
+											"width": 78.05078125,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFpC3IWOLLvs="
+											},
+											"edgePosition": 1,
+											"text": "quarto render"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpC3HWN36y4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRceRi+4+4="
+									},
+									"lineStyle": 3,
+									"points": "103:800;106:774",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3IWOMhwM="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGiFpC3ImOT2fw=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGiFpC3ImOROeU="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGiFpC3ImOUSkM=",
+											"_parent": {
+												"$ref": "AAAAAAGiFpC3ImOT2fw="
+											},
+											"model": {
+												"$ref": "AAAAAAGiFpC3ImOROeU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 536,
+											"top": 1457,
+											"width": 84.53173828125,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGiFpC3ImOT2fw="
+											},
+											"edgePosition": 1,
+											"text": "key check fails"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGiFpC3HmN9kr4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRbyxiOvgM="
+									},
+									"lineStyle": 3,
+									"points": "506:1473;649:1484",
+									"nameLabel": {
+										"$ref": "AAAAAAGiFpC3ImOUSkM="
+									}
 								}
 							]
 						},
@@ -15556,6 +15807,20 @@
 									},
 									"target": {
 										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFpC3ImOROeU=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRbyxiMbI8="
+									},
+									"name": "key check fails",
+									"source": {
+										"$ref": "AAAAAAGhwIRbyxiMbI8="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpC3HmN77UY="
 									}
 								}
 							],
@@ -15726,6 +15991,19 @@
 									"target": {
 										"$ref": "AAAAAAGiFmAZ71SbHzY="
 									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFpC3H2OBC/w=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpC3HGNvuO0="
+									}
 								}
 							],
 							"documentation": "The paper-facing facet. BUILT: always written, with or without the tick (ADR-097 decision 1; export_handlers.py:1085-1091). Original box text: \"Mode 1: Publication / the paper-facing facet\"."
@@ -15849,6 +16127,22 @@
 								"$ref": "AAAAAAGhwIL8VRe1/BM="
 							},
 							"name": "report.qmd: plots + Methods prose",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGiFpC3IWOJZH4=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRceRi8ZH0="
+									},
+									"name": "quarto render",
+									"source": {
+										"$ref": "AAAAAAGhwIRceRi8ZH0="
+									},
+									"target": {
+										"$ref": "AAAAAAGiFpC3HWN1HuQ="
+									}
+								}
+							],
 							"documentation": "BUILT: the Quarto source with the figures, the Methods prose (the why of the audit steps) and a pointer to effective_run.yaml (export_handlers.py:2004-2011, 2273); a rendered report.<ext> is written beside it when it renders (line 2307). Original box text: \"report.qmd / plots + Methods prose (T3 why) / points to effective_run.yaml\"."
 						},
 						{
@@ -16062,6 +16356,33 @@
 							},
 							"name": "Planned: audit log, hash (D-0478, D-0333)",
 							"documentation": "DECIDED, not built: the audit log (who, when, the reason, the scope chosen, the warnings shown at each choice, steps added and removed) is ALWAYS exported beside the audit recipe, no tick (D-0478, which revises D-0315 on the optional tick); an audit record is written beside the audit recipe and the hash of the audit recipe is also written in effective_run.yaml (D-0333). What exactly a warning leaves in the log is not decided."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpC3HGNvuO0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "lineage/lineage_graph.json (shared-node DAG)",
+							"documentation": "BUILT: the lineage graph of the export, one file for the whole bundle: nodes (data source, wrangling, join, plot spec) shared between plots appear once, edges run upstream to downstream (ADR-074). Written in every export (export_handlers.py:1788, written at :1884). When it cannot be made, lineage/lineage_graph_ERROR.txt is written instead and the export goes on (:1891)."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpC3HWN1HuQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "report.<ext>: the rendered report",
+							"documentation": "BUILT: the rendered report, rendered from report.qmd by Quarto (export_handlers.py:2278-2307). The extension follows the report format chosen in the Export panel: html, pdf or docx (export_report_format, :1031; the extension is set at :2277). Written only when Quarto renders it; when Quarto is missing or fails, the bundle holds report.qmd only, a notice says so and README.txt says it (:2309-2318)."
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGiFpC3HmN77UY=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "EXPORT_NOT_CREATED.txt, instead of the zip",
+							"documentation": "BUILT: written INSTEAD of the bundle, as the only file of the zip, when the export is refused (export_handlers.py:320 blocked_export_zip): (1) the key check fails: the recipe or the data changed since the view was opened (:1064-1069), or changed while a table of the export was being built (:2498); (2) the audit steps cannot run in their recorded order (:1212, blocked_audit_notice). The text says what changed. An error notice is shown."
 						}
 					]
 				},
@@ -35382,8 +35703,8 @@
 											"left": 26,
 											"top": 26,
 											"width": 308,
-											"height": 26,
-											"text": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+											"height": 13,
+											"text": "Navigation: the five user spaces and Help",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35504,8 +35825,8 @@
 											"left": 26,
 											"top": 186,
 											"width": 308,
-											"height": 26,
-											"text": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
+											"height": 13,
+											"text": "Gallery Taxonomy: six axes; Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35626,8 +35947,8 @@
 											"left": 366,
 											"top": 76,
 											"width": 368,
-											"height": 26,
-											"text": "Preview, collapsible: tab Plot Preview (gallery_preview_img, the stored picture)",
+											"height": 13,
+											"text": "Preview, collapsible: tab Plot Preview",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35688,7 +36009,7 @@
 											"top": 336,
 											"width": 368,
 											"height": 13,
-											"text": "Guidance (example_meta.md rendered) (gallery_md_content)",
+											"text": "Guidance (example_meta.md rendered)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35748,8 +36069,8 @@
 											"left": 366,
 											"top": 236,
 											"width": 168,
-											"height": 39,
-											"text": "Preview tab Data Sample (gallery_static_data): example_data.tsv",
+											"height": 26,
+											"text": "Preview tab Data Sample: example_data.tsv",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35809,8 +36130,8 @@
 											"left": 556,
 											"top": 236,
 											"width": 178,
-											"height": 39,
-											"text": "Preview tab YAML Example (gallery_yaml_preview): the recipe text, copy by hand",
+											"height": 26,
+											"text": "Preview tab YAML Example: recipe text",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35870,8 +36191,8 @@
 											"left": 26,
 											"top": 356,
 											"width": 308,
-											"height": 26,
-											"text": "No interactive handoff into any other space (ADR-093)",
+											"height": 13,
+											"text": "No interactive handoff to another space",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -35991,8 +36312,8 @@
 											"left": 26,
 											"top": 426,
 											"width": 308,
-											"height": 39,
-											"text": "Left-out notice (gallery_left_out_notice): why an example is not listed. Absent when none failed the check",
+											"height": 13,
+											"text": "Left-out notice: why an example is not listed",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
