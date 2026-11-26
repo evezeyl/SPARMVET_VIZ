@@ -137,20 +137,20 @@ benchmark scripts, and the `libs/test_lab/tests` demos that imported the old `te
 old `AquaSynthesizer` API (covered by `libs/id_reconciliation/tests`, `test_synthesizer.py`,
 `test_bootstrapper.py` and the new `test_extractor.py`).
 
-Headless baseline (fast, about 25 s for everything but the browser tests):
+**The list of browser test files is decided by one script, never by hand** (2026-11-26: three builders guessed it differently and their headless totals differed by dozens of tests). `assets/scripts/list_browser_tests.py` reads every `test_*.py` with `ast` and calls a file a browser file when a test or fixture of it takes `page`, `shiny_app`, `browser` or `context`, when it imports `playwright` or calls `create_app_fixture`, or when it uses a helper (one level: `browser_view`, `gate_stage`, `conftest`, another test file) that does. `--browser` prints the browser files, `--headless-ignores` prints the `--ignore=` arguments; the counts go to standard error. `app/tests/test_list_browser_tests.py` tests the rules.
+
+Headless baseline (everything but the browser tests; `-n 4` at most, and only while the 1-minute load is below 10):
 
 ```bash
 PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests \
-  --ignore=app/tests/test_shiny_smoke.py --ignore=app/tests/test_shiny_smoke_blueprint.py \
-  --ignore=app/tests/test_export_download.py --ignore=app/tests/test_every_app_features_starts.py -q
+  $(./.venv/bin/python assets/scripts/list_browser_tests.py --headless-ignores) -n 4 -q
 ```
 
-Browser tests (about 14 minutes (one measurement, 13 min 35 s, on a machine busy with other test runs; expect less when idle); the first three run under the `qa` app features, `test_every_app_features_starts.py` launches each shipped app features by itself):
+Browser tests: all the files the script lists, ONE process at a time (never several browser runs side by side), under the `qa` app features (`test_every_app_features_starts.py` launches each shipped app features by itself). The run takes about an hour (34 of the files took 1 h 9 min on 2026-11-26 on a machine busy with other work); a single file or test takes from under a minute to a few minutes:
 
 ```bash
 PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest \
-  app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py \
-  app/tests/test_every_app_features_starts.py -q --durations=10
+  $(./.venv/bin/python assets/scripts/list_browser_tests.py --browser) -q --durations=10
 ```
 
 ## 9. Edge Cases and Clean-up (added 2026-11-06, Eve)
