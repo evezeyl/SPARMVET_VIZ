@@ -17,6 +17,14 @@ RULES FROM THE DECISIONS (names only; read the ledger): the table shown in Audit
 which (D-0622); a table no plot reads can be chosen in the lineage and is then shown (D-0457, D-0630); the metadata is never a place (D-0632); a filter belongs to the table it was built
 on, not to the plot (D-0505, D-0506), and is cleared when the viewed table changes (D-0311).
 
+THE PLACE ALONE DRIVES THE VIEW IN AUDIT MODE (owner, 2026-11-26): an open plot is not needed. A table no plot reads, a recipe with no plot at all and no plot open are all reachable: the place chosen in
+"Path of the data" is shown (`from_open_plot` is None without an open plot; `no_plot_reads` says that no plot is built from it, from the lineage). With NO valid place: the table the open plot reads
+(the default, as built); with no open plot either, the "nothing chosen" state (`Viewed.nothing_chosen`, `table` None, `note` "Choose a place in Path of the data to see a table."), never a table picked for the
+user. PROVISIONAL: the owner allowed "the first table of the lineage" or an empty state; the empty state is the coordinator's choice because the app does not choose for the user.
+EXPLORATION WITH NO OPEN PLOT: today's code takes the first plot of the recipe (`_resolve_active_spec`, home_theater.py:311-316) and shows its table; with a recipe with no plot, the T1, T2 and T3 choices read the
+app's open anchor (`_resolve_t1_lf`, home_theater.py:341-342; `tier1_anchor`, server.py:178-191: an empty table when none is open, no table of the recipe) and the Source choice raises "The plot of this view is
+not a plot of the open data analysis recipe" (`_read_source_lf`). `viewed` returns the first plot's table in the first case and the nothing-chosen state in the second (the anchor is no table of the recipe).
+
 WORDS (the owner, 2026-11-26): the last table is "Result data (T3)"; the table a plot shows is "the table the plot reads (T1, T2 or T3)"; never "plot data" or "the plot's table".
 
 PROVISIONAL (the builder's choices, not decided by the owner): the words returned (plain, for the screen to show or reword); that with several places chosen the FIRST valid one in the order
@@ -27,7 +35,7 @@ the table shown is audited or original (the columns are the same); that `conditi
 whose columns are not known answers "does not fit" with the reason.
 
 Raises: `viewed` raises KeyError for an open plot the recipe does not have (a bug of the caller, as `source_tables_of_plot`); `table_for` raises what the readers raise (an audit step that cannot
-run, a table that cannot be built: HOME shows it in the table's place, never a table of another tier in its stead), and `NothingToShow` when no table can be named (no plot open and no place chosen).
+run, a table that cannot be built: HOME shows it in the table's place, never a table of another tier in its stead), and `NothingToShow` only for a fault (a view with no table that is not the nothing-chosen state).
 
 Pure of Shiny and of any engine: no reactive value, no file, no global state.
 
@@ -50,6 +58,8 @@ from utils.lineage_data import Lineage
 from utils.recipe_graph import RecipeGraph
 
 SOURCE = "Source"
+CHOOSE_A_PLACE = "Choose a place in Path of the data to see a table."
+NO_PLOT_NOTE = "The recipe has no plot, so there is no table to show here. In Audit mode, choose a place in Path of the data."
 EXPLORATION = "exploration"
 AUDIT = "audit"
 
@@ -69,7 +79,10 @@ class Viewed:
     place: the lineage node shown (`T1:<table>`, `T2:<table>`, `T3:<plot>`) in Audit mode, None in Exploration (the data choice is the tier). plot: the open plot. shown_plot: the plot whose table
     is shown at tier T3 (the open plot, or the plot of the place); None for the other tiers. is_default: Audit mode with no valid place chosen (the table the open plot reads is shown).
     from_open_plot: True when the open plot is built from what is shown (always in Exploration and for the default), False when it is not (a step written there does not change the open figure),
-    None when no plot is open. others: how many OTHER valid places are chosen and not shown. refused: (place id, plain reason) for every chosen place that is not valid, in the order given."""
+    None when no plot is open. others: how many OTHER valid places are chosen and not shown. refused: (place id, plain reason) for every chosen place that is not valid, in the order given.
+    no_plot_reads: True when no plot is built from what is shown (a table no plot reads, chosen in the lineage): the title can say so; computed from the lineage, not from the open plot.
+    nothing_chosen: the state "there is nothing to show yet" (Audit mode with no valid place and no open plot; Exploration with no plot in the recipe): `table` is None and `note` says what to do. It is a
+    value, not an exception: the app does not choose a table for the user."""
     mode: str
     tier: str
     table: Optional[str]
@@ -80,6 +93,9 @@ class Viewed:
     from_open_plot: Optional[bool]
     others: int = 0
     refused: Tuple[Tuple[str, str], ...] = ()
+    no_plot_reads: bool = False
+    nothing_chosen: bool = False
+    note: str = ""
 
 
 @dataclass(frozen=True)
@@ -92,6 +108,7 @@ class TableFacts:
     place: Optional[str]
     audited: bool
     why_original: str
+    no_plot_reads: bool = False
 
 
 @dataclass(frozen=True)
@@ -144,25 +161,30 @@ def viewed(mode: str, data_view: str, source_table: Optional[str], open_plot: Op
         if data_view not in _TIER_OF_CHOICE:
             raise ValueError(f"data_view is one of {sorted(_TIER_OF_CHOICE)}, not {data_view!r}")
         tier = _TIER_OF_CHOICE[data_view]
-        table = source_table if tier == SOURCE else open_target
-        return Viewed(EXPLORATION, tier, table, None, open_plot, open_plot if tier == "T3" else None, False, True if open_plot else None)
+        plot = open_plot
+        if plot is None and graph.plots():
+            plot = graph.plots()[0]          # what HOME does today with no tab open: `_resolve_active_spec` takes the first plot of the recipe (home_theater.py:311-316)
+        if plot is None:
+            return Viewed(EXPLORATION, tier, None, None, None, None, False, None, nothing_chosen=True, note=NO_PLOT_NOTE)
+        table = source_table if tier == SOURCE else graph.plot_target(plot)
+        return Viewed(EXPLORATION, tier, table, None, open_plot, plot if tier == "T3" else None, False, True if open_plot else None)
     refused = []
     valid = []
     for place in dict.fromkeys(chosen_places):
         problem = _refusal(graph, lineage, place)
         (refused if problem else valid).append((place, problem) if problem else place)
     if not valid:
-        return Viewed(AUDIT, "T3", open_target, open_node, open_plot, open_plot, True, True if open_plot else None, 0, tuple(refused))
+        if open_plot is None:
+            return Viewed(AUDIT, "", None, None, None, None, False, None, 0, tuple(refused), nothing_chosen=True, note=CHOOSE_A_PLACE)
+        return Viewed(AUDIT, "T3", open_target, open_node, open_plot, open_plot, True, True, 0, tuple(refused))
     place = valid[0]
     node = graph.node(place)
     tier = node.kind
     shown_plot = node.name if tier == "T3" else None
     table = graph.plot_target(node.name) if tier == "T3" else node.name
-    if open_node is None:
-        from_open = None
-    else:
-        from_open = place == open_node or open_node in graph.below(place)
-    return Viewed(AUDIT, tier, table, place, open_plot, shown_plot, False, from_open, len(valid) - 1, tuple(refused))
+    from_open = None if open_node is None else (place == open_node or open_node in graph.below(place))
+    no_plot = not any(lineage.node(r).kind == "T3" for r in lineage.reach[place].results)
+    return Viewed(AUDIT, tier, table, place, open_plot, shown_plot, False, from_open, len(valid) - 1, tuple(refused), no_plot_reads=no_plot)
 
 
 def table_for(shown: Viewed, readers: Readers) -> Tuple[Any, TableFacts]:
@@ -170,13 +192,15 @@ def table_for(shown: Viewed, readers: Readers) -> Tuple[Any, TableFacts]:
 
     Exploration: the original of the data choice (Source, T1, T2 or the table the plot reads), as today. Audit: the audit copy's table at the place where an audit step changes it, else the
     original; the facts say which and why. A table with no tier-2 steps asked at T2 is its tier 1 (the reader does it, as the orchestrator does). Raises what the readers raise, and
-    `NothingToShow` when no table can be named."""
+    `NothingToShow` only for a view that names no table although it is not the nothing-chosen state (a bug). For the nothing-chosen state it returns (None, facts) with the note in `why_original`."""
+    if shown.nothing_chosen:
+        return None, TableFacts(shown.mode, shown.tier, None, None, False, shown.note, False)
     if shown.table is None or (shown.tier == "T3" and shown.shown_plot is None):
-        raise NothingToShow("No plot is open and no place is chosen, so there is no table to show.")
+        raise NothingToShow("This view names no table although it is not the nothing-chosen state: a bug of the caller.")
     mode, tier, table, plot = shown.mode, shown.tier, shown.table, shown.shown_plot
 
     def facts(audited: bool, why: str) -> TableFacts:
-        return TableFacts(mode, tier, table, shown.place, audited, why)
+        return TableFacts(mode, tier, table, shown.place, audited, why, shown.no_plot_reads)
 
     if tier == SOURCE:
         return readers.source(table), facts(False, "This is the file as read, before any step of the recipe.")
