@@ -81,10 +81,12 @@ def test_exploration_follows_the_data_choice_and_never_names_a_place(world):
         assert shown.others == 0 and shown.refused == (), "a chosen place means nothing in Exploration"
     source = viewed(EXPLORATION, "SRC", "ResFinder", "amr_heatmap", [], world.graph, world.lineage)
     assert (source.tier, source.table, source.place, source.shown_plot) == ("Source", "ResFinder", None, None)
-    nothing = viewed(EXPLORATION, "T3", None, None, [], world.graph, world.lineage)
-    assert nothing.table is None and nothing.from_open_plot is None
-    with pytest.raises(NothingToShow):
-        table_for(nothing, readers_of(world, []))
+    # no tab open: today's code takes the first plot of the recipe (home_theater.py:311-316): so does `viewed`
+    first = world.graph.plots()[0]
+    fallback = viewed(EXPLORATION, "T3", None, None, [], world.graph, world.lineage)
+    assert (fallback.shown_plot, fallback.table, fallback.plot, fallback.from_open_plot) == (first, world.graph.plot_target(first), None, None) and not fallback.nothing_chosen
+    frame, _ = table_for(fallback, readers_of(world, []))
+    assert frame.collect().equals(world.original_table(first))
 
 
 def test_audit_with_no_place_shows_the_table_the_open_plot_reads(world):
@@ -95,10 +97,19 @@ def test_audit_with_no_place_shows_the_table_the_open_plot_reads(world):
     assert shown == viewed(AUDIT, "SRC", "ResFinder", "amr_heatmap", [], world.graph, world.lineage)
     frame, facts = table_for(shown, readers_of(world, []))
     assert frame.collect().equals(world.original_table("amr_heatmap")) and facts.audited is False
-    no_plot = viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage)
-    assert no_plot.table is None and no_plot.from_open_plot is None
-    with pytest.raises(NothingToShow, match="no table to show"):
-        table_for(no_plot, readers_of(world, []))
+
+
+def test_audit_with_no_place_and_no_open_plot_chooses_nothing_for_the_user(world):
+    state = viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage)
+    assert state.nothing_chosen and state.table is None and state.place is None and state.is_default is False and state.from_open_plot is None
+    assert state.note == "Choose a place in Path of the data to see a table." and state.no_plot_reads is False
+    frame, facts = table_for(state, readers_of(world, []))
+    assert frame is None and facts.table is None and facts.audited is False and facts.why_original == state.note, "a value, not an exception"
+    stale = viewed(AUDIT, "T3", None, None, ["T1:NoSuchTable"], world.graph, world.lineage)
+    assert stale.nothing_chosen and [p for p, _ in stale.refused] == ["T1:NoSuchTable"], "a stale place does not make the app pick a table"
+    fault = dataclasses.replace(state, nothing_chosen=False)
+    with pytest.raises(NothingToShow, match="bug of the caller"):
+        table_for(fault, readers_of(world, []))
 
 
 def test_a_chosen_place_is_shown_and_says_whether_the_open_plot_is_built_from_it(world):
@@ -380,3 +391,44 @@ def test_the_words_returned_use_the_owners_names_for_the_tables(world):
     assert "Result data (T3) of the plot amr_heatmap" in sentences[0]
     for text in sentences:
         assert "plot data" not in text.lower() and "plot's table" not in text.lower(), text
+
+
+# ------------------------------------------------------------------------------------------------ the place alone drives the view (owner, 2026-11-26)
+def test_in_audit_mode_a_place_is_shown_with_no_plot_open_and_nothing_raises(world):
+    for node in world.lineage.nodes:
+        if not node.choosable:
+            continue
+        shown = viewed(AUDIT, "T3", None, None, [node.id], world.graph, world.lineage)
+        assert shown.place == node.id and shown.from_open_plot is None and shown.plot is None and not shown.is_default and not shown.nothing_chosen, node.id
+        frame, facts = table_for(shown, readers_of(world, []))
+        assert frame.collect().equals(original_of(world, node)) and facts.place == node.id, node.id
+
+
+def test_a_table_no_plot_reads_says_so_with_a_plot_open_or_not(world):
+    leaves = [n.id for n in world.lineage.nodes if n.kind == "result"]
+    assert leaves, "the demo has tables no plot reads"
+    for node in world.lineage.nodes:
+        if not node.choosable:
+            continue
+        want = world.graph.plots_reading(node.id) == []          # from the graph, apart from the code under test
+        for open_plot in (None, "amr_heatmap", "mlst_bar"):
+            shown = viewed(AUDIT, "T3", None, open_plot, [node.id], world.graph, world.lineage)
+            assert shown.no_plot_reads is want, (node.id, open_plot)
+            assert table_for(shown, readers_of(world, []))[1].no_plot_reads is want
+    assert all(viewed(AUDIT, "T3", None, None, [leaf], world.graph, world.lineage).no_plot_reads for leaf in leaves)
+    assert not viewed(AUDIT, "T3", None, None, ["T1:ResFinder"], world.graph, world.lineage).no_plot_reads
+    assert not viewed(AUDIT, "T3", None, "amr_heatmap", [], world.graph, world.lineage).no_plot_reads
+    assert viewed(AUDIT, "T3", None, "mlst_bar", [leaves[0]], world.graph, world.lineage).from_open_plot is False
+
+
+def test_the_identity_of_a_view_with_no_open_plot_is_defined_and_stable(world):
+    once = view_identity(viewed(AUDIT, "T3", None, None, ["T1:ResFinder"], world.graph, world.lineage), RECIPE_ID)
+    again = view_identity(viewed(AUDIT, "T3", None, None, ["T1:ResFinder"], world.graph, world.lineage), RECIPE_ID)
+    assert once == again and None not in once[:3]
+    assert once == view_identity(viewed(AUDIT, "T3", None, "mlst_bar", ["T1:ResFinder"], world.graph, world.lineage), RECIPE_ID), "the open plot does not enter the key of a table place"
+    assert once != view_identity(viewed(AUDIT, "T3", None, None, ["T2:ResFinder"], world.graph, world.lineage), RECIPE_ID)
+    assert once != view_identity(viewed(AUDIT, "T3", None, None, ["T1:MLST"], world.graph, world.lineage), RECIPE_ID)
+    leaf = view_identity(viewed(AUDIT, "T3", None, None, ["T1:ResFinder_with_metadata"], world.graph, world.lineage), RECIPE_ID)
+    assert leaf != once and leaf == view_identity(viewed(AUDIT, "T3", None, "amr_heatmap", ["T1:ResFinder_with_metadata"], world.graph, world.lineage), RECIPE_ID)
+    nothing = view_identity(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), RECIPE_ID)
+    assert nothing == view_identity(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), RECIPE_ID) and nothing != once

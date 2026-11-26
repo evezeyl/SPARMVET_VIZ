@@ -20,9 +20,14 @@ import importlib.util
 import json
 from pathlib import Path
 
+import polars as pl
 import pytest
 
-from app.modules.audit_place_view import AUDIT, EXPLORATION, Readers, table_for, viewed
+from app.modules.audit_place_view import AUDIT, EXPLORATION, Readers, table_for, view_identity, viewed
+from app.modules.audit_places import PLACES_BUCKET
+from app.modules.audit_view import PlaceAudit
+from app.modules.session_manager import make_audit_step
+from app.tests.test_export_unread_tables import Wide, _source
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.plan_composer import compose_plan_book
@@ -148,3 +153,86 @@ def test_the_source_choice_reads_the_file_as_read(worlds):
     frame, facts = table_for(shown, walk.readers)
     assert shown.tier == "Source" and shown.table == names[0] and facts.audited is False
     assert frame.collect().equals(walk.orch.read_source(walk.recipe_id, names[0]).collect())
+
+
+@pytest.mark.parametrize("recipe_id", sorted(BASELINE["recipes"]))
+def test_every_place_is_shown_with_no_plot_open_and_says_whether_a_plot_reads_it(recipe_id, worlds):
+    """The place alone drives the view in Audit mode (owner, 2026-11-26): no open plot is needed."""
+    walk = worlds(recipe_id)
+    walked = 0
+    for node in walk.lineage.nodes:
+        if not node.choosable:
+            continue
+        shown = viewed(AUDIT, "T3", None, None, [node.id], walk.graph, walk.lineage)
+        assert shown.place == node.id and shown.plot is None and shown.from_open_plot is None and not shown.nothing_chosen and shown.refused == ()
+        assert shown.no_plot_reads is (walk.graph.plots_reading(node.id) == []), node.id
+        frame, facts = table_for(shown, walk.readers)
+        assert frame.collect().equals(walk.expected(node)) and facts.audited is False and facts.no_plot_reads is shown.no_plot_reads, node.id
+        key = view_identity(shown, recipe_id)
+        assert key == view_identity(viewed(AUDIT, "T3", None, None, [node.id], walk.graph, walk.lineage), recipe_id) and key[1] == "audit"
+        walked += 1
+    assert walked > 0
+    nothing = viewed(AUDIT, "T3", None, None, [], walk.graph, walk.lineage)
+    assert nothing.nothing_chosen and table_for(nothing, walk.readers)[0] is None
+    print(f"\n{recipe_id}: {walked} places shown with no plot open")
+
+
+class NoPlot(Wide):
+    """A made-up recipe with tables and NO plot: T (read by the join C), U (read by nothing) and V (read by the join D); D (a join nothing reads)."""
+
+    def write_data_analysis_recipe(self, **_ignored) -> None:
+        super().write_data_analysis_recipe()
+        entry = self.data_analysis_recipes_dir / "tiny.yaml"
+        text = entry.read_text()
+        # `analysis_groups: {}` is refused by ConfigManager (config_loader.py:193); a group with no plot loads, which is the nearest the loader allows to a recipe with no plot
+        entry.write_text(text[:text.index("analysis_groups:")] + "analysis_groups:\n  g:\n    ui_label: G\n    plots: {}\n")
+
+
+def audit_step(place, column="group", op="eq", value="A", dtype="String"):
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="keep it", place=place, started_from="none")
+
+
+@pytest.mark.parametrize("label", ["no step", "a step at T", "a step at the join D nothing reads", "a step at U", "steps at T and U"])
+def test_a_recipe_with_no_plot_shows_every_table_in_audit_mode_and_the_exploration_says_there_is_nothing(tmp_path, label):
+    nodes = {"no step": [], "a step at T": [audit_step("T1:T")], "a step at the join D nothing reads": [audit_step("T1:D", "color", "eq", "red")],
+             "a step at U": [audit_step("T1:U", "weight", "gt", 2, "Float64")], "steps at T and U": [audit_step("T1:T"), audit_step("T1:U", "weight", "gt", 2, "Float64")]}[label]
+    clear_data_analysis_recipe_cache()
+    world = NoPlot(tmp_path)
+    loaded = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml")
+    graph = build_graph(loaded.raw)
+    assert graph.plots() == [], "the made-up recipe has no plot"
+    plans = compose_plan_book(world.orch, "tiny", loaded, graph)
+    lineage = lineage_of(loaded.raw, plans)
+    anchors = world.root / "user" / "anchors"
+    audit = PlaceAudit(world.orch, anchors, world.root / "user" / "audit_anchors")
+    readers = Readers(
+        source=lambda t: world.orch.read_source("tiny", t),
+        tier1=lambda t: world.orch.materialize_tier1("tiny", t, anchors / f"{t}.parquet"),
+        tier2=lambda t: world.orch.materialize_tier2("tiny", t, anchors / f"{t}.parquet"),
+        plot=lambda p: world.orch.materialize_tier3("tiny", p, anchors),
+        audited_table=lambda t, tier: audit.table_lazy("tiny", t, tier, nodes, plans),
+        audited_plot=lambda p: audit.plot_lazy("tiny", p, nodes, plans),
+        committed_steps=len(nodes))
+    run = audit.run_of("tiny", nodes, plans)
+    frames = run.audited_frames() if run is not None else {}
+    assert [n.id for n in lineage.nodes if n.choosable] == ["T1:T", "T1:U", "T1:V", "T1:C", "T1:D"]
+    for node in lineage.nodes:
+        shown = viewed(AUDIT, "T3", None, None, [node.id], graph, lineage)
+        assert shown.place == node.id and shown.no_plot_reads is True and shown.from_open_plot is None, "no plot reads any table of this recipe"
+        frame, facts = table_for(shown, readers)
+        original = world.orch.materialize_tier1("tiny", node.name, anchors / f"{node.name}.parquet").collect()
+        expected = frames.get(node.name, {}).get("T1")
+        if expected is None:
+            assert frame.collect().equals(original) and facts.audited is False, (label, node.id)
+        else:
+            assert frame.collect().equals(expected) and facts.audited is True and not expected.equals(original), (label, node.id)
+        assert facts.no_plot_reads is True
+    assert sum(1 for t in frames if "T1" in frames[t]) == len(frames)
+    if nodes:
+        assert frames, "a step that changes no table proves nothing"
+    # with no place chosen and no plot, nothing is chosen for the user, in Audit mode; in Exploration nothing can be shown
+    assert viewed(AUDIT, "T3", None, None, [], graph, lineage).nothing_chosen
+    for choice in ("SRC", "T1", "T2", "T3"):
+        state = viewed(EXPLORATION, choice, "T", None, [], graph, lineage)
+        assert state.nothing_chosen and "no plot" in state.note and table_for(state, readers)[0] is None, choice
+    clear_data_analysis_recipe_cache()
