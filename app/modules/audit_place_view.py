@@ -6,7 +6,7 @@ place chosen in the lineage panel. This module is the one place that says, for a
 
 1. `viewed(...)`: what is on screen (`Viewed`): the mode, the tier, the table, the place, whether it is the default (Audit mode with no place chosen shows the table the open plot reads), and
    whether the open plot is built from it (a place outside the open plot: a step there does not change the figure, and the screen must say so).
-2. `table_for(viewed, readers)`: the lazy table and its facts (`TableFacts`): audited or original, and in plain words why it is the original. The readers are handed in (`Readers`: the
+2. `table_for(viewed, readers)`: the lazy table and its facts (`TableFacts`): its state (original, audited or trial), and in plain words why it is the original. The readers are handed in (`Readers`: the
    orchestrator's reads and the audit copy's reads), so this file imports no handler and no engine.
 3. `view_identity(viewed, ...)`: the key of the view for the filters. It is the key HOME uses today (`t3_audit_engine.view_key`, `viewed_table`), built from what is shown: two places that show
    the same table keep a filter built on it, another table clears it (D-0311, D-0505, D-0506).
@@ -23,7 +23,7 @@ THE PLACE ALONE DRIVES THE VIEW IN AUDIT MODE (owner, 2026-11-26): an open plot 
 user. PROVISIONAL: the owner allowed "the first table of the lineage" or an empty state; the empty state is the coordinator's choice because the app does not choose for the user.
 EXPLORATION WITH NO OPEN PLOT: today's code takes the first plot of the recipe (`_resolve_active_spec`, home_theater.py:311-316) and shows its table; with a recipe with no plot, the T1, T2 and T3 choices read the
 app's open anchor (`_resolve_t1_lf`, home_theater.py:341-342; `tier1_anchor`, server.py:178-191: an empty table when none is open, no table of the recipe) and the Source choice raises "The plot of this view is
-not a plot of the open data analysis recipe" (`_read_source_lf`). `viewed` returns the first plot's table in the first case and the nothing-chosen state in the second (the anchor is no table of the recipe).
+not a plot of the open data analysis recipe" (`_read_source_lf`). `viewed` returns the table the first plot reads in the first case and the nothing-chosen state in the second (the anchor is no table of the recipe).
 
 WORDS (the owner, 2026-11-26): the last table is "Result data (T3)"; the table a plot shows is "the table the plot reads (T1, T2 or T3)"; never "plot data" or "the plot's table".
 
@@ -58,6 +58,11 @@ from utils.lineage_data import Lineage
 from utils.recipe_graph import RecipeGraph
 
 SOURCE = "Source"
+# The three states of a table or a plot on screen (the design study of 2026-11-26): the original, the audited (the applied steps) and the trial (a step being tried, not applied).
+ORIGINAL, AUDITED, TRIAL = "original", "audited", "trial"
+STATE_WORDS = {ORIGINAL: "Original (as read)",
+               AUDITED: "Audited: your applied steps",
+               TRIAL: "TRIAL: with the step you are trying. Not applied, not saved, not exported."}   # PROVISIONAL words
 CHOOSE_A_PLACE = "Choose a place in Path of the data to see a table."
 NO_PLOT_NOTE = "The recipe has no plot, so there is no table to show here. In Audit mode, choose a place in Path of the data."
 EXPLORATION = "exploration"
@@ -100,15 +105,20 @@ class Viewed:
 
 @dataclass(frozen=True)
 class TableFacts:
-    """What is true of the table `table_for` returned. audited: True when it is the table of the audit copy. why_original: in plain words why it is the original (empty when audited, and in
-    Exploration where the original is the rule). mode, tier, table, place: as in `Viewed`."""
+    """What is true of the table `table_for` returned. state: "original", "audited" (the table of the audit copy: the applied steps) or "trial" (a step being tried, not applied); `words` is its plain
+    sentence (`STATE_WORDS`). why_original: in plain words why it is the original (empty when audited or trial, and in Exploration where the original is the rule). mode, tier, table, place: as in `Viewed`."""
     mode: str
     tier: str
     table: Optional[str]
     place: Optional[str]
-    audited: bool
+    state: str
     why_original: str
     no_plot_reads: bool = False
+
+    @property
+    def words(self) -> str:
+        """The plain words of the state, for the title of the table."""
+        return STATE_WORDS[self.state]
 
 
 @dataclass(frozen=True)
@@ -117,7 +127,9 @@ class Readers:
 
     source(table): the table as read from its file. tier1(table), tier2(table): the original tables (tier2 gives the tier 1 table when the table has no tier-2 steps, as the orchestrator does).
     plot(plot_id): the original table the plot reads. audited_table(table, tier) with tier "T1" or "T2": the audit copy's table, or None when no committed audit step changes it
-    (`PlaceAudit.table_lazy`). audited_plot(plot_id): the audit copy's table the plot reads, or None (`PlaceAudit.plot_lazy`). committed_steps: how many audit steps are committed (for the words)."""
+    (`PlaceAudit.table_lazy`). audited_plot(plot_id): the audit copy's table the plot reads, or None (`PlaceAudit.plot_lazy`). committed_steps: how many audit steps are committed (for the words).
+    trial_table(table, tier) and trial_plot(plot_id): optional (None by default). When given and they return a table, `table_for` returns it with the state "trial" (Audit mode only: a step being tried,
+    not applied); when they return None (the tried step does not change this item) the audited or the original answer is given as before. This module computes no trial: it only reads what it is handed."""
     source: Callable[[str], Any]
     tier1: Callable[[str], Any]
     tier2: Callable[[str], Any]
@@ -125,6 +137,8 @@ class Readers:
     audited_table: Callable[[str, str], Optional[Any]]
     audited_plot: Callable[[str], Optional[Any]]
     committed_steps: int = 0
+    trial_table: Optional[Callable[[str, str], Optional[Any]]] = None
+    trial_plot: Optional[Callable[[str], Optional[Any]]] = None
 
 
 def _refusal(graph: RecipeGraph, lineage: Lineage, place: str) -> Optional[str]:
@@ -190,30 +204,37 @@ def viewed(mode: str, data_view: str, source_table: Optional[str], open_plot: Op
 def table_for(shown: Viewed, readers: Readers) -> Tuple[Any, TableFacts]:
     """The ONE reader: the lazy table of what is on screen and its facts.
 
-    Exploration: the original of the data choice (Source, T1, T2 or the table the plot reads), as today. Audit: the audit copy's table at the place where an audit step changes it, else the
-    original; the facts say which and why. A table with no tier-2 steps asked at T2 is its tier 1 (the reader does it, as the orchestrator does). Raises what the readers raise, and
+    Exploration: the original of the data choice (Source, T1, T2 or the table the plot reads), as today. Audit: the TRIAL table when the caller hands in a trial reader that answers for this item,
+    else the audit copy's table at the place where an applied audit step changes it, else the original; the facts say which (`state`) and why. A table with no tier-2 steps asked at T2 is its tier 1 (the reader does it, as the orchestrator does). Raises what the readers raise, and
     `NothingToShow` only for a view that names no table although it is not the nothing-chosen state (a bug). For the nothing-chosen state it returns (None, facts) with the note in `why_original`."""
     if shown.nothing_chosen:
-        return None, TableFacts(shown.mode, shown.tier, None, None, False, shown.note, False)
+        return None, TableFacts(shown.mode, shown.tier, None, None, ORIGINAL, shown.note, False)
     if shown.table is None or (shown.tier == "T3" and shown.shown_plot is None):
         raise NothingToShow("This view names no table although it is not the nothing-chosen state: a bug of the caller.")
     mode, tier, table, plot = shown.mode, shown.tier, shown.table, shown.shown_plot
 
-    def facts(audited: bool, why: str) -> TableFacts:
-        return TableFacts(mode, tier, table, shown.place, audited, why, shown.no_plot_reads)
+    def facts(state: str, why: str) -> TableFacts:
+        return TableFacts(mode, tier, table, shown.place, state, why, shown.no_plot_reads)
 
     if tier == SOURCE:
-        return readers.source(table), facts(False, "This is the file as read, before any step of the recipe.")
+        return readers.source(table), facts(ORIGINAL, "This is the file as read, before any step of the recipe.")
     if mode == EXPLORATION:
         original = readers.tier1(table) if tier == "T1" else readers.tier2(table) if tier == "T2" else readers.plot(plot)
-        return original, facts(False, "In Exploration the tables are the originals: audit steps are only shown in Audit mode.")
+        return original, facts(ORIGINAL, "In Exploration the tables are the originals: audit steps are only shown in Audit mode.")
+    trial = None
+    if tier == "T3" and readers.trial_plot is not None:
+        trial = readers.trial_plot(plot)
+    elif tier != "T3" and readers.trial_table is not None:
+        trial = readers.trial_table(table, tier)
+    if trial is not None:
+        return trial, facts(TRIAL, "")
     audited = readers.audited_plot(plot) if tier == "T3" else readers.audited_table(table, tier)
     if audited is not None:
-        return audited, facts(True, "")
+        return audited, facts(AUDITED, "")
     original = readers.tier1(table) if tier == "T1" else readers.tier2(table) if tier == "T2" else readers.plot(plot)
     why = ("No audit step has been added yet, so this is the original table." if readers.committed_steps <= 0
            else "No audit step changes this table, so this is the original table.")
-    return original, facts(False, why)
+    return original, facts(ORIGINAL, why)
 
 
 def view_identity(shown: Viewed, recipe_id: str, plot_has_own_steps: bool = False) -> tuple:
@@ -222,7 +243,10 @@ def view_identity(shown: Viewed, recipe_id: str, plot_has_own_steps: bool = Fals
     It holds the TABLE shown, not the place: two places that show the same table (the tier 3 of two plots that read one table and have no tier-3 steps of their own) give the same key, so a
     filter built on it is kept (D-0505, D-0506); another table, another tier, another mode or the file as read gives another key. `plot_has_own_steps`: whether the recipe writes tier-3 steps for
     `shown.shown_plot` (`view_badge.has_plot_steps`): such a plot reads a table of its own and keeps its own key. Between T1 and T2 of one table the key differs, also when the table has no tier-2
-    steps (today's rule, PROVISIONAL in the contract); in Audit mode a table without tier-2 steps has no T2 place, so only Exploration can meet it."""
+    steps (today's rule, PROVISIONAL in the contract); in Audit mode a table without tier-2 steps has no T2 place, so only Exploration can meet it.
+
+    The key does NOT hold the state (original, audited or trial): the columns are the same in the three states, so a filter stays valid when the state changes. The caller shows the state in the title
+    (`TableFacts.words`)."""
     if shown.tier == SOURCE:
         return view_key(recipe_id, shown.mode, "SRC", shown.table, None)
     return view_key(recipe_id, shown.mode, shown.tier, None, viewed_table(shown.tier, shown.table, shown.shown_plot, plot_has_own_steps))
