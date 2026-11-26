@@ -13,10 +13,15 @@ A modular, multi-species dashboard for bacterial genomics: a **recipe** (YAML) d
 - **CLI-first tests:** scripts take their inputs from `argparse`; no hardcoded paths.
 - **Software informs, the user decides; fail instead of warn** for anything declared but not applied (ADR-099).
 
-## 3. Where we are (2026-11-13)
+## 0. State of 2026-11-26 (read this first; the sections 3 and 4 below are History)
+HOME, the audit and the lineage: the page to trust is `.claude/design/home_audit_what_is_true_now.md` (the model in six sentences: a step is applied in data at a place, T1, T2 or the Result data (T3) of a plot, chosen in "Path of the data"; never by plot). Built on `dev`: audit steps at any tier, the lineage panel, the audit copy and its tables, the recipe checks for the metadata. Decided, not built: the toggle beside the recipe title, "Show selection", no plot tabs in Audit mode, the step bar as the single entry (D-0652 to D-0657, D-0663). Going on: slices 1, 2, 3a, Q1; on hold until the owner has read the behaviour page: the confirm-and-apply flow, the trial, the marks, the removal of the old plot scope (task AUDIT-OLD-SCOPE-REMOVE-1). The demo is about ten days from 2026-11-26 (`tmpAI/status/DEMO_BUILD_PLAN_2026-11-26.md`, not in git). Tasks: `.claude/tasks/tasks.md`; decisions: `.claude/knowledge/decision_ledger.md` (D-0638 to D-0667).
+
+## History (the roadmap as it stood on 2026-11-13; kept, not current)
+
+### 3. Where we were (2026-11-13)
 Phases up to 34 are complete: Home theater, tiers and filters, Blueprint IDE and AI agent, Gallery, Test Lab, sidebar slot registry, configuration vocabulary (ADR-091), reproducible export and import (ADR-097), UML model. The headless baseline is 1652 tests.
 
-## 4. The roadmap now (in this order)
+### 4. The roadmap then (2026-11-13, in this order)
 | Stage | What | Where it is written | State |
 |---|---|---|---|
 | 1 | HOME design: Exploration and Audit modes | `design/spaces/HOME.md`, `design/home_audit_reading_guide.md`, ADR-099 | agreed; Eve reads and confirms |

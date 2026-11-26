@@ -1,5 +1,7 @@
 # Paths, derived places and a parent reused in another graph: what the two agents agree on, and the questions only the owner can answer
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a study of its day. Where it speaks of tick lines of plots or of a dialog that asks the scope by plot, of "My view", of "the plot's table" or "plot data", or of a build order that the owner has since changed (the step bar, the review before the demo, no plot tabs in Audit mode), the page "what is true now" and the ledger lines D-0638 to D-0667 win; nothing below is edited.
+
 Note 2026-11-24: this file still holds quotations of the owner's words from the study rounds. The decisions are written once, in plain words, in the decision ledger; read `WHOLE_PICTURE.md` first.
 
 **What this file is.** The review that the owner ordered of what an independent path is and what is derived (ledger D-0553), with her note on several chosen parents (D-0555), the investigation of how to avoid the errors of a parent reused in another graph (D-0556, D-0557), and the evidence rules she gave (D-0558 to D-0561). It was made by two design agents, one Opus and one Sonnet, who agreed on every point before it was written, as she ordered (D-0552). Nothing here is decided by the agents. The design documents are written after her answers.
