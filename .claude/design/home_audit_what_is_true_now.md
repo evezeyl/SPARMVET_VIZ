@@ -44,9 +44,10 @@ Details with file and line: `tmpAI/panel/review_queue/OLD_THINKING_IN_CODE.md`.
 - **Showing:** choosing in the lineage only stages; a button shows (working label "Show selection"). A table place shows its table and a note in the plot area; a plot place shows the plot and its Result data. With nothing chosen, the item shown on entering Audit is the plot that was open. A condition being built is cleared, with a notice that stays, only when another table is shown.
 - **In Audit mode there are no plot tabs:** one item at a time, with its Compare.
 - **Try before applying:** the effect of a step is computed before it is applied, labelled as a trial, never saved, never exported; applying reuses that result. Marks ("place verified") reset when the condition or the places change.
-- **One entry: a step bar next to the preview title** (condition, place, reach, Try, reason, "Add to audit pipeline"); it also carries the column drop. Build order: the flow first with the Filters panel button, the bar last; both old buttons removed at the end.
+- **One entry: a step bar next to the preview title** (she chose C, D-0663: condition, place, reach, Try, reason, "Add to audit pipeline"); it also carries the column drop. Build order: the flow first with the Filters panel button, the bar last; both old buttons removed at the end.
 - **One reader** for what HOME shows (place to table, three states); built as pure code on a branch, in review.
 - Data with no plot stays reachable (a table no plot reads; no plot open).
+- **Removal and one rename, ON HOLD until she has read the behaviour page (D-0665, decided 2026-11-26, after M703):** the colour and shape pop-up (Plot Style, with its three plot choices) and its rule text (contract section 12g.9) are removed with the pop-up of "Send to Audit"; the stored names `plot_scope` and `t3_audit_steps_by_plot` are renamed ONCE, with a new session format number, together with that removal; only the per-place list is kept in `t3_steps.yaml` (the per-plot list goes). Not decided: the new names. Task: AUDIT-OLD-SCOPE-REMOVE-1.
 
 ## Open (the owner has not decided; do not build on a guess)
 1. What an unverified place means at "Add to audit pipeline" (written anyway with a line, or left out).
@@ -54,7 +55,7 @@ Details with file and line: `tmpAI/panel/review_queue/OLD_THINKING_IN_CODE.md`.
 3. What Compare shows beside a trial (the state before this step, or the original).
 4. Whether the mark is kept in the audit log.
 5. Whether the separate "Apply" with staged cards goes (then steps are tried and applied one at a time).
-6. The rename of the stored names with a new session format number; removal of the colour and shape pop-up; the per-plot list in the export file.
+6. [moved to "Decided today, not built": the removal of the colour and shape pop-up, the one rename of the stored names, the per-place list only; D-0665. Still open: the new names.]
 7. A recipe of tables only (refused before HOME today; kept refused until she answers).
 8. Her new idea, being checked for feasibility: in Exploration, a switch "Recipe: Original | With my audit steps".
 9. Older open points, unchanged: the audit log's content; uploaded data; plot ids across dated copies; the Gallery list (`tmpAI/status/QUESTIONS_HOME_2026-11-26.md`, `QUESTIONS_GALLERY_2026-11-26.md`).
