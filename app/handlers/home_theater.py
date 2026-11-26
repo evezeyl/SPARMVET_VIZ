@@ -1695,6 +1695,29 @@ def define_server(input, output, session, *,
                 if restored_steps.get():
                     restored_steps.set(0)
 
+    # AUDIT-STEPS-SURVIVE-RECIPE-CHANGE (found by `app/tests/test_audit_steps_survive_recipe_change.py`: the steps of recipe A showed in recipe B, 42 rows became 38): an audit step is written
+    # at a table or plot BY NAME, so the steps of the recipe that was open must not stay in the state when another recipe is selected: the other recipe may hold a table or plot of the
+    # same name, and its table would change without a word (D-0050). The steps are in the session of their own recipe (a step is saved when it is applied, D-0302) and Restore brings them
+    # back (D-0317). The words are PROVISIONAL.
+    _steps_recipe = {"id": None}
+
+    @reactive.Effect
+    def _drop_audit_steps_on_recipe_change():
+        recipe = safe_input(input, "data_analysis_recipe_id", None)
+        if home_state is None or recipe is None:
+            return
+        with reactive.isolate():
+            previous, _steps_recipe["id"] = _steps_recipe["id"], recipe
+            if previous is None or previous == recipe:
+                return
+            cur = home_state.get()
+            n = len({n.get("id") for n in place_nodes(cur.get("t3_audit_steps_by_plot", {}) or {})}) + len({n.get("id") for n in cur.get("_pending_t3_nodes", []) or []})
+            if not n:
+                return
+            home_state.set({**cur, "t3_audit_steps_by_plot": {}, "_pending_t3_nodes": []})
+            _notify(f"The audit steps of the recipe '{previous}' ({n}) were not carried over to '{recipe}': a step is written at a table or a plot by name, and another recipe "
+                    f"can hold one of the same name. They stay in the session of '{previous}': open that recipe and restore its session to get them back.", type="warning", duration=15)
+
     # A click on a plot tab in Audit mode shows that plot (interim: the tabs go in the next slice; D-0655 point 3, D-0657). The effect follows the open tab only, so entering
     # Audit mode on a tab shows that plot by default, and a click on the tab already open does nothing (a tab that does not change is not an event).
     @reactive.Effect
