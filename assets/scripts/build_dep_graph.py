@@ -36,8 +36,9 @@ SCAN_EXTENSIONS = {".py", ".yaml", ".yml", ".md"}
 SKIP_DIRS = {".venv", ".git", "node_modules", "__pycache__", ".pytest_cache",
              ".mypy_cache", "dist", "build", "tmp", "tmpAI"}
 
+# .claude/outdated/ is the archive of what is no longer the source of truth: it is not indexed.
 # Agent worktrees hold a full copy of the repository; indexing them would list every file twice or more.
-SKIP_PATH_PREFIXES = {(".claude", "worktrees")}
+SKIP_PATH_PREFIXES = {(".claude", "worktrees"), (".claude", "outdated")}
 
 # Coupling types → Cytoscape edge style class
 EDGE_STYLES = {

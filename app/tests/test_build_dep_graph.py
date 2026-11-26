@@ -61,3 +61,9 @@ def test_the_skipped_folders_inside_the_project_are_still_skipped(tmp_path):
     _write(tmp_path, "tmpAI/scratch.py")
     _write(tmp_path, ".venv/lib/pkg.py")
     assert _files(tmp_path) == ["libs/x/thing.py"]
+
+
+def test_the_archive_of_outdated_files_is_not_indexed(tmp_path):
+    _write(tmp_path, ".claude/rules/rule.py")
+    _write(tmp_path, ".claude/outdated/design/studies/x/old.py")
+    assert _files(tmp_path) == [".claude/rules/rule.py"]

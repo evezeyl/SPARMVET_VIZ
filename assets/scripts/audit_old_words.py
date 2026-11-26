@@ -46,6 +46,7 @@ EXCLUDED_PREFIXES = (
     ".venv/",
     "docs/_freeze/",
     ".claude/logs/",
+    ".claude/outdated/",
     ".claude/tasks/archives/",
     ".claude/baselines/",
     ".claude/prompts/",
