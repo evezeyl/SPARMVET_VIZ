@@ -23,7 +23,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from app.modules.audit_place_view import AUDIT, EXPLORATION, Readers, table_for, view_identity, viewed
+from app.modules.audit_place_view import AUDIT, EXPLORATION, NO_SOURCE_NOTE, Readers, table_for, view_identity, viewed
 from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.session_manager import make_audit_step
@@ -236,3 +236,17 @@ def test_a_recipe_with_no_plot_shows_every_table_in_audit_mode_and_the_explorati
         state = viewed(EXPLORATION, choice, "T", None, [], graph, lineage)
         assert state.nothing_chosen and "no plot" in state.note and table_for(state, readers)[0] is None, choice
     clear_data_analysis_recipe_cache()
+
+
+def test_the_source_choice_with_no_source_table_is_a_value_not_an_exception(worlds):
+    """A plot that reads no source table (reproduced on `3_test_no_joins`): HOME says so in plain words today; the reader gives the nothing-to-show value with its own note."""
+    walk = worlds("3_test_no_joins")
+    plot = walk.graph.plots()[0]
+    for source in (None, ""):
+        shown = viewed(EXPLORATION, "SRC", source, plot, [], walk.graph, walk.lineage)
+        assert shown.nothing_chosen and shown.table is None and shown.tier == "Source" and shown.note == NO_SOURCE_NOTE and shown.from_open_plot is True
+        frame, facts = table_for(shown, walk.readers)
+        assert frame is None and facts.state == "original" and facts.why_original == NO_SOURCE_NOTE
+    assert "no source table" in NO_SOURCE_NOTE
+    # with a source table the view is as before
+    assert not viewed(EXPLORATION, "SRC", "MLST", plot, [], walk.graph, walk.lineage).nothing_chosen

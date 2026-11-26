@@ -22,6 +22,7 @@ cases and the export case); Q3 `viewed` ignores the first chosen place (the walk
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_place_view.py -q
 """
+import copy
 import dataclasses
 import io
 import zipfile
@@ -29,13 +30,14 @@ import zipfile
 import polars as pl
 import pytest
 
-from app.modules.audit_place_view import (AUDIT, EXPLORATION, STATE_WORDS, NothingToShow, Readers, condition_fits, table_for, view_identity, viewed)
+from app.modules.audit_place_view import (AUDIT, columns_digest, EXPLORATION, STATE_WORDS, NothingToShow, Readers, condition_fits, table_for, view_identity, viewed)
 from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.plan_composer import compose_plan_book
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import view_key, viewed_table
+from app.modules.view_badge import has_plot_steps
 from app.tests.audit_export_harness import FLAGS, audit_kwargs
 from app.tests.test_audit_view import RECIPE_ID, World
 from app.tests.test_export_download_path import _download_function, _run
@@ -496,3 +498,86 @@ def test_the_trial_readers_are_asked_in_audit_mode_only_and_never_for_the_file_a
         assert facts.state == "original", choice
     nothing = table_for(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), readers)
     assert nothing[0] is None and nothing[1].state == "original"
+
+
+# ------------------------------------------------------------------------------------------------ the columns in the identity and in the fit (review fix round)
+def schema_pairs(lazy):
+    return [(name, str(kind)) for name, kind in lazy.collect_schema().items()]
+
+
+def drop_node(world, column="identity", place="T3:amr_heatmap"):
+    return world.node(node_type="drop_column", params={"column": column}, place=place)
+
+
+def test_a_column_drop_changes_the_identity_when_the_columns_are_given_and_a_row_filter_does_not(world):
+    shown = viewed(AUDIT, "T3", None, "amr_heatmap", ["T3:amr_heatmap"], world.graph, world.lineage)
+    original, _ = table_for(shown, readers_of(world, []))
+    dropped, facts = table_for(shown, readers_of(world, [drop_node(world)]))
+    assert facts.state == "audited"
+    before, after = schema_pairs(original), schema_pairs(dropped)
+    assert ("identity", dict(before).get("identity")) in before and "identity" not in dict(after), "the real committed drop removes the column from the audited table"
+    key_original, key_dropped = view_identity(shown, RECIPE_ID, True, before), view_identity(shown, RECIPE_ID, True, after)
+    assert key_original != key_dropped, "a filter built on the dropped column must not survive"
+    assert view_identity(shown, RECIPE_ID, True) == view_identity(shown, RECIPE_ID, True), "without the columns the key is HOME's own key"
+    # an applied row filter: same columns, same key (the state alone clears nothing)
+    filtered, facts = table_for(shown, readers_of(world, [world.node(place="T3:amr_heatmap", value=world.victim)]))
+    assert facts.state == "audited" and schema_pairs(filtered) == before
+    assert view_identity(shown, RECIPE_ID, True, schema_pairs(filtered)) == key_original
+    # the order of the columns alone changes nothing; a changed type does
+    assert view_identity(shown, RECIPE_ID, True, list(reversed(before))) == key_original
+    assert columns_digest(before) == columns_digest(sorted(before))
+    retyped = [(n, "Int8" if n == before[0][0] else k) for n, k in before]
+    assert view_identity(shown, RECIPE_ID, True, retyped) != key_original
+
+
+def test_without_columns_the_key_is_homes_key_and_with_columns_it_only_adds_the_digest(world):
+    shown = viewed(EXPLORATION, "T3", None, "amr_heatmap", [], world.graph, world.lineage)
+    plain = view_identity(shown, RECIPE_ID, True)
+    cols = [("a", "String"), ("b", "Int64")]
+    assert view_identity(shown, RECIPE_ID, True, cols) == plain + (columns_digest(cols),)
+    assert plain == view_key(RECIPE_ID, "exploration", "T3", None, viewed_table("T3", world.graph.plot_target("amr_heatmap"), "amr_heatmap", True))
+
+
+def test_a_column_dropped_by_an_applied_or_tried_step_no_longer_fits_when_the_columns_are_given(world):
+    shown = viewed(AUDIT, "T3", None, "amr_heatmap", ["T3:amr_heatmap"], world.graph, world.lineage)
+    dropped, _ = table_for(shown, readers_of(world, [drop_node(world)]))
+    node = world.lineage.node("T3:amr_heatmap")
+    kind = dict(node.columns)["identity"]
+    assert condition_fits("T3:amr_heatmap", "identity", kind, world.lineage) == (True, ""), "the lineage holds the ORIGINAL plan: it still says the column fits"
+    ok, why = condition_fits("T3:amr_heatmap", "identity", kind, world.lineage, schema_pairs(dropped))
+    assert ok is False and "identity" in why and "not in" in why and "applied or tried" in why
+    other = [(n, k) for n, k in schema_pairs(dropped)]
+    keep = next(n for n, _ in other)
+    assert condition_fits("T3:amr_heatmap", keep, dict(other)[keep], world.lineage, other) == (True, "")
+    ok, why = condition_fits("T3:amr_heatmap", keep, "NoSuchType", world.lineage, other)
+    assert ok is False and "NoSuchType" in why and dict(other)[keep] in why
+    assert condition_fits("T3:Nothing", keep, "String", world.lineage, other)[0] is False, "a place that is not in the lineage is refused whatever the columns"
+
+
+def test_with_no_tab_open_the_flag_of_own_steps_belongs_to_the_plot_the_view_falls_back_to(world):
+    raw = copy.deepcopy(world.loaded.raw)
+    group = next(g for g, spec in raw["analysis_groups"].items() if "amr_heatmap" in spec["plots"])
+    first = {"amr_heatmap": raw["analysis_groups"][group]["plots"]["amr_heatmap"]}
+    raw["analysis_groups"][group]["plots"] = {**first, **{k: v for k, v in raw["analysis_groups"][group]["plots"].items() if k != "amr_heatmap"}}
+    raw["analysis_groups"] = {group: raw["analysis_groups"][group], **{g: v for g, v in raw["analysis_groups"].items() if g != group}}
+    graph = build_graph(raw)
+    assert graph.plots()[0] == "amr_heatmap" and has_plot_steps(raw, "amr_heatmap"), "the made-up order: the first plot has tier-3 steps of its own"
+    shown = viewed(EXPLORATION, "T3", None, None, [], graph, world.lineage)
+    assert shown.plot is None and shown.shown_plot == "amr_heatmap"
+    right, wrong = has_plot_steps(raw, shown.shown_plot), has_plot_steps(raw, shown.plot)
+    assert (right, wrong) == (True, False)
+    key = view_identity(shown, RECIPE_ID, right)
+    assert key != view_identity(shown, RECIPE_ID, wrong), "taking the flag of the open plot (None) gives the key of another table"
+    assert key == view_identity(viewed(EXPLORATION, "T3", None, "amr_heatmap", [], graph, world.lineage), RECIPE_ID, True), "the fall-back view is the view of that plot opened"
+
+
+def test_the_refusal_sentences_are_pinned(world):
+    meta = viewed(AUDIT, "T3", None, "amr_heatmap", [f"T1:{recipe_tiers.METADATA_SCHEMA}"], world.graph, world.lineage)
+    assert meta.refused == ((f"T1:{recipe_tiers.METADATA_SCHEMA}", recipe_tiers.METADATA_NOT_A_PLACE),)
+    assert "metadata" in recipe_tiers.METADATA_NOT_A_PLACE.lower()
+    empty_t2 = next(n for n in world.graph.places() if n.startswith("T2:") and not world.graph.node(n).steps)
+    name = world.graph.node(empty_t2).name
+    shown = viewed(AUDIT, "T3", None, "amr_heatmap", [empty_t2], world.graph, world.lineage)
+    assert shown.refused == ((empty_t2, f"The table {name} has no tier-2 steps: its tier 2 is its tier 1. Choose its tier 1."),)
+    stale = viewed(AUDIT, "T3", None, "amr_heatmap", ["T1:NoSuchTable"], world.graph, world.lineage)
+    assert stale.refused == (("T1:NoSuchTable", "'T1:NoSuchTable' is not a place of this recipe (it may belong to the recipe that was open before)."),)
