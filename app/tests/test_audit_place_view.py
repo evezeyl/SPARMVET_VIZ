@@ -9,14 +9,16 @@ What is proved:
 - `viewed`: Exploration for each data choice; Audit with no place, one place, several (the first valid is shown, the others counted), a stale id, the metadata, an empty tier 2, a node that cannot be
   chosen, a place outside the open plot (`from_open_plot` equals what the graph says: the plot is among the plots read from the place);
 - `table_for` with audit steps on the demo recipe (a step at a tier 1, a tier 2, a plot's tier 3, a table no plot reads, and all of them together): for EVERY place of the lineage the table equals the one the
-  audit run writes for it (`AuditRun.audited_frames`, `plot_table`), the original where the run leaves it, and `facts.audited` and its reason are right;
+  audit run writes for it (`AuditRun.audited_frames`, `plot_table`), the original where the run leaves it, and `facts.state` and its reason are right;
 - the same on a real export: the real download generator is run on the small recipe of `test_export_unread_tables.Wide` (a table nobody reads, a join nobody reads, a plot) and every place shows the same
   rows as the file the export wrote for it (`T1_data.tsv`, `T1_data_audited.tsv`, `T3_data_p.tsv`);
 - `view_identity` equals HOME's own key (`view_key` with `viewed_table`), is the same for two plots that read one table, differs for another table, another tier, another mode, and for a plot with tier-3 steps of its own;
-- `condition_fits`: column absent, another type, the same, a place not in the lineage, columns not known.
+- `condition_fits`: column absent, another type, the same, a place not in the lineage, columns not known;
+- the three states (original, audited, trial): a trial reader handed in wins over the audited and the original, a trial reader that answers None for an item falls back, no trial reader gives today's answers
+  (the walk file runs unchanged), Exploration never asks a trial reader, and the words of the states are the owner's PROVISIONAL ones.
 
 Mutation index (each seen failing): MUTATION Q1 `table_for` reads the tier-2 reader for a T1 place (walk file); Q2 `table_for` returns the original even when the audit reader answers (the audited
-cases and the export case); Q3 `viewed` ignores the first chosen place (the walk file and here); Q4 `table_for` swaps the T1 and T2 audited reads (the audited cases).
+cases and the export case); Q3 `viewed` ignores the first chosen place (the walk file and here); Q4 `table_for` swaps the T1 and T2 audited reads (the audited cases); Q5 `table_for` ignores the trial readers (the three-states tests).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_place_view.py -q
 """
@@ -27,7 +29,7 @@ import zipfile
 import polars as pl
 import pytest
 
-from app.modules.audit_place_view import (AUDIT, EXPLORATION, NothingToShow, Readers, condition_fits, table_for, view_identity, viewed)
+from app.modules.audit_place_view import (AUDIT, EXPLORATION, STATE_WORDS, NothingToShow, Readers, condition_fits, table_for, view_identity, viewed)
 from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
@@ -96,7 +98,7 @@ def test_audit_with_no_place_shows_the_table_the_open_plot_reads(world):
     # the data choice does not matter in Audit mode: the strip is hidden
     assert shown == viewed(AUDIT, "SRC", "ResFinder", "amr_heatmap", [], world.graph, world.lineage)
     frame, facts = table_for(shown, readers_of(world, []))
-    assert frame.collect().equals(world.original_table("amr_heatmap")) and facts.audited is False
+    assert frame.collect().equals(world.original_table("amr_heatmap")) and facts.state == "original"
 
 
 def test_audit_with_no_place_and_no_open_plot_chooses_nothing_for_the_user(world):
@@ -104,7 +106,7 @@ def test_audit_with_no_place_and_no_open_plot_chooses_nothing_for_the_user(world
     assert state.nothing_chosen and state.table is None and state.place is None and state.is_default is False and state.from_open_plot is None
     assert state.note == "Choose a place in Path of the data to see a table." and state.no_plot_reads is False
     frame, facts = table_for(state, readers_of(world, []))
-    assert frame is None and facts.table is None and facts.audited is False and facts.why_original == state.note, "a value, not an exception"
+    assert frame is None and facts.table is None and facts.state == "original" and facts.why_original == state.note, "a value, not an exception"
     stale = viewed(AUDIT, "T3", None, None, ["T1:NoSuchTable"], world.graph, world.lineage)
     assert stale.nothing_chosen and [p for p, _ in stale.refused] == ["T1:NoSuchTable"], "a stale place does not make the app pick a table"
     fault = dataclasses.replace(state, nothing_chosen=False)
@@ -188,11 +190,11 @@ def test_with_audit_steps_every_place_shows_the_table_the_audit_run_writes_for_i
         else:
             expected = run.audited_frames().get(node.name, {}).get("T2" if node.kind == "T2" else "T1")
         if expected is None:
-            assert got.equals(original_of(world, node)) and facts.audited is False, f"{label}: {node.id} must be the original"
+            assert got.equals(original_of(world, node)) and facts.state == "original", f"{label}: {node.id} must be the original"
             assert "No audit step changes this table" in facts.why_original, node.id
             original_places.append(node.id)
         else:
-            assert got.equals(expected) and facts.audited is True and facts.why_original == "", f"{label}: {node.id} must be the audited table"
+            assert got.equals(expected) and facts.state == "audited" and facts.why_original == "", f"{label}: {node.id} must be the audited table"
             assert not got.equals(original_of(world, node)), f"{label}: {node.id} the audited table must differ from the original"
             audited_places.append(node.id)
     assert audited_places and original_places, "a case that audits nothing, or everything, proves nothing"
@@ -210,7 +212,7 @@ def test_a_step_at_resfinder_leaves_the_tables_beside_it_as_the_original_and_cha
     assert changed == {"T1:ResFinder", "T2:ResFinder", "T1:ResFinder_with_metadata"}
     for place in changed | beside:
         frame, facts = table_for(viewed(AUDIT, "T3", None, "amr_heatmap", [place], world.graph, world.lineage), readers)
-        assert facts.audited == (place in changed), place
+        assert (facts.state == "audited") == (place in changed), place
         if place in changed:
             assert world.victim not in frame.collect()["sample_id"].to_list(), place
 
@@ -219,7 +221,7 @@ def test_without_a_committed_step_every_place_is_the_original_and_the_words_say_
     readers = readers_of(world, [])
     for node in world.lineage.nodes:
         frame, facts = table_for(viewed(AUDIT, "T3", None, "amr_heatmap", [node.id], world.graph, world.lineage), readers)
-        assert facts.audited is False and "No audit step has been added yet" in facts.why_original
+        assert facts.state == "original" and "No audit step has been added yet" in facts.why_original
         assert frame.collect().equals(original_of(world, node)), node.id
 
 
@@ -232,7 +234,7 @@ def test_a_step_that_cannot_run_is_raised_at_the_places_it_reaches_and_not_at_th
     with pytest.raises(AuditRunError):
         table_for(viewed(AUDIT, "T3", None, "amr_heatmap", [], world.graph, world.lineage), readers)
     frame, facts = table_for(viewed(AUDIT, "T3", None, "amr_heatmap", ["T1:MLST"], world.graph, world.lineage), readers)
-    assert facts.audited is False and frame.collect().equals(original_of(world, world.lineage.node("T1:MLST")))
+    assert facts.state == "original" and frame.collect().equals(original_of(world, world.lineage.node("T1:MLST")))
 
 
 def test_a_table_with_no_tier2_steps_asked_at_t2_in_exploration_is_its_tier1(world):
@@ -300,10 +302,10 @@ def test_every_place_shows_the_rows_of_the_file_the_export_wrote_for_it(tmp_path
             written = audited_name if audited_name in members else f"{node.name}/T1_data.tsv"
         assert as_text(frame.collect()).equals(tsv(members, written)), f"{label}: {node.id} shows other rows than {written}"
         if node.kind != "T3":
-            assert facts.audited == (written.endswith("_audited.tsv")), (label, node.id)
+            assert (facts.state == "audited") == written.endswith("_audited.tsv"), (label, node.id)
         else:
-            assert facts.audited == ("C/T3_data_p.tsv" in members), (label, node.id)
-        audited_seen += facts.audited
+            assert (facts.state == "audited") == ("C/T3_data_p.tsv" in members), (label, node.id)
+        audited_seen += facts.state == "audited"
     if nodes:
         assert audited_seen >= 1, "an audit step that changes no place proves nothing"
     else:
@@ -432,3 +434,65 @@ def test_the_identity_of_a_view_with_no_open_plot_is_defined_and_stable(world):
     assert leaf != once and leaf == view_identity(viewed(AUDIT, "T3", None, "amr_heatmap", ["T1:ResFinder_with_metadata"], world.graph, world.lineage), RECIPE_ID)
     nothing = view_identity(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), RECIPE_ID)
     assert nothing == view_identity(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), RECIPE_ID) and nothing != once
+
+
+# ------------------------------------------------------------------------------------------------ the three states
+def with_trial(readers, trial_table=None, trial_plot=None):
+    return dataclasses.replace(readers, trial_table=trial_table, trial_plot=trial_plot)
+
+
+def test_the_words_of_the_three_states_are_the_proposed_ones_and_use_the_owners_names():
+    assert STATE_WORDS == {"original": "Original (as read)", "audited": "Audited: your applied steps",
+                           "trial": "TRIAL: with the step you are trying. Not applied, not saved, not exported."}
+    for text in STATE_WORDS.values():
+        assert "plot data" not in text.lower() and "plot's table" not in text.lower()
+
+
+def test_a_table_place_shows_the_three_states_original_audited_and_trial(world):
+    shown = viewed(AUDIT, "T3", None, None, ["T1:ResFinder"], world.graph, world.lineage)
+    original = original_of(world, world.lineage.node("T1:ResFinder"))
+    tried = world.orch.materialize_tier1(RECIPE_ID, "ResFinder", world.anchors / "ResFinder.parquet").filter(pl.col("sample_id") != world.ids[1])
+    asked = []
+    trial = lambda t, tier: (asked.append((t, tier)), tried)[1]
+    # no applied step, no trial reader: the original
+    frame, facts = table_for(shown, readers_of(world, []))
+    assert facts.state == "original" and facts.words == "Original (as read)" and frame.collect().equals(original)
+    # an applied step: audited
+    nodes = [world.node(place="T1:ResFinder", value=world.victim)]
+    frame, facts = table_for(shown, readers_of(world, nodes))
+    assert facts.state == "audited" and facts.words == "Audited: your applied steps" and world.victim not in frame.collect()["sample_id"].to_list()
+    # a trial reader that answers: the trial wins over the audited table, with or without an applied step
+    for committed in ([], nodes):
+        frame, facts = table_for(shown, with_trial(readers_of(world, committed), trial_table=trial))
+        assert facts.state == "trial" and facts.why_original == "" and facts.words.startswith("TRIAL: ") and frame.collect().equals(tried.collect())
+    assert asked and set(asked) == {("ResFinder", "T1")}
+    # a trial reader that does not change this item (None): the audited or the original answer, as before
+    for committed, state in (([], "original"), (nodes, "audited")):
+        frame, facts = table_for(shown, with_trial(readers_of(world, committed), trial_table=lambda t, tier: None))
+        assert facts.state == state
+        assert frame.collect().equals(table_for(shown, readers_of(world, committed))[0].collect())
+
+
+def test_a_plot_place_shows_the_three_states_and_a_trial_reader_for_tables_does_not_answer_for_a_plot(world):
+    shown = viewed(AUDIT, "T3", None, "amr_heatmap", ["T3:amr_heatmap"], world.graph, world.lineage)
+    tried = world.orch.materialize_tier3(RECIPE_ID, "amr_heatmap", world.anchors).filter(pl.col("sample_id") != world.ids[1])
+    nodes = [world.node(place="T3:amr_heatmap", value=world.victim)]
+    assert table_for(shown, readers_of(world, []))[1].state == "original"
+    assert table_for(shown, readers_of(world, nodes))[1].state == "audited"
+    frame, facts = table_for(shown, with_trial(readers_of(world, nodes), trial_plot=lambda p: tried if p == "amr_heatmap" else None))
+    assert facts.state == "trial" and frame.collect().equals(tried.collect())
+    only_tables = with_trial(readers_of(world, nodes), trial_table=lambda t, tier: tried)
+    assert table_for(shown, only_tables)[1].state == "audited", "a trial reader for tables says nothing about a plot"
+    other = viewed(AUDIT, "T3", None, "amr_heatmap", ["T3:mlst_bar"], world.graph, world.lineage)
+    assert table_for(other, with_trial(readers_of(world, []), trial_plot=lambda p: tried if p == "amr_heatmap" else None))[1].state == "original", "the trial answers for its own plot only"
+
+
+def test_the_trial_readers_are_asked_in_audit_mode_only_and_never_for_the_file_as_read(world):
+    def boom(*args):
+        raise AssertionError("a trial reader was asked")
+    readers = with_trial(readers_of(world, []), trial_table=boom, trial_plot=boom)
+    for choice in ("SRC", "T1", "T2", "T3"):
+        frame, facts = table_for(viewed(EXPLORATION, choice, "ResFinder", "amr_heatmap", [], world.graph, world.lineage), readers)
+        assert facts.state == "original", choice
+    nothing = table_for(viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage), readers)
+    assert nothing[0] is None and nothing[1].state == "original"

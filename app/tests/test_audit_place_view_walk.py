@@ -111,7 +111,7 @@ def test_every_place_of_the_lineage_gives_the_table_the_orchestrator_builds_and_
         got = frame.collect()
         want = walk.expected(node)
         assert got.equals(want) and got.schema == want.schema, f"{recipe_id} {node.id}: not the table the orchestrator builds"
-        assert facts.audited is False and "No audit step has been added yet" in facts.why_original and facts.place == node.id
+        assert facts.state == "original" and "No audit step has been added yet" in facts.why_original and facts.place == node.id
         if node.columns is not None:     # the engine's plan: what the lineage says the place holds is what it holds
             assert [(n, str(t)) for n, t in got.schema.items()] == list(node.columns), f"{recipe_id} {node.id}: the plan and the table differ"
         # the golden baseline, written before this reader existed: the same rows, columns with types and content hash
@@ -139,7 +139,7 @@ def test_exploration_reads_the_original_of_each_data_choice_for_every_plot(recip
             assert shown.place is None and not shown.is_default and shown.tier == choice and shown.table == target and shown.from_open_plot is True
             frame, facts = table_for(shown, walk.readers)
             assert frame.collect().equals(want_frame().collect()), (recipe_id, plot, choice)
-            assert facts.audited is False and facts.mode == EXPLORATION
+            assert facts.state == "original" and facts.mode == EXPLORATION
         assert GOLDEN.table_record(table_for(viewed(EXPLORATION, "T1", None, plot, [], walk.graph, walk.lineage), walk.readers)[0].collect()) == golden["t1"][target]
         assert GOLDEN.table_record(table_for(viewed(EXPLORATION, "T2", None, plot, [], walk.graph, walk.lineage), walk.readers)[0].collect()) == golden["t2"][target]
 
@@ -151,7 +151,7 @@ def test_the_source_choice_reads_the_file_as_read(worlds):
     assert names
     shown = viewed(EXPLORATION, "SRC", names[0], "amr_heatmap", [], walk.graph, walk.lineage)
     frame, facts = table_for(shown, walk.readers)
-    assert shown.tier == "Source" and shown.table == names[0] and facts.audited is False
+    assert shown.tier == "Source" and shown.table == names[0] and facts.state == "original"
     assert frame.collect().equals(walk.orch.read_source(walk.recipe_id, names[0]).collect())
 
 
@@ -167,7 +167,7 @@ def test_every_place_is_shown_with_no_plot_open_and_says_whether_a_plot_reads_it
         assert shown.place == node.id and shown.plot is None and shown.from_open_plot is None and not shown.nothing_chosen and shown.refused == ()
         assert shown.no_plot_reads is (walk.graph.plots_reading(node.id) == []), node.id
         frame, facts = table_for(shown, walk.readers)
-        assert frame.collect().equals(walk.expected(node)) and facts.audited is False and facts.no_plot_reads is shown.no_plot_reads, node.id
+        assert frame.collect().equals(walk.expected(node)) and facts.state == "original" and facts.no_plot_reads is shown.no_plot_reads, node.id
         key = view_identity(shown, recipe_id)
         assert key == view_identity(viewed(AUDIT, "T3", None, None, [node.id], walk.graph, walk.lineage), recipe_id) and key[1] == "audit"
         walked += 1
@@ -223,9 +223,9 @@ def test_a_recipe_with_no_plot_shows_every_table_in_audit_mode_and_the_explorati
         original = world.orch.materialize_tier1("tiny", node.name, anchors / f"{node.name}.parquet").collect()
         expected = frames.get(node.name, {}).get("T1")
         if expected is None:
-            assert frame.collect().equals(original) and facts.audited is False, (label, node.id)
+            assert frame.collect().equals(original) and facts.state == "original", (label, node.id)
         else:
-            assert frame.collect().equals(expected) and facts.audited is True and not expected.equals(original), (label, node.id)
+            assert frame.collect().equals(expected) and facts.state == "audited" and not expected.equals(original), (label, node.id)
         assert facts.no_plot_reads is True
     assert sum(1 for t in frames if "T1" in frames[t]) == len(frames)
     if nodes:
