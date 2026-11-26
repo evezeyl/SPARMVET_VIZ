@@ -367,6 +367,10 @@ a plain table instead of a forced-fit diagram.
 
 [arc42 sections](https://examples.arc42.org/sections/), [C4 model](https://c4model.com/), [C4 modelling guide](https://barkingiguana.com/writing/the-workshop-c4-modelling/), [Kruchten 4+1](https://arxiv.org/pdf/2006.04975), [views and viewpoints](https://btabok.iasaglobal.org/btabok_3/capability-descriptions/views-and-viewpoints/).
 
+### History: diagrams of 2026-11-11 that are not in the model any more (records pass 2026-11-26)
+
+> **HISTORICAL (2026-11-26):** `HOME-FILTER-FLOW`, `HOME-FILTER-MATRIX`, `HOME-FILTER-SCOPING` and `HOME-AUDIT-SCOPE` named in the next three paragraphs do NOT exist in `docs/UML/app.mdj` (checked by the UML builder, 2026-11-26); they are named here for the record only. They described "My view", the propagation dialog and plot scope, which the place model replaces (D-0662; `.claude/design/home_audit_what_is_true_now.md`). Do not redraw them: the diagrams that stand are `HOME-AUDIT-FLOW` and `UI-HOME-AUDIT` (see the table below).
+
 **Added 2026-11-11 (HOME filters, issue #56):** `HOME-FILTER-FLOW` (as built: staged and applied
 filters, what each consumer does, audit and export) and `HOME-FILTER-SCOPING` (concept: lineage cases
 L1 T1=T2=T3, L2 T1=T2 with T3 different, L3 all different; red nodes = scope decisions still open).
@@ -429,9 +433,12 @@ until the change is built; tracked by `AUDIT-REPLACE-1` in `tasks.md`), **valid*
 
 | Diagram | Status | Note |
 |---|---|---|
-| HOME-EXPLORATION, HOME-VIEW-MATRIX, UI-HOME-EXPLORATION, UI-HOME-AUDIT | target | |
-| HOME-AUDIT-FLOW, HOME-AUDIT-CACHE, HOME-AUDIT-COMPONENTS | redrawn 2026-11-26 | built parts marked BUILT, decided-not-built parts carry their ledger number; the 2026-11-15 draft components are marked NOT BUILT, NOT confirmed |
-| HOME-AUDIT-GUARDRAILS | outdated in part | not built; has a fourth level (confirm with a reason) that D-0026 does not show; listed for the owner |
+| HOME-EXPLORATION, UI-HOME-EXPLORATION | target | |
+| HOME-VIEW-MATRIX | OUTDATED, to redraw | to redraw to the place model: the columns Source, T1, T2, T3 and the shown place (D-0655); it still keeps the old choice |
+| UI-HOME-AUDIT | AS BUILT (not the target) | the screen as built today, and its documentation says so; the target screen (toggle beside the title, no plot tabs, Compare above the plot, the step bar) is not drawn yet |
+| HOME-AUDIT-FLOW | redrawn 2026-11-26 (three parts) | the flow as built, with the old parts named "(built, to go)"; the planned target flow as an amber column (choose places, show, condition on the table shown, try, verify the table at each place, reason and "Add to audit pipeline"; the step bar, D-0663; no plot tabs and Compare above the plot), each planned box with its ledger number; a grey group "Not decided" with five boxes (D-0662) |
+| HOME-AUDIT-CACHE, HOME-AUDIT-COMPONENTS | redrawn 2026-11-26 | built parts marked BUILT, decided-not-built parts carry their ledger number; the 2026-11-15 draft components are marked NOT BUILT, NOT confirmed |
+| HOME-AUDIT-GUARDRAILS | outdated in part (stays so) | not built; has a fourth level (confirm with a reason) that D-0026 does not show; listed for the owner |
 | HOME-AUDIT-LINEAGE, HOME-AUDIT-EFFECT | redrawn 2026-11-26 | the levels 0-3 are gone; they show the places T1:<table>, T2:<table>, T3:<plot> (built, PROVISIONAL) |
 | UI-HOME The screen as built today, SEQ-AUDIT, COM-REACTIVE, C4-COMP-HOME | as built | replaced when audit mode is built |
 | UC-HOME | mixed | four old use cases renamed "(replaced by audit mode, ADR-099)"; four planned ones added |
@@ -453,5 +460,7 @@ Checker persona of `.claude/workflows/design_review_personas.md` and is run by h
 - Conventions added: (1) every diagram that holds untagged flow nodes or panels has a `status` tag of its own (`implemented` or `partial`); its nodes inherit it, and a "decided, not built" node names its ledger number in its text. (2) A component that is drawn both in C4 (Architecture) and in UML (Requirements, as the thing a requirement is satisfied by) has the same `status`, `code`, `flag`, `adr`, `test` tags on both and a tag `counterpart` that names the other copy.
 
 **Added 2026-11-26 (owner's order, channel M698 section A point 2).** `DM-KEYS-HOME-AUDIT` (package "Data and configuration"): one diagram of the chain of keys and hashes of HOME and the audit, read from the code (`tmpAI/uml/keys_facts.md`, every line with file:line). Six columns: inputs, the key of one table (`E . rC . dC . [a1]`, `. [s2] . [a2]`, `. [s3] . [a3]`), session and stored tables with the places where a key is checked, audit, export, refusal/import/ids. White boxes are BUILT (`status` implemented or partial, `code` tag), grey boxes are DECIDED not built with the ledger number in the name (D-0331, D-0333, D-0345, D-0478), yellow boxes are NOT DECIDED (a hash per file, the content hash `c`, the steps hash `A` and the record hash `Rec`, the keys of the audit tables in the export); the documentation of every box starts with BUILT, PARTIAL, DECIDED not built or NOT DECIDED. The four older key diagrams were deleted on 2026-11-26 (owner's order, channel M700 point 3); see the line below.
+
+**Convention added 2026-11-26 (records pass; UML builder):** an element whose name ends with "(built, to go)" is old thinking that is still built and is scheduled for removal (task AUDIT-OLD-SCOPE-REMOVE-1, on hold); a planned element carries its ledger number (the step bar: D-0663; the removal and the one rename of the stored names: D-0665; the rest of the target flow: D-0655 to D-0657, D-0662). The model is read together with `.claude/design/home_audit_what_is_true_now.md`.
 
 **Deleted 2026-11-26 (owner's order, channel M700 point 3).** `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE` and `DM-KEYS-EXPORT` (added 2026-11-12, lines above) with their wrapper elements and the 137 model elements they owned; replaced by `DM-KEYS-HOME-AUDIT`. Nothing else in the model showed those elements; pointers "Detail: DM-KEYS-..." in the documentation of the `EXP-MODES` and `HOME-AUDIT-CACHE` boxes now point to `DM-KEYS-HOME-AUDIT`. Words (owner's rule): the table a plot reads is T1, T2 or T3 depending on which tiers have steps, T3 is the last data tier, so the model says "Result data (T3)" (owner, 2026-11-26: it is the result table and what a plot reads) or "the table the plot reads", never "the plot's table" or "plot data" (one box name and one documentation line changed in `DM-KEYS-HOME-AUDIT`; no other hit in the model).
