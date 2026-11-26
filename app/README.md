@@ -40,7 +40,7 @@ app/
 └── handlers/                   ← Shiny wiring only (Two-Category Law, ADR-045)
     ├── home_theater.py              ← Home mode: tabs, plots, data preview, sidebar dispatch
     ├── audit_stack.py               ← T2/T3 audit nodes, Apply gate, Revert
-    ├── filter_and_audit_handlers.py ← Filter builder, Send to Audit, propagation modal
+    ├── filter_and_audit_handlers.py ← Filter builder, Send to Audit, propagation modal (DEPRECATED 2026-11-26, D-0662: removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold)
     ├── export_handlers.py           ← Export bundle (ADR-043/047)
     ├── session_handlers.py          ← Session save/restore/import/delete
     ├── data_import_handlers.py      ← Data Import panel (upload, assign, metadata replace)

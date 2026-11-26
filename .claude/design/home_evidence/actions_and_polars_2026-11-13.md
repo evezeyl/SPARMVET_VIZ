@@ -1,5 +1,7 @@
 # Actions and Polars: names, steps done at once, the whitelist (2026-11-13)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve (decisions) and the recipe session (the policy goes into the spec). Eve asked on 2026-11-13: stay aligned with Polars; check which action names already mean something else in Polars; actions that do several steps at once will go; what is the whitelist; Blueprint is not touched now but what changes must be recorded.
 
 **Evidence labels.** VERIFIED = run by a probe (`tmpAI/architect/polars_names_probe.py`, `polars_wraps_probe.py`, `polars_names_bodies.py`). READ = the body of the action was read (25 of 67 actions: the ones named below). NOT READ = judged from the name only; each package reads the body before it changes the action. Counts of recipes are files that contain the word (`grep -l` in `config/data_analysis_recipes` and `assets/gallery_data`), comments included.

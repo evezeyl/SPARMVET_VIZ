@@ -1,5 +1,7 @@
 # Where in the data processing must a removal happen? How a data scientist answers (P5 investigation)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve, to discuss P5 (stage and reach). **Written:** 2026-11-12, after your correction: the user does not remove from a plot, the user removes **from the data**, and we must understand what the recipe does to the data (wrangling, tidy, joins, filters, aggregations) to know where a removal can go and what it affects.
 **Status:** investigation and proposal. Nothing is decided. **Evidence:** verified = run on the shipped recipes and test data (scripts in `tmpAI/architect/lineage_scan.py`, not committed); reasoned = standard data-science and database theory, said so.
 

@@ -1,5 +1,7 @@
 # Review of the HOME UML diagrams against the latest decisions (2026-11-12)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Method.** The text of every HOME diagram was read from `docs/UML/app.mdj` (`tmpAI/architect/uml_dump.py`, read-only) and the screen `UI-HOME-AUDIT` was also looked at as an image. **The latest decisions are the design files, not the diagrams:** `home_preview_filters.md`, `home_audit_steps.md` (sections 3, 4, 5a, 11, 16, 19), ADR-099 points 10-15. A diagram that disagrees with them is out of date; it is not a finding against the design. **Nothing was edited**: each UML edit needs your OK (workspace rule), and I suggest one pass after the open items are decided (end of this paper).
 
 Status words: **CURRENT** (agrees), **PARTLY OUTDATED** (small differences), **CONTRADICTED** (shows a model that was replaced), **AS BUILT** (describes today's code on purpose, correct as history).

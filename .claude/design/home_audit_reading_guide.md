@@ -1,5 +1,7 @@
 # HOME filters and audit: reading guide (start here)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Written for:** Eve, to re-read the whole redesign with a fresh mind. 2026-11-11.
 **Companions (the real content):** `home_preview_filters.md`, `home_audit_steps.md`, ADR-098 (what is built), ADR-099 (the
 target), issues #56, #60, #61, #62, #63, #64.

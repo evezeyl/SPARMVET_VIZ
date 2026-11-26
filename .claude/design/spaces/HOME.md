@@ -1,5 +1,7 @@
 # HOME — Main Analysis Space
 
+> **Where this file and `home_audit_what_is_true_now.md` differ (2026-11-26), that page wins.** The sections on Audit mode below were written before the place model was restated: the scope of a step is the place chosen in "Path of the data" (a table at T1, at T2, or the Result data (T3) of a plot), never a plot choice (D-0662); the toggle "Exploration | Audit" moves beside the recipe title, "Table to view" is for Exploration only, in Audit mode there are no plot tabs, and the single entry is the step bar (D-0652 to D-0657, D-0663). Not built yet; the pop-up with plot choices is still built and scheduled for removal (AUDIT-OLD-SCOPE-REMOVE-1, on hold).
+
 **Type:** User space
 **Status:** core built (Exploration, filters, export, sessions); since 2026-11-20 the mode switch Exploration | Audit and the data choice Source | T1 | T2 | T3 are built (slice B), with Audit mode on screen (audited plot, Compare, audit steps at T3 of a plot, the audit copy in memory). **Not built:** the audit recipe as a file and its record, the new audit dialog with the lineage walk, the build at the opening of a recipe, the export of an audit (ADR-099 and the decisions of 2026-11-20). Each statement below says whether it is **[built]** or **[target]**.
 **Last updated:** 2026-11-20 (built and decided state brought in line with the ledger, D-0350); 2026-11-12 (rewritten from the agreed design; the earlier version of 2026-05-05 described "audit always on" and the "T3 cascade rule", both retired)

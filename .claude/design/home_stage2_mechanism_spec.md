@@ -1,5 +1,7 @@
 # HOME audit: the mechanism and the build plan (stage 2)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status:** draft v0.2, 2026-11-15 15:05, for Eve's confirmation; nothing is built from the unconfirmed points. PROVISIONAL under Eve's rule of 2026-11-15 (this version changes no result and hides nothing). v0.1 was written on 2026-11-13 and never confirmed.
 **Written for:** Eve, to read and confirm (part A alone is enough); then part B is the base of the tests-first work and of the build.
 **Applies:** `spaces/HOME.md`, `home_audit_steps.md` (5a points 3-22, 9, 11, 19), ADR-099 (as read in its reading guide), ADR-100 to ADR-106, the hash model, to the code as read on 2026-11-15 (`feat/recipe-format-1` at `c5570336`).

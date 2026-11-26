@@ -1,5 +1,7 @@
 # The hash model: what exists, what each hash answers, what the redesign needs (2026-11-12)
 
+> **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated record. Where it speaks of plots as the scope of a step ("This plot only / All plots / All plots except", per-plot stacks, a propagation dialog), of "My view", of "the plot's table" or "plot data", or of an audit that is written only at T3, the page "what is true now" and the ledger lines D-0662 to D-0667 win; nothing below is edited.
+
 **Status: inventory VERIFIED (code read and run); the model in section 4 was DECIDED by Eve on 2026-11-12, points (1) to (5) of section 5 (also `home_audit_reading_guide.md:99`, group D).** Eve asked: a hash per node (T1, T2, T3) to see changes (audit), a hash of the whole recipe for recomputation in every deployment mode; verify how the series of hashes (a chain of content-addressed keys) works for stored data, sessions and exports, and whether a UML must change.
 
 ## 1. What exists today (verified: `cache_keys.py`, `session_manager.py`, `orchestrator.py`, `export_handlers.py`, `bundle_importer.py`, `docs/foundations/reproducibility_hash_schema.qmd`, ADR-089, ADR-097)
