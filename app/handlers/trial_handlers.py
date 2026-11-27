@@ -154,6 +154,11 @@ def define_trial_server(input, output, session, *,
     # ── The trial ends when what it was made for changes ───────────────────────────────────────────────────────
     @reactive.Effect
     def _watch_the_world():
+        # No trial, nothing to watch: in Exploration (and in Audit mode before any Try) `_world_now` is not computed at all. It hashes the data files of the recipe (`recipe_keys`) and
+        # reads the whole HOME state, so computing it on every change of the staged rows, the mode or the state slowed every other output of the page. The effect reads `trial_state` first, so it
+        # runs again when a trial begins and then watches.
+        if trial_state.get() is None:
+            return
         now = _world_now()
         with reactive.isolate():
             record = trial_state.get()
