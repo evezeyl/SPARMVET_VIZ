@@ -19,10 +19,31 @@ def wait_shiny(page: Page, timeout: int = 10_000) -> None:
 
 
 def set_mode(page: Page, mode: str) -> None:
+    """Switch the HOME mode and wait for the SERVER to have taken it (the caption under the control changes with the mode). The click can land before the control is ready, or be undone by a redraw
+    of the mode row (found in the first test of several files, always under load): so wait for the control, click, and when the state did not change, click once more; then say plainly if it still did not."""
     wait_shiny(page)       # after a switch of user space the page is still drawing HOME again: a click made then can land on the old control
-    page.locator(f"#home_mode input[value={mode}]").check(force=True)
+    radio = page.locator(f"#home_mode input[value={mode}]")
+    expect(radio).to_be_attached(timeout=30_000)
+    caption = page.locator("#mode_caption_ui")
+    was = caption.inner_text() if caption.count() else ""
+    last_error = None
+    for _attempt in range(2):
+        try:
+            radio.check(force=True)
+        except Exception as exc:        # Playwright: "Clicking the checkbox did not change its state" (a redraw undid the click)
+            last_error = exc
+        wait_shiny(page)
+        if radio.is_checked():
+            break
+    else:
+        raise AssertionError(f"The mode control did not change to {mode!r} after two clicks (last error: {last_error})")
+    if was and caption.count():
+        try:
+            page.wait_for_function("(was) => { const c = document.querySelector('#mode_caption_ui'); return !c || c.innerText !== was; }", arg=was, timeout=20_000)
+        except Exception:
+            pass       # the caption may be the same in both modes in some setups; the checked control below is the assertion
     wait_shiny(page)
-    expect(page.locator(f"#home_mode input[value={mode}]")).to_be_checked()
+    expect(radio).to_be_checked()
 
 
 def in_audit_mode(page: Page) -> bool:

@@ -172,6 +172,18 @@ def figure(page: Page, plot_id: str = PLOT) -> str:
     return hashlib.sha256(src.encode()).hexdigest()
 
 
+def wait_figure(page: Page, accept, message: str, timeout_s: float = 45.0) -> None:
+    """Wait (by state, not by a fixed sleep) until the hash of the figure's `src` satisfies `accept`; fail with `message` and the last hash otherwise."""
+    import time
+    deadline, last = time.monotonic() + timeout_s, None
+    while time.monotonic() < deadline:
+        last = figure(page)
+        if accept(last):
+            return
+        page.wait_for_timeout(300)
+    raise AssertionError(f"{message} (waited {timeout_s:.0f} s; last figure hash {last})")
+
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 @NEEDS_AUDIT
 def test_try_at_the_plot_shown_counts_the_rows_shows_the_trial_in_words_and_discard_puts_everything_back(ready: Page, tables):
@@ -195,16 +207,15 @@ def test_try_at_the_plot_shown_counts_the_rows_shows_the_trial_in_words_and_disc
     expect(page.locator("#home_data_preview_badge")).to_contain_text("TRIAL, not applied")
     expect(page.locator(AREA)).to_contain_text(TRIAL_WORDS)                            # beside the plot's title
     expect(page.locator(f"#plot_badge_{PLOT}")).to_contain_text("TRIAL, not applied")
-    page.wait_for_timeout(1500)       # a step at the Result data (T3) of a plot stores no table: the trial folder is not needed there
-    assert figure(page) != before_figure, "the figure is drawn from the trial: it is another picture"
+    wait_figure(page, lambda h: h != before_figure, "the figure is drawn from the trial: it is another picture")   # a step at the Result data (T3) of a plot stores no table
     page.locator("#trial_discard").click()
     wait_shiny(page)
     expect(page.locator(PANEL)).to_have_count(0, timeout=15_000)
     wait_preview_rows(page, tables["plot"].height, timeout=60_000)
     expect(page.locator("#shown_band_ui")).not_to_contain_text("TRIAL")
     expect(page.locator("#shown_band_ui .spv-shown-band-trial")).to_have_count(0)
-    page.wait_for_timeout(1500)
-    assert figure(page) == before_figure, "after Discard the figure is the one it was"
+    expect(page.locator(f"#plot_badge_{PLOT}")).not_to_contain_text("TRIAL", timeout=30_000)
+    wait_figure(page, lambda h: h == before_figure, "after Discard the figure is the one it was")
     assert trial_files() == [], "Discard empties the trial's folder"
     assert listing(user_data() / "audit_anchors") == audit_files and listing(user_data() / "_sessions") == session_files, "a trial wrote nothing to the audit folder or to a session"
     assert "Discard" not in notices(page), "her own Discard says nothing"
