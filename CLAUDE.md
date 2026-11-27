@@ -149,6 +149,8 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `design_t3_export_threading.md` | T3 node threading + export lineage design |
 | `ui_panel_map_current.md` | CSS selector reference + panel name mapping |
 | `uml_model_plan.md` | UML model of the app: diagram catalogue, conventions, discrepancy checks |
+| `home_audit_what_is_true_now.md` | READ FIRST for HOME, the audit and the lineage: the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject |
+| `current_limits.md` | Every known limit of the app as built today (what the user sees, workaround, what lifts it, evidence); read before telling a user what the app can do; agents update it in the same change |
 
 ---
 
