@@ -119,6 +119,7 @@ def test_nothing_is_tried_when_the_composer_has_a_bug(monkeypatch):
                     recipe_raw=lambda: demo_raw(), recipe_plans=broken)
     _flush()
     world2.live.set("preview_col_selector", ["year", "source"])
-    world2.live.set("col_drop_try", 1)
+    world2.live.set("step_kind", "drop")
+    world2.live.set("step_try", 1)
     _flush()
     assert _nodes_of(world2) == [] and trial.tried == [] and world2.notes == []

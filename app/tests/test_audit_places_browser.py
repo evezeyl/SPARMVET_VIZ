@@ -239,7 +239,7 @@ def test_a_column_drop_at_the_result_data_of_the_plot_is_tried_and_added_and_the
     _amr_plot(page)
     set_view(page, "T3")
     wait_preview_rows(page, expected["amr_before"], timeout=30_000)
-    expect(page.locator("#col_drop_try")).to_have_count(1, timeout=15_000)
+    expect(page.locator("#step_try")).to_have_count(1, timeout=15_000)
     page.locator("#preview_col_selector-selectized, #preview_col_selector").first.wait_for(state="attached", timeout=10_000)
     before = page.evaluate("() => Object.keys(document.getElementById('preview_col_selector').selectize.options)")
     assert "overlap" in before

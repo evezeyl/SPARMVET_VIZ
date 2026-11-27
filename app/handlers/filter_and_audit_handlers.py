@@ -3,7 +3,8 @@ The filter builder of the Filters panel (HOME).
 
 Extracted from home_theater.py in Phase 24-D (ADR-051). FLOW-3 (2026-11-27): the old way of creating an audit step is gone from this file (the pop-up that asked "This plot only / All plots /
 All plots except" and the button "Send to Audit", the button of the lineage panel, the column drop of the old way): a step is created in ONE way, show an item, stage the step here, Try, (mark),
-reason, "Add to audit pipeline" (`trial_handlers.py`, D-0662, D-0663, D-0672). This file builds the CONDITION (the staged rows), applies it in Exploration, and offers the button Try in Audit mode.
+reason, "Add to audit pipeline" (`trial_handlers.py`, D-0662, D-0663, D-0672). This file builds the CONDITION (the staged rows) and applies it in Exploration. The form is mounted here in both modes; in Audit mode the step bar
+(`step_bar_handlers.py`) names the staged condition and holds the one button Try.
 
 Two-Category Law (ADR-045): this module contains @render.* / @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
@@ -12,7 +13,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, button:filter_try (the Try of a staged condition, handled by trial_handlers.py), output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply
+# provides: function:define_filter_audit_server, function:form_slots (the slots of the one form, mounted by the Filters panel), output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply
 # consumes: app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
@@ -109,6 +110,17 @@ def _control(kind: str, suffix: str, d: dict):
         ui.div(ui.input_select(f"fb_unit{suffix}", label=None, choices=list(UNIT_NS), selected=d.get("unit", "s")), class_="spv-flex-1"),
         class_="d-flex gap-1",
     )
+
+
+def form_slots() -> list:
+    """The outputs of the ONE form of a condition: the staged rows, the add-row form, the choice for missing values and the buttons. The Filters panel mounts them (in both modes)."""
+    return [
+        ui.output_ui("filter_rows_ui"),
+        ui.output_ui("filter_form_ui"),
+        ui.output_ui("filter_na_ui"),
+        ui.output_ui("filter_na_text_ui"),
+        ui.div(ui.output_ui("filter_controls_ui"), class_="mt-2 px-1"),
+    ]
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -226,21 +238,11 @@ def define_filter_audit_server(input, output, session, *,
                     class_="text-warning d-block px-1 mb-1 border-start border-warning ps-2 spv-text-xs"
                 )
             )
-        # In Exploration the left "Apply" commits transient filters. In Audit mode the form builds the condition of an audit step, which is tried with "Try" and added with "Add to
-        # audit pipeline" (the panel below, `trial_handlers`); there is no Apply and no other entry.
+        # The form is built here in both modes (one mount: the ids of its inputs exist once in the page). In Audit mode the step bar above the data preview (`step_bar_handlers`) names the staged
+        # condition and holds the one button Try; the form could not be moved into the bar soundly (see step_bar_handlers.py, "WHY THE FORM STAYS IN THE FILTERS PANEL").
         return ui.div(
             disclaimer or ui.div(),
-            ui.output_ui("filter_rows_ui"),
-            ui.output_ui("filter_form_ui"),
-            ui.output_ui("filter_na_ui"),
-            ui.output_ui("filter_na_text_ui"),
-            ui.div(
-                ui.output_ui("filter_controls_ui"),
-                class_="mt-2 px-1"
-            ),
-            # FLOW-1: the line of the count while Try computes (shown by `app/src/www/trial_counting.js` from the click until Shiny is idle), and the panel of the trial (`trial_handlers.trial_panel_ui`)
-            ui.div("Counting the rows each place loses...", class_="spv-try-counting px-1", role="status"),
-            ui.output_ui("trial_panel_ui"),
+            *form_slots(),
             class_="spv-text-sm"
         )
 
@@ -673,11 +675,11 @@ def define_filter_audit_server(input, output, session, *,
     @output
     @render.ui
     def filter_controls_ui():
-        """Apply / Try / + Add / Reset buttons + status. Reads _pending_filters + applied_filters.
+        """Apply / + Add / Reset buttons + status. Reads _pending_filters + applied_filters.
 
         Exploration and Audit mode are different. In Exploration the staged rows are tried on the table of the view shown with "Apply": they change that table only, never a plot, and nothing
-        is saved or exported. In Audit mode the form builds the condition of an audit step: no Apply; "Try" computes the step at the item shown (a table too) and at the places chosen in Path of
-        the data, and the panel below it adds the step to the audit pipeline (FLOW-3: the one way to create a step).
+        is saved or exported. In Audit mode the form builds the condition of an audit step: no Apply; the button "Try" is the step bar's (`step_bar_handlers`, one button for a condition and a
+        drop), and the fold-out of the bar adds the step to the audit pipeline (FLOW-3, then the step bar: the one way to create a step).
         """
         n_applied = len(applied_filters.get())
         n_pending = len(_pending_filters.get())
@@ -695,16 +697,6 @@ def define_filter_audit_server(input, output, session, *,
                     title="Applies these filters to the table you view (Source, T1, T2 or T3) for exploration. They change that "
                           "table only, never a plot. Not written to the audit log, and not exported.",
                 ))
-        if audit and n_pending:
-            # a staged condition can be TRIED on the item shown (a table too), before anything is applied; the answer is the panel below (`trial_handlers`)
-            buttons.append(
-                ui.input_action_button(
-                    "filter_try", "Try",
-                    class_="btn-primary btn-sm spv-text-xs",
-                    title="Computes what this step would do at the place shown (and the other places you chose in Path of the data): the rows it removes at each place, and "
-                          "what is built from them. Nothing is applied, saved or exported until you add it to the audit pipeline.",
-                )
-            )
         buttons.append(
             ui.input_action_button(
                 "filter_add_row", "+ Add",
@@ -719,7 +711,7 @@ def define_filter_audit_server(input, output, session, *,
         )
         # Reminders (Eve, 2026-11-06): in Exploration a filter is a way to understand the data; only what is added to the audit pipeline (with a reason) is exported. PROVISIONAL words.
         if audit:
-            reminder = ui.tags.small("Audit: add a row, press Try, then write the reason and add the step to the audit pipeline. An added step changes the plots built from its place and is exported.",
+            reminder = ui.tags.small("Audit: build the condition here (+ Add), press Try in the bar above the table, then write the reason and add the step to the audit pipeline. An added step changes the plots built from its place and is exported.",
                                      class_="text-warning d-block mt-1 spv-text-xxs")
         else:
             reminder = ui.tags.small("Exploration: filters change this table only, never a plot. Nothing here is exported.",

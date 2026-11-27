@@ -36,7 +36,7 @@ def _world(monkeypatch, trial=None, save_session=None, committed=None, extra_inp
     monkeypatch.setattr(render, "ui", lambda fn=None, **k: fn if fn else (lambda f: f))
     monkeypatch.setattr(ui, "notification_show", lambda message, **k: notes.append(str(message)))
     live = LiveInput()
-    for name in ("filter_try", "trial_discard", "col_drop_try", "preview_col_selector", "lineage_chosen", "trial_show", "trial_add", *extra_inputs):
+    for name in ("step_try", "step_kind", "trial_discard", "preview_col_selector", "lineage_chosen", "trial_show", "trial_add", *extra_inputs):
         live.set(name, None)
     live.set("lineage_chosen", [])
     pending = reactive.Value([dict(ROW)])
@@ -201,7 +201,8 @@ def _drop_world(monkeypatch, columns=(("identity", "Float64"), ("length", "Int64
 
 def _try_drop(w, selected):
     w.live.set("preview_col_selector", selected)
-    w.live.set("col_drop_try", (_peek(w.live.values["col_drop_try"]) or 0) + 1 if "col_drop_try" in w.live.values and _peek(w.live.values["col_drop_try"]) else 1)
+    w.live.set("step_kind", "drop")
+    w.live.set("step_try", (_peek(w.live.values["step_try"]) or 0) + 1 if "step_try" in w.live.values and _peek(w.live.values["step_try"]) else 1)
     _flush()
 
 
@@ -212,7 +213,7 @@ def test_the_columns_the_chooser_does_not_select_are_tried_at_the_place_shown_as
     assert record is not None and record.kind == KIND_DROP and record.places == ("T3:p",)
     assert [(n["node_type"], n["params"]["column"], n["place"]) for n in record.nodes] == [("drop_column", "identity", "T3:p")], "the deselected column, written at the place shown"
     assert record.condition == ("Drop the column: identity. No row is removed.",)
-    assert w.notes and "The drop is tried" in w.notes[-1] and "Filters panel" in w.notes[-1], "the panel is in the Filters panel: the notice says where to look"
+    assert w.notes and "The drop is tried" in w.notes[-1] and "bar above the table" in w.notes[-1], "the answer is in the bar: the notice says where to look"
     assert "the step drops 1 column of 3 here" in _html(w)
 
 
@@ -232,7 +233,8 @@ def test_a_column_that_is_not_in_the_table_at_a_place_is_named_and_nothing_is_tr
     w2 = _drop_world(monkeypatch, columns=(("identity", "Float64"),), places=(("T3:p", "T3:q"), ""))
     w2.live.set("preview_col_selector", [])
     monkeypatch.setattr(trial_handlers, "drop_fit_problem", lambda *a, **k: "The drop does not fit every place. name of T3:q: identity is not in the table there. Nothing was tried.")
-    w2.live.set("col_drop_try", 5)
+    w2.live.set("step_kind", "drop")
+    w2.live.set("step_try", 5)
     _flush()
     assert _peek(w2.trial_state) is None and "does not fit every place" in w2.notes[-1]
 
@@ -249,3 +251,15 @@ def test_a_key_that_a_later_join_reads_is_refused_at_try_with_the_sentence_of_th
     assert "read as a key by the join J" in w.notes[-1] and "Nothing was tried" in w.notes[-1]
     _try_drop(w, ["identity"])                                   # the other column is not a key: tried
     assert _peek(w.trial_state) is not None and asked[-1] == ("T3:p", ["length"])
+
+
+def test_the_fold_out_says_which_kind_of_step_the_open_trial_is(monkeypatch):
+    """The switch of the step bar may be moved while a trial is open: the trial stays what it was tried as, and its first line says so. MUTATION: the summary is a fixed text: the drop assert fails."""
+    w = _world(monkeypatch)
+    _flush()
+    _set(w, _record(w))
+    assert "Result of Try: a condition (not applied)" in _html(w)
+    record = _record(w)
+    _set(w, TrialRecord(record.world, record.places, record.nodes, record.result, record.condition, record.serial, KIND_DROP))
+    html = _html(w)
+    assert "Result of Try: a column drop (not applied)" in html and "a condition (not applied)" not in html

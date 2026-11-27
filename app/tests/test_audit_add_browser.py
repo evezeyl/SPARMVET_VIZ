@@ -263,6 +263,6 @@ def test_without_the_audit_there_is_no_add(page: Page, shiny_app: ShinyAppProc):
     _wait_shiny(page)
     _open_filters_panel(page)
     page.locator("#filter_add_row").wait_for(state="attached", timeout=30_000)
-    for element in ("#filter_try", "#trial_add", "#trial_discard"):
+    for element in ("#step_try", "#trial_add", "#trial_discard"):
         assert page.locator(element).count() == 0, element
     expect(page.locator(".spv-trial-panel")).to_have_count(0)

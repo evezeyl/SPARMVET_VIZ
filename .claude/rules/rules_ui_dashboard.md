@@ -108,7 +108,7 @@ Phase 24 and all future Home Theater refactors.
 | `app/modules/t3_audit_engine.py` | Pure helpers (Two-Category Law): `_apply_filter_rows`, `_op_label`. No Shiny imports. | (functions) |
 | `app/handlers/session_handlers.py` | Session management panel: `session_management_ui`, `_handle_session_import`, `_handle_session_actions`, `_restore_session`. | `define_session_server(...)` |
 | `app/handlers/export_handlers.py` | Export pipeline: `system_tools_ui`, `export_bundle_download`, `export_audit_report_*`, filename helpers. | `define_export_server(...)` |
-| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects, Try (Audit mode), `_make_remove_handler` factory; the audit step itself is made in `trial_handlers.py` (FLOW-3). | `define_filter_audit_server(...)` |
+| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects (the form is mounted once, here, in both modes; the one button Try of Audit mode is the step bar's, `app/handlers/step_bar_handlers.py`), `_make_remove_handler` factory; the audit step itself is made in `trial_handlers.py` (FLOW-3). | `define_filter_audit_server(...)` |
 
 Shared `reactive.Value` instances (`applied_filters`, `_pending_filters`,
 `home_state`) are created in `home_theater.define_server()` and

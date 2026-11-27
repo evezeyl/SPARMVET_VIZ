@@ -3,10 +3,10 @@
 Two-Category Law (ADR-045): this module holds @render.* and @reactive.* only; the rules (where a step is tried, when a trial ends, the lines of the panel, the words) are in `app/modules/audit_try.py`,
 the computation is the engine's (`app/modules/audit_trial.py`, `PlaceTrial`).
 
-WHAT THE USER SEES (Audit mode only). A staged condition in the Filters panel can be TRIED: the button "Try" (`filter_try`, drawn by `filter_and_audit_handlers.filter_controls_ui`). The step is written
+WHAT THE USER SEES (Audit mode only). A staged step is TRIED with the one button "Try" of the STEP BAR (`step_try`, drawn by `step_bar_handlers`; the switch `step_kind` says whether it is the staged condition or a column drop, one at a time). The step is written
 at the place shown, plus the other places chosen in "Path of the data" when the place shown is among them (all of them, D-0669), and never at a place where the condition does not fit (that is told and
-nothing is tried). While the engine counts, a line says so (`app/src/www/trial_counting.js` shows it at the click; the answer comes after). The answer is in a small panel below the buttons
-(`trial_panel_ui`; not a pop-up): the condition, the rows the step removes at each place, each with the mark "User verified" (advice, D-0670), what the places reach (information, never ticks), the
+nothing is tried). While the engine counts, a line says so (`app/src/www/trial_counting.js` shows it at the click; the answer comes after). The answer is the fold-out of the bar
+(`trial_panel_ui`, a `details` element that can be folded; not a pop-up): the condition, the rows the step removes at each place, each with the mark "User verified" (advice, D-0670), what the places reach (information, never ticks), the
 summary "N of M places user verified", the field "Reason" (required), the button "Add to audit pipeline" (FLOW-2, D-0672) and "Discard".
 The item shown shows the trial (`home_theater`: the preview, the band, the badge, the figure and Compare read it through the one reader, `audit_place_view`).
 
@@ -16,7 +16,7 @@ computation path) and writes it at ALL the places of the trial, also those not m
 NOTHING applied (`apply_trial` is all or nothing for a reader; the committed list and the session file are written only after it succeeded).
 
 THE ONE WAY (FLOW-3, D-0662, D-0663, D-0672). This is the only way to create an audit step: show an item, stage the step, Try, (mark), reason, Add; one step at a time. A staged CONDITION is tried
-with the button "Try" of the Filters panel (`filter_try`); a COLUMN DROP is tried with the button "Try the drop" under the column chooser (`col_drop_try`, drawn by `home_theater`): the columns the chooser
+with the button Try of the step bar when the switch says "Condition on rows"; a COLUMN DROP is tried with the same button when it says "Drop columns": the columns the chooser
 does not select, at the Result data (T3) shown (PROVISIONAL, as the old drop was offered) and the other places chosen. Both give the same panel, marks, reason and Add; the panel says "drops N columns"
 for a drop. The old entries (the pop-up of "Send to Audit", the button of the lineage panel, the small form of a table no plot reads, the staged cards and the separate Apply) are gone.
 
@@ -37,7 +37,7 @@ Why the marks and the reason are inputs with the number of the Try in their id (
 new trial with the same ids could read a mark ticked in an OLDER trial before the new widget reports its own value. A new id has no value yet, so a mark is never inherited.
 
 # @deps
-# provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, button:col_drop_try (drawn by home_theater), effect:_try, effect:_try_drop, effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world
+# provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, effect:_try_step (the one button Try of the step bar; it runs _try or _try_drop), effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world
 # consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature), app/modules/notification_utils.py, libs/utils/src/utils/key_drop.py (DropGate: the refusal of a key drop by place at Try)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
@@ -55,6 +55,7 @@ from app.modules.audit_add import (ADD_LABEL, REASON_LABEL, REASON_PLACEHOLDER, 
 from app.modules.audit_places import nodes_signature
 from app.modules.audit_shown import request_to_show
 from app.modules.audit_trial import TrialRefused, now_iso
+from app.modules.step_bar import fold_summary, kind_of_input
 from app.modules.audit_try import (DISCARD_LABEL, KIND_DROP, KIND_FILTER, NO_CONDITION, TrialRecord, condition_lines, drop_condition_lines, drop_fit_problem, drops_from_selection, end_cause, fit_problem, panel_model,
                                    trial_has_state, trial_places, tried_drop_nodes, tried_nodes, world_of)
 from app.modules.notification_utils import make_notifier
@@ -162,11 +163,20 @@ def define_trial_server(input, output, session, *,
         trial_state.set(TrialRecord(world, places, tuple(nodes), result, condition, _counter[0], kind))
 
     @reactive.Effect
-    @reactive.event(input.filter_try)
-    def _try():
-        """Compute the effect of the staged condition at the places, without applying anything. Refusals are one plain sentence and leave the state as it was."""
+    @reactive.event(input.step_try)
+    def _try_step():
+        """The one button Try of the step bar: the kind of step the switch names (a condition, or a column drop; one at a time, D-0672) is tried."""
         if not in_audit():
             return
+        with reactive.isolate():
+            kind = kind_of_input(safe_input(input, "step_kind", KIND_FILTER))
+        if kind == KIND_DROP:
+            _try_drop()
+        else:
+            _try()
+
+    def _try():
+        """Compute the effect of the staged condition at the places, without applying anything. Refusals are one plain sentence and leave the state as it was."""
         rows = list(pending_filters.get())
         if not rows:
             _notify(NO_CONDITION, type="warning", duration=6)
@@ -190,14 +200,10 @@ def define_trial_server(input, output, session, *,
         nodes = tried_nodes(rows, places, (state or {}).get("primary_keys") or [])
         _compute(KIND_FILTER, places, nodes, condition_lines(rows), _world_now())
 
-    @reactive.Effect
-    @reactive.event(input.col_drop_try)
     def _try_drop():
         """FLOW-3: the column drop is tried like a condition (the one way to create a step). The columns to drop are the ones the column chooser of the table shown does NOT select; the drop is
         written at the places of the trial (the Result data (T3) of a plot is shown, as the drop was always offered; the other places chosen in Path of the data too, D-0669). A column a join
         step later reads as a key is refused BY PLACE (D-0358, D-0371: `utils.key_drop`), with the sentence of the rule, before anything is computed."""
-        if not in_audit():
-            return
         shown = shown_place()
         if not shown or not str(shown).startswith("T3:"):
             _notify("A column drop is tried on the Result data (T3) of a plot: show a plot's Result data in Path of the data first. Nothing was tried.", type="warning", duration=8)
@@ -205,7 +211,7 @@ def define_trial_server(input, output, session, *,
         names = [name for name, _ in (columns_at(shown) or ())]
         to_drop = drops_from_selection(names, safe_input(input, "preview_col_selector", None))
         if not to_drop:
-            _notify("No column is deselected. Uncheck the columns to drop in the column chooser, then press Try the drop. Nothing was tried.", type="warning", duration=6)
+            _notify("No column is deselected. Uncheck the columns to drop in the column chooser, then press Try. Nothing was tried.", type="warning", duration=6)
             return
         ready = _ready_to_try()
         if ready is None:
@@ -232,7 +238,7 @@ def define_trial_server(input, output, session, *,
         nodes = tried_drop_nodes(to_drop, places)
         _compute(KIND_DROP, places, nodes, drop_condition_lines(to_drop), _world_now())
         if trial_state.get() is not None:
-            _notify("The drop is tried: the answer is in the Filters panel of the left column (the effect at each place, the reason and Add to audit pipeline).", type="message", duration=8)
+            _notify("The drop is tried: the answer is in the bar above the table (the effect at each place, the reason and Add to audit pipeline).", type="message", duration=8)
 
     # ── Discard (her own: no notice) ────────────────────────────────────────────────────────────────────────
     @reactive.Effect
@@ -397,7 +403,7 @@ def define_trial_server(input, output, session, *,
     @output
     @render.ui
     def trial_panel_ui():
-        """The answer of Try, in the Filters panel: the three-state words, the condition, the rows the step removes at each place with its mark "User verified", what the places reach (information), the
+        """The answer of Try, the fold-out of the step bar: the three-state words, the condition, the rows the step removes at each place with its mark "User verified", what the places reach (information), the
         summary of the marks, the reason, "Add to audit pipeline" and Discard. It reads the trial only (R4): the ticks and the reason are inputs it mounts and never reads; the summary and the button are outputs
         of their own."""
         if not in_audit():
@@ -427,7 +433,8 @@ def define_trial_server(input, output, session, *,
             body.append(ui.input_text(f"trial_reason_{record.serial}", REASON_LABEL, value=draft, placeholder=REASON_PLACEHOLDER, width="100%"))
             body.append(ui.output_ui("trial_add_ui"))
         body.append(ui.input_action_button("trial_discard", DISCARD_LABEL, class_="btn-outline-secondary btn-sm"))
-        return ui.div(*body, class_="spv-trial-panel")
+        # a `details` element: the user can fold the answer away to see the table under it; it is drawn open again by every new Try (PROVISIONAL)
+        return ui.tags.details(ui.tags.summary(fold_summary(record.kind), class_="spv-trial-summary-line"), ui.div(*body, class_="spv-trial-body"), open=True, class_="spv-trial-panel")
 
     @output
     @render.ui

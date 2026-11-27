@@ -24,7 +24,7 @@ Consumed by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/t
 # @deps
 # provides: class:TrialRecord, function:condition_lines, function:stage_sentence, function:tried_drop_nodes, function:drop_fit_problem, function:drop_condition_lines, function:drops_from_selection, constant:KIND_FILTER, constant:KIND_DROP, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL
 # consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (audit_params_from_row, describe_filter), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
-# consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py
+# consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/handlers/step_bar_handlers.py, app/modules/step_bar.py, app/tests/test_audit_try.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
 """
@@ -45,7 +45,7 @@ KIND_DROP = "drop"
 TRY_LABEL = "Try"                     # PROVISIONAL
 DISCARD_LABEL = "Discard"             # PROVISIONAL
 NOT_CHANGED = "The step you are trying does not change this."                              # PROVISIONAL
-NO_CONDITION = "Build a condition first: add a row in the Filters panel, then press Try."  # PROVISIONAL
+NO_CONDITION = "Build a condition first: add a row in the Filters panel (+ Add), then press Try."  # PROVISIONAL
 NOTHING_SHOWN = "Show an item first: the step is tried at the place shown. Nothing was tried."   # PROVISIONAL
 TRIAL_WORDS = STATE_WORDS[TRIAL]
 COUNTING = "Counting the rows each place loses..."                                         # PROVISIONAL (D-0650)

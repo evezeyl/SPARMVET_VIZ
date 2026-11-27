@@ -192,10 +192,19 @@ def add_to_pipeline(page: Page, reason: str, mark: bool = False, expected_places
     expect(panel).to_have_count(0, timeout=15_000)
 
 
+def choose_kind(page: Page, kind: str) -> None:
+    """The plain switch of the step bar: "filter" (Condition on rows) or "drop" (Drop columns)."""
+    expect(page.locator(".spv-stepbar-inner")).to_be_visible(timeout=15_000)
+    page.locator(f"input[name='step_kind'][value='{kind}']").evaluate("(e) => e.click()")
+    expect(page.locator(".spv-stepbar-inner")).to_have_attribute("data-kind", kind, timeout=5_000)
+    wait_shiny(page)
+
+
 def try_staged(page: Page) -> None:
     """Press Try on the staged condition and wait for the panel of the trial."""
-    expect(page.locator("#filter_try")).to_be_visible(timeout=15_000)
-    page.locator("#filter_try").click()
+    choose_kind(page, "filter")
+    expect(page.locator("#step_try")).to_be_enabled(timeout=15_000)
+    page.locator("#step_try").click()
     wait_shiny(page, 90_000)
     expect(page.locator(".spv-trial-panel")).to_be_visible(timeout=60_000)
 
@@ -208,11 +217,12 @@ def add_condition_step(page: Page, column: str, op: str, value, reason: str, mar
 
 
 def drop_columns(page: Page, columns: list, reason: str, mark: bool = False) -> None:
-    """The whole way, for a column drop: deselect the columns in the column chooser of the Result data (T3) shown, Try the drop, (mark), reason, Add to audit pipeline."""
+    """The whole way, for a column drop: deselect the columns in the column chooser of the Result data (T3) shown, Try (kind Drop columns), (mark), reason, Add to audit pipeline."""
     for column in columns:
         page.evaluate("(c) => { const s = document.getElementById('preview_col_selector').selectize; s.removeItem(c); }", column)
     wait_shiny(page)
-    expect(page.locator("#col_drop_try")).to_be_enabled(timeout=15_000)
-    page.locator("#col_drop_try").click()
+    choose_kind(page, "drop")
+    expect(page.locator("#step_try")).to_be_enabled(timeout=15_000)
+    page.locator("#step_try").click()
     wait_shiny(page, 90_000)
     add_to_pipeline(page, reason, mark)

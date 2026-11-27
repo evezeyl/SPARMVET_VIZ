@@ -143,7 +143,10 @@ def _same_picture(a: Image.Image, b: Image.Image) -> bool:
 def _press(page: Page, selector: str) -> None:
     """Press a Shiny action button once it is visible. The click is made in the page: a notification can lie over the button."""
     expect(page.locator(selector).first).to_be_visible(timeout=15_000)
-    expect(page.locator(selector).first).to_be_enabled(timeout=15_000)   # a button can be disabled until the app has read what it needs
+    try:
+        expect(page.locator(selector).first).to_be_enabled(timeout=15_000)   # a button can be disabled until the app has read what it needs
+    except AssertionError:
+        raise AssertionError(f"{selector} stayed disabled; the bar says: {page.locator('.spv-stepbar-why, .spv-stepbar-drop').all_inner_texts()}")
     page.eval_on_selector(selector, "e => e.click()")
 
 
@@ -184,7 +187,7 @@ def _stage_filter(page: Page) -> None:
     _wait_shiny(page)
     # the staged row says what the app read: column and value (a value typed too late would stage another one)
     expect(page.locator("#filter_rows_ui")).to_contain_text(f"score \u2265 {THRESHOLD}", timeout=10_000)
-    expect(page.locator("#filter_try")).to_be_visible(timeout=10_000)
+    expect(page.locator("#step_try")).to_be_visible(timeout=10_000)
 
 
 def _send_staged_filter(page: Page, nodes: int) -> None:
@@ -198,10 +201,11 @@ def _filter_step(page: Page, nodes: int) -> None:
 
 def _drop_step(page: Page, nodes: int) -> None:
     """Deselect `score`, try the drop, write the reason and add it (FLOW-3: the drop goes the one way, like a condition)."""
-    from app.tests.browser_view import add_to_pipeline
+    from app.tests.browser_view import add_to_pipeline, choose_kind
     page.evaluate("() => $('#preview_col_selector')[0].selectize.removeItem('score')")
     _wait_shiny(page)
-    _press(page, "#col_drop_try")
+    choose_kind(page, "drop")
+    _press(page, "#step_try")
     _wait_shiny(page, 60_000)
     add_to_pipeline(page, "score is not needed", expected_places=1)
     _wait_shiny(page, 30_000)

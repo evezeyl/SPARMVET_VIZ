@@ -1374,3 +1374,24 @@ html.spv-try-counting-on .spv-try-counting { display: block; }
 .spv-trial-add { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .spv-audit-verified { font-size: 0.75rem; font-weight: 600; color: #6c757d; }
 .spv-audit-reason { font-size: 0.75rem; font-weight: 400; color: #1a1a1a; overflow-wrap: anywhere; margin-top: 2px; }
+
+/* ── 33. HOME Audit mode: the step bar, the one entry that creates an audit step (2026-11-27; PROVISIONAL) ──── */
+/* Existing tokens and sizes only (rules_css_style_spec.md sections 1, 2, 3, 4, 9): the bar is the white card of section 9a with the band of section 31 as its first line; the switch of the kind is a
+   plain pair of radios (state told by the checked radio and its text, not by colour alone); Try is the Type 1 button. The region exists in Audit mode only (the output is empty in Exploration, so there is no empty landmark). The part that the kind names is shown by the attribute `data-kind` that `app/src/www/step_bar.js` sets; both parts stay mounted (the form keeps what the user typed). At narrow
+   width the parts wrap under each other; the fold-out is a `details` element that can be folded, and its body scrolls inside 40% of the window so that the table stays visible under it. */
+.spv-stepbar { margin: 0 0 8px 0; padding: 6px 8px; background: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); min-width: 0; }
+.spv-stepbar .spv-shown-band { margin-bottom: 6px; }
+.spv-stepbar-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-bottom: 4px; font-size: 0.8rem; font-weight: 600; color: #1a1a1a; }
+.spv-stepbar-kind .shiny-input-container { margin: 0 !important; width: auto !important; }
+.spv-stepbar-kind label { font-size: 0.8rem; font-weight: 600; }
+.spv-stepbar-condition { min-width: 0; }
+.spv-stepbar-inner[data-kind="drop"] .spv-stepbar-condition { display: none; }
+.spv-stepbar-inner:not([data-kind="drop"]) .spv-stepbar-drop { display: none; }
+.spv-stepbar-line { font-size: 0.8rem; font-weight: 600; color: #1a1a1a; overflow-wrap: anywhere; margin-bottom: 4px; }
+.spv-stepbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 4px 0; }
+.spv-stepbar-why { font-size: 0.75rem; color: #6c757d; overflow-wrap: anywhere; }
+.spv-stepbar .spv-trial-panel { margin: 6px 0 0 0; }
+.spv-stepbar .spv-trial-panel > summary { cursor: pointer; font-size: 0.75rem; font-weight: 700; color: #1a1a1a; }
+.spv-stepbar .spv-trial-panel > summary:focus-visible { outline: 2px solid #1a1a1a; outline-offset: 1px; }
+.spv-trial-body { max-height: 40vh; overflow: auto; margin-top: 4px; }
+.spv-filters-audit-line { padding-top: 2px; }

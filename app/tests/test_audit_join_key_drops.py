@@ -153,7 +153,8 @@ def _trial_of_drop(monkeypatch, raw, selected, columns=COLUMNS, shown="T3:p1", p
                    recipe_raw=lambda: raw, recipe_plans=(lambda: plans))
     _flush()
     world.live.set("preview_col_selector", selected)
-    world.live.set("col_drop_try", 1)
+    world.live.set("step_kind", "drop")
+    world.live.set("step_try", 1)
     _flush()
     return world
 
@@ -212,7 +213,8 @@ def test_without_a_recipe_the_trial_judges_nothing_and_tries_the_drop(monkeypatc
     world = _world(monkeypatch, trial=trial, shown_place=lambda: "T3:p1", columns_at=lambda p: [(c, "String") for c in COLUMNS], open_graph=lambda: object(), lineage_calc=lambda: (object(), ""))
     _flush()
     world.live.set("preview_col_selector", [c for c in COLUMNS if c != "year"])
-    world.live.set("col_drop_try", 1)
+    world.live.set("step_kind", "drop")
+    world.live.set("step_try", 1)
     _flush()
     assert _nodes_of(world) == [("year", "T3:p1")]
 

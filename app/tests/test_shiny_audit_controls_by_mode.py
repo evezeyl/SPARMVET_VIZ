@@ -49,26 +49,27 @@ def test_the_controls_of_a_step_are_in_audit_mode_only(page: Page, shiny_app: Sh
     _open_filters_panel(page)
     _navigate_to_mlst_plot(page)
 
-    # Exploration: nothing that does nothing, and nothing of the old way
+    # Exploration: no bar, nothing of the old way; the form is in the Filters panel
     set_mode(page, "exploration")
-    for gone in ("#btn_apply", ".audit-pending-badge", "#filter_send_to_audit", "#propagation_confirm", "#filter_try", ".spv-trial-panel", "#col_drop_try"):
+    for gone in ("#btn_apply", ".audit-pending-badge", "#filter_send_to_audit", "#propagation_confirm", "#step_try", ".spv-trial-panel", ".spv-stepbar-inner"):
         expect(page.locator(gone)).to_have_count(0)
 
-    # Audit: Try comes with a staged condition, the panel of the trial with the Try; the old controls are not there either
+    # Audit: the one button Try is in the step bar, off while nothing is staged (and it says why); the old controls are not there either
     set_mode(page, "audit")
     set_view(page, "T3")
     for gone in ("#btn_apply", ".audit-pending-badge", "#filter_send_to_audit"):
         expect(page.locator(gone)).to_have_count(0)
-    expect(page.locator("#filter_try")).to_have_count(0)                       # nothing staged yet
+    expect(page.locator("#step_try")).to_be_disabled()                          # nothing staged yet
+    expect(page.locator(".spv-stepbar-why")).to_contain_text("Add a condition row first")
     stage_condition(page, "year", "gt", 2000)
-    expect(page.locator("#filter_try")).to_have_count(1, timeout=10_000)
+    expect(page.locator("#step_try")).to_be_enabled(timeout=10_000)
     try_staged(page)
     expect(page.locator(".spv-trial-panel")).to_have_count(1)
 
-    # back to Exploration: the controls are gone, the trial ended with ONE notice and nothing was applied
+    # back to Exploration: the bar is gone, the trial ended with ONE notice and nothing was applied
     set_mode(page, "exploration")
     expect(page.locator(".spv-trial-panel")).to_have_count(0, timeout=10_000)
-    expect(page.locator("#filter_try")).to_have_count(0)
+    expect(page.locator("#step_try")).to_have_count(0)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("You left Audit mode. The trial ended", timeout=10_000)
     set_mode(page, "audit")
     expect(page.locator("[id^='t3_delete_']")).to_have_count(0)                # nothing was added by the trip
