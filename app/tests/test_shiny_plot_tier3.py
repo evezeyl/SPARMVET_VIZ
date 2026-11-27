@@ -48,7 +48,7 @@ from PIL import Image
 from playwright.sync_api import Page, expect
 
 from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
-from app.tests.browser_view import set_compare, set_mode, set_view, wait_preview_rows
+from app.tests.browser_view import in_audit_mode, set_compare, set_mode, set_view, show_plot, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _wait_shiny
 from app.tests.test_shiny_step_order import N, _free_port, _red_pixels, _same_picture
@@ -134,6 +134,10 @@ def _rows(page: Page, n: int) -> None:
 
 
 def _plot_tab(page: Page, plot_id: str) -> None:
+    """The plot's tab in Exploration; in Audit mode there are no plot tabs (slice 3b): the plot is shown from "Path of the data"."""
+    if in_audit_mode(page):
+        show_plot(page, plot_id)
+        return
     page.locator(f".nav-link:has-text('{plot_id} plot')").first.click()
     _wait_shiny(page, 30_000)
 

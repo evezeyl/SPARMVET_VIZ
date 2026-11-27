@@ -192,7 +192,7 @@ def test_the_buttons_follow_the_mode_and_the_view(tmp_path, monkeypatch):
     audit_t3 = buttons("audit", "T3")
     assert 'id="filter_send_to_audit"' in audit_t3 and 'id="filter_apply"' not in audit_t3
     audit_t2 = buttons("audit", "T2", shown="T2:J")
-    assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, show the Result data (T3) of the open plot" in audit_t2
+    assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, show the Result data (T3) of a plot" in audit_t2
 
 
 def test_one_function_says_whether_the_app_is_in_audit_mode(tmp_path, monkeypatch):

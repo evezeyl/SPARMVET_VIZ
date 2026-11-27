@@ -19,7 +19,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import preview_rows, set_compare, set_mode, set_view, show_place, wait_preview_rows, wait_preview_rows_below
+from app.tests.browser_view import in_audit_mode, preview_rows, set_compare, set_mode, set_view, show_place, show_plot, wait_preview_rows, wait_preview_rows_below
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_smoke import (_load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _choose_fb_op, _wait_shiny)
@@ -54,6 +54,10 @@ def expected(tmp_path_factory):
 
 
 def _amr_plot(page: Page) -> None:
+    """The AMR Heatmap plot: its tab in Exploration; in Audit mode there are no plot tabs (slice 3b), the plot is shown from "Path of the data"."""
+    if in_audit_mode(page):
+        show_plot(page, "amr_heatmap")
+        return
     page.locator(".nav-link:has-text('AMR')").first.click()
     _wait_shiny(page)
     page.locator("[id^='subtabs_'] .nav-link:has-text('AMR Heatmap')").first.click()
@@ -160,30 +164,26 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
     show_place(page, "T1:ResFinder")      # slice 3a: in Audit mode the table shown is the place chosen in Path of the data and shown
     wait_preview_rows(page, rows_after, timeout=30_000)
     expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, audited", timeout=20_000)
-    set_view(page, "T3")
+    show_plot(page, "amr_heatmap")      # a table was shown: the plot's Result data is shown from the lineage (no plot tabs in Audit mode)
     wait_preview_rows(page, rows_after, timeout=30_000)
     # Compare: the Original and the Audited pane
     set_compare(page, True)
     expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=30_000)
     set_compare(page, False)
     # a plot beside ResFinder: no step on it, its table is its original
-    page.locator(".nav-link:has-text('AMR')").first.click()
-    page.locator("[id^='subtabs_'] .nav-link:has-text('MLST Bar')").first.click()
-    _wait_shiny(page)
+    show_plot(page, "mlst_bar")
     mlst_rows = expected["mlst"]
     wait_preview_rows(page, mlst_rows, timeout=30_000)
     expect(page.locator("#plot_badge_mlst_bar")).to_contain_text("no audited step for this plot yet", timeout=20_000)
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("No T3 adjustments")
     # back to the AMR plot: remove the step (the bin of its card) and every plot reads its original table
-    page.locator("[id^='subtabs_'] .nav-link:has-text('AMR Heatmap')").first.click()
-    _wait_shiny(page)
+    show_plot(page, "amr_heatmap")
     expect(page.locator("[id^='t3_delete_']")).to_have_count(1, timeout=15_000)
     page.locator("[id^='t3_delete_']").first.click()
     _wait_shiny(page)
     wait_preview_rows(page, rows_before, timeout=60_000)
     expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("no audited step for this plot yet", timeout=20_000)
-    page.locator("[id^='subtabs_'] .nav-link:has-text('MLST Bar')").first.click()
-    _wait_shiny(page)
+    show_plot(page, "mlst_bar")
     wait_preview_rows(page, mlst_rows, timeout=30_000)
 
 
@@ -292,21 +292,14 @@ def test_the_added_lines_of_resfinder_are_removed_by_a_filter_on_its_marker_at_t
         wait_preview_rows(page, expected["amr_no_added"], timeout=60_000)
         expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)
         # a plot of another group, built from the same table, follows
-        page.locator(".nav-link:has-text('QA canaries')").first.click()
-        _wait_shiny(page)
-        page.locator("[id^='subtabs_'] .nav-link:has-text('Qa Amr Genes Per Sample'), [id^='subtabs_'] .nav-link:has-text('QA AMR')").first.click()
-        _wait_shiny(page)
+        show_plot(page, "qa_amr_genes_per_sample")
         wait_preview_rows(page, expected["qa_no_added"], timeout=60_000)
         expect(page.locator("#plot_badge_qa_amr_genes_per_sample")).to_contain_text("its table changed", timeout=20_000)
         # a plot that is built from ResFinder through a join whose rows are the same count but whose ResFinder columns lose the added lines: its table changed too
-        page.locator(".nav-link:has-text('AMR')").first.click()
-        _wait_shiny(page)
-        page.locator("[id^='subtabs_'] .nav-link:has-text('Virulence Bar')").first.click()
-        _wait_shiny(page)
+        show_plot(page, "virulence_bar")
         expect(page.locator("#plot_badge_virulence_bar")).to_contain_text("its table changed", timeout=20_000)
         # the plot beside ResFinder is not touched
-        page.locator("[id^='subtabs_'] .nav-link:has-text('MLST Bar')").first.click()
-        _wait_shiny(page)
+        show_plot(page, "mlst_bar")
         expect(page.locator("#plot_badge_mlst_bar")).to_contain_text("no audited step for this plot yet", timeout=20_000)
     finally:
         _amr_plot(page)
@@ -372,7 +365,7 @@ def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_a
         show_place(page, "T1:ResFinder")
         wait_preview_rows(page, expected["amr_before"], timeout=30_000)      # a step at tier 2 leaves tier 1 as it is
         expect(page.locator("#home_data_preview_badge")).to_contain_text("Viewing: T1, original", timeout=20_000)
-        set_view(page, "T3")
+        show_plot(page, "amr_heatmap")      # a table was shown: the plot's Result data is shown from the lineage (no plot tabs in Audit mode)
         wait_preview_rows(page, expected["amr_after"], timeout=30_000)
     finally:
         _amr_plot(page)

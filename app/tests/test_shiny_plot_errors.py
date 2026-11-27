@@ -44,7 +44,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
-from app.tests.browser_view import set_compare, set_mode, set_view
+from app.tests.browser_view import in_audit_mode, set_compare, set_mode, set_view, show_plot
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from app.tests.test_shiny_step_order import _confirm_and_apply, _press
@@ -118,6 +118,10 @@ def _server_log() -> str:
 
 
 def _show_plot(page: Page, plot_id: str) -> None:
+    """The plot's tab in Exploration; in Audit mode there are no plot tabs (slice 3b), the plot is shown from "Path of the data"."""
+    if in_audit_mode(page):
+        show_plot(page, plot_id)
+        return
     page.locator(f".nav-link:has-text('{LABELS[plot_id]}')").first.click()
     _wait_shiny(page, 20_000)
 

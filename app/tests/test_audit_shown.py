@@ -13,7 +13,8 @@ S4 `selection_problem` never refuses; S5 `view_change_notice` ignores the column
 import pytest
 
 from app.modules.audit_place_view import AUDIT, ORIGINAL, AUDITED, TableFacts, view_identity, viewed
-from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, others_chosen, request_to_show, selection_problem, shown_node_of_tab)
+from app.modules.audit_places import nodes_reaching_node, plots_below
+from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, others_chosen, open_subtab_of, plot_area_title, request_to_show, selection_problem, table_shown_in_panel, table_shown_lines, unlisted_pending_line)
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.lineage_view import line_text
 from app.modules.t3_audit_engine import view_change_notice
@@ -111,8 +112,80 @@ def test_a_selection_without_the_place_shown_is_refused_with_show_your_selection
     assert "Show your selection first" in SHOW_SELECTION_FIRST
 
 
-def test_a_click_on_a_plot_tab_shows_that_plot_node():
-    assert shown_node_of_tab("amr_heatmap") == "T3:amr_heatmap" and shown_node_of_tab(None) is None and shown_node_of_tab("") is None
+# -- slice 3b: no plot tabs in Audit mode, the plot shown is the open plot -----------------------------------------------
+def audit_view(world, shown_place, default_plot="amr_heatmap"):
+    """What the screen reads in Audit mode, as `home_theater._audit_viewed` builds it: the open plot of the reader is the plot shown, none while a table is shown, the default plot with nothing shown."""
+    candidate = default_plot
+    if shown_place and world.graph.has_node(shown_place):
+        node = world.graph.node(shown_place)
+        candidate = node.name if node.kind == "T3" else None
+    return viewed(AUDIT, "T3", None, candidate, [shown_place] if shown_place else [], world.graph, world.lineage)
+
+
+def test_the_open_plot_of_audit_mode_is_the_plot_shown_not_the_tab_of_exploration(world):
+    assert open_subtab_of(audit_view(world, "T3:mlst_bar", default_plot="amr_heatmap")) == "subtab_mlst_bar", "the plot shown, whatever tab Exploration had"
+    assert open_subtab_of(audit_view(world, None, default_plot="amr_heatmap")) == "subtab_amr_heatmap", "nothing shown: the default plot (the tab of Exploration)"
+    assert open_subtab_of(audit_view(world, "T3:amr_heatmap")) == "subtab_amr_heatmap"
+
+
+def test_while_a_table_is_shown_no_plot_is_open(world):
+    for place in ("T1:ResFinder", "T1:Quality_metrics"):
+        shown = audit_view(world, place)
+        assert shown.shown_plot is None and shown.from_open_plot is None and shown.place == place
+        assert open_subtab_of(shown) == "", "no plot is open: nothing may write a step at the plot the tab had"
+
+
+def test_no_plot_is_open_when_nothing_can_be_shown(world):
+    assert open_subtab_of(None) == ""
+    nothing = viewed(AUDIT, "T3", None, None, [], world.graph, world.lineage)
+    assert nothing.nothing_chosen and open_subtab_of(nothing) == ""
+
+
+def test_the_open_plot_does_not_depend_on_which_tab_exploration_had_when_a_plot_is_shown(world):
+    other = audit_view(world, "T3:mlst_bar", default_plot="mlst_bar")
+    assert open_subtab_of(audit_view(world, "T3:mlst_bar", default_plot="amr_heatmap")) == open_subtab_of(other)
+
+
+def test_the_words_of_the_plot_area(world):
+    assert plot_area_title("AMR Heatmap") == "Plot shown: AMR Heatmap"
+    lines = table_shown_lines("ResFinder: Table, T1", ["AMR Heatmap", "MLST"])
+    assert lines[0].startswith("No figure: ResFinder: Table, T1 is a table")
+    assert "2 plots are built from it: AMR Heatmap, MLST." in lines and lines[-1].startswith("To see a figure")
+    one = table_shown_lines("X", ["P"])
+    assert "1 plot is built from it: P." in one
+    none = table_shown_lines("Quality: Table, T1", [])
+    assert any("No plot is built from it." in line for line in none) and not any("built from it:" in line for line in none)
+
+
+def test_the_plots_named_in_the_note_of_a_table_are_the_plots_built_from_it(world):
+    below = plots_below(world.graph, ["T1:ResFinder"])
+    assert "amr_heatmap" in below
+    assert plots_below(world.graph, ["T1:Quality_metrics"]) == [], "a table no plot reads names no plot"
+
+
+def test_the_right_panel_lists_the_steps_written_at_the_table_shown_or_above_it(world):
+    here = {"id": "a", "place": "T1:ResFinder"}
+    above = None
+    for node in world.graph.lineage_back("T2:ResFinder") if world.graph.has_node("T2:ResFinder") else []:
+        if world.graph.node(node).kind == "T1":
+            above = {"id": "b", "place": node}
+    below = {"id": "c", "place": "T3:amr_heatmap"}
+    beside = {"id": "d", "place": "T1:MLST"}
+    listed = nodes_reaching_node(world.graph, [here, below, beside], "T1:ResFinder")
+    assert [n["id"] for n in listed] == ["a"], "a step at the table itself; a step below it (the plot) or beside it is not on its path"
+    assert [n["id"] for n in nodes_reaching_node(world.graph, [here, below, beside], "T3:amr_heatmap")] == ["a", "c"], "the plot is built from the table"
+
+
+def test_table_shown_in_panel_reads_only_table_nodes():
+    assert table_shown_in_panel("T1:ResFinder") == "T1:ResFinder" and table_shown_in_panel("T2:x") == "T2:x"
+    assert table_shown_in_panel("T3:amr_heatmap") == "" and table_shown_in_panel(None) == "" and table_shown_in_panel("") == ""
+
+
+def test_pending_steps_the_right_panel_does_not_list_are_told_not_dropped_silently():
+    assert unlisted_pending_line(0, 0) == "" and unlisted_pending_line(2, 2) == ""
+    one = unlisted_pending_line(1, 0)
+    assert "1 pending step is written elsewhere and not listed here" in one and "Apply needs a reason for every step" in one
+    assert unlisted_pending_line(3, 1).startswith("2 pending steps are written elsewhere")
 
 
 # -- the condition belongs to the table shown (key + notice) -------------------------------------------------------

@@ -268,8 +268,8 @@ class TestRecipeSwitchClearsFilters:
         # The audited step is not a staged filter: no notice for it, nothing cleared.
         expect(_notices(page)).to_have_count(0)
         _choose_recipe(page, A)
-        page.wait_for_selector(".nav-link:has-text('AMR')", timeout=20_000)
-        _open_plot(page, A)
+        # Audit mode has no plot tabs (slice 3b): the plot area draws the plot of the tab Exploration had for A (the default plot), and the right panel lists the step written at it
+        expect(page.locator(".spv-audit-plot-area")).to_contain_text("Plot shown", timeout=30_000)
         expect(page.locator("body")).to_contain_text("year < 2050", timeout=20_000)
 
 

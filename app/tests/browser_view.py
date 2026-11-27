@@ -2,7 +2,7 @@
 
 # @deps
 # consumes: app/handlers/home_theater.py (the inputs home_mode, data_view, source_table, audit_compare), app/src/www/lineage_view.js (the chosen places and their Show buttons)
-# consumed_by: app/tests/test_shiny_na_tick.py, app/tests/test_shiny_step_order.py, app/tests/test_tier_decides_filter_form.py, app/tests/test_filter_form_survives_rerender.py, app/tests/test_shiny_plot_tier3.py, app/tests/test_shiny_seed_places.py, app/tests/test_shiny_plot_errors.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_shiny_session_restore.py, app/tests/test_shiny_apply_blocked.py, app/tests/test_export_download.py, app/tests/test_shiny_smoke.py
+# consumed_by: app/tests/test_audit_one_plot_browser.py, app/tests/test_shiny_na_tick.py, app/tests/test_shiny_step_order.py, app/tests/test_tier_decides_filter_form.py, app/tests/test_filter_form_survives_rerender.py, app/tests/test_shiny_plot_tier3.py, app/tests/test_shiny_seed_places.py, app/tests/test_shiny_plot_errors.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_shiny_session_restore.py, app/tests/test_shiny_apply_blocked.py, app/tests/test_export_download.py, app/tests/test_shiny_smoke.py
 # @end_deps
 
 The mode switch (`home_mode`: "exploration" or "audit", only with the audit on) and the data choice (`data_view`: "SRC", "T1", "T2",
@@ -32,23 +32,27 @@ def in_audit_mode(page: Page) -> bool:
 
 def set_view(page: Page, view: str) -> None:
     """The data choice "Table to view" of Exploration. In Audit mode the choice is hidden (slice 3a, D-0652): the table shown is the one chosen in "Path of the data" and shown with the
-    button Show (`show_place`); with nothing shown it is the Result data (T3) of the open plot, so `set_view(page, "T3")` is true already; any other view is asked of `show_place`."""
+    button Show (`show_place`); with nothing shown it is the Result data (T3) of the plot of the tab Exploration had, so `set_view(page, "T3")` is true already; any other view is asked of
+    `show_place`. There are no plot tabs in Audit mode (slice 3b): when a TABLE is shown, `set_view(page, "T3")` fails and says to name the plot with `show_plot` (the helper never picks
+    a plot for the test)."""
     if in_audit_mode(page):
         assert view == "T3", f"In Audit mode there is no 'Table to view': show the place with show_place(page, 'T1:<table>') instead of set_view({view!r})."
         expect(page.locator("#data_view")).to_have_count(0)
         wait_shiny(page)
-        # "T3" in Audit mode is the Result data of the open plot: show it unless it is shown already
-        active = page.locator("[id^='subtabs_'] .nav-link.active:visible")
-        value = active.first.get_attribute("data-value") if active.count() else None
-        if value and page.locator("#lineage_root .spv-lin-line").count():
-            place = "T3:" + value.removeprefix("subtab_")
-            line = page.locator(f"#lineage_root .spv-lin-line[data-id='{place}']")
-            if line.count() and "shown" not in (line.get_attribute("class") or "").split():
-                show_place(page, place, keep_chosen=False)
+        band = page.locator("#shown_band_ui")
+        assert not band.count() or "Result data, T3" in band.inner_text() or not band.inner_text().strip(), (
+            "A table is shown and there are no plot tabs in Audit mode: name the plot whose Result data (T3) the test needs with show_plot(page, '<plot id>').")
         return
     page.locator(f"#data_view input[value={view}]").check(force=True)
     wait_shiny(page)
     expect(page.locator(f"#data_view input[value={view}]")).to_be_checked()
+
+
+def show_plot(page: Page, plot_id: str) -> None:
+    """Audit mode: show the plot `plot_id` (its Result data, T3) in the one plot area. There are no plot tabs in Audit mode (slice 3b, D-0657): a plot is chosen in "Path of the data" and shown.
+    Nothing stays chosen."""
+    show_place(page, f"T3:{plot_id}", keep_chosen=False)
+    expect(page.locator(f"#plot_cell_{plot_id}")).to_be_attached(timeout=30_000)
 
 
 def show_place(page: Page, place: str, keep_chosen: bool = True) -> None:

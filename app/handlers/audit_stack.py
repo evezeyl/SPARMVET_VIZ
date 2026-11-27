@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: app/modules/audit_shown.py (table_shown_in_panel, unlisted_pending_line: the right panel follows the item shown, slice 3b), app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it), libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -38,7 +38,8 @@ from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
-from app.modules.audit_places import PLACES_BUCKET, place_line, place_words, plots_below
+from app.modules.audit_places import PLACES_BUCKET, nodes_reaching_node, place_line, place_words, plots_below
+from app.modules.audit_shown import table_shown_in_panel, unlisted_pending_line
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -387,6 +388,10 @@ def define_server(input, output, session, *,
         """
         if home_state is not None:
             state = home_state.get()
+            table_place = table_shown_in_panel(state.get("audit_shown_place"))
+            if table_place:
+                # Audit mode, a TABLE is shown (slice 3b): the panel is about that table, and no plot is open
+                return table_place.partition(":")[2]
             subtab = state.get("active_plot_subtab") or ""
             p_id = subtab.removeprefix("subtab_") if subtab else None
             if p_id:
@@ -477,6 +482,7 @@ def define_server(input, output, session, *,
         by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
         pending_all = list(state.get("_pending_t3_nodes", []))
         open_plot = active_subtab.removeprefix("subtab_")
+        table_place = table_shown_in_panel(state.get("audit_shown_place"))
         reach_of: dict[str, list[str]] = {}
         graph = _graph_of_open_recipe()
         if graph is not None:
@@ -486,8 +492,13 @@ def define_server(input, output, session, *,
                     reach_of[place] = plots_below(graph, [place])
             # a step written at a table that NO plot reads (LINEAGE-VIEW-G, D-0627) reaches no plot, so it belongs to none: it is listed with every plot's steps, with the words that no
             # figure changes, so that its reason can be typed and the step removed (PROVISIONAL: listed on every plot)
-            committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
-            pending_here = [n for n in pending_all if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
+            if table_place and graph.has_node(table_place):
+                # a TABLE is shown (slice 3b, D-0657; PROVISIONAL): the steps written at that table or above it on its path (`nodes_reaching_node`), committed and pending
+                committed_here = nodes_reaching_node(graph, by_plot.get(PLACES_BUCKET, []), table_place)
+                pending_here = nodes_reaching_node(graph, pending_all, table_place)
+            else:
+                committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
+                pending_here = [n for n in pending_all if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
         else:
             committed_here, pending_here = [], []
 
@@ -505,11 +516,21 @@ def define_server(input, output, session, *,
 
         # The section of the audit steps, below the recipe's own steps (Inherited, Tier 2) and apart from them: its heading is always shown, with the name of the open plot, in the style of
         # the heading of a recipe tier (`#audit_sidebar h6`). The heading words "My Adjustments" are the ones the panel already used.
-        plot_name = display_names.shown_name(display_names.shown_names(active_cfg().raw_config), display_names.PLOT, open_plot) if open_plot else "plot"
+        # a TABLE shown (slice 3b): the heading names the table as the lineage writes it ("ResFinder: Table, T1"); the plot's name otherwise
+        if table_place:
+            plot_name = place_line(table_place, active_cfg().raw_config)
+            no_steps_text = f"No audit steps are written at {plot_name} or above it yet."
+        else:
+            plot_name = display_names.shown_name(display_names.shown_names(active_cfg().raw_config), display_names.PLOT, open_plot) if open_plot else "plot"
+            no_steps_text = f"No T3 adjustments for {plot_name} yet."
+        # the pending steps this list does not show (written at a place the item shown is not built from): Apply still asks a reason for every one, so the panel says so
+        unlisted = unlisted_pending_line(len({n.get("id") for n in pending_all if n.get("id")}), len({n.get("id") for n in pending_here if n.get("id")}))
+        unlisted_note = ui.div(unlisted, class_="text-muted spv-text-xxs", style="padding:2px 4px;", role="status") if unlisted else ui.span()
         if not all_nodes and not orphaned:
             return ui.div(
                 ui.h6(f"My Adjustments — {plot_name}"),
-                ui.div(f"No T3 adjustments for {plot_name} yet.", class_="text-muted spv-text-sm", style="padding:4px;"),
+                ui.div(no_steps_text, class_="text-muted spv-text-sm", style="padding:4px;"),
+                unlisted_note,
                 class_="spv-audit-mine",
             )
 
@@ -622,7 +643,7 @@ def define_server(input, output, session, *,
                 style="padding:2px 4px;",
             ))
 
-        return ui.div(adj_header, *node_els, class_="spv-audit-mine")
+        return ui.div(adj_header, unlisted_note, *node_els, class_="spv-audit-mine")
 
     # ------------------------------------------------------------------
     # Reason inputs are NOT eagerly synced to home_state (would re-render the

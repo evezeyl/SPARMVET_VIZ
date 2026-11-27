@@ -129,7 +129,7 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
         a_table = page.locator("#lineage_root .spv-lin-line[data-id^='T1:']:not(.not-choosable)").first.get_attribute("data-id")
         show_place(page, a_table)
         expect(page.locator("#filter_send_to_audit")).to_have_count(0, timeout=10_000)
-        expect(page.locator("#filter_controls_ui")).to_contain_text("To create an audit step, show the Result data (T3) of the open plot")
+        expect(page.locator("#filter_controls_ui")).to_contain_text("To create an audit step, show the Result data (T3) of a plot")
     finally:
         set_mode(page, "exploration")
         set_view(page, "T3")

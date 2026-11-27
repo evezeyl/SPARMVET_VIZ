@@ -706,6 +706,13 @@ class TestSessionListRefresh:
         sm.write_assembly_ghost(key, label, msig, dbh, {"d": str(data)}, {})
         return key
 
+    def _home_loaded(self, page: Page) -> None:
+        """Wait until HOME has drawn its plot area (the plot's accordion is on the page) and Shiny is idle. The Session Management panel is drawn again whenever `home_state` changes, and the
+        plot accordion writes to it when it first appears (`_track_plot_collapse`): a test that opens a session group before that write finds the group closed again (found 2026-11-27 with
+        slice 3b of the Audit flow, which draws the plot area one step later than the page; the panel redrawing on an unrelated change is a defect of its own, task HOME-SESSION-PANEL-REDRAWS-ON-ANY-STATE)."""
+        page.wait_for_selector(".spv-plot-accordion", timeout=90_000)
+        _wait_shiny(page, 60_000)
+
     def _open_session_group(self, page: Page, label: str) -> None:
         """Sessions are grouped by data_analysis_recipe_id in a nested accordion
         (session_groups_accordion, 📁 {id}) — expand the group our seeded session
@@ -722,6 +729,7 @@ class TestSessionListRefresh:
         try:
             page.goto(shiny_app.url)
             page.wait_for_selector("#nav_accordion", timeout=15_000)
+            self._home_loaded(page)
             page.locator("#nav_accordion").get_by_text("Session Management").first.click()
             _wait_shiny(page)
             self._open_session_group(page, "hom53_single")
@@ -746,6 +754,7 @@ class TestSessionListRefresh:
         try:
             page.goto(shiny_app.url)
             page.wait_for_selector("#nav_accordion", timeout=15_000)
+            self._home_loaded(page)
             page.locator("#nav_accordion").get_by_text("Session Management").first.click()
             _wait_shiny(page)
             self._open_session_group(page, "hom54_a")
@@ -781,6 +790,7 @@ class TestSessionListRefresh:
 
             page.goto(shiny_app.url)
             page.wait_for_selector("#nav_accordion", timeout=15_000)
+            self._home_loaded(page)
             page.locator("#nav_accordion").get_by_text("Session Management").first.click()
             _wait_shiny(page)
             self._open_session_group(page, "hom50_label")

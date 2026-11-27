@@ -13,8 +13,9 @@ The recipe is `1_test_data_ST22_dummy`, the one the lineage tests call the demo 
 
 The walk (each stage is a small function, so that a later slice changes one stage only):
   1 open          the recipe opens in Exploration, with the mode row and no Compare
-  2 audit mode    switch to Audit: the Compare switch appears, the lineage panel can be opened
+  2 audit mode    switch to Audit: the Compare switch appears, the lineage panel can be opened; no group tabs and no plot tabs (slice 3b): one plot area, "Plot shown: AMR Heatmap"
   3 lineage       open "Path of the data" (it is open on entering Audit mode); choose the place: the first table, tier 1 (ResFinder): nothing changes on screen; Show it and see its table (slice 3a);
+                  (the plot area says "No figure: ResFinder ... is a table" and the Compare switch is absent while the table is shown);
                   show the Result data (T3) of the plot again, which the filter is built on, and choose ResFinder again, to write the step there
   4 filter        build a filter on a column of the table the open plot reads, a value taken from the data (never a fixed count), sent to audit at that place
   5 apply         a reason, Apply: the card says where it was written, the place is marked, the plot is the audited one, the data preview has the rows expected
@@ -80,6 +81,9 @@ def stage_open(page: Page, url: str) -> None:
 def stage_audit_mode(page: Page) -> None:
     set_mode(page, "audit")
     expect(page.locator("#audit_compare")).to_be_attached(timeout=15_000)
+    expect(page.locator("#home_groups_nav")).to_have_count(0)                  # slice 3b: no group tabs and no plot tabs in Audit mode
+    expect(page.locator("[id^='subtabs_']")).to_have_count(0)
+    expect(page.locator(".spv-audit-plot-area")).to_contain_text(f"Plot shown: AMR Heatmap", timeout=30_000)
     set_view(page, "T3")
 
 
@@ -95,6 +99,8 @@ def stage_lineage(page: Page, expected: dict) -> None:
     _wait_shiny(page)
     expect(page.locator("#shown_band_ui")).to_contain_text("Shown: ResFinder: Table, T1")
     wait_preview_rows(page, expected["resfinder"], timeout=60_000)
+    expect(page.locator(".spv-audit-plot-area")).to_contain_text("No figure: ResFinder: Table, T1 is a table")      # a table is not a figure
+    expect(page.locator("#audit_compare")).to_have_count(0)                                                           # no Compare for a table
     show_place(page, f"T3:{PLOT}")                  # the filter below is built on the Result data (T3) of the open plot, so it is shown again
     wait_preview_rows(page, expected["before"], timeout=60_000)
     _line(page, PLACE).click()                      # the place the step is written at: chosen again, not shown

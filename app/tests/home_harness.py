@@ -175,6 +175,22 @@ class Home:
             home_state=self.home_state, session_manager=session_manager or mock.MagicMock(), notification_log=reactive.Value([]))
         self.filters_applied = self.readers["applied_filters"]
         self.filters_pending = self.readers["_pending_filters"]
+        self._open_exploration_tab(subtab)
+
+    def _open_exploration_tab(self, subtab):
+        """The plot tab of EXPLORATION (slice 3b): in Audit mode the plot shown is the open plot and, with nothing shown, the default is the tab Exploration had, which HOME keeps in its own
+        value (`_exploration_subtab`, written by the tracker of the tabs from the inputs of the navsets). The harness plays the click on the tab: it gives the navset input of the group and runs
+        the tracker as in Exploration."""
+        if not subtab:
+            return
+        self.inputs["subtabs_g"] = subtab
+        with reactive.isolate():
+            mode = self.mode.get()
+            self.mode.set("exploration")
+            try:
+                self.effects["_track_active_home_subtab"]()
+            finally:
+                self.mode.set(mode)
 
     def filter_handlers(self, monkeypatch) -> dict:
         """Run the REAL `define_filter_audit_server` with the readers HOME hands it: its outputs join `self.outputs`, its effects `self.effects`.
@@ -221,6 +237,8 @@ class Home:
                 self.source.set(source)
             if subtab is not None:
                 self.subtab.set(subtab)
+        if subtab is not None:
+            self._open_exploration_tab(subtab)
 
 
 def ids(frame: pl.DataFrame) -> list:

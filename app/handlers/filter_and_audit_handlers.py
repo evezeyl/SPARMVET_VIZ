@@ -746,7 +746,7 @@ def define_filter_audit_server(input, output, session, *,
         # Reminders (Eve, 2026-11-06; slice B): in Exploration a filter is a way to understand the data; only what is sent to audit (with a
         # reason) is exported. PROVISIONAL words (the coordinator's; the owner reads them).
         if audit and not can_send:
-            reminder = ui.tags.small("To create an audit step, show the Result data (T3) of the open plot: press Show on its square in Path of the data, or click its tab.",
+            reminder = ui.tags.small("To create an audit step, show the Result data (T3) of a plot: press Show on its square in Path of the data.",
                                      class_="text-warning d-block mt-1 spv-text-xxs")
         elif audit:
             reminder = ui.tags.small("Audit: a step you send changes the plot and is exported.", class_="text-warning d-block mt-1 spv-text-xxs")

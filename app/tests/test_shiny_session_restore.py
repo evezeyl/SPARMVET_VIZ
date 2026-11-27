@@ -158,6 +158,9 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         expect(page.locator("#home_mode input[value=audit]")).to_be_checked(timeout=10_000)
         # slice 3a (PROVISIONAL): the band says that the restored steps are applied
         expect(page.locator("#shown_band_ui")).to_contain_text("Restored session: 1 audit step is applied.", timeout=15_000)
+        # slice 3b (PROVISIONAL): Audit mode has no plot tabs; the plot area holds the plot of the tab Exploration had (nothing shown yet), where the saved step was made
+        expect(page.locator(".spv-audit-plot-area")).to_contain_text("Plot shown: MLST Bar", timeout=15_000)
+        expect(page.locator("#home_groups_nav")).to_have_count(0)
 
         # 2. Restore the session that has no save: one notice, nothing restored, the steps of the view are unchanged
         _show_card(page, "restore_once_empty", f"#session_restore_{safe(key_empty)}")
