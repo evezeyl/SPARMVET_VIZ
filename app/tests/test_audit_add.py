@@ -23,13 +23,13 @@ import json
 import pytest
 
 from app.modules.audit_add import (ADD_LABEL, NOT_MARKED, REASON_NEEDED_LINE, VERIFIED_LABEL, added_notice, can_add, marks_summary, stamp_marks, verification_sentences, verified_card_line)
-from app.modules.audit_places import PLACES_BUCKET, nodes_signature, place_step_records
+from app.modules.audit_places import nodes_signature, place_step_records
 from app.modules.session_manager import make_audit_step
 from utils.recipe_graph import build_graph
 
 
 def node(place, node_id="d1", value=90):
-    return make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": value, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="why", place=place, node_id=node_id)
+    return make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": value, "na": "remove"}, reason="why", place=place, node_id=node_id)
 
 
 PLACES = ["T1:ResFinder", "T2:ResFinder", "T3:amr_heatmap"]

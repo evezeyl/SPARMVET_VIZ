@@ -13,7 +13,6 @@ import pytest
 from app.handlers.export_handlers import blocked_audit_notice
 from app.modules.audit_run import AuditRunError
 from app.tests.test_audit_view import RECIPE_ID, World
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.session_manager import make_audit_step
 
 
@@ -26,8 +25,8 @@ def world(tmp_path_factory):
 
 def broken(plot, column="year"):
     """A step at the plot's own tier 3 that cannot run: the column is dropped by the step before it."""
-    drop = make_audit_step("drop_column", {"column": column}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot}")
-    use = make_audit_step("filter_row", {"column": column, "op": "ge", "value": 2000.0, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot}")
+    drop = make_audit_step("drop_column", {"column": column}, reason="r", place=f"T3:{plot}")
+    use = make_audit_step("filter_row", {"column": column, "op": "ge", "value": 2000.0, "na": "remove"}, reason="r", place=f"T3:{plot}")
     return [drop, use]
 
 

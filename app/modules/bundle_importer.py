@@ -77,7 +77,6 @@ class ImportResult:
     imported_recipe_path: Path
     session_key: str
     legs: dict[str, LegResult]
-    skipped_t3_plots: dict[str, str] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)    # what could not be checked because of an error, in plain words (D-0050)
 
 
@@ -183,14 +182,22 @@ def _verify(
             ),
         )
 
-    legs["t3_steps"] = LegResult(
-        status="not_checked",
-        recorded=effective_run.get("t3_audit_steps_sha256"),
-        detail=(
+    if "audit_steps_sha256" not in effective_run and "t3_audit_steps_sha256" in effective_run:
+        # the old key is NOT read as the new one: the hash covers another structure (one list with places, not one list per plot)
+        steps_detail = (
+            "This bundle was exported by an older version: its audit steps were recorded under another name "
+            "and are not compared."
+        )
+    else:
+        steps_detail = (
             "Not independently re-checked on import: T3 audit steps exist only in the "
             "exporting session. Compare this value against another effective_run.yaml of "
             "the same session to confirm the same audited decisions were applied."
-        ),
+        )
+    legs["t3_steps"] = LegResult(
+        status="not_checked",
+        recorded=effective_run.get("audit_steps_sha256"),
+        detail=steps_detail,
     )
 
     return legs
@@ -212,7 +219,7 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         from app.modules.renamed_keys import refused_audit_step_problem
         for steps_name in (n for n in names if n.endswith("/t3_steps.yaml") or n == "t3_steps.yaml"):
             record = yaml.safe_load(zf.read(steps_name).decode()) or {}
-            problem = refused_audit_step_problem(record.get("t3_steps") or {}, f"The bundle's {steps_name}", type_key="action", flat=True)
+            problem = refused_audit_step_problem(record.get("steps_by_place") or [], f"The bundle's {steps_name}", type_key="action", flat=True, list_name="steps_by_place")
             if problem:
                 raise BundleImportError(problem)
 
@@ -349,14 +356,10 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
     legs = _verify(effective_run, data_batch_hash, local_recipe_sha256_original,
                    _data_detail(set(source_files), named, carried), recipe_problem)
 
-    skipped = effective_run.get("t3_translation_skipped")
-    skipped = skipped if isinstance(skipped, dict) else {}
-
     return ImportResult(
         recipe_id=imported_id,
         imported_recipe_path=dest_recipe_path,
         session_key=session_key,
         legs=legs,
-        skipped_t3_plots=skipped,
         problems=[recipe_problem] if recipe_problem else [],
     )

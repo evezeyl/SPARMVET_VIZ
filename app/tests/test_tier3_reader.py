@@ -34,7 +34,6 @@ from app.modules.cache_keys import (
     clear_data_analysis_recipe_cache, data_analysis_recipe_keys, load_data_analysis_recipe, plot_tier3_key, tier3_steps)
 from app.modules.engine_registry import PlotEngines
 from app.modules.orchestrator import DataOrchestrator
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_run import AuditRunError
 from app.modules.audit_view import PlaceAudit
 from app.tests.audit_export_harness import FLAGS, audit_kwargs
@@ -349,7 +348,7 @@ def test_every_plot_of_every_shipped_recipe_has_the_key_of_its_table_unless_it_h
 def _audited(world, plot, nodes):
     """The table `plot` reads in the audit copy made from `nodes` (steps written at the plot's own tier 3), lazy; its original table when the copy leaves it as it is."""
     audit = PlaceAudit(world.orch, world.anchors, world.root / "audit_anchors")
-    placed = [{**n, "place": f"T3:{plot}", "plot_scope": PLACES_BUCKET} for n in nodes]
+    placed = [{**n, "place": f"T3:{plot}"} for n in nodes]
     lazy = audit.plot_lazy("tiny", plot, placed)
     return lazy if lazy is not None else world.orch.materialize_tier3("tiny", plot, world.anchors, keys=world.keys())
 
@@ -441,7 +440,7 @@ def test_the_export_applies_the_audited_steps_on_top_of_the_recipes_tier3(tmp_pa
     """A plot with recipe steps AND an audited step (written at its own tier 3): the table, the picture and the T3 file hold both, the recipe's first."""
     world = Tier3World(tmp_path)
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
-    nodes = [{**n, "place": "T3:p_steps", "plot_scope": PLACES_BUCKET, "created_at": "t"} for n in filter_nodes(
+    nodes = [{**n, "place": "T3:p_steps", "created_at": "t"} for n in filter_nodes(
         [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])]
     drawn: dict = {}
     real_render = PlotEngines.render
@@ -479,20 +478,3 @@ def test_a_failure_that_depends_on_a_value_is_named_by_the_plot_and_the_step_whe
     assert not (world.anchors / "C__T3_p_steps.parquet").exists(), "a table that failed is not stored"
     raw_text = "boom"
     assert plot_read_error_text(world.raw(), "p_plain", ValueError(raw_text)) == raw_text, "a plot without tier-3 steps: the error as it is"
-
-
-def test_the_propagation_dialogs_column_check_reads_each_plot_own_table_not_the_first_plots_of_the_same_target(tmp_path):
-    """L1: two plots on one table with different tier-3 steps (one drops `group`) must not share a schema in the dialog's check."""
-    from types import SimpleNamespace
-    from app.tests.test_audit_join_key_drops import closure
-    world = Tier3World(tmp_path)                      # p_steps drops `group`; p_plain keeps it
-    subtabs = ["subtab_p_steps", "subtab_p_plain"]
-    check = closure(
-        "_column_presence_per_plot",
-        _resolve_active_spec=lambda p_id: {"target_dataset": "C", "plot": p_id},
-        # an audit step is written at the plot's table: the check asks for T3 explicitly, whatever table the data choice shows (slice B)
-        _resolve_active_lf=lambda spec, tier=None: (world.orch.materialize_tier3("tiny", spec["plot"], world.anchors, keys=world.keys())
-                                                    if tier == "T3" else pytest.fail(f"the column check read tier {tier!r}, not T3")))
-    node = {"params": {"column": "group"}}
-    assert check([node], subtabs) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}
-    assert check([node], subtabs[::-1]) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}, "the order of the plots does not matter"

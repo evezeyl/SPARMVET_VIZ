@@ -19,7 +19,7 @@ import polars as pl
 import pytest
 import yaml
 
-from app.modules.audit_places import PLACES_BUCKET, bake_place_steps, place_step_records, place_words
+from app.modules.audit_places import bake_place_steps, place_step_records, place_words
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator
@@ -33,7 +33,7 @@ PIPELINES = ROOT / "config" / "data_analysis_recipes" / "pipelines"
 
 
 def node(place="T1:ResFinder", column="identity", op="lt", value=99, reason="keep the hits below 99 for this check"):
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "na": "remove"}, plot_scope=PLACES_BUCKET, reason=reason,
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "na": "remove"}, reason=reason,
                            place=place, started_from="subtab_amr_heatmap")
 
 
@@ -98,27 +98,27 @@ def test_the_recipe_built_from_the_baked_one_gives_the_plot_the_table_of_the_aud
 # ------------------------------------------------------------------ the session keeps a step written at a table
 def test_a_saved_and_restored_session_keeps_the_step_with_its_place_and_the_format_number_is_the_current_one(tmp_path):
     from app.modules.session_manager import SESSION_FORMAT_VERSION, SessionManager, split_key_drops
-    assert SESSION_FORMAT_VERSION == 5, "the stored form changed (every step is a node with a place, T1, T2 or T3, in the bucket `__places__`): an older file is refused, never converted"
+    assert SESSION_FORMAT_VERSION == 6, "the stored form changed (FLOW-3: the steps are ONE flat list `audit_pipeline`, each with its place T1, T2 or T3, no `plot_scope`): an older file is refused, never converted"
     sm = SessionManager(tmp_path)
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     step = node()
-    sm.write_t3_ghost(key, RECIPE_ID, "a" * 64, "b" * 64, t3_audit_steps_by_plot={PLACES_BUCKET: [step]})
+    sm.write_t3_ghost(key, RECIPE_ID, "a" * 64, "b" * 64, audit_steps=[step])
     saves, skipped = sm.scan_t3_ghosts(key)
     assert skipped == [] and saves[0]["schema_version"] == SESSION_FORMAT_VERSION
-    back = saves[0]["t3_audit_steps_by_plot"][PLACES_BUCKET]
+    back = saves[0]["audit_pipeline"]
     assert back == [step] and back[0]["place"] == "T1:ResFinder" and back[0]["started_from"] == "subtab_amr_heatmap" and back[0]["reason"]
 
 
-@pytest.mark.parametrize("old_number", [3, 4])
+@pytest.mark.parametrize("old_number", [3, 4, 5])
 def test_a_file_of_the_older_format_is_refused_not_converted(tmp_path, old_number):
-    """3: before the steps written at a table; 4: before the steps written at a plot's tier 3 went into the same list (format 5)."""
+    """3: before the steps written at a table; 4: before the steps written at a plot's tier 3 went into the same list (format 5); 5: before the one flat list `audit_pipeline` (format 6, FLOW-3)."""
     import json
     from app.modules.session_manager import LegacySessionError, SessionManager
     sm = SessionManager(tmp_path)
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     sm.session_dir(key).mkdir(parents=True, exist_ok=True)
     (sm.session_dir(key) / "t3_20261101T000000.json").write_text(json.dumps({"session_key": key, "saved_at": "2026-11-01T00:00:00", "schema_version": old_number,
-                                                                          "t3_audit_steps_by_plot": {}, "t3_plot_overrides": {}}))
+                                                                          "audit_pipeline": [], "t3_plot_overrides": {}}))
     with pytest.raises(LegacySessionError, match="older version of the app and cannot be opened"):
         sm.scan_t3_ghosts(key)
 
@@ -126,7 +126,7 @@ def test_a_file_of_the_older_format_is_refused_not_converted(tmp_path, old_numbe
 def test_restore_judges_a_stored_key_drop_at_its_own_place_and_keeps_the_filter(world):
     from app.modules.session_manager import split_key_drops
     keep = node()
-    drop_key = make_audit_step("drop_column", {"column": "sample_id"}, plot_scope=PLACES_BUCKET, reason="no", place="T1:ResFinder", started_from="subtab_amr_heatmap")
-    kept, refused = split_key_drops({PLACES_BUCKET: [keep, drop_key]}, world["loaded"].raw, world["plans"])
-    assert kept[PLACES_BUCKET] == [keep], "the filter is restored"
+    drop_key = make_audit_step("drop_column", {"column": "sample_id"}, reason="no", place="T1:ResFinder", started_from="subtab_amr_heatmap")
+    kept, refused = split_key_drops([keep, drop_key], world["loaded"].raw, world["plans"])
+    assert kept == [keep], "the filter is restored"
     assert [r["id"] for r in refused] == [drop_key["id"]] and "sample_id" in refused[0]["problem"]

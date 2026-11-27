@@ -6,17 +6,17 @@ and, for the test that the panel is absent without the audit:
     PYTHONPATH=. SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy SPARMVET_APP_FEATURES=pipeline-exploration-simple ./.venv/bin/python -m pytest app/tests/test_lineage_view_browser.py -q
 
 What a person does on the demo `1_test_data_ST22_dummy`, and sees (the design expects: a list and a map with one entry for every node; a choice by click or keyboard; what is built from the
-chosen place is marked; one chosen place for each independent graph; the dialog opens with the chosen place ticked; a table no plot reads can take a step):
+chosen place is marked; one chosen place for each independent graph; the places chosen are the places a step is tried at; a table no plot reads can take a step):
 - Exploration: no panel. Audit mode: a collapsible panel, open when Audit mode is entered (slice 3a); the list and the map hold the same 51 nodes; no line is the metadata; the node tagged "+ meta" says so;
 - a click on a dot chooses its place (the list line and the dot are chosen together); everything built from it is marked; the text area says what is built from it; a second click
   chooses nothing; a choice in the same independent graph replaces the first one;
 - the keyboard: a list line takes focus, Enter chooses; a dot takes focus and Space chooses; hover shows the name and the steps without choosing;
 - "All original tables of this group" chooses every first place of the graph; "Around my selection" keeps fewer dots, "Whole recipe" brings them back;
-- with a place chosen, "Create an audit step here..." opens the dialog of Send to Audit with the place ticked and "At a table this plot is built from" selected;
-- a result table no plot reads (Quality_metrics) is chosen: the small form appears with the columns of that table; a step is added, waits for its reason, is applied, is marked in the list and
-  on the dot, the audit panel says that no figure changes, and the bin removes it and its mark.
+- FLOW-3: the panel has no button that creates a step and no small form (the old way is gone); the places chosen are used by Try (`test_audit_try_browser.py`);
+- a result table no plot reads (Quality_metrics) is shown like any place; a step is built in the Filters panel, tried, added, and is marked in the list and on the dot, the audit panel says that
+  no figure changes, and the bin removes it and its mark.
 
-Mutation index (each seen failing): MUTATION L1 the script does not mark what is built from the chosen place; MUTATION L2 the dialog ignores the chosen places.
+Mutation index (each seen failing): MUTATION L1 the script does not mark what is built from the chosen place.
 """
 import os
 
@@ -24,7 +24,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import in_audit_mode, set_mode, set_view, show_plot
+from app.tests.browser_view import add_to_pipeline, in_audit_mode, set_mode, set_view, show_place, show_plot, try_staged
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _choose_fb_op, _load_data_analysis_recipe, _open_filters_panel, _wait_shiny)
@@ -224,80 +224,24 @@ def _stage_identity_filter(page: Page) -> None:
 
 
 @NEEDS_AUDIT
-def test_create_an_audit_step_here_opens_the_dialog_with_the_chosen_place_ticked(ready: Page):
-    page = ready
-    _open_panel(page)
-    _clear_choice(page)
-    _amr_plot(page)
-    set_mode(page, "audit")
-    set_view(page, "T3")
-    _open_panel(page)
-    _stage_identity_filter(page)
-    _line(page, "T1:ResFinder").click()
-    page.locator("#lineage_root .spv-lin-create").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=15_000)
-    assert page.locator("#propagation_choice input[value=place]").is_checked()
-    expect(page.locator("#propagation_places input[value='T1:ResFinder']")).to_be_checked()
-    assert "Chosen in the path of the data and ticked below" in page.locator("#propagation_lineage_note").inner_text()
-    page.locator("#shiny-modal .modal-footer button").first.click()
-    expect(page.locator("#propagation_confirm")).to_have_count(0, timeout=5_000)
-    # a chosen place the step cannot be written at (the table of a plot beside) is named, not ticked
-    _clear_choice(page)
-    _stage_identity_filter(page)
-    _line(page, "T1:Quality_metrics").click()
-    page.locator("#lineage_root .spv-lin-create").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=15_000)
-    assert "not offered for this step" in page.locator("#propagation_lineage_note").inner_text()
-    assert page.locator("#propagation_choice input[value=this]").is_checked()
-    page.locator("#shiny-modal .modal-footer button").first.click()
-    expect(page.locator("#propagation_confirm")).to_have_count(0, timeout=5_000)
-    page.locator("#filter_reset").click()
-    _wait_shiny(page)
-    _clear_choice(page)
-
-
-@NEEDS_AUDIT
 def test_a_step_at_a_result_table_no_plot_reads(ready: Page):
+    """FLOW-3: the small form of the lineage panel is gone; a table no plot reads is shown like any place, its condition is built in the Filters panel, tried and added the one way. The panel of the
+    trial says that nothing is built from the place, the card says that no figure changes, and the lineage marks the place."""
     page = ready
     _open_panel(page)
     _clear_choice(page)
-    _line(page, "T1:Quality_metrics").click()
-    expect(page.locator("#lineage_step_column")).to_be_visible(timeout=20_000)
-    options = page.eval_on_selector_all("#lineage_step_column option", "els => els.map(e => e.value)")
-    assert len(options) >= 2
-    # the form is for ONE such table: choosing a plot's table too removes it
-    page.locator("#lineage_step_column").select_option(options[0])
-    _wait_shiny(page)
-    expect(page.locator("#lineage_step_op")).to_be_visible(timeout=10_000)
-    page.locator("#lineage_step_value").fill("")
-    page.locator("#lineage_step_add").click()
-    expect(page.locator(NOTICE)).to_contain_text("Nothing was added", timeout=10_000)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0)
-    _close_notices(page)
-    # a value that exists in the table: keep those rows (any of)
-    page.locator("#lineage_step_op").select_option("in")
-    _wait_shiny(page)
-    page.locator("#lineage_step_value").fill("zzz-no-such-value")
-    page.locator("#lineage_step_add").click()
-    _wait_shiny(page)
-    expect(page.locator(NOTICE)).to_contain_text("Step staged at Table Quality_metrics (tier 1)", timeout=10_000)
-    expect(page.locator(NOTICE)).to_contain_text("no figure changes")
-    _close_notices(page)
-    # waiting for its reason in the audit panel, with the words of where it is written
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
+    set_mode(page, "audit")
+    show_place(page, "T1:Quality_metrics", keep_chosen=False)
+    assert page.locator("#lineage_step_column").count() == 0 and page.locator("#lineage_root .spv-lin-create").count() == 0, "neither the small form nor the button of the old way is on the page"
+    from app.tests.browser_view import stage_condition
+    stage_condition(page, "total_reads_after", "gt", 0)
+    try_staged(page)
+    expect(page.locator(".spv-trial-panel")).to_contain_text("No table or plot is built from these places", timeout=15_000)
+    add_to_pipeline(page, "check the table of the quality metrics", mark=True, expected_places=1)
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("No plot is built from there", timeout=10_000)
     expect(page.locator("#audit_nodes_tier3 .spv-audit-mine .spv-audit-place")).to_contain_text("Written at Quality metrics: Table, T1")
-    expect(page.locator("#btn_apply").first).to_be_disabled()
     expect(_line(page, "T1:Quality_metrics").locator(".spv-lin-mark")).to_contain_text("audit step", timeout=10_000)
     assert "*" in (_dot(page, "T1:Quality_metrics").evaluate("e => e.nextSibling.textContent"))
-    box = page.locator('input[id^="t3_reason_"]').first
-    box.fill("check the table of the quality metrics")
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
-    expect(page.locator(NOTICE)).to_contain_text("No plot is built from Table Quality_metrics (tier 1): no figure changes", timeout=15_000)
-    expect(_line(page, "T1:Quality_metrics").locator(".spv-lin-mark")).to_contain_text("audit step")
     # the step shows in the audit panel of another plot too, and its bin removes it and its mark
     show_plot(page, "qc_reads_horizontal_barplot")
     expect(page.locator("[id^='t3_delete_']")).to_have_count(1, timeout=15_000)
@@ -571,12 +515,8 @@ def test_a_step_on_a_plot_says_where_it_was_written(ready: Page):
     set_mode(page, "audit")
     set_view(page, "T3")
     _stage_identity_filter(page)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    assert page.locator("#propagation_choice input[value=this]").is_checked()
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
+    try_staged(page)
+    add_to_pipeline(page, "walk: where is it written", expected_places=1)
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at AMR Heatmap: Result data, T3", timeout=15_000)
     # the section of the audit steps: its own block below the recipe's steps, a heading in the style of a recipe tier, the place under it
     mine = page.locator("#audit_nodes_tier3 .spv-audit-mine")

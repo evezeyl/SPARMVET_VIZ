@@ -15,7 +15,7 @@ What a person does and sees, on the demo `1_test_data_ST22_dummy` (Audit mode, n
 - the same on a TABLE shown (new): Try at ResFinder T1; showing the plot built from it shows the trial (its rows equal an audit copy with the step really appended); a plot the step does not reach says so;
 - two places chosen: each has its line; a place where the condition does not fit stops the trial and is named; a selection that does not hold the place shown asks to show it first;
 - Compare beside a trial: the left pane "before this step", the right pane the trial, a switch for the original on the left;
-- a trial ends, with one plain notice and its folder emptied, when the condition or the places change, when Audit mode is left, and when an old entry (Send to Audit) is used;
+- a trial ends, with one plain notice and its folder emptied, when the condition or the places change and when Audit mode is left (FLOW-3: the old entries, Send to Audit and the others, are gone);
 - a trial is in no session file, no export and no stored audited table.
 
 Mutation index (each seen failing): MUTATION F1 the preview keeps the audited table during a trial (`_preview_lf` without `with_trial`); MUTATION F2 the plot figure does not read the trial (`_group_plot_handler`);
@@ -172,6 +172,18 @@ def figure(page: Page, plot_id: str = PLOT) -> str:
     return hashlib.sha256(src.encode()).hexdigest()
 
 
+def wait_figure(page: Page, accept, message: str, timeout_s: float = 45.0) -> None:
+    """Wait (by state, not by a fixed sleep) until the hash of the figure's `src` satisfies `accept`; fail with `message` and the last hash otherwise."""
+    import time
+    deadline, last = time.monotonic() + timeout_s, None
+    while time.monotonic() < deadline:
+        last = figure(page)
+        if accept(last):
+            return
+        page.wait_for_timeout(300)
+    raise AssertionError(f"{message} (waited {timeout_s:.0f} s; last figure hash {last})")
+
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 @NEEDS_AUDIT
 def test_try_at_the_plot_shown_counts_the_rows_shows_the_trial_in_words_and_discard_puts_everything_back(ready: Page, tables):
@@ -195,16 +207,15 @@ def test_try_at_the_plot_shown_counts_the_rows_shows_the_trial_in_words_and_disc
     expect(page.locator("#home_data_preview_badge")).to_contain_text("TRIAL, not applied")
     expect(page.locator(AREA)).to_contain_text(TRIAL_WORDS)                            # beside the plot's title
     expect(page.locator(f"#plot_badge_{PLOT}")).to_contain_text("TRIAL, not applied")
-    page.wait_for_timeout(1500)       # a step at the Result data (T3) of a plot stores no table: the trial folder is not needed there
-    assert figure(page) != before_figure, "the figure is drawn from the trial: it is another picture"
+    wait_figure(page, lambda h: h != before_figure, "the figure is drawn from the trial: it is another picture")   # a step at the Result data (T3) of a plot stores no table
     page.locator("#trial_discard").click()
     wait_shiny(page)
     expect(page.locator(PANEL)).to_have_count(0, timeout=15_000)
     wait_preview_rows(page, tables["plot"].height, timeout=60_000)
     expect(page.locator("#shown_band_ui")).not_to_contain_text("TRIAL")
     expect(page.locator("#shown_band_ui .spv-shown-band-trial")).to_have_count(0)
-    page.wait_for_timeout(1500)
-    assert figure(page) == before_figure, "after Discard the figure is the one it was"
+    expect(page.locator(f"#plot_badge_{PLOT}")).not_to_contain_text("TRIAL", timeout=30_000)
+    wait_figure(page, lambda h: h == before_figure, "after Discard the figure is the one it was")
     assert trial_files() == [], "Discard empties the trial's folder"
     assert listing(user_data() / "audit_anchors") == audit_files and listing(user_data() / "_sessions") == session_files, "a trial wrote nothing to the audit folder or to a session"
     assert "Discard" not in notices(page), "her own Discard says nothing"
@@ -217,7 +228,7 @@ def test_try_at_a_table_shown_and_the_trial_followed_to_the_plots_it_reaches_and
     show_place(page, "T1:ResFinder", keep_chosen=False)
     wait_preview_rows(page, tables["resfinder"].height, timeout=60_000)
     build_condition(page, "identity", "lt", tables["threshold"])
-    assert page.locator("#filter_send_to_audit").count() == 0, "a table shown offers no Send to Audit, and offers Try"
+    assert page.locator("#filter_send_to_audit").count() == 0, "FLOW-3: there is no Send to Audit; a table shown offers Try"
     press_try(page)
     panel = page.locator(PANEL)
     expect(panel).to_be_visible(timeout=60_000)
@@ -389,23 +400,6 @@ def test_a_trial_ends_when_audit_mode_is_left_and_its_folder_is_emptied(ready: P
 
 
 @NEEDS_AUDIT
-def test_using_send_to_audit_while_a_trial_exists_ends_the_trial_first(ready: Page, tables):
-    page = ready
-    enter_audit(page)
-    build_condition(page, "identity", "lt", tables["threshold"])
-    press_try(page)
-    expect(page.locator(PANEL)).to_be_visible(timeout=60_000)
-    close_notices(page)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#shiny-notification-panel")).to_contain_text("You used Send to Audit. The trial ended", timeout=15_000)
-    expect(page.locator(PANEL)).to_have_count(0, timeout=15_000)
-    assert trial_files() == []
-    if page.locator("#propagation_confirm").count():
-        page.keyboard.press("Escape")
-        wait_shiny(page)
-
-
-@NEEDS_AUDIT
 def test_nothing_of_a_trial_is_in_an_export_a_session_or_a_stored_audited_table(ready: Page, tables):
     page = ready
     enter_audit(page)
@@ -450,9 +444,9 @@ def test_without_the_audit_there_is_no_try(page: Page, shiny_app: ShinyAppProc):
 
 
 @NEEDS_AUDIT
-def test_a_condition_built_on_one_table_is_never_sent_to_audit_from_another(ready: Page, tables):
-    """FLOW-1 review: build on ResFinder (T1), Try, Show the plot built from it (the trial keeps the staged condition), press Send to Audit: refused with one plain
-    line, no dialog, no pending step. The condition belongs to the table it was built on."""
+def test_a_condition_built_on_one_table_is_never_tried_at_another(ready: Page, tables):
+    """FLOW-1 review: build on ResFinder (T1), Try, Show the plot built from it (the trial keeps the staged condition), press Try again: refused with one plain
+    line, no new trial, no step. The condition belongs to the table it was built on."""
     page = ready
     enter_audit(page)
     show_place(page, "T1:ResFinder", keep_chosen=False)
@@ -466,12 +460,11 @@ def test_a_condition_built_on_one_table_is_never_sent_to_audit_from_another(read
     expect(page.locator(AREA)).to_contain_text("Plot shown: AMR Heatmap", timeout=30_000)
     assert page.locator("#filter_remove_0").count() == 1, "the trial keeps the staged condition (the premise of the trace)"
     close_notices(page)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=15_000)
-    page.locator("#filter_send_to_audit").click()
+    expect(page.locator("#filter_try")).to_be_visible(timeout=15_000)
+    page.locator("#filter_try").click()
     wait_shiny(page)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("built on another table", timeout=15_000)
-    assert "Nothing was sent" in notices(page)
-    assert page.locator(".modal.show").count() == 0, "no dialog was opened"
+    assert "Nothing was tried" in notices(page)
     assert page.locator("[id^='t3_delete_']").count() == 0, "no step was written"
     page.locator("#trial_discard").click()
     wait_shiny(page)

@@ -62,7 +62,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Optional, Set, Tuple
 
 from app.modules.audit_places import audit_copy_for, nodes_signature, place_words
-from app.modules.audit_run import AuditRun, compare_tables, same_table
+from app.modules.audit_run import AuditRun, compare_shapes, same_table
 from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
 from app.modules.cache_keys import load_data_analysis_recipe, loaded_from_resolved
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, tier2_path_for
@@ -91,10 +91,16 @@ class PlaceEffect:
     rows_before: int
     rows_after: int
     state: str
+    columns_before: int = 0       # the columns of that table before and after the step: a drop changes these and no row (FLOW-3: a drop is tried like a condition)
+    columns_after: int = 0
 
     @property
     def rows_removed(self) -> int:
         return self.rows_before - self.rows_after
+
+    @property
+    def columns_removed(self) -> int:
+        return self.columns_before - self.columns_after
 
 
 @dataclass(frozen=True)
@@ -274,10 +280,10 @@ class PlaceTrial:
         chosen = list(dict.fromkeys(places))
         for place in chosen:
             before, after = self._pair(graph, run, audited_run, place)
-            rows_before, rows_after, same = compare_tables(before, after)
+            rows_before, rows_after, columns_before, columns_after, same = compare_shapes(before, after)
             if not same:
                 changed.add(place)
-            effects.append(PlaceEffect(place, place_words(place), rows_before, rows_after, NO_ROW_CHANGED if same else TABLE_CHANGED))
+            effects.append(PlaceEffect(place, place_words(place), rows_before, rows_after, NO_ROW_CHANGED if same else TABLE_CHANGED, columns_before, columns_after))
         reached: Set[str] = set()
         for place in chosen:
             reached.update(graph.below(place))

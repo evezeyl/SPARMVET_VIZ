@@ -43,7 +43,7 @@ deps:
 |---|---|---|---|---|
 | **SPARMVET Blue** | `#345beb` | `#2a4bc4` | Primary action | Buttons, active tabs, headings in cards, focus rings |
 | **SPARMVET Teal** | `#10a395` | `#0d8a7e` | Export / upload | Export bundle, upload, filter "+ Add row" |
-| **SPARMVET Amber** | `#ffc107` | `#e0a800` | Discard / pending | Reset, session delete, pending badge, "send to audit" |
+| **SPARMVET Amber** | `#ffc107` | `#e0a800` | Discard / pending | Reset, session delete |
 | **SPARMVET Error Red** | `#d62828` | `#b91c1c` | Error / destructive | Error banners, danger-delete modal, critical alerts |
 
 **FORBIDDEN Bootstrap defaults:** `#0d6efd` (Bootstrap primary), `#198754` (success), `#dc3545` (danger). If Bootstrap injects any of these, override with the palette above using `!important`.
@@ -93,7 +93,6 @@ These are the ONLY allowed values for informational banners (connected/error/bus
 | Gallery guidance even-row | `#fffde7` | Even rows in guidance table |
 | Gallery guidance row hover | `#fff8a0` | Row hover in guidance table |
 | PK-warn badge border | `#ffeeba` | `.spv-badge-pk-warn` border |
-| Propagation badge (pending fix) | `#cfe2ff` bg / `#0a3678` text | `.spv-badge-propagation` — **Bootstrap info colors, added today (§20). Should be migrated to `#eef0fb` bg / `#345beb` text in next session.** |
 
 ### 1g. Code Editor Surface (YAML / docstring blocks only)
 
@@ -117,7 +116,7 @@ All text in the application follows exactly this scale. **No other sizes are per
 | **Primary** | `0.85rem` | 700 | Accordion buttons, card headers, gallery filter titles, section headings |
 | **Secondary** | `0.80rem` | 400/600 | Body text, form content, input labels, filter rows |
 | **Sub-secondary** | `0.78rem` | 400 | Gallery blockquotes, small labels |
-| **Small** | `0.75rem` | 400 | Badges, `.spv-text-xs`, audit-pending-badge text in audit sidebar |
+| **Small** | `0.75rem` | 400 | Badges, `.spv-text-xs`, small text in the audit sidebar |
 | **Micro** | `0.65rem` | 400 | `.ultra-small`, dtype labels, helper/meta annotations |
 
 Special cases (allowed and documented):
@@ -146,7 +145,7 @@ Special cases (allowed and documented):
 
 | Component | Height | Where |
 |---|---|---|
-| Primary action buttons | `32px` | `#btn_apply`, `#filter_add_row`, export buttons, etc. |
+| Primary action buttons | `32px` | `#trial_add`, `#filter_add_row`, export buttons, etc. |
 | Control buttons (compact) | `28px` | `.control-btn` header area |
 | Sidebar form inputs / selects | `26px` | `#nav_sidebar .form-select`, `.form-control` |
 | Theater header strip | `44px` min | `.theater-header-strip` |
@@ -166,7 +165,7 @@ Special cases (allowed and documented):
 
 ## 4. Button Catalog
 
-Every button in the application belongs to exactly one of five types.
+Every button in the application belongs to exactly one of five types (the type 4 is removed, see below).
 Add new buttons by finding the right type — never invent a new color.
 
 ### Type 1 — Primary Action (Blue)
@@ -175,7 +174,7 @@ Add new buttons by finding the right type — never invent a new color.
 
 - **Color:** `#345beb` bg, `#2a4bc4` hover, white text
 - **Size:** `height: 32px`, `border-radius: 6px`, `font-weight: 600`
-- **IDs:** `#btn_apply` (base state), `#btn_revert_sync`, `#btn_ingest`, `#restore_session`, `#btn_save_internal`, `#btn_autofill_meta`, `#btn_generate_data`, `#btn_apply_gallery_filters`
+- **IDs:** `#trial_add` (Add to audit pipeline), `#filter_try`, `#col_drop_try`, `#btn_revert_sync`, `#btn_ingest`, `#restore_session`, `#btn_save_internal`, `#btn_autofill_meta`, `#btn_generate_data`, `#btn_apply_gallery_filters`
 
 ### Type 2 — Export / Upload / Ingest (Teal)
 
@@ -193,19 +192,13 @@ Add new buttons by finding the right type — never invent a new color.
 - **Size:** `height: 32px`, `border-radius: 6px`, `font-weight: 700`
 - **IDs:** `#filter_reset`, `[id^="session_delete_"]`
 
-### Type 4 — Pending / Audit Action (Amber Badge)
+### Type 4 — Pending / Audit Action (Amber Badge): REMOVED
 
-> The apply button or "send to audit" state when changes are staged. Visually identical to
-> Type 3 amber but rendered as a badge-like element with a specific class.
-
-- **Color:** `#ffc107` bg, `#e0a800` border, black text
-- **Class:** `.audit-pending-badge`
-- **Usage:** Replaces or accompanies `#btn_apply` when `audit_pending == True`. The badge
-  signals "there are uncommitted changes — press to apply."
+> **REMOVED (FLOW-3, 2026-11-27; D-0672):** the Pending badge (`.audit-pending-badge`) and the staged ("pending") step it announced no longer exist: a step is added at once with its reason ("Add to audit pipeline", a Type 1 button, `#trial_add`). The type number is kept so that the other numbers stay as they were. **Tombstone expires:** Phase 40 (PROVISIONAL, delete this block after two phases; task TOMBSTONE-AUDIT-OLD-WAY in `.claude/tasks/tasks.md`).
 
 ### Type 5 — Disabled / Inactive (Grey)
 
-> Button is present but not actionable (e.g. `#btn_apply` with missing audit comments).
+> Button is present but not actionable (e.g. `#trial_add` with no reason typed).
 
 - **Color:** Bootstrap default disabled grey (`#b0b0b0` bg equivalent), cursor not-allowed
 - **Applied via:** `disabled` HTML attribute on the button element — CSS handles it natively.

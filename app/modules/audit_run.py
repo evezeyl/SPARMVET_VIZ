@@ -30,7 +30,7 @@ engine refuses what it cannot apply).
 Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; the slices that put the audit on the screen need it.
 
 # @deps
-# provides: function:run_audit, function:row_count, function:same_table, function:compare_tables, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
+# provides: function:run_audit, function:row_count, function:same_table, function:compare_tables, function:compare_shapes, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
 # consumes: app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
 # consumed_by: app/tests/test_audit_run.py, app/tests/test_audit_shared_folder.py, app/modules/audit_trial.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
@@ -194,11 +194,17 @@ def row_count(table: pl.LazyFrame) -> int:
     return int(table.select(pl.len()).collect().item())
 
 
-def compare_tables(first: pl.LazyFrame, second: pl.LazyFrame) -> Tuple[int, int, bool]:
-    """(rows of the first, rows of the second, whether they are the same table): each table is read ONCE (collected); the row counts are compared first and the tables are
-    compared only when the counts are equal (same columns, same rows, same order)."""
+def compare_shapes(first: pl.LazyFrame, second: pl.LazyFrame) -> Tuple[int, int, int, int, bool]:
+    """(rows of the first, rows of the second, columns of the first, columns of the second, whether they are the same table): each table is read ONCE (collected); the row counts are
+    compared first and the tables are compared only when the counts are equal (same columns, same rows, same order). A step that drops a column changes the columns and no row."""
     left, right = first.collect(), second.collect()
-    return left.height, right.height, left.height == right.height and left.equals(right)
+    return left.height, right.height, left.width, right.width, left.height == right.height and left.equals(right)
+
+
+def compare_tables(first: pl.LazyFrame, second: pl.LazyFrame) -> Tuple[int, int, bool]:
+    """(rows of the first, rows of the second, whether they are the same table): `compare_shapes` without the columns."""
+    rows_first, rows_second, _, _, same = compare_shapes(first, second)
+    return rows_first, rows_second, same
 
 
 def same_table(first: pl.LazyFrame, second: pl.LazyFrame) -> bool:

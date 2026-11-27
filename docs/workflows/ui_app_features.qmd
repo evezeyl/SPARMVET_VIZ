@@ -121,7 +121,7 @@ the Filters panel and the entire header strip are absent: the plots show the Res
 
 In **Exploration** there is one plot per plot tab, the Result; filters change the table you view only and are
 cleared, with a notice, when that table changes. `t3_sandbox_enabled` gates **Audit mode**: the audited plot,
-the "Send to Audit" button (offered while T3 is viewed), the propagation modal, the **Compare** switch (the
+the audit steps (Try, then "Add to audit pipeline", one step at a time), the **Compare** switch (the
 original and the audited plot; it also needs `comparison_mode_enabled`) and the right sidebar Pipeline Audit panel.
 
 ```
@@ -132,7 +132,7 @@ interactivity_enabled: true
 
 t3_sandbox_enabled: true   (together with interactivity_enabled)
   └─ the mode switch "Exploration | Audit"
-  └─ Audit mode: audited plot, "Send to Audit" button + propagation modal
+  └─ Audit mode: audited plot, Try + "Add to audit pipeline" (the one way to create a step)
   └─ comparison_mode_enabled: true    → Compare switch (Audit mode only)
   └─ Right sidebar Pipeline Audit panel (audit_stack)
 ```
@@ -154,7 +154,7 @@ The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It 
 ```
 interactivity_enabled: true
   └─ Right sidebar visible for ≥ pipeline-exploration-advanced
-       └─ btn_apply gate (requires at least one Yellow node with a comment)
+       └─ "Add to audit pipeline" gate (a step is never added without a reason)
        └─ a trash button on each step: remove that step (one undo control, no "remove all")
 ```
 

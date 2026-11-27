@@ -14,7 +14,7 @@ import pytest
 
 from app.modules.audit_place_view import AUDIT, ORIGINAL, AUDITED, TableFacts, view_identity, viewed
 from app.modules.audit_places import nodes_reaching_node, plots_below
-from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, others_chosen, open_subtab_of, plot_area_title, request_to_show, selection_problem, table_shown_in_panel, table_shown_lines, unlisted_pending_line)
+from app.modules.audit_shown import (CHOOSE_FIRST, SHOW_SELECTION_FIRST, band_lines, others_chosen, open_subtab_of, plot_area_title, request_to_show, selection_problem, table_shown_in_panel, table_shown_lines)
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.lineage_view import line_text
 from app.modules.t3_audit_engine import view_change_notice
@@ -181,13 +181,6 @@ def test_the_right_panel_lists_the_steps_written_at_the_table_shown_or_above_it(
 def test_table_shown_in_panel_reads_only_table_nodes():
     assert table_shown_in_panel("T1:ResFinder") == "T1:ResFinder" and table_shown_in_panel("T2:x") == "T2:x"
     assert table_shown_in_panel("T3:amr_heatmap") == "" and table_shown_in_panel(None) == "" and table_shown_in_panel("") == ""
-
-
-def test_pending_steps_the_right_panel_does_not_list_are_told_not_dropped_silently():
-    assert unlisted_pending_line(0, 0) == "" and unlisted_pending_line(2, 2) == ""
-    one = unlisted_pending_line(1, 0)
-    assert "1 pending step is written elsewhere and not listed here" in one and "Apply needs a reason for every step" in one
-    assert unlisted_pending_line(3, 1).startswith("2 pending steps are written elsewhere")
 
 
 # -- the condition belongs to the table shown (key + notice) -------------------------------------------------------

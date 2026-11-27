@@ -62,13 +62,13 @@ def test_the_mapping_does_not_depend_on_the_listing_order():
 # --------------------------------------------------------------------------- (b) the real effect
 
 def _step(reason):
-    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "__places__", reason, place="T3:p")
+    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, reason, place="T3:p")
 
 
 def _add_pair(live):
     for key, tag, reason in ((X, "x", "from x"), (Y, "y", "from y")):
         live.manager.write_assembly_ghost(key, "tiny", tag * 64, "b" * 64, {}, {})
-        live.manager.write_t3_ghost(key, "tiny", tag * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [_step(reason)]})
+        live.manager.write_t3_ghost(key, "tiny", tag * 64, "b" * 64, audit_steps=[_step(reason)])
     return session_input_id_parts([s["session_key"] for s in live.manager.list_all_sessions()])
 
 
@@ -104,7 +104,7 @@ def test_restoring_one_of_two_colliding_sessions_restores_that_one(tmp_path, mon
         live.input.set(f"session_restore_{parts[X]}", 1)
         await _flush(6)
         assert len(live.texts("Session restored")) == 1, live.notes
-        reasons = [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["__places__"]]
+        reasons = [n["reason"] for n in live.state()["audit_pipeline"]]
         assert reasons == ["from x"], reasons
     asyncio.run(scenario())
 

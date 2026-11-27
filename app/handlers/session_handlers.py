@@ -53,7 +53,7 @@ def define_session_server(input, output, session, *,
     current_app_features : reactive.Value[str]
         Active launch app features (hyphen form, e.g. "pipeline-exploration-advanced").
     home_state : reactive.Value[dict] | None
-        Shared home dashboard state (data_analysis_recipe_sha256, t3_audit_steps_by_plot, etc.).
+        Shared home dashboard state (data_analysis_recipe_sha256, audit_steps, etc.).
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
         download to read data_analysis_recipe_id for the filename. Optional for back-compat.
@@ -117,7 +117,7 @@ def define_session_server(input, output, session, *,
             if msig and dbh:
                 from app.modules.session_manager import SessionManager
                 key = SessionManager.compute_session_key(msig, dbh)
-            applies = int(state.get("t3_apply_count", 0) or 0)
+            applies = int(state.get("audit_saves_count", 0) or 0)
         with reactive.isolate():
             if _panel_inputs.get() != (key, applies):
                 _panel_inputs.set((key, applies))
@@ -650,13 +650,10 @@ def define_session_server(input, output, session, *,
             return
         _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None)
         if t3_ghosts:
-            # Restore most-recent T3 ghost into home_state.
-            # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and
-            # t3_audit_steps_by_plot (current). Legacy ghosts have nodes bucketed
-            # under "__legacy__" — they're surfaced as orphans in the audit
-            # panel until the user re-targets or deletes them.
+            # Restore the most recent save into home_state: the audit steps are ONE flat list (`audit_pipeline`, each step with its `place`); a file of another format number never gets here
+            # (every reader refuses it as a whole, D-0312).
             latest = t3_ghosts[0]
-            by_plot = latest.get("t3_audit_steps_by_plot") or {}
+            steps = latest.get("audit_pipeline") or []
 
             # REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): self-consistency check, not a
             # comparison against "current" T3 — there is no independent current copy to
@@ -666,10 +663,10 @@ def define_session_server(input, output, session, *,
             # Empty stored hash = a ghost written before this field existed — nothing to
             # check, not a mismatch.
             from app.modules.cache_keys import canonical_hash as _canonical_hash
-            _saved_t3_sha = latest.get("t3_audit_steps_sha256", "")
+            _saved_t3_sha = latest.get("audit_steps_sha256", "")
             if _saved_t3_sha:
                 _recomputed = _canonical_hash({
-                    "t3_audit_steps_by_plot": by_plot,
+                    "audit_pipeline": steps,
                     "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
                 })
                 if _recomputed != _saved_t3_sha:
@@ -683,33 +680,29 @@ def define_session_server(input, output, session, *,
 
             # NA-RULE-63: steps made before the choice `na` existed are carried as "remove", what they always
             # did. After the checksum above, which is over the file as it was written.
-            by_plot = normalise_audit_steps(by_plot)
+            steps = normalise_audit_steps(steps)
             # D-0297, by place (D-0358): a stored step that drops a column a join still needs is not restored (a file saved before the rule, or written by hand); the rest
             # is, and the user is told which step and why. The recipe is the open one.
             try:
-                by_plot, refused_key_drops = split_key_drops(by_plot, recipe_raw() if recipe_raw is not None else None, recipe_plans() if recipe_plans is not None else None)
+                steps, refused_key_drops = split_key_drops(steps, recipe_raw() if recipe_raw is not None else None, recipe_plans() if recipe_plans is not None else None)
             except PlanComposerBug:
                 return      # the plain notice was shown by `recipe_plans` (an error of the app): nothing is restored
             if refused_key_drops:
-                _kept_ids = {n.get("id") for nodes in by_plot.values() for n in nodes}
+                _kept_ids = {n.get("id") for n in steps}
                 _notify("⚠️ " + key_drop_notice(refused_key_drops, len(_kept_ids)), type="warning", duration=15)
             new_state = {
                 **state,
-                "t3_audit_steps_by_plot": by_plot,
+                "audit_pipeline": steps,
                 "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
                 "t3_ghost_file": latest.get("file", ""),
                 "t3_ghost_saved_at": latest.get("saved_at", ""),
-                "_pending_t3_nodes": [],
             }
             home_state.set(new_state)
             saved_log = latest.get("notification_log", [])
             if saved_log and notification_log is not None:
                 notification_log.set(saved_log)
-            legacy_n = len(by_plot.get("__legacy__", []))
-            extra = (f" ({legacy_n} orphaned legacy node(s) — see audit panel)"
-                     if legacy_n else "")
             _notify(
-                f"✅ Session restored ({latest.get('saved_at','')[:16]}){extra}. "
+                f"✅ Session restored ({latest.get('saved_at','')[:16]}). "
                 f"{len(t3_ghosts)} save(s) available for this batch.",
                 type="message", duration=6,
             )

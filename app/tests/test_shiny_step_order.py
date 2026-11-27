@@ -2,7 +2,7 @@
 (PLOT-TABLE-ORDER-1, Eve 2026-11-14 and 2026-11-15), in the browser.
 
 # @deps
-# consumes: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/t3_audit_engine.py, app/modules/plot_issue_reporter.py
+# consumes: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/handlers/trial_handlers.py (Try and Add), app/modules/t3_audit_engine.py, app/modules/plot_issue_reporter.py
 # @end_deps
 
 A staged recipe (one table of 30 rows: sample_id, year, score = 1..30; one plot of the number of samples per year) in a
@@ -11,15 +11,15 @@ temporary folder of `tmpAI/`; no tracked file is touched. In the qa app features
 - order B (filter score >= 16, then drop score): the table and the plot both show the filtered rows (15). The plot differs
   from the Result plot, and the drop does not change it (the old plot path skipped the filter on the dropped column and drew
   all 30 rows);
-- order A (drop score, then filter score >= 16, the filter staged before the drop): the table's place and the plot's place
-  both show the error, naming the plot, the audit step, the column and the step that removed it; the Alerts panel holds it;
-  the export is refused with `EXPORT_NOT_CREATED.txt` and the same reason;
+- (order A, a drop then a filter on the dropped column, with both staged before either was applied, cannot be made any more: FLOW-3 adds steps one at a time, each tried first (D-0672), and the
+  form does not offer a dropped column; its test is gone, the engine's refusal of a list that cannot run is `test_audit_step_refused_not_skipped.py` and `test_audit_error_names_the_plot.py`,
+  the refusal of the export `test_export_view_consistency.py`);
 - the filter dialog does not offer a column that an earlier audit step dropped (DECIDED 2026-11-15, S2-1 (a));
 - two exports that succeed with audited steps (a filter; a filter then a drop): the `T3_data_<plot>.tsv` of the bundle holds
   the rows and values of a reference built in plain Polars from the raw file, and the plot of the bundle is the picture of a
   direct render of that reference (so a bundle that took an unfiltered frame fails).
 
-Waits are on the app's state (the "audit steps applied" count, the row summary, the option list), never on time.
+Waits are on the app's state (the notice of the Add, the row summary, the option list), never on time.
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_step_order.py -q
 """
@@ -143,44 +143,16 @@ def _same_picture(a: Image.Image, b: Image.Image) -> bool:
 def _press(page: Page, selector: str) -> None:
     """Press a Shiny action button once it is visible. The click is made in the page: a notification can lie over the button."""
     expect(page.locator(selector).first).to_be_visible(timeout=15_000)
-    expect(page.locator(selector).first).to_be_enabled(timeout=15_000)   # Apply stays disabled until every reason is read by the app
+    expect(page.locator(selector).first).to_be_enabled(timeout=15_000)   # a button can be disabled until the app has read what it needs
     page.eval_on_selector(selector, "e => e.click()")
 
 
-def _confirm_scope(page: Page) -> None:
-    """The scope dialog (this plot only is the default); the step stays pending, its reason box appears after it."""
-    _press(page, "#propagation_confirm")
-    _wait_shiny(page)
-
-
-def _reasons_and_apply(page: Page, reason: str, nodes: int) -> None:
-    """Give every empty reason, press Apply, and wait until the app says `nodes` audit steps are applied.
-
-    A reason box can appear a moment after another one: fill what is empty until the app enables Apply (it enables it only when
-    it has read every reason), then press it."""
-    page.wait_for_function("() => [...document.querySelectorAll('input[id^=t3_reason_]')].some(e => !e.value)", timeout=15_000)
-    deadline = time.time() + 20
-    apply = page.locator("#btn_apply").first
-    while True:
-        reasons = page.locator('input[id^="t3_reason_"]')
-        for i in range(reasons.count()):
-            if not reasons.nth(i).input_value():
-                reasons.nth(i).fill(reason)
-                reasons.nth(i).press("Tab")   # leaving the box sends the text now; a click sent before it would be refused by the Apply gate
-        _wait_shiny(page)
-        if apply.is_enabled():
-            break
-        assert time.time() < deadline, "Apply was never enabled: a reason is not read by the app"
-        page.wait_for_timeout(250)
-    _press(page, "#btn_apply")
-    page.wait_for_function("(n) => document.body.textContent.includes('audit steps applied \u2014 ' + n + ' node(s)')",
-                           arg=nodes, timeout=20_000)
-    _wait_shiny(page, 30_000)
-
-
 def _confirm_and_apply(page: Page, reason: str, nodes: int) -> None:
-    _confirm_scope(page)
-    _reasons_and_apply(page, reason, nodes)
+    """FLOW-3: the staged step is TRIED, the reason is written and "Add to audit pipeline" adds it (the scope dialog and the Apply of the old way are gone). `nodes`: how many places the notice names."""
+    from app.tests.browser_view import add_to_pipeline, try_staged
+    try_staged(page)
+    add_to_pipeline(page, reason, expected_places=1)
+    _wait_shiny(page, 30_000)
 
 
 def _start(page: Page, url: str) -> None:
@@ -212,12 +184,10 @@ def _stage_filter(page: Page) -> None:
     _wait_shiny(page)
     # the staged row says what the app read: column and value (a value typed too late would stage another one)
     expect(page.locator("#filter_rows_ui")).to_contain_text(f"score \u2265 {THRESHOLD}", timeout=10_000)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
+    expect(page.locator("#filter_try")).to_be_visible(timeout=10_000)
 
 
 def _send_staged_filter(page: Page, nodes: int) -> None:
-    _press(page, "#filter_send_to_audit")
-    _wait_shiny(page)
     _confirm_and_apply(page, "keep the good scores", nodes)
 
 
@@ -226,18 +196,15 @@ def _filter_step(page: Page, nodes: int) -> None:
     _send_staged_filter(page, nodes)
 
 
-def _pending_drop(page: Page) -> None:
-    """Deselect `score` and send the drop to audit; the scope dialog is confirmed, the step stays pending (no Apply yet)."""
+def _drop_step(page: Page, nodes: int) -> None:
+    """Deselect `score`, try the drop, write the reason and add it (FLOW-3: the drop goes the one way, like a condition)."""
+    from app.tests.browser_view import add_to_pipeline
     page.evaluate("() => $('#preview_col_selector')[0].selectize.removeItem('score')")
     _wait_shiny(page)
-    _press(page, "#col_drop_to_audit")
-    _wait_shiny(page)
-    _confirm_scope(page)
-
-
-def _drop_step(page: Page, nodes: int) -> None:
-    _pending_drop(page)
-    _reasons_and_apply(page, "score is not needed", nodes)
+    _press(page, "#col_drop_try")
+    _wait_shiny(page, 60_000)
+    add_to_pipeline(page, "score is not needed", expected_places=1)
+    _wait_shiny(page, 30_000)
 
 
 def _alerts(page: Page) -> list:
@@ -328,34 +295,6 @@ def test_the_filter_dialog_does_not_offer_a_column_that_an_earlier_audit_step_dr
     # the other tables are as they are (Audit mode has no data choice since slice 3a: the table is shown from Path of the data; this one has no tier-2 steps, so its tier 2 is its tier 1): T1 still offers the column
     show_place(page, "T1:t", keep_chosen=False)
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
-
-
-def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_blocks_the_export(page: Page, staged_app):
-    """Order A cannot be made by recording the drop first and then opening the dialog (it does not offer the dropped column and
-    Apply clears the staged rows). It still can be made while the drop is pending: the dialog acts on the applied steps only. The
-    engine must then refuse the list, never skip a step."""
-    _start(page, staged_app)
-    _pending_drop(page)                       # step 1, pending
-    _stage_filter(page)                       # the dialog still offers `score`: the drop is not applied yet
-    _press(page, "#filter_send_to_audit")
-    _wait_shiny(page)
-    _confirm_scope(page)                      # step 2, pending
-    _reasons_and_apply(page, "recorded in this order", 2)
-    expect(page.locator("#home_data_preview")).to_contain_text("cannot be applied", timeout=20_000)
-    table = _table_text(page)
-    # the audit copy names the second step (its id ends in _2) and its place; the engine's words name the column that the first step dropped
-    for needle in ("audit step audit_", "_2 at T3:per_year cannot be applied", "score", "not in the table"):
-        assert needle in table, f"the table's place does not say {needle!r}: {table!r}"
-    plot = _plot_until(page, lambda im: _red_pixels(im) > 100, "the error text (red) in the plot's place; the filter is not skipped")
-    assert _red_pixels(plot) > 100
-    found = [a for a in _alerts(page) if "cannot be applied" in a]
-    assert len(found) == 1 and "T3:per_year" in found[0], found
-    archive = _export_bundle(page)            # the export is checked before anything is written
-    assert archive.namelist() == ["EXPORT_NOT_CREATED.txt"], archive.namelist()
-    notice = archive.read("EXPORT_NOT_CREATED.txt").decode()
-    assert "audit step audit_" in notice and "_2 at T3:per_year cannot be applied" in notice and "'per_year'" in notice, notice
-    # two plots in scope, the second one sound: the export is refused as a whole, and the notice says so and names the failing step and plot only
-    assert "nothing was exported" in notice and "T3:per_year" in notice and f"T3:{OTHER_PLOT}" not in notice, notice
 
 
 def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page: Page, staged_app):

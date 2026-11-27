@@ -23,11 +23,11 @@ from app.tests.test_session_errors_visible import KEY, RESTORE, Screen
 
 
 def _step(reason):
-    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "__places__", reason, place="T3:p")
+    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, reason, place="T3:p")
 
 
 def _save(manager, reason):
-    path = manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [_step(reason)]})
+    path = manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, audit_steps=[_step(reason)])
     time.sleep(0.002)   # the file name holds a time stamp: two saves never share one
     return path
 
@@ -91,7 +91,7 @@ def test_a_restore_that_skips_the_newest_save_says_which_was_skipped_and_which_w
     screen.run("_handle_session_actions")
     with reactive.isolate():
         state = screen.home_state.get()
-    assert [n["reason"] for n in state["t3_audit_steps_by_plot"]["__places__"]] == ["older save"], "the older save is still restored"
+    assert [n["reason"] for n in state["audit_pipeline"]] == ["older save"], "the older save is still restored"
     warnings = screen.texts("warning")
     assert len(warnings) == 1, screen.notes
     text = warnings[0]
@@ -106,12 +106,12 @@ def test_a_restore_whose_every_save_is_damaged_says_so_and_leaves_the_view_uncha
     screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
     only = _save(screen.manager, "only save")
     only.write_text("{ not json")
-    in_view = {"__places__": [_step("a step already in this view")]}
+    in_view = [_step("a step already in this view")]
     with reactive.isolate():
-        screen.home_state.set({**screen.home_state.get(), "t3_audit_steps_by_plot": in_view})
+        screen.home_state.set({**screen.home_state.get(), "audit_pipeline": in_view})
     screen.run("_handle_session_actions")
     with reactive.isolate():
-        assert screen.home_state.get()["t3_audit_steps_by_plot"] is in_view, "the state is not touched, as the text must say"
+        assert screen.home_state.get()["audit_pipeline"] is in_view, "the state is not touched, as the text must say"
     warnings = screen.texts("warning")
     assert len(warnings) == 1 and only.name in warnings[0] and "Suggestion:" in warnings[0], screen.notes
     assert "nothing was restored" in warnings[0] and "unchanged" in warnings[0], warnings[0]
@@ -122,12 +122,12 @@ def test_a_restore_whose_every_save_is_damaged_says_so_and_leaves_the_view_uncha
 def test_a_session_with_no_saves_does_not_say_it_starts_fresh(tmp_path, monkeypatch):
     """The other old sentence ('starting fresh T3') was untrue in the same way."""
     screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
-    in_view = {"__places__": [_step("a step already in this view")]}
+    in_view = [_step("a step already in this view")]
     with reactive.isolate():
-        screen.home_state.set({**screen.home_state.get(), "t3_audit_steps_by_plot": in_view})
+        screen.home_state.set({**screen.home_state.get(), "audit_pipeline": in_view})
     screen.run("_handle_session_actions")
     with reactive.isolate():
-        assert screen.home_state.get()["t3_audit_steps_by_plot"] is in_view
+        assert screen.home_state.get()["audit_pipeline"] is in_view
     texts = screen.texts("message")
     assert len(texts) == 1 and "nothing was restored" in texts[0] and "unchanged" in texts[0] and "fresh" not in texts[0], texts
 

@@ -3,7 +3,8 @@
 What it converts, each only when you ask for it and only with --apply:
   --recipes DIR    data analysis recipe YAML files: join_manifests: -> joins:, recipe: -> steps:, top-level type: removed
   --sessions DIR   saved sessions (assembly.json, t3_*.json): manifest_id, manifest_sha256,
-                   t3_recipe, t3_recipe_by_plot, t3_recipe_sha256 -> their new names
+                   -> their new names (the old `t3_recipe*` keys are not converted: a session with them is older than
+                   session format 6 and the app refuses it as a whole, D-0312)
   --gallery DIR    gallery bundles: recipe_manifest.yaml -> data_analysis_recipe.yaml,
                    recipe_meta.md -> example_meta.md (and the keys inside the YAML)
 
@@ -24,9 +25,6 @@ from pathlib import Path
 SESSION_KEYS = {
     "manifest_id": "data_analysis_recipe_id",
     "manifest_sha256": "data_analysis_recipe_sha256",
-    "t3_recipe": "t3_audit_steps",
-    "t3_recipe_by_plot": "t3_audit_steps_by_plot",
-    "t3_recipe_sha256": "t3_audit_steps_sha256",
 }
 _KEY_LINE = re.compile(r"^(?P<ind>\s*-?\s*)(?P<key>join_manifests|recipe)(?P<rest>\s*:.*)$")
 _RENAME = {"join_manifests": "joins", "recipe": "steps"}

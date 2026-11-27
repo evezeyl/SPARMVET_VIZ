@@ -351,7 +351,7 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_in_audit_mode(browser, tm
     assert not same_picture(png_b, png_a)
     # the pin is a step of the audit trail: listed in t3_steps.yaml and in the report
     steps = yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("t3_steps.yaml"))).decode())
-    (step,) = steps["t3_steps"][PID]
+    (step,) = steps["plot_seeds"][PID]
     assert step["action"] == "random_seed" and step["seed"] == run_b["seeds_per_plot"][PID] and step["reason"]
     report = z.read(next(n for n in z.namelist() if n.endswith("report.qmd"))).decode()
     assert "random_seed" in report and str(step["seed"]) in report

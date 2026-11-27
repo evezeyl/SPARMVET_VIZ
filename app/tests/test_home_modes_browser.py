@@ -7,7 +7,7 @@ What a person sees:
 - Exploration is the start: a mode switch with Exploration and Audit; the data choice Source, T1, T2, T3 starting on T3; no Compare switch;
 - Source shows a second list with the source tables that feed the open plot, the table as read from its file, and a badge that says so;
 - a filter applied in Exploration changes the table only; changing the table to view clears the filter and says so; changing nothing says nothing;
-- in Audit mode Compare appears (the original and the audited plot), and "Send to Audit" is offered only while T3 is viewed, with one plain
+- in Audit mode Compare appears (the original and the audited plot), and a step is added in one way (Try, then Add to audit pipeline), with one plain
   line on the other tables; switching the mode removes exploration filters, with the notice.
 """
 import pytest
@@ -108,7 +108,7 @@ def test_no_notice_when_there_is_no_filter_to_clear(page: Page, shiny_app: Shiny
     assert "The filters were removed" not in shown, shown
 
 
-def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, shiny_app: ShinyAppProc):
+def test_audit_mode_has_compare_and_builds_a_condition_to_try_on_any_table_shown(page: Page, shiny_app: ShinyAppProc):
     _ready(page, shiny_app.url)
     set_mode(page, "audit")
     try:
@@ -119,17 +119,19 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=20_000)
         set_compare(page, False)
         expect(page.locator("[id$='_cmp_base'].shiny-plot-output")).to_have_count(0, timeout=15_000)
-        # the form builds audit steps: no Apply; Send to Audit only while T3 is viewed
+        # the form builds the condition of an audit step: no Apply and no Send to Audit (FLOW-3: a step is tried, then added); Try is offered once a row is staged, on the plot's Result data and on a table too
         set_view(page, "T3")
-        expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
+        expect(page.locator("#filter_send_to_audit")).to_have_count(0)
         expect(page.locator("#filter_apply")).to_have_count(0)
+        expect(page.locator("#filter_controls_ui")).to_contain_text("press Try", timeout=10_000)
         # Audit mode has no "Table to view" (slice 3a): another table is shown from Path of the data
         expect(page.locator("#data_view")).to_have_count(0)
         page.wait_for_selector("#lineage_root .spv-lin-line", timeout=30_000)
         a_table = page.locator("#lineage_root .spv-lin-line[data-id^='T1:']:not(.not-choosable)").first.get_attribute("data-id")
         show_place(page, a_table)
         expect(page.locator("#filter_send_to_audit")).to_have_count(0, timeout=10_000)
-        expect(page.locator("#filter_controls_ui")).to_contain_text("To create an audit step, show the Result data (T3) of a plot")
+        expect(page.locator("#filter_controls_ui")).to_contain_text("press Try")
+        expect(page.locator("#col_drop_try")).to_have_count(0)                      # a column drop is tried at the Result data (T3) of a plot only
     finally:
         set_mode(page, "exploration")
         set_view(page, "T3")

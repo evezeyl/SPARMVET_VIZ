@@ -54,7 +54,7 @@ def newest_session_steps() -> list:
     """The audit steps of the newest session file written in the user's folder (ghost save on), [] when there is none."""
     root = user_data() / "_sessions"
     files = sorted(root.glob("*/t3_*.json"), key=lambda p: p.stat().st_mtime_ns) if root.is_dir() else []
-    return json.loads(files[-1].read_text())["t3_audit_steps_by_plot"].get("__places__", []) if files else []
+    return json.loads(files[-1].read_text())["audit_pipeline"] if files else []
 
 
 def session_file_count() -> int:
@@ -116,7 +116,7 @@ def test_add_after_the_mark_and_the_reason_writes_the_step_and_it_equals_a_fresh
     expect(page.locator(CARDS)).to_contain_text("Written at ResFinder: Table, T1", timeout=20_000)
     expect(page.locator(CARDS)).to_contain_text("User verified")
     expect(page.locator(CARDS)).not_to_contain_text("PENDING")
-    expect(page.locator("#audit_pending_badge_ui")).not_to_contain_text("Pending")     # nothing is pending after Add (the old badge says it when it is)
+    assert page.locator("#audit_pending_badge_ui").count() == 0 and page.locator(".audit-pending-badge").count() == 0, "FLOW-3: there is no Pending badge any more"
     wait_preview_rows(page, tables["kept_resfinder"], timeout=60_000)
     expect(page.locator("#shown_band_ui")).to_contain_text("Audited: your applied steps")
     expect(page.locator("#shown_band_ui")).not_to_contain_text("TRIAL")

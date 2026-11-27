@@ -22,8 +22,6 @@ from app.modules.session_manager import (
     SESSION_FORMAT_VERSION,
     SessionManager,
     make_audit_step,
-    node_blocks_apply,
-    gatekeeper_blocked,
     audit_steps_sha256,
 )
 
@@ -231,7 +229,7 @@ def test_restore_t1t2_reassemble(sm, data_analysis_recipe_file, source_files):
 
 def test_write_list_t3_ghosts(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test", place="T3:p")]
 
     p1 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="first")
     p2 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="second")
@@ -243,36 +241,35 @@ def test_write_list_t3_ghosts(sm):
 
 
 # ---------------------------------------------------------------------------
-# REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): t3_audit_steps_sha256 self-consistency
+# REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): audit_steps_sha256 self-consistency
 # ---------------------------------------------------------------------------
 
 def test_t3_ghost_carries_a_self_consistency_hash(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test", place="T3:p")]
     sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="x")
     ghost = sm.list_t3_ghosts(key)[0]
-    assert len(ghost["t3_audit_steps_sha256"]) == 64
+    assert len(ghost["audit_steps_sha256"]) == 64
 
 
 def test_t3_ghost_hash_is_stable_for_identical_content(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test", place="T3:p")]
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, audit_steps, {}, label="a")
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, list(audit_steps), {}, label="b")
     ghosts = sm.list_t3_ghosts(key)
-    assert ghosts[0]["t3_audit_steps_sha256"] == ghosts[1]["t3_audit_steps_sha256"]
+    assert ghosts[0]["audit_steps_sha256"] == ghosts[1]["audit_steps_sha256"]
 
 
 def test_t3_ghost_hash_differs_for_different_content(sm):
-    """t3_audit_steps_by_plot is what the hash covers — t3_audit_steps_by_plot, not the
-    legacy flat list, is the authoritative, current representation (Phase 22-J)."""
+    """`audit_pipeline` (the one flat list, FLOW-3) is what the hash covers."""
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="a",
-                       t3_audit_steps_by_plot={"__places__": [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")]})
+                       audit_steps=[make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")])
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="b",
-                       t3_audit_steps_by_plot={"__places__": [make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")]})
+                       audit_steps=[make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x", place="T3:p")])
     ghosts = sm.list_t3_ghosts(key)
-    assert ghosts[0]["t3_audit_steps_sha256"] != ghosts[1]["t3_audit_steps_sha256"]
+    assert ghosts[0]["audit_steps_sha256"] != ghosts[1]["audit_steps_sha256"]
 
 
 def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_path):
@@ -285,11 +282,11 @@ def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_p
     legacy = {
         "session_key": key, "data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64,
         "saved_at": "2026-01-01T00:00:00", "label": "", "schema_version": SESSION_FORMAT_VERSION,
-        "t3_audit_steps": [], "t3_audit_steps_by_plot": {"__places__": []}, "t3_plot_overrides": {},
+        "audit_pipeline": [], "t3_plot_overrides": {},
     }
     (d / "t3_20260101_000000.json").write_text(json.dumps(legacy))
     ghost = sm.list_t3_ghosts(key)[0]
-    assert ghost["t3_audit_steps_sha256"] == ""
+    assert ghost["audit_steps_sha256"] == ""
 
 
 # ---------------------------------------------------------------------------
@@ -398,39 +395,6 @@ def test_make_audit_step_defaults():
     assert "created_at" in node
 
 
-def test_node_blocks_apply_empty_reason():
-    node = make_audit_step("filter_row", {}, reason="")
-    assert node_blocks_apply(node) is True
-
-
-def test_node_blocks_apply_filled_reason():
-    node = make_audit_step("filter_row", {}, reason="Outlier removed.")
-    assert node_blocks_apply(node) is False
-
-
-def test_node_blocks_apply_aesthetic_never_blocks():
-    node = make_audit_step("aesthetic_override", {}, reason="")
-    assert node_blocks_apply(node) is False
-
-
-def test_node_blocks_apply_inactive_never_blocks():
-    node = make_audit_step("filter_row", {}, reason="")
-    node["active"] = False
-    assert node_blocks_apply(node) is False
-
-
-def test_gatekeeper_blocked():
-    audit_steps = [
-        make_audit_step("filter_row", {}, reason="ok"),
-        make_audit_step("exclusion_row", {}, reason=""),
-        make_audit_step("drop_column", {"column": "x"}, reason=""),
-        make_audit_step("aesthetic_override", {}, reason=""),
-    ]
-    blocked = gatekeeper_blocked(audit_steps)
-    assert len(blocked) == 2
-    assert audit_steps[1]["id"] in blocked
-    assert audit_steps[2]["id"] in blocked
-
 
 def test_transformation_sha256_active_only():
     audit_steps = [
@@ -529,9 +493,9 @@ def test_stored_assembly_ghost_key_names(sm, data_analysis_recipe_file, source_f
 def test_stored_t3_ghost_key_names(sm):
     import json
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    node = make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
+    node = make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test", place="T3:p")
     path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, [node], {}, label="x")
     raw = json.loads(Path(path).read_text())
     assert {"session_key", "data_analysis_recipe_id", "data_analysis_recipe_sha256", "data_batch_hash", "saved_at",
-            "schema_version", "t3_audit_steps", "t3_plot_overrides"} <= set(raw)
+            "schema_version", "audit_pipeline", "t3_plot_overrides"} <= set(raw)
     assert "tier_toggle" not in raw   # PROVISIONAL (D-0312 work): the view is not stored in a session file

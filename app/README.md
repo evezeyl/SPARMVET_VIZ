@@ -16,7 +16,7 @@ app/
 │   ├── bootloader.py           ← Path authority & app features bootstrap (ADR-031)
 │   ├── ui.py                   ← Static HTML/CSS shell — no reactive logic
 │   └── server.py               ← Thin orchestrator (~240 lines, ADR-045)
-│                                  Shared state: anchor_path, audit_pending,
+│                                  Shared state: anchor_path,
 │                                  snapshot_steps, gallery_refresh_trigger,
 │                                  data_refresh_trigger, notification_log,
 │                                  session_processing_issues, home_state,
@@ -39,8 +39,9 @@ app/
 │
 └── handlers/                   ← Shiny wiring only (Two-Category Law, ADR-045)
     ├── home_theater.py              ← Home mode: tabs, plots, data preview, sidebar dispatch
-    ├── audit_stack.py               ← T2/T3 audit nodes, Apply gate, Revert
-    ├── filter_and_audit_handlers.py ← Filter builder, Send to Audit, propagation modal (DEPRECATED 2026-11-26, D-0662: removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold)
+    ├── audit_stack.py               ← the Pipeline Audit panel: the steps added, their reasons, remove
+    ├── filter_and_audit_handlers.py ← Filter builder: the condition, Apply (Exploration), Try (Audit mode)
+    ├── trial_handlers.py ← the one way to create an audit step: Try, the marks, the reason, Add to audit pipeline
     ├── export_handlers.py           ← Export bundle (ADR-043/047)
     ├── session_handlers.py          ← Session save/restore/import/delete
     ├── data_import_handlers.py      ← Data Import panel (upload, assign, metadata replace)

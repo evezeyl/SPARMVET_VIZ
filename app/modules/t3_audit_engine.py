@@ -684,7 +684,7 @@ def rows_built_on(rows: list, key: tuple | None) -> list:
     return [row for row in rows if key is not None and row.get("view") == key]
 
 
-# PROVISIONAL words (the builder's; the owner reads them): told when a staged condition is used (Try, Send to Audit, the lineage button) on a table other than the one it was built on.
+# PROVISIONAL words (the builder's; the owner reads them): told when a staged condition is tried on a table other than the one it was built on.
 BUILT_ELSEWHERE_LINE = "This condition was built on another table than the one shown. Show that table, or build the condition again here. Nothing was {done}."
 
 
@@ -695,7 +695,7 @@ def rows_built_elsewhere(rows: list, key: tuple | None) -> bool:
 
 
 def audit_params_from_row(frow: dict) -> dict:
-    """The params of the audit step built from a staged row on "Send to Audit": everything the user chose.
+    """The params of the audit step built from a staged row (`audit_try.tried_nodes`): everything the user chose.
 
     `na` (keep or remove the rows with no value) and, for `between`, `closed` are carried exactly as chosen. A row of an
     older state without `na` is "remove".

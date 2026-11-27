@@ -45,7 +45,7 @@ from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from app.modules.audit_view import AUDIT_ERRORS
 from app.modules.audit_add import verification_sentences
-from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
+from app.modules.audit_places import steps_by_place_yaml, audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
@@ -103,14 +103,15 @@ def build_export_provenance(
     plot_keys: dict | None = None,
     orchestrator=None,
     anchor_dir=None,
-    t3_by_plot: dict | None = None,
+    audit_steps: list | None = None,
+    plot_seeds: dict | None = None,
     t3_aesthetic_overrides: dict | None = None,
 ) -> dict:
     """Collect all export provenance fields for README, QMD, and image metadata.
 
     ADR-069: all 8 required provenance fields + git info + software versions.
     ADR-097 (REPRO-PROV-1, issue #39): adds the fourth verification leg
-    (``t3_audit_steps_sha256``) and an environment-aware engine fingerprint
+    (``audit_steps_sha256``) and an environment-aware engine fingerprint
     (``containerized``/``image_ref`` vs. ``git_commit``/``uv_lock_sha256`` — detected
     automatically, never asked of the user, decision 3). Field names checked against
     RO-Crate's Provenance Run Crate profile (arXiv:2312.07852, W3C-PROV-aligned) where they
@@ -202,8 +203,10 @@ def build_export_provenance(
     # before this: the original ui_implementation_contract.md §12f spec named this exact
     # field and it was never computed anywhere. A snapshot, not a seal — recomputed fresh
     # here every export; T3 itself stays fully editable in the live session (§6d).
-    t3_audit_steps_sha256 = canonical_hash({
-        "t3_audit_steps_by_plot": t3_by_plot or {},
+    # FLOW-3 (D-0665; PROVISIONAL names): the audit steps are ONE flat list, each step with its place; the seed pins of the plots (the Reshuffle record) are listed apart under `plot_seeds`.
+    audit_steps_sha256 = canonical_hash({
+        "audit_pipeline": audit_steps or [],
+        "plot_seeds": plot_seeds or {},
         "t3_plot_overrides": t3_aesthetic_overrides or {},
     })
 
@@ -249,7 +252,7 @@ def build_export_provenance(
         "data_source_paths": data_source_paths,
         "problems": problems,
         # ADR-097 decision 3 — the four verification legs (recipe/data above; engine + T3 here):
-        "t3_audit_steps_sha256": t3_audit_steps_sha256,
+        "audit_steps_sha256": audit_steps_sha256,
         "engine_fingerprint": engine_fingerprint(),
         "containerized": containerized,
         "image_ref": image_ref,
@@ -493,14 +496,15 @@ def _embed_svg_provenance(
 
 def _build_methods_section(
     all_plots: list,
-    t3_by_plot: dict,
+    audit_steps: list,
     ds_to_plots: dict,
     tiers_exported: list,
     t3_aesthetic_overrides: dict | None = None,
+    plot_seeds: dict | None = None,
 ) -> list[str]:
     """Return QMD lines for the auto-generated Methods section.
 
-    Produces human-readable prose from the audited T3 steps (exploration filters are never exported).
+    Produces human-readable prose from the audit steps (each written at a place) and the seed pins of the plots (exploration filters are never exported).
     Returns an empty list when nothing actionable exists so the section is
     omitted rather than appearing empty.
     """
@@ -520,59 +524,54 @@ def _build_methods_section(
 
     prose_items: list[str] = []
 
-    # T3 node prose
-    for p_id, nodes in (t3_by_plot or {}).items():
+    # The audit steps, in the order added (each says where it was written) and then the seed pins of the plots
+    entries = [(None, n) for n in (audit_steps or [])] + [(p_id, n) for p_id, nodes in (plot_seeds or {}).items() for n in nodes]
+    for p_id, n in entries:
         plot_label = _qp(next(
             (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
             p_id,
-        ))
-        for n in nodes:
-            # a step written at a table (bucket `__places__`) says where, and applies to every plot built from there; a step written at a plot's own tier 3 says the plot
-            place = n.get("place", "") if p_id == PLACES_BUCKET else ""
-            own_plot = place.removeprefix("T3:") if place.startswith("T3:") else None
-            at_table = bool(place) and own_plot is None
-            if own_plot is not None:
-                plot_label = _qp(next((plot_report_name(s, own_plot) for pid, s in all_plots if pid == own_plot), own_plot))
-            where = f" (written at {_qp(place_words(n.get('place', '')))}; it applies to every plot built from there)"
-            nt = n.get("node_type", "")
-            params = n.get("params", {})
-            reason = n.get("reason", "").strip()
-            verb = _node_verb.get(nt, "An adjustment was applied")
+        )) if p_id is not None else ""
+        # a step says where it is written, and applies to every plot built from there (a plot's own tier 3 included); a plot is named as the report names it
+        place = n.get("place", "") or ""
+        own_plot = place.removeprefix("T3:") if place.startswith("T3:") else None
+        place_text = (f"Plot {_qp(next((plot_report_name(s, own_plot) for pid, s in all_plots if pid == own_plot), own_plot))} (tier 3)"
+                      if own_plot else _qp(place_words(place)))
+        where = f" (written at {place_text}; it applies to every plot built from there)"
+        nt = n.get("node_type", "")
+        params = n.get("params", {})
+        reason = n.get("reason", "").strip()
+        verb = _node_verb.get(nt, "An adjustment was applied")
 
-            if nt in ("filter_row", "exclusion_row"):
-                col = _qp(params.get("column", "?"))
-                op = _qp(_op_prose.get(params.get("op", "eq"), params.get("op", "")))
-                val = params.get("value", "")
-                val_str = (
-                    ", ".join(f'"{_qp(value_text(v))}"' for v in val) if isinstance(val, list)
-                    else f'"{_qp(value_text(val))}"'
-                )
-                if params.get("op") == "between" and isinstance(val, list) and len(val) == 2:
-                    # ADR-104 point 8: the report says which ends of the range were included (an old step: both)
-                    detail = f"where **{col}** is " + _qp(between_prose(val, params.get("closed", "both")))
-                else:
-                    detail = f"where **{col}** is {op} {val_str}"
-                # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
-                detail += ", " + _qp(no_value_words(na_of(params), str(params.get("column", "?"))))
-                scope = where if at_table else (f" (plot: *{plot_label}*)" if p_id != "__all__" else "")
-                sentence = f"{verb} {detail}{scope}."
-            elif nt == "drop_column":
-                col = _qp(params.get("column", "?"))
-                scope = where if at_table else (f" (plot: *{plot_label}*)" if p_id != "__all__" else "")
-                sentence = f"Column **{col}** was permanently removed from the exported data{scope}."
-            elif nt == "aesthetic_override":
-                scope = f" for plot *{plot_label}*"
-                sentence = f"Plot aesthetics were adjusted{scope}."
-            elif nt == "random_seed":
-                sentence = (f"The arrangement of the random points of plot *{plot_label}* was fixed with the seed "
-                            f"**{_qp(params.get('seed'))}**.")
+        if nt in ("filter_row", "exclusion_row"):
+            col = _qp(params.get("column", "?"))
+            op = _qp(_op_prose.get(params.get("op", "eq"), params.get("op", "")))
+            val = params.get("value", "")
+            val_str = (
+                ", ".join(f'"{_qp(value_text(v))}"' for v in val) if isinstance(val, list)
+                else f'"{_qp(value_text(val))}"'
+            )
+            if params.get("op") == "between" and isinstance(val, list) and len(val) == 2:
+                # ADR-104 point 8: the report says which ends of the range were included (an old step: both)
+                detail = f"where **{col}** is " + _qp(between_prose(val, params.get("closed", "both")))
             else:
-                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
-                sentence = f"{verb}{scope}."
+                detail = f"where **{col}** is {op} {val_str}"
+            # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
+            detail += ", " + _qp(no_value_words(na_of(params), str(params.get("column", "?"))))
+            sentence = f"{verb} {detail}{where}."
+        elif nt == "drop_column":
+            col = _qp(params.get("column", "?"))
+            sentence = f"Column **{col}** was permanently removed from the exported data{where}."
+        elif nt == "aesthetic_override":
+            sentence = f"Plot aesthetics were adjusted for plot *{plot_label}*."
+        elif nt == "random_seed":
+            sentence = (f"The arrangement of the random points of plot *{plot_label}* was fixed with the seed "
+                        f"**{_qp(params.get('seed'))}**.")
+        else:
+            sentence = f"{verb}{where}."
 
-            if reason:
-                sentence += f" *Reason: {_qp(reason)}*"
-            prose_items.append(sentence)
+        if reason:
+            sentence += f" *Reason: {_qp(reason)}*"
+        prose_items.append(sentence)
 
     # Aesthetic overrides prose (from t3_plot_overrides — stored separately per §12c)
     for p_id, overrides in (t3_aesthetic_overrides or {}).items():
@@ -977,22 +976,12 @@ def define_export_server(input, output, session, *,
             )
             for leg_name, leg in result.legs.items()
         ]
-        skipped_note = (
-            ui.tags.small(
-                f"{len(result.skipped_t3_plots)} plot(s)' T3 steps were not translated into "
-                "replayable actions when this bundle was exported (see the plot names in "
-                "effective_run.yaml's t3_translation_skipped).",
-                class_="text-muted d-block mt-1",
-            )
-            if result.skipped_t3_plots else ui.div()
-        )
         return ui.div(
             ui.tags.small(
                 f"Imported as '{result.recipe_id}' — reload (F5) to see it in the selector.",
                 class_="d-block mb-1", style="font-weight:600;",
             ),
             *rows,
-            skipped_note,
             class_="mt-1",
         )
 
@@ -1119,7 +1108,7 @@ def define_export_server(input, output, session, *,
         _place_records: list[dict] = []
         _place_plot_ids: set[str] = set()
         if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
-            _place_nodes_all = _committed_place_nodes_of(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
+            _place_nodes_all = _committed_place_nodes_of(home_state.get().get("audit_pipeline", []) or [])
             if _place_nodes_all:
                 _graph = build_graph(cfg.raw_config)
                 _place_records = place_step_records(_graph, _place_nodes_all)
@@ -1170,7 +1159,7 @@ def define_export_server(input, output, session, *,
 
         # The audit pin of a plot (Reshuffle, or an audit override) is a step of the audit trail too, whatever the
         # audit-trail flag: listed in t3_steps.yaml, the Methods text and the report's audit table, and hashed.
-        _t3_listed = with_seed_steps({}, _plot_seeds)
+        _plot_seed_steps = with_seed_steps({}, _plot_seeds)
 
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
@@ -1276,7 +1265,8 @@ def define_export_server(input, output, session, *,
                 plot_keys=plot_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
-                t3_by_plot={**_t3_listed, PLACES_BUCKET: _place_nodes_all} if _place_nodes_all else _t3_listed,
+                audit_steps=_place_nodes_all,
+                plot_seeds=_plot_seed_steps,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
             # The notices of the build are held and shown only when the bundle is handed over: an export that is refused
@@ -1592,12 +1582,15 @@ def define_export_server(input, output, session, *,
 
                 # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
                 # human-readable audit record backing the Methods prose, not the recipe. ──
-                if _t3_listed or _t3_aesthetic_overrides or _place_records:
+                if _plot_seed_steps or _t3_aesthetic_overrides or _place_records:
                     try:
                         import yaml as _yaml
                         t3_steps_data = {
                             "generated": now.isoformat(),
-                            "t3_steps": {
+                        }
+                        # the seed pins of the plots (Reshuffle): not a step on data, listed apart (PROVISIONAL name `plot_seeds`; before FLOW-3 they sat in a per-plot list `t3_steps`)
+                        if _plot_seed_steps:
+                            t3_steps_data["plot_seeds"] = {
                                 _pid: [
                                     {
                                         "action": n.get("node_type", "unknown"),
@@ -1607,18 +1600,11 @@ def define_export_server(input, output, session, *,
                                     }
                                     for n in _nodes
                                 ]
-                                for _pid, _nodes in _t3_listed.items()
-                            },
-                        }
+                                for _pid, _nodes in _plot_seed_steps.items()
+                            }
                         # the audit steps, at every tier: where each is written (a table's tier 1 or tier 2, a plot's tier 3), its reason and the plots built from there
                         if _place_records:
-                            t3_steps_data["steps_by_place"] = [
-                                {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
-                                 "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
-                                 "plots_built_from_it": r["plots"],
-                                 **({"user_verified": r["user_verified"], **({"verified_at": r["verified_at"]} if r.get("verified_at") else {})} if "user_verified" in r else {})}
-                                for r in _place_records
-                            ]
+                            t3_steps_data["steps_by_place"] = steps_by_place_yaml(_place_records)
                         # Aesthetic overrides are stored separately from audit step (§12c)
                         # the seed is listed as a step above, not a second time here
                         _overrides_listed = {
@@ -1758,7 +1744,7 @@ def define_export_server(input, output, session, *,
                 "generated": now.isoformat(),
                 "data_analysis_recipe_sha256": prov["data_analysis_recipe_sha256"],
                 "data_batch_hash": prov["data_batch_hash"],
-                "t3_audit_steps_sha256": prov["t3_audit_steps_sha256"],
+                "audit_steps_sha256": prov["audit_steps_sha256"],
                 "engine_fingerprint": prov["engine_fingerprint"],
                 "containerized": prov["containerized"],
                 "image_ref": prov["image_ref"],
@@ -2027,7 +2013,7 @@ def define_export_server(input, output, session, *,
                 "|------|------------|",
                 "| **T1 — Raw data** | The original assembled dataset exactly as it came out of the analysis pipeline. Nothing has been changed. This is what you find in the `data/` folder. |",
                 "| **T2 — Result** | T1 with the processing steps of the data analysis recipe (tier 2) applied. The figures show the Result. A T2 file is included only when the dataset has tier 2 steps; without them T2 equals T1. |",
-                "| **T3 — The table of a plot** | The table a plot is drawn from: the Result (T2) plus the plot's own tier-3 steps of the recipe, when it has some, plus the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The table of a plot is saved as `T3_data_<plot>.tsv`; the sentence under each plot says whether it holds the recipe's own steps, the audit steps or both, and the audit steps are listed under *T3 Audit Trail*. |",
+                "| **T3 — The table of a plot** | The table a plot is drawn from: the Result (T2) plus the plot's own tier-3 steps of the recipe, when it has some, plus the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The table of a plot is saved as `T3_data_<plot>.tsv`; the sentence under each plot says whether it holds the recipe's own steps, the audit steps or both, and the audit steps are listed under *Audit steps*. |",
                 "",
             ]
             if _id_sentences:
@@ -2045,7 +2031,8 @@ def define_export_server(input, output, session, *,
             # ── Methods section (auto-generated from the audited T3 steps) ───
             _methods_lines = _build_methods_section(
                 all_plots=all_plots,
-                t3_by_plot={**_t3_listed, PLACES_BUCKET: _place_nodes_all} if _place_nodes_all else _t3_listed,
+                audit_steps=_place_nodes_all,
+                plot_seeds=_plot_seed_steps,
                 ds_to_plots=ds_to_plots,
                 tiers_exported=tiers_exported,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
@@ -2124,7 +2111,7 @@ def define_export_server(input, output, session, *,
                 qmd_lines.append("")
 
             # ── The audit steps, at every tier (demo steps 4 and 7) ──────────
-            if _place_records:
+            if _place_records or _plot_seed_steps:
                 qmd_lines += ["## Audit steps", "",
                               "Each step below was written at the table or plot named; every table and plot built from that place is built again from it, and the figures and data files of this bundle are those.", "",
                               "| Step | Written at | Action | Details | Justification | Plots built from it |",
@@ -2133,7 +2120,15 @@ def define_export_server(input, output, session, *,
                     _details = _qp("; ".join(f"{k}={v}" for k, v in _r["params"].items())) if _r["params"] else "—"
                     _plots = _qp(", ".join(_r["plots"]) or "none")
                     qmd_lines.append(f"| {_i} | {_qp(_r['place_words'])} | {_qc(_r['action'], True)} | {_details} | {_qp(_r['reason'] or '—')} | {_plots} |")
+                # the seed pin of a plot (Reshuffle) is a row of the same table: it is written at the plot, and changes only its picture
+                _seed_rows = [(_pid, _n) for _pid, _seed_nodes in _plot_seed_steps.items() for _n in _seed_nodes]
+                for _i, (_pid, _n) in enumerate(_seed_rows, len(_place_records) + 1):
+                    _plot_name = _qp(next((plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid))
+                    _params = _n.get("params", {})
+                    _details = _qp("; ".join(f"{k}={v}" for k, v in _params.items())) if _params else "—"
+                    qmd_lines.append(f"| {_i} | Plot {_plot_name} | {_qc(_n.get('node_type', '?'), True)} | {_details} | {_qp(_n.get('reason') or '—')} | {_plot_name} |")
                 qmd_lines.append("")
+            if _place_records:
                 for _sentence in verification_sentences(_place_records):          # FLOW-2, D-0670: which places the user marked "User verified" when the step was added (advice, not a condition)
                     qmd_lines.append(_qp(_sentence))
                     qmd_lines.append("")
@@ -2149,31 +2144,6 @@ def define_export_server(input, output, session, *,
                 elif audit_recipe_failed:
                     qmd_lines += ["The audit recipe could not be written: see `audit_recipe/ERROR.txt`.", ""]
                 qmd_lines.append("")
-
-            # ── T3 Audit Trail section ────────────────────────────────────
-            if _t3_listed:
-                qmd_lines += ["## T3 Audit Trail", ""]
-                for _pid, _nodes in _t3_listed.items():
-                    _section_label = _qp(next(
-                        (plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid
-                    ))
-                    qmd_lines += [
-                        f"### {_section_label}",
-                        "",
-                        "| Step | Action | Details | Justification |",
-                        "|------|--------|---------|---------------|",
-                    ]
-                    for _i, _n in enumerate(_nodes, 1):
-                        _action = _n.get("node_type", "?")
-                        _params = _n.get("params", {})
-                        _details = _qp("; ".join(
-                            f"{k}={v}" for k, v in _params.items()
-                        )) if _params else "—"
-                        _reason = _qp(_n.get("reason") or "—")
-                        qmd_lines.append(
-                            f"| {_i} | {_qc(_action, True)} | {_details} | {_reason} |"
-                        )
-                    qmd_lines.append("")
 
             # ── Processing Issues section ───────────────────────────────────
             _pe_entries = (

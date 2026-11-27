@@ -24,13 +24,14 @@ The badge next to the table says which table it is and when two tables are the s
 
 - In **Exploration**, a filter changes the **table only**. Use it to check "what is this data?". It does not change any plot, and it is never saved or exported. A badge says "N preview filter(s) on, not saved".
 - When you change what you view (the table to view, the source table, the plot tab, the mode or the recipe), the staged and applied filters are removed and a notice says so. Nothing is carried over silently.
-- In **Audit** mode the form builds audit steps, not previews: there is no Apply. **➜ Send to Audit** (with a reason) is offered while T3 is viewed; it makes a step permanent: it is applied to the audited plot and to the exported plot and data and recorded in the audit trail. On another table the panel says: "To create an audit step, view T3."
+- In **Audit** mode the form builds the condition of an audit step, not a preview: there is no Apply. **Try** computes the step at the table you are viewing and at the places you chose in "Path of the data": for each place how many rows it removes, and what is built from it. Nothing is applied, saved or exported yet. You may tick **User verified** on a place (advice only), write the **reason** (required) and press **Add to audit pipeline**: the step is written at every place of the trial, it is applied to the audited plots and to the exported plots and data, and it is recorded in the audit trail. One step at a time.
+- To drop columns in Audit mode, view the Result data (T3) of a plot, deselect the columns in the column chooser and press **Try the drop**; it is tried and added the same way.
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
 A column of **whole numbers** (an integer type) takes whole numbers only, for every operator: a decimal such as 12.5 is refused with a line under the box and nothing is added. A column of decimal numbers takes decimals.
 
-In the right panel (Pipeline Audit) the **Pending** badge and the **Apply** button are shown in Audit mode only: Exploration never writes audit steps. The right panel opens when you choose **Audit** mode and closes when you leave it; opened by hand in Exploration it is empty.
+The right panel (Pipeline Audit) lists the audit steps you added, each with where it was written, whether the place was marked "User verified", its reason and a bin that removes it (from every place it was written at). Exploration never writes audit steps. The right panel opens when you choose **Audit** mode and closes when you leave it; opened by hand in Exploration it is empty.
 
 The side panels follow the window width. To change a panel's width, drag the grip on its edge (double-click it to go back to the default width). The width is kept in this browser, on this machine, as a share of the window; the centre always keeps at least half of the window.
 
@@ -41,7 +42,7 @@ A plot with a random layer (for example jitter) shows a line with its plot: the 
 **Info** shows what the recipe says about itself. **Alerts** lists the notices of this session (for example that a recipe was loaded or that filters were removed).
 
 ### Data Preview
-Shows up to the first 100 rows of the table you chose to view for the active plot. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only; in Audit mode on T3, deselecting a column stages it to be permanently dropped via the audit trail.
+Shows up to the first 100 rows of the table you chose to view for the active plot. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only; in Audit mode on T3, deselecting a column is the start of a drop (**Try the drop**, then add it to the audit pipeline).
 
 ### Export
 Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a **Plot format** (PNG / SVG / PDF), a **Report format** (HTML / PDF / DOCX), and the plot size in inches, then click **Export Bundle**. Every export holds all plots of the loaded recipe. The bundle contains the plots, the underlying data, the data analysis recipe YAML, and a report with your audit trail. Only filters sent to audit are exported — exploration-only filters never are.

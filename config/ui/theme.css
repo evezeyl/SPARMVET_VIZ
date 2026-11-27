@@ -28,7 +28,7 @@
  *  25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1)
  *  26. Side panel drag handle (D-0375, D-0381)
  *  27. HOME warning of the ids (D-0582)
- *  28. Audit dialog: the places as the path of the lineage (D-0553)
+ *  28. (removed in FLOW-3, 2026-11-27: the audit dialog's places as a path)
  *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
  *  30. HOME mode row (title and Exploration | Audit) and the Compare line
  *  31. HOME Audit mode: the chosen places with Show, the shown mark and the band above the preview (slice 3a)
@@ -119,7 +119,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Shiny sets margin-top:-10px on stacked radio/checkbox .shiny-options-group to cancel
    the control-label's margin-bottom — this leaves 0px gap between label and first option.
    Inline groups get margin-top:-1px (9px net). Neutralize the stacked case so both match.
-   Applied to sidebar AND modals (T3 propagation modal uses stacked radio with "Apply to:"). */
+   Applied to sidebar AND modals (a modal that holds a stacked radio group). */
 #nav_sidebar .shiny-input-radiogroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,
 #nav_sidebar .shiny-input-checkboxgroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,
 .modal .shiny-input-radiogroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,
@@ -171,7 +171,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .theater-container-main .nav-pills .nav-link:not(.active) { color: #345beb !important; }
 .theater-container-main .nav-tabs  .nav-link              { color: #345beb !important; }
 #btn_revert_sync, #restore_session, #btn_reset_sync,
-#btn_reset_theater, #btn_ingest, #btn_apply {
+#btn_reset_theater, #btn_ingest {
     background-color: #345beb !important; border-color: #345beb !important;
     color: white !important; font-weight: 600 !important; height: 32px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
@@ -249,9 +249,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 #btn_generate_data:hover, #btn_apply_gallery_filters:hover {
     background-color: #2a4bc4 !important; border-color: #2344bb !important;
 }
-.btn-primary,
-#btn_apply { font-weight: 700; border-radius: 6px !important; }
-.audit-pending-badge { display: inline-flex; height: 32px !important; align-items: center; background: #ffc107; color: #000; border-radius: 6px !important; padding: 0 12px; font-size: 0.85rem; font-weight: 700; margin-right: 2px; border: 1px solid #e0a800; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1; }
+.btn-primary { font-weight: 700; border-radius: 6px !important; }
 
 /* ── 7. Ingest & Upload UI ──────────────────────────────────────────────── */
 .upload-row .form-control { height: 32px !important; font-size: 0.8rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
@@ -597,13 +595,6 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .central-theater .ultra-small,
 #audit_sidebar .ultra-small { font-size: 0.65rem !important; color: #6c757d !important; }
 
-/* Pending badge in audit sidebar: smaller text, centered, breathing room before Tier 2 */
-#audit_sidebar .audit-pending-badge {
-    font-size: 0.75rem !important;
-    width: fit-content !important;
-    margin: 4px auto 14px auto !important;
-}
-
 /* ── 17. Educational Guidance Pane Content ───────────────────────────────── */
 /*
  * All visual styling for the "📖 Visual Cookbook: Guidance" accordion and the
@@ -917,9 +908,6 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .spv-divider    { margin: 6px 0; }
 .spv-divider-sm { margin: 4px 0; }
 
-/* Audit node inline badges */
-.spv-badge-pending     { font-size: 0.65em; background: #ffc107; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
-.spv-badge-propagation { font-size: 0.65em; background: #eef0fb; color: #345beb; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
 /* Where an audit step was written, on every step card (PROVISIONAL, 2026-11-26): the plot's own tier 3 or a table; always shown, readable size, dark text */
 /* The section of the audit steps ("My Adjustments"), below the recipe's own steps: its own block, set apart by a rule and a little space (PROVISIONAL, 2026-11-26) */
 .spv-audit-mine        { margin-top: 6px; padding-top: 2px; border-top: 2px solid #dee2e6; }
@@ -1244,13 +1232,6 @@ body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
 /* While a recipe opens, the cover stands in the place of the theater (section above): the warning of the previous recipe is hidden too. */
 body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 
-/* ── 28. Audit dialog: the places as the path of the lineage (D-0553) ───────── */
-/* The list of places in the dialog "Send to Audit" (app/src/www/audit_places_path.js sets --spv-depth and the two classes). A derived place (below a ticked one) is grey and
-   cannot be ticked; a blocked place (above a ticked one) is grey too. Palette: muted text #6c757d, border #dee2e6; type scale 0.75rem notes. PROVISIONAL look. */
-.spv-places-path .spv-place-row { margin-left: calc(var(--spv-depth, 0) * 18px); padding-left: 8px; border-left: 2px solid #dee2e6; }
-.spv-places-path .spv-place-derived, .spv-places-path .spv-place-blocked { color: #6c757d; background-color: #f8f9fa; }
-.spv-places-path .spv-place-note { font-size: 0.75rem; font-weight: 400; margin-left: 20px; }
-
 /* ── 29. HOME lineage panel in Audit mode (D-0629, D-0634) ───────────────── */
 /* app/handlers/lineage_handlers.py draws the container, app/src/www/lineage_view.js builds the list and the map. One quiet colour for each kind, the same in the list and on the
    dots; only existing tokens of rules_css_style_spec.md are used (PROVISIONAL, D-0634: the exact colours are not decided): tier 1 = surface neutral #f8f9fa with the muted text grey
@@ -1328,9 +1309,6 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-lin-text { margin-top: 0; box-sizing: border-box; padding: 6px 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; max-height: 190px; overflow: auto; }
 .spv-lin-text-head { font-size: 0.8rem; font-weight: 700; margin-bottom: 2px; }
 .spv-lin-text-line { font-size: 0.75rem; margin-bottom: 2px; overflow-wrap: anywhere; }
-.spv-lin-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-.spv-lin-create { height: 32px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; padding: 0 14px; }
-.spv-lin-form { margin-top: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; background: #ffffff; }
 .spv-lin-error { font-size: 0.8rem; }
 
 /* ── 30. HOME mode row and Compare line (slice 1, 2026-11-26; PROVISIONAL) ──── */
@@ -1395,3 +1373,4 @@ html.spv-try-counting-on .spv-try-counting { display: block; }
 .spv-trial-panel label { font-size: 0.75rem; font-weight: 600; }
 .spv-trial-add { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .spv-audit-verified { font-size: 0.75rem; font-weight: 600; color: #6c757d; }
+.spv-audit-reason { font-size: 0.75rem; font-weight: 400; color: #1a1a1a; overflow-wrap: anywhere; margin-top: 2px; }

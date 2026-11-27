@@ -20,7 +20,7 @@ Imagine you are a Chef in a high-pressure kitchen:
 ## 2. The 3-Tier Workflow
 
 ::: {.lightbox}
-![SEQ-AUDIT: exploration filters against Send to Audit and Apply — the real current flow,
+![SEQ-AUDIT: exploration filters against the old Send to Audit and Apply (both removed in FLOW-3, 2026-11-27; the diagram is history),
 redrawn 2026-11-08 in plain language and current naming (ADR-085/ADR-086, since replaced by the Exploration and Audit modes: the diagram still says "My view", not "Tier 3"
 or "Active Pane"). Source: `docs/UML/app.mdj`, package `HOME` (ADR-096 — StarUML trial mode
 watermarks this image; a clean re-export follows once licensed). Naming note: this page's own

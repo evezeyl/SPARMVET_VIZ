@@ -9,7 +9,6 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_dialog_afte
 """
 import pytest
 
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_run import AuditRunError
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.session_manager import make_audit_step
@@ -26,11 +25,11 @@ def world(tmp_path_factory):
 
 
 def drop(column):
-    return make_audit_step("drop_column", {"column": column}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{PLOT}")
+    return make_audit_step("drop_column", {"column": column}, reason="r", place=f"T3:{PLOT}")
 
 
 def keep_one_gene(gene):
-    return make_audit_step("filter_row", {"column": "gene", "op": "eq", "value": gene, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{PLOT}")
+    return make_audit_step("filter_row", {"column": "gene", "op": "eq", "value": gene, "na": "remove"}, reason="r", place=f"T3:{PLOT}")
 
 
 def audited(world, nodes):
@@ -71,7 +70,7 @@ def test_two_drops_leave_the_rest(world):
 
 
 def test_a_list_that_cannot_run_raises_in_audit_mode_and_not_elsewhere(world):
-    broken = [drop("identity"), make_audit_step("filter_row", {"column": "identity", "op": "ge", "value": 1.0, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{PLOT}")]
+    broken = [drop("identity"), make_audit_step("filter_row", {"column": "identity", "op": "ge", "value": 1.0, "na": "remove"}, reason="r", place=f"T3:{PLOT}")]
     with pytest.raises(AuditRunError, match=f"T3:{PLOT}"):
         audited(world, broken)
     assert "identity" in column_types(as_it_is(world))

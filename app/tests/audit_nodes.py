@@ -62,7 +62,7 @@ def filter_rows_of(nodes: list) -> list:
 
 
 def audit_state(plot: str, nodes: list) -> dict:
-    """The part of HOME's state that holds committed audit steps written at the tier 3 of `plot` (a plot id, or its sub-tab id): every step in the one bucket, with its place."""
+    """The part of HOME's state that holds committed audit steps written at the tier 3 of `plot` (a plot id, or its sub-tab id): the one flat list `audit_pipeline`, every step with its place."""
     plot_id = plot.removeprefix("subtab_")
-    return {"t3_audit_steps_by_plot": {"__places__": [{**n, "place": f"T3:{plot_id}", "plot_scope": "__places__", "created_at": n.get("created_at", f"2026-11-24T10:00:0{i}")}
-                                                      for i, n in enumerate(nodes)]}}
+    return {"audit_pipeline": [{**n, "place": f"T3:{plot_id}", "created_at": n.get("created_at", f"2026-11-24T10:00:0{i}")}
+                                                      for i, n in enumerate(nodes)]}

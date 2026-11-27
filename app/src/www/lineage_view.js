@@ -5,7 +5,7 @@
 // The server draws the container once per recipe (app/handlers/lineage_handlers.py) with the data of app/modules/lineage_view.py in a <script type="application/json"> tag;
 // this script builds the list and the map from it and handles hover, focus, keyboard, choice, pan, zoom and the size of the parts in the browser, so that a click never makes the
 // server draw the panel again (ui_implementation_contract.md section 14, R4). The server is told the choice with Shiny.setInputValue('lineage_chosen', [...ids], {priority:'event'});
-// it checks the choice again at confirm (RecipeGraph.chosen_places_problem). The only rules kept here: one chosen place for each independent graph, and "all original tables of this
+// it checks the choice again at Try (RecipeGraph.chosen_places_problem). The only rules kept here: one chosen place for each independent graph, and "all original tables of this
 // group" (the first places of the group). A choice that is a set of first places is accepted by the server's rule too (no place lies below another).
 // The marks of the places that hold an audit step come from the server (custom message 'lineage_marks': {place: number of steps}).
 //
@@ -188,12 +188,6 @@
       save: function () { writePrefs(prefs); }
     });
     root.appendChild(handleT);
-    var actions = el("div", "spv-lin-actions");
-    var create = el("button", "btn btn-primary spv-lin-create", "Create an audit step here...");
-    create.type = "button"; create.disabled = true;
-    var createNote = el("span", "spv-lin-note", "Choose a place first.");
-    actions.appendChild(create); actions.appendChild(createNote);
-    root.appendChild(actions);
 
     function sizeParts() {
       var split = prefs.split !== undefined ? prefs.split : DEFAULTS.split;
@@ -536,8 +530,6 @@
       chosenInfo.textContent = chosen.length ? ("Chosen: " + chosen.map(function (c) { return byId[c].shown; }).join(", ") + ".") : "No place chosen.";
       chosenInfo.className = "spv-lin-chosen" + (chosen.length ? "" : " none");
       paintStaged(chosen);
-      create.disabled = !chosen.length;
-      createNote.textContent = chosen.length ? (st.mode === "around" ? "" : "The dialog opens with the chosen place(s) ticked, for the step you staged in the Filters panel (view T3).") : "Choose a place first.";
       whole.className = "spv-lin-switch" + (st.mode === "whole" ? " active" : "");
       around.className = "spv-lin-switch" + (st.mode === "around" ? " active" : "");
       whole.setAttribute("aria-checked", st.mode === "whole" ? "true" : "false");
@@ -550,7 +542,6 @@
       if (!flat().length) text.textContent = "Choose a place first: this view shows what that place is built from and what is built from it.";
       paint();
     });
-    create.addEventListener("click", function () { send("lineage_create", Date.now()); });
 
     panels.push({ paint: paint });
     paint();

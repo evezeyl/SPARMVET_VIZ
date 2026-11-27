@@ -11,7 +11,7 @@ format:
 params:
   data_analysis_recipe_id: "{{data_analysis_recipe_id}}"
   data_analysis_recipe_sha256: "{{data_analysis_recipe_sha256}}"
-  t3_audit_steps_sha256: "{{t3_audit_steps_sha256}}"
+  audit_steps_sha256: "{{audit_steps_sha256}}"
   deployment: "{{deployment}}"
   export_timestamp: "{{export_timestamp}}"
 ---
@@ -28,7 +28,7 @@ report_data = json.loads(pathlib.Path("report_data.json").read_text())
 |---|---|
 | **Data analysis recipe** | `{{data_analysis_recipe_id}}` |
 | **Data analysis recipe SHA256** | `{{data_analysis_recipe_sha256}}` |
-| **audit steps SHA256** | `{{t3_audit_steps_sha256}}` |
+| **audit steps SHA256** | `{{audit_steps_sha256}}` |
 | **Deployment** | `{{deployment}}` |
 | **Exported** | `{{export_timestamp}}` |
 

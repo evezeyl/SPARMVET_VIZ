@@ -39,7 +39,7 @@ def _fresh_cache():
 def _audited_export(world, monkeypatch, steps_for_plot=True):
     """The real download generator with one audited step on plot `p` (a filter, with its reason)."""
     step = make_audit_step("filter_row", {"column": "group", "op": "ne", "value": "B", "dtype": "String", "na": "remove"},
-                           "__places__", "the group B samples failed quality control", place="T3:p")
+                           "the group B samples failed quality control", place="T3:p")
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
     notes = []
     function = _download_function(

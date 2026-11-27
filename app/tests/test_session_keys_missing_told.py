@@ -3,15 +3,15 @@ D-0050 "No silent error that is the rule.").
 
 1. `_sync_session_provenance` (HOME) swallowed every error while it computed the recipe and data keys of the session or wrote the
    first record of the session: the keys stayed empty, and the next two places then went quiet too.
-2. `_write_t3_ghost` (the Apply of audit steps) returned with nothing saved when the keys were empty, and the user read
+2. `save_audit_session` (the save after an added or removed audit step) returned with nothing saved when the keys were empty, and the user read
    "audit steps applied".
 3. The Restore compared the saved keys with the keys of the open view only when both were there, and warned of nothing otherwise.
-What the code does after is not changed (the effect still goes on, the Apply still applies, the Restore still restores).
+What the code does after is not changed (the effect still goes on, the Add still adds, the Restore still restores).
 
 Mutation index (grep "MUTATION"; each seen failing):
   MUTATION K1  the outer `except` of `_sync_session_provenance` goes back to `pass`
   MUTATION K2  the inner `except` (the first record of the session cannot be written) goes back to `pass`
-  MUTATION K3  `_write_t3_ghost` returns nothing again when the keys are empty
+  MUTATION K3  `save_audit_session` returns nothing again when the keys are empty
   MUTATION K4  the Restore does not say that the keys could not be compared
   MUTATION K5  the same sync failure is told again at every re-run of the effect
 
@@ -24,7 +24,7 @@ import pytest
 from shiny import reactive, render, ui
 
 import app.handlers.home_theater as home_theater
-from app.handlers.audit_stack import _write_t3_ghost
+from app.modules.audit_session_save import save_audit_session
 from app.modules.session_manager import SessionManager
 from app.tests.test_session_errors_visible import KEY, RESTORE, Screen
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
@@ -150,10 +150,10 @@ def test_a_label_lost_while_the_record_is_rewritten_is_told(tmp_path, monkeypatc
 
 
 def test_apply_with_no_keys_says_the_steps_were_not_saved():
-    """MUTATION K3 fails here. Before: `_write_t3_ghost` returned None and the screen said 'audit steps applied'."""
+    """MUTATION K3 fails here. Before: `save_audit_session` returned None and the screen said 'audit steps applied'."""
     manager = mock.Mock()
     for state in ({}, {"data_analysis_recipe_sha256": "a" * 64}, {"data_batch_hash": "b" * 64}):
-        text = _write_t3_ghost(state, manager)
+        text = save_audit_session(state, manager)
         assert text and "not saved" in text and ". Suggestion:" in text, text
     manager.write_t3_ghost.assert_not_called()
 
@@ -161,7 +161,7 @@ def test_apply_with_no_keys_says_the_steps_were_not_saved():
 def test_apply_with_keys_still_saves_and_says_nothing(tmp_path):
     """The control."""
     manager = SessionManager(tmp_path / "user")
-    text = _write_t3_ghost({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64}, manager)
+    text = save_audit_session({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64}, manager)
     assert text is None
     assert manager.root.glob("*/t3_*.json")
 
@@ -177,7 +177,7 @@ def test_a_restore_with_no_keys_to_compare_says_so_and_still_restores(tmp_path, 
     warnings = screen.texts("warning")
     assert len(warnings) == 1 and "compare" in warnings[0] and ". Suggestion:" in warnings[0], screen.notes
     with reactive.isolate():
-        assert screen.home_state.get()["t3_audit_steps_by_plot"]["__places__"], "the restore still happens"
+        assert screen.home_state.get()["audit_pipeline"], "the restore still happens"
 
 
 def test_a_restore_with_both_keys_present_and_equal_says_nothing_extra(tmp_path, monkeypatch):

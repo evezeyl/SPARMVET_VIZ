@@ -47,7 +47,7 @@ EVERY = [f"s{i}" for i in range(1, N + 1)]
 # -- headless: the claim at the level of the functions ------------------------------------------------------------------------
 
 def _step(column, op, value, dtype="String"):
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype}, plot_scope="subtab_p", reason="r")
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype}, reason="r")
 
 
 def _lf():
@@ -162,8 +162,8 @@ class TestTheRealFormFollowsTheViewShown:
 
     def test_audit_mode_t3_does_not_offer_a_column_an_audited_step_dropped(self, tmp_path, monkeypatch):
         world = ViewWorld(tmp_path)
-        drop = make_audit_step("drop_column", {"column": "group"}, plot_scope="__places__", reason="r", place="T3:p_join")
-        state = {"t3_audit_steps_by_plot": {"__places__": [drop]}}
+        drop = make_audit_step("drop_column", {"column": "group"}, reason="r", place="T3:p_join")
+        state = {"audit_pipeline": [drop]}
         flags = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled")
         for mode, view, expected_has_group in (("audit", "T3", False), ("audit", "T2", True), ("exploration", "T3", True)):
             home = Home(world, monkeypatch, view=view, mode=mode, flags=flags, home_state=state, subtab="subtab_p_join")

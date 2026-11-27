@@ -12,7 +12,7 @@ deps:
 - **Dynamic discovery:** Tabs and column filters MUST be derived from data analysis recipes and Polars schemas at runtime.
 - **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, aesthetic overrides, and BLUEPRINT's own YAML escape hatch (`developer_raw_yaml`, written only via `data_analysis_recipe_edit_enabled` — never from any other source, see ADR-093). It is NOT a wrangling sandbox — no action-picker UI, and no importing of recipe content from elsewhere (not even Gallery, ADR-093). Wrangling belongs in T1/T2 data analysis recipes.
 - **audit steps IS the Audit Trace:** There is no separate FILTERS.txt for T3. The T3 YAML audit trail (list of AuditStep dicts) is the complete audit trail. `aesthetic_override` nodes are stored separately as `t3_plot_overrides` but are included in the export report.
-- **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply`: only audited steps applied with a reason are saved, pending steps are not, and there is no save on a panel switch (D-0302).
+- **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written each time a step is added with "Add to audit pipeline" (FLOW-3; there is no Apply and no staged step): only steps added with a reason are saved, and there is no save on a panel switch (D-0302).
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
 
 ## 2. Left vs Right Panel Behaviors (ADR-073)
@@ -33,7 +33,7 @@ deps:
 
 - **The Focus Mode (ADR-038)**: Gallery workspace left sidebar shows only `gallery_search` panel — operation controls (Import/Session) are not in its slot list, providing automatic focus mode without extra gating logic.
 
-- **The Gatekeeper**: `btn_apply` is locked unless all T3 audit nodes have non-empty `reason` fields. Rendered only when the right sidebar `audit_stack` panel is active.
+- **The Gatekeeper**: the button "Add to audit pipeline" (`#trial_add`) is locked until the step has a reason (`audit_add.can_add`); one plain line under it says why. There is no separate Apply and no staged ("pending") step since FLOW-3 (D-0672).
 
 ## 3. App features Reactivity Matrix (Component Masking)
 
@@ -49,9 +49,7 @@ The UI dynamically alters component availability based on the templates in `conf
 | **6. qa** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **passive_exploration**: Exploration mode: filters on the table viewed (Source, T1, T2 or T3) change only that table, never the plot; nothing saved, no audit trail (D-0019, D-0310, D-0327).
-**t3_audit**: Audit mode: promotes filters/drops to audit steps (mode switch, Compare, right sidebar, propagation modal, reason gatekeeper, audit trail export) (D-0016, D-0018).
-
-> **DEPRECATED (2026-11-26, records pass; D-0662, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** the "propagation modal" named above (the pop-up with "This plot only / All plots / All plots except") is how the app is built TODAY; the scope of a step is the place chosen in "Path of the data" and the single entry will be the step bar (D-0663). Read `.claude/design/home_audit_what_is_true_now.md`. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD).
+**t3_audit**: Audit mode: promotes filters/drops to audit steps (mode switch, Compare, right sidebar, Try and Add to audit pipeline with the reason gatekeeper, audit trail export) (D-0016, D-0018).
 
 **App features file flags** (in `config/app_features/<app features>.yaml`):
 `interactivity_enabled`, `blueprint_enabled`, `test_lab_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
@@ -68,7 +66,7 @@ The UI dynamically alters component availability based on the templates in `conf
 
 ## 4. Coding Standards & Execution
 
-- **Home Module State Object** (`home_state`): A single `reactive.Value` dict holding navigation state, filter state, audit steps, pending T3 nodes, and plot overrides. Full schema in `ui_implementation_contract.md §13`. Survives all panel switches. `t3_audit_steps` (wrangling audit nodes) and `t3_plot_overrides` (aesthetic changes per plot sub-tab) are **separate fields** within it. Changes only apply upon `btn_apply`.
+- **Home Module State Object** (`home_state`): A single `reactive.Value` dict holding navigation state, filter state, the audit steps added (`audit_pipeline`) and the Reshuffle pins (`t3_plot_overrides`). Full schema in `ui_implementation_contract.md §13`. Survives all panel switches. `audit_pipeline` (the audit steps, one flat list, each with its place) and `t3_plot_overrides` (the seed pin of a plot, per plot sub-tab) are **separate fields** within it. A step applies when it is added with its reason.
 - **The Pipeline Builder Scope**: an audit step is only a filter, a column drop or a removal by key, in every app features file; the check of an audit recipe refuses any other step with a plain line, and the list of allowed steps is kept in one place so that it can be widened later (D-0322; DECIDED, not built as a check on `dev`). There is no `build_polars_pipeline` function in the code; in the exported recipe an audit step is written as the registered action `modif_filter` or `polars_drop` (`libs/blueprint_arch/src/blueprint_arch/t3_translator.py`).
 - **Unified Home Theater (ADR-043)**: The "Analysis Theater / Viz" nav mode is **eliminated**. Home is the sole results mode. Data analysis recipe-defined `analysis_groups` are the primary tab structure of Home. Plot sub-tabs (`navset_underline`) are wrapped in a **collapsible accordion panel**; data preview panes are in a **separate collapsible accordion panel below**. Both default to expanded. Collapse state is user-driven and must not reset on sub-tab navigation.
 - **Mode and data choice (D-0016, D-0019, D-0310, D-0327; built 2026-11-20, slice B)**: the Home header strip has the mode switch "Mode: Exploration | Audit" (only with `t3_sandbox_enabled`) and the data choice "Table to view: Source | T1 | T2 | T3" (starts on T3). The data choice drives the data preview only; the mode drives the plot: Exploration shows one plot, the Result, never changed by an exploration filter; Audit mode shows the audited plot, and its Compare switch (`comparison_mode_enabled`) shows "Original" and "Audited" side by side. Plots never show T1. There is no "My view" any more and no "Data to show" / "Plot to show" (D-0179, D-0180); see `ui_implementation_contract.md §2/§5`.
@@ -110,10 +108,10 @@ Phase 24 and all future Home Theater refactors.
 | `app/modules/t3_audit_engine.py` | Pure helpers (Two-Category Law): `_apply_filter_rows`, `_op_label`. No Shiny imports. | (functions) |
 | `app/handlers/session_handlers.py` | Session management panel: `session_management_ui`, `_handle_session_import`, `_handle_session_actions`, `_restore_session`. | `define_session_server(...)` |
 | `app/handlers/export_handlers.py` | Export pipeline: `system_tools_ui`, `export_bundle_download`, `export_audit_report_*`, filename helpers. | `define_export_server(...)` |
-| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects, propagation modal, `_make_remove_handler` factory. | `define_filter_audit_server(...)` |
+| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects, Try (Audit mode), `_make_remove_handler` factory; the audit step itself is made in `trial_handlers.py` (FLOW-3). | `define_filter_audit_server(...)` |
 
 Shared `reactive.Value` instances (`applied_filters`, `_pending_filters`,
-`_propagation_scratch`, `home_state`) are created in `home_theater.define_server()` and
+`home_state`) are created in `home_theater.define_server()` and
 passed as kwargs to the sub-handlers. They are NEVER module-level globals.
 
 ### Infrastructure

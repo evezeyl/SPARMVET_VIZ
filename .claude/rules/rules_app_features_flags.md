@@ -39,13 +39,13 @@ No dependencies. Safe to enable in any app features.
 interactivity_enabled: true/false   ← MASTER GATE for all below
   │
   ├─ (header strip: "Table to view" Source/T1/T2/T3 + Exploration)  ← gated on interactivity_enabled alone
-  ├─ t3_sandbox_enabled             ← the audit: "Mode: Exploration | Audit" switch, Send to Audit, right sidebar audit panel
+  ├─ t3_sandbox_enabled             ← the audit: "Mode: Exploration | Audit" switch, Try and Add to audit pipeline, right sidebar audit panel
   │                                    REQUIRES comparison_mode_enabled, session_management_enabled, export_enabled (FATAL, D-0018)
   ├─ comparison_mode_enabled        ← the Compare switch of Audit mode ("Original" | "Audited"); REQUIRES t3_sandbox_enabled (FATAL, D-0018)
   └─ session_management_enabled     ← Session Save/Import + ghost save
 ```
 
-**Exploration and Audit (D-0016, D-0019, D-0179, D-0310, D-0327; built 2026-11-20, slice B).** There is no "My view" any more. With `interactivity_enabled` the header strip shows the data choice "Table to view: Source | T1 | T2 | T3" and the Filters panel: this is Exploration, one plot (the Result), filters that change only the table viewed and never a plot. `t3_sandbox_enabled` adds the mode switch "Mode: Exploration | Audit": Audit mode holds the "Send to Audit" button, the propagation modal, the right sidebar Pipeline Audit panel and the audited plot; `comparison_mode_enabled` adds its Compare switch. Without `t3_sandbox_enabled` the app is always in Exploration and nothing can be written to an audit trail. Source, T1 and T2 always show the originals: neither exploration filters on another view nor audit-committed filters/drops ever render there (`home_theater._applied_for_view`, `_in_audit`).
+**Exploration and Audit (D-0016, D-0019, D-0179, D-0310, D-0327; built 2026-11-20, slice B).** There is no "My view" any more. With `interactivity_enabled` the header strip shows the data choice "Table to view: Source | T1 | T2 | T3" and the Filters panel: this is Exploration, one plot (the Result), filters that change only the table viewed and never a plot. `t3_sandbox_enabled` adds the mode switch "Mode: Exploration | Audit": Audit mode holds Try and "Add to audit pipeline" (FLOW-3), the right sidebar Pipeline Audit panel and the audited plot; `comparison_mode_enabled` adds its Compare switch. Without `t3_sandbox_enabled` the app is always in Exploration and nothing can be written to an audit trail. Source, T1 and T2 always show the originals: neither exploration filters on another view nor audit-committed filters/drops ever render there (`home_theater._applied_for_view`, `_in_audit`).
 
 **Dependency rule:** `bootloader` ignores `t3_sandbox_enabled`, `comparison_mode_enabled` and `session_management_enabled` when `interactivity_enabled: false` (`bootloader.py:760-769`). Setting them to `true` in a static app features produces no UI effect and logs a warning.
 

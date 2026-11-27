@@ -253,16 +253,9 @@ class TestRecipeSwitchClearsFilters:
         expect(page.locator("#fb_value")).to_have_value("2050")
         page.locator("#filter_add_row").click()
         _wait_shiny(page)
-        page.locator("#filter_send_to_audit").click()
-        _wait_shiny(page)
-        page.locator("#propagation_confirm").click()
-        _wait_shiny(page)
-        reason = page.locator("textarea[id^='t3_reason_'], input[id^='t3_reason_']").first
-        expect(reason).to_be_visible(timeout=8_000)
-        reason.fill("test reason")
-        _wait_shiny(page)
-        page.locator("#btn_apply").click()
-        _wait_shiny(page)
+        from app.tests.browser_view import add_to_pipeline, try_staged
+        try_staged(page)
+        add_to_pipeline(page, "test reason", expected_places=1)
         expect(page.locator("body")).to_contain_text("year", timeout=5_000)
         _choose_recipe(page, B)
         # The audited step is not a staged filter: no notice for it, nothing cleared.

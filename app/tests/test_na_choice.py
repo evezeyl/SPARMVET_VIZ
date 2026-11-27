@@ -93,7 +93,7 @@ def test_the_translator_refuses_a_na_that_is_neither_keep_nor_remove():
 
 
 def test_a_keep_is_never_exported_as_remove_end_to_end():
-    node = make_audit_step("filter_row", {"column": "x", "op": "not_in", "value": [2.0], "na": "keep"}, plot_scope="p")
+    node = make_audit_step("filter_row", {"column": "x", "op": "not_in", "value": [2.0], "na": "keep"})
     assert by_export(_num(), node["params"]) == ["a", "c", "d", "e"]
 
 
@@ -124,17 +124,17 @@ def test_inactive_nodes_and_other_types_give_no_row():
 
 # ── old data: a session written before this change ──────────────────────────────────────────
 
-OLD_NODE = {"node_type": "filter_row", "id": "old1", "created_at": "2026-11-01T10:00:00", "plot_scope": "__places__", "place": "T3:p",
+OLD_NODE = {"node_type": "filter_row", "id": "old1", "created_at": "2026-11-01T10:00:00", "place": "T3:p",
             "params": {"column": "x", "op": "ne", "value": 2.0, "dtype": "Float64"}, "reason": "old", "active": True}
 
 
 def _write_old_ghost(root, sm):
     from app.modules.cache_keys import canonical_hash
-    by_plot_ = {"__places__": [OLD_NODE]}
+    steps = [OLD_NODE]
     ghost = {"session_key": "k:k", "data_analysis_recipe_id": "r", "data_analysis_recipe_sha256": "a", "data_batch_hash": "b",
              "saved_at": "2026-11-01T10:00:00", "label": "", "schema_version": SESSION_FORMAT_VERSION,
-             "t3_audit_steps": [OLD_NODE], "t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {},
-             "notification_log": [], "t3_audit_steps_sha256": canonical_hash({"t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {}})}
+             "audit_pipeline": steps, "t3_plot_overrides": {},
+             "notification_log": [], "audit_steps_sha256": canonical_hash({"audit_pipeline": steps, "t3_plot_overrides": {}})}
     (sm.session_dir("k:k") / "t3_20261101T100000000000.json").write_text(json.dumps(ghost))
 
 
@@ -142,11 +142,11 @@ def test_an_old_session_gives_the_same_rows_as_before_and_shows_remove(tmp_path)
     sm = SessionManager(tmp_path)
     _write_old_ghost(tmp_path, sm)
     (ghost,) = sm.list_t3_ghosts("k:k")
-    by_plot_ = normalise_audit_steps(ghost["t3_audit_steps_by_plot"])
-    node = by_plot_["__places__"][0]
+    steps = normalise_audit_steps(ghost["audit_pipeline"])
+    node = steps[0]
     assert node["params"]["na"] == "remove"                     # carried and shown as remove
     # the rows of the table: what the old code gave (x != 2 removes the null row), i.e. remove
-    (row,) = filter_rows_from_nodes(by_plot_["__places__"])
+    (row,) = filter_rows_from_nodes(steps)
     assert by_home(_num(), row) == by_home(_num(), {k: v for k, v in OLD_NODE["params"].items()}) == ["a", "c", "e"]
     assert by_plot(_num(), row) == ["a", "c", "e"] and by_export(_num(), row) == ["a", "c", "e"]
 
@@ -155,10 +155,9 @@ def test_an_old_session_is_written_with_na_remove_when_it_is_next_saved(tmp_path
     sm = SessionManager(tmp_path)
     _write_old_ghost(tmp_path, sm)
     (ghost,) = sm.list_t3_ghosts("k:k")
-    path = sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot=ghost["t3_audit_steps_by_plot"])
+    path = sm.write_t3_ghost("k:k", "r", "a", "b", audit_steps=ghost["audit_pipeline"])
     saved = json.loads(path.read_text())
-    assert saved["t3_audit_steps_by_plot"]["__places__"][0]["params"]["na"] == "remove"
-    assert saved["t3_audit_steps"][0]["params"]["na"] == "remove"
+    assert saved["audit_pipeline"][0]["params"]["na"] == "remove"
 
 
 def test_an_old_step_is_exported_with_na_remove():
@@ -168,8 +167,8 @@ def test_an_old_step_is_exported_with_na_remove():
 
 def test_normalising_twice_changes_nothing_and_leaves_a_keep_alone():
     keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 1, "na": "keep"})
-    once = normalise_audit_steps({"p": [OLD_NODE, keep]})
-    assert normalise_audit_steps(once) == once and once["p"][1]["params"]["na"] == "keep"
+    once = normalise_audit_steps([OLD_NODE, keep])
+    assert normalise_audit_steps(once) == once and once[1]["params"]["na"] == "keep"
     assert "na" not in OLD_NODE["params"]                      # the input is not changed in place
 
 
@@ -219,7 +218,7 @@ def test_the_report_states_the_choice_for_every_filter_step():
     plots = [("p", {"title": "P"})]
 
     def report(node):
-        return "\n".join(_build_methods_section(plots, {"p": [node]}, {"d": ["p"]}, ["T1"]))
+        return "\n".join(_build_methods_section(plots, [{**node, "place": "T3:p"}], {"d": ["p"]}, ["T1"]))
 
     assert ", rows with no x record are kept" in report(
         make_audit_step("filter_row", {"column": "x", "op": "ne", "value": "a", "na": "keep"}, reason="r"))
@@ -310,7 +309,7 @@ def test_the_staged_row_of_between_carries_closed_and_the_others_do_not():
 def test_the_audit_params_carry_the_tick_of_the_staged_row(na):
     row = staged_filter_row("x", "ne", 2.0, "Float64", na == "keep")
     assert audit_params_from_row(row)["na"] == na
-    node = make_audit_step("filter_row", audit_params_from_row(row), plot_scope="p")
+    node = make_audit_step("filter_row", audit_params_from_row(row))
     assert node["params"]["na"] == na
 
 
@@ -328,25 +327,23 @@ def test_a_staged_row_of_an_old_state_without_na_gives_remove_in_the_audit_param
 # Session: a KEEP step survives the save, the list and the restore
 def test_a_keep_step_survives_save_list_and_restore(tmp_path):
     sm = SessionManager(tmp_path)
-    keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2.0, "na": "keep"}, plot_scope="__places__", place="T3:p")
-    path = sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot={"__places__": [keep]})
+    keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2.0, "na": "keep"}, place="T3:p")
+    path = sm.write_t3_ghost("k:k", "r", "a", "b", audit_steps=[keep])
     saved = json.loads(path.read_text())
-    assert saved["t3_audit_steps_by_plot"]["__places__"][0]["params"]["na"] == "keep"
-    assert saved["t3_audit_steps"][0]["params"]["na"] == "keep"
+    assert saved["audit_pipeline"][0]["params"]["na"] == "keep"
     (ghost,) = sm.list_t3_ghosts("k:k")
-    restored = normalise_audit_steps(ghost["t3_audit_steps_by_plot"])
-    assert restored["__places__"][0]["params"]["na"] == "keep"
-    (row,) = filter_rows_from_nodes(restored["__places__"])
+    restored = normalise_audit_steps(ghost["audit_pipeline"])
+    assert restored[0]["params"]["na"] == "keep"
+    (row,) = filter_rows_from_nodes(restored)
     assert by_home(_num(), row) == ["a", "c", "d", "e"]
 
 
 def test_a_between_step_keeps_closed_through_save_and_restore(tmp_path):
     sm = SessionManager(tmp_path)
-    node = make_audit_step("filter_row", {"column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"},
-                           plot_scope="__places__", place="T3:p")
-    sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot={"__places__": [node]})
+    node = make_audit_step("filter_row", {"column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"}, place="T3:p")
+    sm.write_t3_ghost("k:k", "r", "a", "b", audit_steps=[node])
     (ghost,) = sm.list_t3_ghosts("k:k")
-    (row,) = filter_rows_from_nodes(normalise_audit_steps(ghost["t3_audit_steps_by_plot"])["__places__"])
+    (row,) = filter_rows_from_nodes(normalise_audit_steps(ghost["audit_pipeline"]))
     assert row["closed"] == "none" and row["na"] == "keep"
 
 
@@ -381,7 +378,7 @@ BETWEEN = {"both": ["a", "b", "c", "f"], "none": ["b", "f"]}   # x = [1, 2, 3, n
 @pytest.mark.parametrize("closed", ["both", "none"])
 def test_between_gives_the_same_rows_in_the_table_the_plot_the_bundle_and_the_export(closed, na):
     staged = staged_filter_row("x", "between", [1.0, 3.0], "Float64", na == "keep", closed=closed)
-    node = make_audit_step("filter_row", audit_params_from_row(staged), plot_scope="__places__", place="T3:p")
+    node = make_audit_step("filter_row", audit_params_from_row(staged), place="T3:p")
     (row,) = filter_rows_from_nodes([node])
     want = expected(BETWEEN[closed], na)
     got = {"home": by_home(_num(), row), "plot": by_plot(_num(), row),
@@ -409,7 +406,7 @@ def test_a_whole_number_typed_for_a_decimal_column_reads_without_point_zero_in_t
     node = make_audit_step("filter_row", {"column": "year", "op": "ge", "value": 2024.0, "na": "remove"}, reason="r")
     assert _params_summary(node) == "year ≥ 2024 · rows with no year record are removed"
     assert node["params"]["value"] == 2024.0                                   # what is stored and compared is not changed
-    text = "\n".join(_build_methods_section([("p", {"title": "P"})], {"p": [node]}, {"d": ["p"]}, ["T1"]))
+    text = "\n".join(_build_methods_section([("p", {"title": "P"})], [{**node, "place": "T3:p"}], {"d": ["p"]}, ["T1"]))
     assert '"2024"' in text and "2024.0" not in text
     between = make_audit_step("filter_row", {"column": "year", "op": "between", "value": [2023.0, 2025.5], "closed": "both", "na": "keep"}, reason="r")
     assert _params_summary(between) == "year ∈ [2023, 2025.5] · rows with no year record are kept"

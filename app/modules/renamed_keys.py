@@ -78,13 +78,11 @@ RENAMED_PANEL_TYPES = {
     "project_info": "data_analysis_recipe_info",
 }
 
-# keys written into saved sessions (assembly.json, t3_*.json): old -> new
+# keys written into saved sessions (assembly.json, t3_*.json): old -> new. The old `t3_recipe*` keys are not listed any more (FLOW-3, D-0665): a file with them is older than format 6
+# and is refused as a whole by its number (D-0312), never converted.
 RENAMED_SESSION_KEYS = {
     "manifest_id": "data_analysis_recipe_id",
     "manifest_sha256": "data_analysis_recipe_sha256",
-    "t3_recipe": "t3_audit_steps",
-    "t3_recipe_by_plot": "t3_audit_steps_by_plot",
-    "t3_recipe_sha256": "t3_audit_steps_sha256",
 }
 
 MIGRATION_HINT = "python assets/scripts/migrate_config_vocabulary.py"
@@ -266,35 +264,28 @@ def audit_step_defect(step, type_key: str = "node_type", flat: bool = False, pla
     return None
 
 
-def refused_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = "node_type", flat: bool = False, place_required: bool = False) -> str | None:
-    """A message naming the first audit step of `{plot: [step, ...]}` that the app cannot apply, else None.
+def refused_audit_step_problem(steps: list, where: str, type_key: str = "node_type", flat: bool = False, place_required: bool = False, list_name: str = "audit_pipeline") -> str | None:
+    """A message naming the first audit step of the list `steps` that the app cannot apply, else None.
 
-    The user's action in the app comes first; the pointer for a maintainer (where the step is in the file) after it.
+    The user's action in the app comes first; the pointer for a maintainer (where the step is in the file) after it. `list_name` is the key that holds the list in the file.
     """
-    for plot, steps in (steps_by_plot or {}).items():
-        number = 0
-        for step in steps or []:
-            if isinstance(step, dict) and step.get(type_key) in ("aesthetic_override", "random_seed"):
-                continue
-            number += 1
-            defect = audit_step_defect(step, type_key, flat, place_required)
-            if defect:
-                reason = f', reason: "{step["reason"]}"' if isinstance(step, dict) and step.get("reason") else ""
-                ident = f"id {step.get('id', '?')}" if isinstance(step, dict) and step.get("id") else "no id"
-                of_list = "of the audit list" if str(plot).startswith("__") else f"of the plot '{plot}'"
-                return (f"{where} cannot be read: the audit step {number} {of_list} ({ident}{reason}) is refused, {defect}. "
-                        f"The file is refused as a whole, nothing of it is used. Fix: {FIX_IN_APP}. For a maintainer: the step is "
-                        f"entry {number} of the list '{plot}' in `t3_audit_steps_by_plot` (the step list of the file); "
-                        f"taking that entry out makes the file readable again.")
+    number = 0
+    for step in steps or []:
+        if isinstance(step, dict) and step.get(type_key) in ("aesthetic_override", "random_seed"):
+            continue
+        number += 1
+        defect = audit_step_defect(step, type_key, flat, place_required)
+        if defect:
+            reason = f', reason: "{step["reason"]}"' if isinstance(step, dict) and step.get("reason") else ""
+            ident = f"id {step.get('id', '?')}" if isinstance(step, dict) and step.get("id") else "no id"
+            return (f"{where} cannot be read: audit step {number} ({ident}{reason}) is refused, {defect}. "
+                    f"The file is refused as a whole, nothing of it is used. Fix: {FIX_IN_APP}. For a maintainer: the step is "
+                    f"entry {number} of the list `{list_name}` (the step list of the file); "
+                    f"taking that entry out makes the file readable again.")
     return None
 
 
 def refused_audit_step_in_ghost(raw: dict, where: str) -> str | None:
-    """`refused_audit_step_problem` for a stored session file: the per-plot lists and the flat legacy list."""
-    by_plot = raw.get("t3_audit_steps_by_plot")
-    if isinstance(by_plot, dict) and by_plot:
-        problem = refused_audit_step_problem(by_plot, where, place_required=True)
-        if problem:
-            return problem
-    flat = raw.get("t3_audit_steps")
-    return refused_audit_step_problem({"(all plots, old file)": flat}, where) if isinstance(flat, list) else None
+    """`refused_audit_step_problem` for a stored session file: its one flat list `audit_pipeline`, every step with its place."""
+    steps = raw.get("audit_pipeline")
+    return refused_audit_step_problem(steps, where, place_required=True) if isinstance(steps, list) else None

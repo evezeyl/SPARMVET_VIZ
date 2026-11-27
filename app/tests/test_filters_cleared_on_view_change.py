@@ -144,12 +144,12 @@ def test_an_unchanged_view_clears_nothing_even_with_filters(run):
 
 def test_audited_steps_are_not_touched_by_a_view_change(tmp_path, monkeypatch):
     nodes = [{"id": "a", "node_type": "filter_row", "params": dict(ROW), "reason": "r"}]
-    run = Run(tmp_path, monkeypatch, home_state={"t3_audit_steps_by_plot": {"subtab_p_join": nodes}})
+    run = Run(tmp_path, monkeypatch, home_state={"audit_pipeline": nodes})
     run.stage()
     run.home.set(view="T1")
     run.step()
     with reactive.isolate():
-        assert run.home.home_state.get()["t3_audit_steps_by_plot"]["subtab_p_join"] == nodes
+        assert run.home.home_state.get()["audit_pipeline"] == nodes
 
 
 def test_the_first_view_is_not_a_change(tmp_path, monkeypatch):
@@ -178,21 +178,24 @@ def test_apply_does_not_exist_in_audit_mode_even_if_called(tmp_path, monkeypatch
         assert len(run.home.filters_applied.get()) == 1
 
 
-def test_the_buttons_follow_the_mode_and_the_view(tmp_path, monkeypatch):
-    """Exploration: Apply, no Send to Audit. Audit mode on T3: Send to Audit, no Apply. Audit mode on another view: neither, and one plain line."""
-    def buttons(mode, view, shown=None):
-        run = Run(tmp_path / f"{mode}{view}", monkeypatch, mode=mode, view=view)
+def test_the_buttons_follow_the_mode(tmp_path, monkeypatch):
+    """Exploration: Apply, no Try. Audit mode with a staged row: Try, no Apply (FLOW-3: there is no Send to Audit any more; a step is tried, then added from the panel of the trial). Audit mode with nothing staged: no Try."""
+    def buttons(mode, view, shown=None, staged=0):
+        run = Run(tmp_path / f"{mode}{view}{staged}", monkeypatch, mode=mode, view=view)
         if shown:
             run.home.show(shown)     # Audit mode (slice 3a): the table is the place shown, not a data choice
+        run.stage(pending=staged, applied=0)
         with reactive.isolate():
             return str(run.home.outputs["filter_controls_ui"]())
     exploration = buttons("exploration", "T2")
-    assert 'id="filter_apply"' in exploration and 'id="filter_send_to_audit"' not in exploration
+    assert 'id="filter_apply"' in exploration and 'id="filter_try"' not in exploration and 'id="filter_send_to_audit"' not in exploration
     assert "never a plot" in exploration
-    audit_t3 = buttons("audit", "T3")
-    assert 'id="filter_send_to_audit"' in audit_t3 and 'id="filter_apply"' not in audit_t3
-    audit_t2 = buttons("audit", "T2", shown="T2:J")
-    assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, show the Result data (T3) of a plot" in audit_t2
+    audit_t3 = buttons("audit", "T3", staged=1)
+    assert 'id="filter_try"' in audit_t3 and 'id="filter_apply"' not in audit_t3 and 'id="filter_send_to_audit"' not in audit_t3
+    audit_table = buttons("audit", "T2", shown="T2:J", staged=1)
+    assert 'id="filter_try"' in audit_table, "a staged condition can be tried on a table shown too"
+    audit_empty = buttons("audit", "T3", staged=0)
+    assert 'id="filter_try"' not in audit_empty and 'id="filter_apply"' not in audit_empty and "press Try" in audit_empty
 
 
 def test_one_function_says_whether_the_app_is_in_audit_mode(tmp_path, monkeypatch):
@@ -201,5 +204,5 @@ def test_one_function_says_whether_the_app_is_in_audit_mode(tmp_path, monkeypatc
     run = Run(tmp_path, monkeypatch, mode="audit", view="T3", flags=("t3_sandbox_enabled",))
     with reactive.isolate():
         html = str(run.home.outputs["filter_controls_ui"]())
-        assert 'id="filter_apply"' in html and 'id="filter_send_to_audit"' not in html
+        assert 'id="filter_apply"' in html and 'id="filter_try"' not in html
         assert run.home.readers["in_audit"]() is False

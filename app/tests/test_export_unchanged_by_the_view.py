@@ -38,7 +38,7 @@ def _fresh_cache():
 def _export(tmp_path, monkeypatch, screen_view: str) -> zipfile.ZipFile:
     world = Tier3World(tmp_path)
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
-    nodes = [{**n, "place": "T3:p_steps", "plot_scope": "__places__", "created_at": "t"} for n in filter_nodes(
+    nodes = [{**n, "place": "T3:p_steps", "created_at": "t"} for n in filter_nodes(
         [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])]
     yielded = _run(_download_function(world, view, [], monkeypatch, flags=FLAGS, screen_view=lambda: screen_view,
                                       **audit_kwargs(world, nodes, in_audit=screen_view.startswith("Audit"))))

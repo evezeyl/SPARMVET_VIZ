@@ -2,6 +2,8 @@
 
 > **HISTORICAL, see `.claude/design/home_audit_what_is_true_now.md` (2026-11-26).** This is a dated discussion (2026-11-09). Where it speaks of per-plot choices for a step, of a fork of the join per plot, or of the plot as the scope of an audit step, the page "what is true now", the contract (section 7.2 points 8 to 10: the audit steps are written by place and the audit recipe carries them as plain steps; the fork of a join per plot is gone) and the ledger lines D-0662 to D-0669 win; nothing below is edited.
 
+> **FLOW-3 note (2026-11-27):** the per-plot list `t3_audit_steps_by_plot` named below is now ONE flat list `audit_pipeline` with a `place` on every step (session format number 6); the sentences that say "per plot" describe the design before the place model.
+
 **Status:** DISCUSSION — nothing in this document is implemented yet. Written to capture a
 chat discussion that grew from issue #39 into five/six separable pieces of work, so none of
 it is lost before filing issues. Decided by Eve, with @dasharch.
@@ -357,9 +359,9 @@ every other session rendering the same recipe.
 ### 6d. #39/#48 are missing a fourth hash leg: the T3 steps themselves — new finding
 
 Confirmed by reading the code, not assumed: `export_handlers.py`'s provenance dict has never
-had a `t3_audit_steps_sha256` field — `grep -n "t3_audit_steps_sha256" app/handlers/export_handlers.py`
+had a `audit_steps_sha256` field — `grep -n "audit_steps_sha256" app/handlers/export_handlers.py`
 returns nothing, even though the *original* design spec's own example front-matter
-(`ui_implementation_contract.md §12f`) already specified one: `t3_audit_steps_sha256: "b7c1..."
+(`ui_implementation_contract.md §12f`) already specified one: `audit_steps_sha256: "b7c1..."
 # SHA256 of the serialized audit steps`. Designed once, never wired up.
 
 The same gap exists on ordinary session reopen, not just reproducibility export/import:
@@ -369,7 +371,7 @@ steps themselves changed, even though they affect the data just as much as the r
 data batch do.
 
 **Fold-in:**
-- **#39**: compute and include `t3_audit_steps_sha256` (per the content already serialized for
+- **#39**: compute and include `audit_steps_sha256` (per the content already serialized for
   export) in the consolidated provenance record.
 - **#48**: verify it as a fourth leg (recipe / data / engine / **T3 steps**), same pass/fail
   reporting, same non-blocking-mismatch rule as §6b.
@@ -385,7 +387,7 @@ seal that blocks further edits. `data_analysis_recipe_sha256` and `data_batch_ha
 work exactly this way: the recipe or the data can keep changing afterward, the hash only
 describes the one snapshot it was computed from. T3 stays fully editable during the live
 session (add/remove/modify nodes freely, unchanged); each save (on Apply or panel-leave, the
-existing triggers, §12d) or export recomputes `t3_audit_steps_sha256` over whatever the step
+existing triggers, §12d) or export recomputes `audit_steps_sha256` over whatever the step
 list looks like *at that moment* and stores it with that specific snapshot. The restore/import
 check then only asks "does what I'm loading match the hash recorded when *this* snapshot was
 saved" — trivially true right after a save, meaningful only if something changed outside the

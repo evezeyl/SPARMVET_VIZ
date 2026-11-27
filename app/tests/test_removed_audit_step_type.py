@@ -28,7 +28,7 @@ import yaml
 
 from app.modules.bundle_importer import BundleImportError, import_bundle
 from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
-from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.modules.audit_places import audit_copy_for, place_nodes
 from app.tests.test_audit_places import small
 from utils.audit_copy import AuditCopyError
 
@@ -67,47 +67,41 @@ def test_an_inactive_removed_step_is_not_run_and_is_refused_where_a_file_is_read
     """One rule for the files (round 3, point 2): a switched-off step of a removed type is refused when a session file, a session zip or a bundle holds it (below).
     The list the audit runs holds the ACTIVE steps only (`place_nodes`), so an inactive step is never applied or ignored in one place and refused in another by accident:
     it is not a step of the audit. Nothing creates an inactive step today (contract 12c, F-07)."""
-    assert place_nodes({PLACES_BUCKET: [{**removed_node(), "active": False}, filter_node()]}) == [filter_node()]
+    assert place_nodes([{**removed_node(), "active": False}, filter_node()]) == [filter_node()]
 
 
 # -- a stored session file and an imported session zip ------------------------------------------------------------------
 
-def _session(tmp_path, steps_by_plot=None, flat=None):
+def _session(tmp_path, steps=None):
     sm = SessionManager(tmp_path)
     key = "abc123def456:0123456789ab"
     folder = sm.session_dir(key)
     (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": SESSION_FORMAT_VERSION}))
     ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": SESSION_FORMAT_VERSION,
-             "t3_audit_steps_by_plot": steps_by_plot or {}, "t3_audit_steps": flat or []}
+             "audit_pipeline": steps or []}
     (folder / "t3_20261115_100000.json").write_text(json.dumps(ghost))
     return sm, key
 
 
 def test_a_session_file_with_the_removed_type_is_refused_when_it_is_read(tmp_path):
-    sm, key = _session(tmp_path, {PLACES_BUCKET: [filter_node(), removed_node()]})
-    with pytest.raises(LegacySessionError, match=r"audit step 2 of the audit list.*n9.*was removed"):
-        sm.list_t3_ghosts(key)
-
-
-def test_the_flat_list_of_an_old_session_file_is_refused_too(tmp_path):
-    sm, key = _session(tmp_path, flat=[removed_node()])
-    with pytest.raises(LegacySessionError, match="removed"):
+    sm, key = _session(tmp_path, [filter_node(), removed_node()])
+    with pytest.raises(LegacySessionError, match=r"audit step 2 \(.*n9.*was removed"):
         sm.list_t3_ghosts(key)
 
 
 def test_the_session_panel_lists_such_a_session_with_the_problem_not_silently(tmp_path):
-    sm, key = _session(tmp_path, {PLACES_BUCKET: [removed_node()]})
+    sm, key = _session(tmp_path, [removed_node()])
     listed = sm.list_all_sessions()
     assert len(listed) == 1 and "was removed" in listed[0].get("legacy_problem", ""), listed
 
 
 def test_a_session_file_without_the_type_is_read_as_before(tmp_path):
-    sm, key = _session(tmp_path, {PLACES_BUCKET: [filter_node()]})
-    assert sm.list_t3_ghosts(key)[0]["t3_audit_steps_by_plot"] == {PLACES_BUCKET: [filter_node()]}
+    sm, key = _session(tmp_path, [filter_node()])
+    assert sm.list_t3_ghosts(key)[0]["audit_pipeline"] == [filter_node()]
 
 
 def test_an_imported_session_zip_with_the_removed_type_is_refused_and_nothing_is_extracted(tmp_path):
-    source, key = _session(tmp_path / "from", {PLACES_BUCKET: [removed_node()]})
+    source, key = _session(tmp_path / "from", [removed_node()])
     archive = source.export_session_zip(key)
     target = SessionManager(tmp_path / "to")
     with pytest.raises(LegacySessionError, match="removed"):
@@ -120,20 +114,20 @@ def test_an_imported_session_zip_with_the_removed_type_is_refused_and_nothing_is
 def _bundle(steps_yaml: dict | None) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
-        zf.writestr("b/effective_run.yaml", yaml.safe_dump({"t3_audit_steps_sha256": "x"}))
+        zf.writestr("b/effective_run.yaml", yaml.safe_dump({"audit_steps_sha256": "x"}))
         if steps_yaml is not None:
             zf.writestr("b/t3_steps.yaml", yaml.safe_dump(steps_yaml))
     return buf.getvalue()
 
 
 def test_a_bundle_whose_audit_record_holds_the_removed_type_is_refused_before_anything_is_written():
-    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}, {"action": REMOVED, "reason": "old"}]}}
-    with pytest.raises(BundleImportError, match=r"audit step 2 of the plot 'p'.*was removed"):
+    record = {"steps_by_place": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}, {"action": REMOVED, "reason": "old"}]}
+    with pytest.raises(BundleImportError, match=r"audit step 2 \(.*was removed"):
         import_bundle(_bundle(record), bootloader=None)   # bootloader is never reached
 
 
 def test_a_bundle_without_the_type_goes_on_to_its_own_checks():
-    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}]}}
+    record = {"steps_by_place": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}]}
     with pytest.raises(BundleImportError, match="no reproducibility recipe"):
         import_bundle(_bundle(record), bootloader=None)
 
@@ -154,4 +148,39 @@ def test_no_code_path_knows_the_removed_type_but_the_refusal_table():
 
 def test_the_screens_do_not_offer_or_label_the_removed_type():
     from app.handlers import audit_stack
-    assert REMOVED not in audit_stack._NODE_META and REMOVED not in audit_stack._REASON_REQUIRED
+    assert REMOVED not in audit_stack._NODE_META     # FLOW-3: `_REASON_REQUIRED` is gone with the reason boxes (a reason is asked at Add for every step)
+
+
+# -- the round trip: what the export writes is what the importer's check reads (B1 of the FLOW-3 review) ------------------
+
+def _real_export_record(steps: list[dict]) -> dict:
+    """The `t3_steps.yaml` content as the export builds it: place_step_records -> steps_by_place_yaml, through yaml like a real file."""
+    from app.modules.audit_places import place_step_records, steps_by_place_yaml
+
+    class _G:
+        def has_node(self, _n):
+            return False
+    records = place_step_records(_G(), steps)
+    return yaml.safe_load(yaml.safe_dump({"steps_by_place": steps_by_place_yaml(records)}))
+
+
+def _node(kind, params, place="T3:p"):
+    return {"id": f"i_{kind}", "node_type": kind, "params": params, "place": place, "reason": "r", "created_at": "2026-11-27", "started_from": "subtab_p"}
+
+
+def test_the_record_the_export_writes_is_accepted_by_the_importer_check():
+    record = _real_export_record([_node("filter_row", {"column": "identity", "op": "ge", "value": 90, "na": "remove"}), _node("drop_column", {"column": "x"}, "T1:t")])
+    with pytest.raises(BundleImportError, match="no reproducibility recipe"):     # past the audit check, on to the next one
+        import_bundle(_bundle(record), bootloader=None)
+
+
+def test_an_unknown_step_type_in_the_real_shape_is_still_refused_in_plain_words():
+    record = _real_export_record([_node("filter_row", {"column": "a", "op": "ge", "value": 1}), _node("mystery", {"column": "a"})])
+    with pytest.raises(BundleImportError, match=r"audit step 2 .*does not know"):
+        import_bundle(_bundle(record), bootloader=None)
+
+
+def test_a_filter_step_without_its_column_in_the_real_shape_is_refused():
+    record = _real_export_record([_node("filter_row", {"op": "ge", "value": 1})])
+    with pytest.raises(BundleImportError, match="needs the column"):
+        import_bundle(_bundle(record), bootloader=None)

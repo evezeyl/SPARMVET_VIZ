@@ -212,9 +212,9 @@ def seed_pin_steps(seeds: dict[str, Seeds]) -> dict[str, list[dict]]:
     return steps
 
 
-def with_seed_steps(t3_by_plot: dict[str, list[dict]], seeds: dict[str, Seeds]) -> dict[str, list[dict]]:
-    """A copy of the audited steps per plot with the seed step of each pinned plot added at the end."""
-    listed = {plot_id: list(nodes) for plot_id, nodes in t3_by_plot.items()}
+def with_seed_steps(steps_by_plot: dict[str, list[dict]], seeds: dict[str, Seeds]) -> dict[str, list[dict]]:
+    """A copy of the step lists per plot with the seed step of each pinned plot added at the end (the export lists the seed pins apart from the audit steps, as `plot_seeds`)."""
+    listed = {plot_id: list(nodes) for plot_id, nodes in steps_by_plot.items()}
     for plot_id, steps in seed_pin_steps(seeds).items():
         listed[plot_id] = listed.get(plot_id, []) + steps
     return listed

@@ -16,7 +16,7 @@ This document defines the authoritative nomenclature for the **SPARMVET_VIZ** pl
 - **Anchor (Tier 1/2)**: The authoritative, materialized Parquet file representing the joined and cleaned data of one collection.
 - **Leaf (Tier 3)**: The transient, reactive view produced by applying user-defined filters and audit steps in the UI.
 - **Step list**: A serialized YAML sequence of transformation nodes (`steps:` of a join, or `tier1:` / `tier2:` of a data schema).
-- **Audit steps**: The Tier 3 decisions a user sends to audit, each with a reason (`t3_audit_steps_by_plot`).
+- **Audit steps**: The Tier 3 decisions a user sends to audit, each with a reason (`audit_pipeline`).
 - **Bootloader (bootloader.py)**: The system initialization engine responsible for path authority, UI app features toggling, and discovery of the data analysis recipes.
 
 ## Configuration

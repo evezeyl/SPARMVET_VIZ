@@ -149,7 +149,7 @@ def _open_home(page: Page, url: str) -> None:
 
 
 def _break_the_bad_plot(page: Page) -> None:
-    """Audit mode, the table of the bad plot, the filter `value >= THRESHOLD` sent to audit with a reason and applied: no row stays, the audited plot cannot be faceted."""
+    """Audit mode, the table of the bad plot, the filter `value >= THRESHOLD` tried and added to the audit pipeline with a reason: no row stays, the audited plot cannot be faceted."""
     _show_plot(page, BAD)
     _open_filters_panel(page)
     set_mode(page, "audit")
@@ -166,8 +166,6 @@ def _break_the_bad_plot(page: Page) -> None:
     _press(page, "#filter_add_row")
     _wait_shiny(page)
     expect(page.locator("#filter_rows_ui")).to_contain_text(f"value \u2265 {THRESHOLD}", timeout=10_000)
-    _press(page, "#filter_send_to_audit")
-    _wait_shiny(page)
     _confirm_and_apply(page, "no row stays: a plot that cannot be drawn", 1)
 
 
