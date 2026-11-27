@@ -129,12 +129,29 @@ class AuditRun:
         for table, run in self.tables.items():
             frames: Dict[str, pl.DataFrame] = {}
             if run.t1 != FROM_ORIGINAL:
-                frames["T1"] = pl.read_parquet(run.t1_path)
+                frames["T1"] = self._stored_scan(run, "T1").collect()
             if run.t2 not in (FROM_ORIGINAL, NONE) and run.t2_path is not None:
-                frames["T2"] = pl.read_parquet(run.t2_path)
+                frames["T2"] = self._stored_scan(run, "T2").collect()
             if frames:
                 found[table] = frames
         return found
+
+    def _stored_scan(self, run: TableRun, tier: str) -> pl.LazyFrame:
+        """The stored table of `run` at `tier` ("T1" or "T2") IF the key in its footer is the key this run wants for it (never by file name alone, ADR-089).
+
+        Why: the audit folder is one per recipe and data, so two browser tabs (two sessions) on the same recipe and data share it, and one tab's apply can replace the stored file this run
+        remembers. When the footer holds another key the table is built again for THIS run's steps (`_Run.copy_table`, the same function that built it), never served as it is. If it still
+        cannot be read under its key (its inputs changed while it was built, so it was not stored) a plain `AuditRunError` says so and nothing wrong is shown."""
+        path, meta, key = (run.t1_path, TIER1_KEY_META, run.t1_key_audit) if tier == "T1" else (run.t2_path, TIER2_KEY_META, run.t2_key_audit)
+        scan = read_anchor_if_key(path, meta, key)
+        if scan is not None:
+            return scan
+        if self.context is not None:
+            self.context.copy_table(run.table, self.context.audit_loaded, self.context.keys_audit, self.context.audit_dir, self.context.changed)
+            scan = read_anchor_if_key(path, meta, key)
+            if scan is not None:
+                return scan
+        raise AuditRunError(f"The audited table '{run.table}' ({tier}) was changed by another session on the same recipe and data and could not be built again here. Reload the page and look again.")
 
     def audited_table_lazy(self, table: str, tier: str) -> Optional[pl.LazyFrame]:
         """The table `table` at `tier` ("T1" or "T2") as the copy builds it, LAZY, read from the stored table of this run; None when the copy leaves it as the original's (a table
@@ -146,9 +163,9 @@ class AuditRun:
         if run is None:
             return None
         if tier == "T2" and run.t2 not in (FROM_ORIGINAL, NONE) and run.t2_path is not None:
-            return pl.scan_parquet(run.t2_path)
+            return self._stored_scan(run, "T2")
         if (tier == "T1" or run.t2 == NONE) and run.t1 != FROM_ORIGINAL:
-            return pl.scan_parquet(run.t1_path)
+            return self._stored_scan(run, "T1")
         return None
 
     def original_table_lazy(self, table: str, tier: str) -> pl.LazyFrame:
