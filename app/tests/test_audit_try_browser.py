@@ -2,7 +2,7 @@
 
 Run (qa app features: every flag on, ghost save off; about ten minutes on an idle machine):
     PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_audit_try_browser.py -q
-and, for the last test, with `SPARMVET_APP_FEATURES=pipeline-exploration-simple` (no audit: no Try).
+and, for the last test, with `SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy SPARMVET_APP_FEATURES=pipeline-exploration-simple` (no audit: no Try).
 
 # @deps
 # consumes: app/handlers/trial_handlers.py (the panel, Discard, the ends of a trial), app/handlers/filter_and_audit_handlers.py (the button Try), app/handlers/home_theater.py (the preview, the band, the badge, the figure and Compare read the trial), app/modules/audit_trial.py (the engine), app/modules/audit_try.py (the words)
@@ -439,7 +439,10 @@ def test_nothing_of_a_trial_is_in_an_export_a_session_or_a_stored_audited_table(
 
 @pytest.mark.skipif(LAUNCH != "pipeline-exploration-simple", reason="run with SPARMVET_APP_FEATURES=pipeline-exploration-simple")
 def test_without_the_audit_there_is_no_try(page: Page, shiny_app: ShinyAppProc):
-    _load_data_analysis_recipe(page, shiny_app.url, RECIPE)
+    page.goto(shiny_app.url)                          # this app features file hides the recipe selector: the recipe is named by SPARMVET_DATA_ANALYSIS_RECIPE
+    page.wait_for_selector("#nav_accordion", timeout=30_000)
+    page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=120_000)
+    _wait_shiny(page)
     _open_filters_panel(page)
     page.locator("#filter_add_row").wait_for(state="attached", timeout=30_000)
     assert page.locator("#filter_try").count() == 0 and page.locator("#trial_discard").count() == 0
