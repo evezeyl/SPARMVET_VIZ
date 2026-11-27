@@ -24,7 +24,7 @@ the causes.
 
 # @deps
 # provides: function:define_trial_server, output:trial_panel_ui, effect:_try, effect:_discard, effect:_watch_the_world, effect:_old_entries_end_the_trial
-# consumes: app/modules/audit_try.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`), app/modules/audit_places.py (nodes_signature), app/modules/notification_utils.py
+# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`), app/modules/audit_places.py (nodes_signature), app/modules/notification_utils.py
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
@@ -39,13 +39,14 @@ from app.modules.audit_places import nodes_signature
 from app.modules.audit_shown import request_to_show
 from app.modules.audit_try import (DISCARD_LABEL, NO_CONDITION, TrialRecord, condition_lines, end_cause, fit_problem, panel_model, trial_places, tried_nodes, world_of)
 from app.modules.notification_utils import make_notifier
+from app.modules.t3_audit_engine import BUILT_ELSEWHERE_LINE, rows_built_elsewhere
 
 
 def define_trial_server(input, output, session, *,
                         trial_state, trial_left_original, in_audit, home_state, pending_filters, safe_input,
                         recipe_id: Callable[[], str], recipe_keys: Callable[[], tuple], open_graph, lineage_calc, recipe_plans,
                         shown_place: Callable[[], Optional[str]], committed_nodes: Callable[[], list], columns_at, place_name: Callable[[str], str],
-                        get_trial, shown_item=None, restored_steps=None, notification_log=None):
+                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None):
     """Register the Try button's effect, the panel and the ends of a trial.
 
     Parameters (kwargs):
@@ -63,6 +64,7 @@ def define_trial_server(input, output, session, *,
       place_name(node id)   the name of a place as the lineage panel writes it
       get_trial()           the `PlaceTrial` of this browser session
       shown_item            reactive.Value of the place shown (written by "Show" beside a place or a reached item of the panel)
+      current_view_key()    the view key of the table shown (the rows a condition is stamped with): a condition built on another table is refused
       restored_steps        reactive.Value: the band's note of a restored session, cleared when the user shows something
     """
     _notify = make_notifier(notification_log)
@@ -110,6 +112,9 @@ def define_trial_server(input, output, session, *,
         rows = list(pending_filters.get())
         if not rows:
             _notify(NO_CONDITION, type="warning", duration=6)
+            return
+        if current_view_key is not None and rows_built_elsewhere(rows, current_view_key()):
+            _notify(BUILT_ELSEWHERE_LINE.format(done="tried"), type="warning", duration=10)
             return
         try:
             graph = open_graph()

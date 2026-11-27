@@ -3287,6 +3287,7 @@ def define_server(input, output, session, *,
         shown_item=shown_item,
         restored_steps=restored_steps,
         notification_log=notification_log,
+        current_view_key=_current_view_key,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──

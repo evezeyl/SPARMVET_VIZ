@@ -30,7 +30,7 @@ from shiny import reactive, render, ui
 from app.src.bootloader import bootloader
 from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import (
-    describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
+    BUILT_ELSEWHERE_LINE, rows_built_elsewhere, describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
@@ -905,6 +905,9 @@ def define_filter_audit_server(input, output, session, *,
         if not _can_write_audit_step():
             return
         rows = list(_pending_filters.get())
+        if rows_built_elsewhere(rows, current_view_key()):
+            _notify(BUILT_ELSEWHERE_LINE.format(done="sent"), type="warning", duration=10)
+            return
         if not rows or home_state is None:
             _notify(
                 "No filter rows to send. Add rows below first (the '+ Add' button).",

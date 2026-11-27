@@ -173,3 +173,16 @@ def test_the_three_states_are_told_in_words_and_compare_beside_a_trial_says_whic
     assert compare_left_label(True, True) == compare_left_label(False, True) == "Original (as read)"
     assert band_trial_line("original", True) == NOT_CHANGED == band_trial_line("audited", True)
     assert band_trial_line(TRIAL, True) == "" and band_trial_line("original", False) == ""
+
+
+def test_a_condition_is_never_used_on_a_table_other_than_the_one_it_was_built_on():
+    from app.modules.t3_audit_engine import BUILT_ELSEWHERE_LINE, rows_built_elsewhere, staged_filter_row
+    key_a, key_b = ("recipe", "audit", "T1", None, "A"), ("recipe", "audit", "T1", None, "B")
+    row_a = staged_filter_row("x", "eq", 1, "Int64", None, view=key_a)
+    assert not rows_built_elsewhere([row_a], key_a)
+    assert rows_built_elsewhere([row_a], key_b), "a row built on A is not for B"
+    assert rows_built_elsewhere([row_a], None), "no table shown: nothing it was built on"
+    assert rows_built_elsewhere([row_a, staged_filter_row("y", "eq", 1, "Int64", None, view=key_b)], key_a), "one row built elsewhere is enough"
+    assert rows_built_elsewhere([staged_filter_row("x", "eq", 1, "Int64", None)], key_a), "a row with no view key was built nowhere known"
+    assert not rows_built_elsewhere([], key_a), "nothing staged: nothing built elsewhere (the other guard says so)"
+    assert "built on another table" in BUILT_ELSEWHERE_LINE and "Nothing was" in BUILT_ELSEWHERE_LINE

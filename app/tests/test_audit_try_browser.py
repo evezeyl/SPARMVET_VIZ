@@ -447,3 +447,31 @@ def test_without_the_audit_there_is_no_try(page: Page, shiny_app: ShinyAppProc):
     page.locator("#filter_add_row").wait_for(state="attached", timeout=30_000)
     assert page.locator("#filter_try").count() == 0 and page.locator("#trial_discard").count() == 0
     expect(page.locator(".spv-trial-panel")).to_have_count(0)
+
+
+@NEEDS_AUDIT
+def test_a_condition_built_on_one_table_is_never_sent_to_audit_from_another(ready: Page, tables):
+    """FLOW-1 review: build on ResFinder (T1), Try, Show the plot built from it (the trial keeps the staged condition), press Send to Audit: refused with one plain
+    line, no dialog, no pending step. The condition belongs to the table it was built on."""
+    page = ready
+    enter_audit(page)
+    show_place(page, "T1:ResFinder", keep_chosen=False)
+    wait_preview_rows(page, tables["resfinder"].height, timeout=60_000)
+    build_condition(page, "identity", "lt", tables["threshold"])
+    press_try(page)
+    expect(page.locator(PANEL)).to_be_visible(timeout=60_000)
+    page.locator(f"{PANEL} summary").click()
+    page.locator(f"{PANEL} li", has_text="AMR Heatmap").locator("button", has_text="Show").click()
+    wait_shiny(page)
+    expect(page.locator(AREA)).to_contain_text("Plot shown: AMR Heatmap", timeout=30_000)
+    assert page.locator("#filter_remove_0").count() == 1, "the trial keeps the staged condition (the premise of the trace)"
+    close_notices(page)
+    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=15_000)
+    page.locator("#filter_send_to_audit").click()
+    wait_shiny(page)
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("built on another table", timeout=15_000)
+    assert "Nothing was sent" in notices(page)
+    assert page.locator(".modal.show").count() == 0, "no dialog was opened"
+    assert page.locator("[id^='t3_delete_']").count() == 0, "no step was written"
+    page.locator("#trial_discard").click()
+    wait_shiny(page)
