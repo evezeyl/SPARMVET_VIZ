@@ -80,7 +80,17 @@ In Audit mode, once you have added a condition in the **Filters** panel (the "+ 
 - **What you see.** A small panel under the Filters buttons says, for each place, how many rows the step removes **there** ("removes no row" is said plainly: it may mean you chose the wrong place), and what is built from those places (a count and a list, each marked "table changed" or "no row changed"; this is information, not something to tick). Press **Show** beside a place or a reached item to look at it with the step tried. While the app counts, a line says so.
 - **The three states, always in words.** "Original (as read)", "Audited: your applied steps" and "TRIAL: with the step you are trying. Not applied, not saved, not exported." The table, the title, the badge, the band above the table and the figure all say which one you are looking at. An item the step does not change says "The step you are trying does not change this."
 - **Compare beside a trial.** With Compare on, the left pane is "Before this step" (your applied steps as they are now), the right pane is the trial, and a switch lets you show the original on the left instead.
-- **When a trial ends.** Press **Discard**, or it ends by itself, with one plain notice, when you change the condition, change the places chosen, leave Audit mode, open another recipe, restore a session, apply or remove a step, or use Send to Audit. To apply the step you tried, use **Send to Audit** for now (the new way to add it comes next).
+- **When a trial ends.** Press **Discard**, or it ends by itself, with one plain notice, when you change the condition, change the places chosen, leave Audit mode, open another recipe, restore a session, apply or remove a step, or use Send to Audit.
+
+#### Adding the step you tried: "Add to audit pipeline"
+
+Under the lines of the trial panel you find, for each place, a tick **User verified**: tick it when you have looked at the table at that place (use **Show**) and accept the step there. The mark is advice: the step is written at **every** place of the trial, also at those you did not tick, and the panel says "N of M places user verified" so that you see it. Then write the **Reason** (required: the button **Add to audit pipeline** stays disabled, with one line that says why, until there is one) and press the button.
+
+- **What happens.** The step is applied with the tables the trial already computed (nothing is calculated twice), written at all the places, and saved in the session as the Apply button saves it. One notice says "Step added to the audit pipeline at N places (K of N places user verified)". The table you look at now says "Audited: your applied steps", and the step is listed in the right panel under "Written at ...", with "User verified" or "not marked as verified" for that place.
+- **If something goes wrong,** nothing is applied: the notice says so and you try the step again.
+- **The marks and the export.** Which places you marked is kept with each step: in the session, in `t3_steps.yaml` (`user_verified`), and in the README and the report ("2 of 3 places user verified; not marked: ..."). The app does not record who ticked.
+- **Remove a step** with the bin on its card, as always; the session is saved without it, so a Restore does not bring it back.
+- **A new Try starts the marks again** at zero, and so does a change of the condition or of the places. The reason you typed is kept as a draft until you add the step.
 
 #### Choosing the place on the "Path of the data"
 
