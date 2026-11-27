@@ -313,7 +313,7 @@ def t3_file_sentence(folder: str, plot_id: str, audited: bool, recipe_steps: boo
 
 def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[str, Any]]:
     """One record per committed node written at a place, in commit order, for `t3_steps.yaml`, the README and the report: id, place (as a node id and in words), the plot it was
-    started from, the action it is (`node_type`) with its parameters, the reason, the date it was APPLIED (`applied_at`; `created_at`, the staging time, for a step stored before that key existed) and the plots built from the place (`plots`). A place the graph does not have lists no plot."""
+    started from, the action it is (`node_type`) with its parameters, the reason, the date it was APPLIED (`applied_at`; `created_at`, the staging time, for a step stored before that key existed) and the plots built from the place (`plots`), and, for a step added with "Add to audit pipeline", `user_verified` (and `verified_at` when it was). A place the graph does not have lists no plot."""
     records: List[Dict[str, Any]] = []
     for node in nodes:
         place = node.get("place") or ""
@@ -323,6 +323,10 @@ def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[s
             "committed_at": node.get("applied_at") or node.get("created_at", ""),
             "plots": plots_below(graph, [place]) if graph.has_node(place) else [],
         })
+        if "user_verified" in node:        # a step added with "Add to audit pipeline" says whether its place was user verified (FLOW-2, D-0670); a step of the old way carries nothing
+            records[-1]["user_verified"] = bool(node["user_verified"])
+            if node.get("verified_at"):
+                records[-1]["verified_at"] = node["verified_at"]
     return records
 
 
