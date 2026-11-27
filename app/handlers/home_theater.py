@@ -1690,7 +1690,7 @@ def define_server(input, output, session, *,
     def trial_plot_label_ui():
         """Beside the title of the plot shown (Audit mode): "TRIAL" in words when the figure is drawn from the step being tried, a plain line when a trial exists and does not change this plot (FLOW-1,
         PROVISIONAL words). Its own output (R4): it reads the trial and the open plot, mounts no input, and never draws the plot cell again."""
-        if not _in_audit() or trial_state.get() is None:
+        if not _in_audit() or not audit_try.trial_has_state(trial_state.get()):
             return ui.span()
         plot = (active_home_subtab.get() or "").removeprefix("subtab_")
         if not plot:
@@ -1912,7 +1912,7 @@ def define_server(input, output, session, *,
         others = others_chosen(chosen, shown.place)
         lines = band_lines(_shown_name(shown), facts, others, shown.from_open_plot, restored_steps.get())
         # FLOW-1: while a trial exists, the band says it in words and is unmistakable (the amber tokens, a dashed frame); an item the tried step does not change says so
-        extra = audit_try.band_trial_line(facts.state, trial_state.get() is not None)
+        extra = audit_try.band_trial_line(facts.state, audit_try.trial_has_state(trial_state.get()))
         if extra:
             lines = lines + (extra,)
         return ui.div(*[ui.tags.span(line, class_="spv-shown-band-line") for line in lines], class_="spv-shown-band" + (" spv-shown-band-trial" if facts.state == TRIAL else ""), role="status")

@@ -20,7 +20,7 @@ among them (else the refusal "Show your selection first" of slice 3a); that with
 Consumed by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py. If deleted: HOME's Audit mode has no Try.
 
 # @deps
-# provides: class:TrialRecord, function:condition_lines, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL, constant:APPLY_NOTE
+# provides: class:TrialRecord, function:condition_lines, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL, constant:APPLY_NOTE
 # consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/lineage_step.py (stage_nodes), app/modules/lineage_view.py (line_text), app/modules/t3_audit_engine.py (audit_params_from_row), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
 # consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
@@ -224,6 +224,12 @@ def compare_left_label(has_earlier_steps: bool, show_original: bool) -> str:
 def compare_right_label() -> str:
     """The label of the right pane of Compare beside a trial: the trial."""
     return TRIAL_WORDS
+
+
+def trial_has_state(record: Optional[TrialRecord]) -> bool:
+    """True when a trial exists AND the step could be run: only then does an item have a trial state ("trial", "not changed"). A trial whose step cannot run (`result.error`) has no state on any item:
+    the panel carries the error and the band and the plot label say nothing about a trial."""
+    return record is not None and not getattr(record.result, "error", None)
 
 
 def band_trial_line(state: str, trial_exists: bool) -> str:

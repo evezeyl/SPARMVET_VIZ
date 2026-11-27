@@ -15,7 +15,7 @@ import pytest
 from app.modules.audit_place_view import STATE_WORDS, TRIAL
 from app.modules.audit_places import nodes_signature
 from app.modules.audit_trial import PlaceTrial, TRIAL_FOLDER
-from app.modules.audit_try import (APPLY_NOTE, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, end_cause, fit_problem, panel_model,
+from app.modules.audit_try import (APPLY_NOTE, TrialRecord, trial_has_state, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, end_cause, fit_problem, panel_model,
                                    rows_signature, tried_nodes, trial_places, world_of)
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
@@ -161,6 +161,11 @@ def test_a_step_that_cannot_run_shows_its_plain_error_and_nothing_else(world, tm
     result = trial.try_step(RECIPE_ID, [], tried_nodes([row("no_such_column", "eq", 1, "Int64")], ["T1:ResFinder"]), world.plans)
     model = panel_model(result, [], name_of(world))
     assert model.error.startswith("This step cannot be tried:") and "no_such_column" in model.error and not model.effects and not model.reach_items
+    # the band and the plot label say nothing about a trial: with an error there is no trial state on any item (review of FLOW-1)
+    record = TrialRecord(None, ("T1:ResFinder",), (), result, ())
+    assert not trial_has_state(record), "a trial whose step cannot run has no state"
+    assert band_trial_line("original", trial_has_state(record)) == "" and band_trial_line("audited", trial_has_state(record)) == ""
+    assert trial_has_state(TrialRecord(None, (), (), type("R", (), {"error": None})(), ())) and not trial_has_state(None)
     trial.discard()
 
 
