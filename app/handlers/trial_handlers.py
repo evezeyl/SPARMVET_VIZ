@@ -55,7 +55,7 @@ from app.modules.audit_add import (ADD_LABEL, REASON_LABEL, REASON_PLACEHOLDER, 
 from app.modules.audit_places import nodes_signature
 from app.modules.audit_shown import request_to_show
 from app.modules.audit_trial import TrialRefused, now_iso
-from app.modules.step_bar import kind_of_input
+from app.modules.step_bar import fold_summary, kind_of_input
 from app.modules.audit_try import (DISCARD_LABEL, KIND_DROP, KIND_FILTER, NO_CONDITION, TrialRecord, condition_lines, drop_condition_lines, drop_fit_problem, drops_from_selection, end_cause, fit_problem, panel_model,
                                    trial_has_state, trial_places, tried_drop_nodes, tried_nodes, world_of)
 from app.modules.notification_utils import make_notifier
@@ -434,7 +434,7 @@ def define_trial_server(input, output, session, *,
             body.append(ui.output_ui("trial_add_ui"))
         body.append(ui.input_action_button("trial_discard", DISCARD_LABEL, class_="btn-outline-secondary btn-sm"))
         # a `details` element: the user can fold the answer away to see the table under it; it is drawn open again by every new Try (PROVISIONAL)
-        return ui.tags.details(ui.tags.summary("Result of Try (not applied): fold or open", class_="spv-trial-summary-line"), ui.div(*body, class_="spv-trial-body"), open=True, class_="spv-trial-panel")
+        return ui.tags.details(ui.tags.summary(fold_summary(record.kind), class_="spv-trial-summary-line"), ui.div(*body, class_="spv-trial-body"), open=True, class_="spv-trial-panel")
 
     @output
     @render.ui

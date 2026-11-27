@@ -7,7 +7,7 @@ drop, one at a time) and the button "Try"; the answer of Try (the places, the ma
 All words here are PROVISIONAL (the owner reads them).
 
 # @deps
-# provides: function:try_state, function:drop_words, function:kind_of_input, const:KIND_CHOICES, const:TRY_BUTTON, const:STEP_BAR_LABEL
+# provides: function:try_state, function:drop_words, function:kind_of_input, function:fold_summary, const:KIND_CHOICES, const:TRY_BUTTON, const:STEP_BAR_LABEL
 # consumes: app/modules/audit_try.py (KIND_FILTER, KIND_DROP, drops_from_selection)
 # consumed_by: app/handlers/step_bar_handlers.py, app/handlers/trial_handlers.py, app/tests/test_step_bar.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0663, D-0672)
@@ -30,6 +30,12 @@ CONDITION_HINT = "No condition yet. Build it in the Filters panel on the left (c
 CONDITION_EDIT_HINT = "To change it, remove a row or reset in the Filters panel on the left."
 NEEDS_T3_FOR_DROP = "Columns are dropped at the Result data (T3) of a plot: show a plot's Result data in Path of the data first."
 NEEDS_DESELECTED = "Deselect the columns to drop in the column chooser below the bar, then press Try."
+
+
+def fold_summary(kind: str) -> str:
+    """The first line of the fold-out: which kind of step the open trial is (the switch may have been moved since; the trial stays what it was tried as). PROVISIONAL words."""
+    what = "a column drop" if kind == KIND_DROP else "a condition"
+    return f"Result of Try: {what} (not applied): fold or open"
 
 
 def kind_of_input(value: Any) -> str:

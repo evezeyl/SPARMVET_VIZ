@@ -251,3 +251,15 @@ def test_a_key_that_a_later_join_reads_is_refused_at_try_with_the_sentence_of_th
     assert "read as a key by the join J" in w.notes[-1] and "Nothing was tried" in w.notes[-1]
     _try_drop(w, ["identity"])                                   # the other column is not a key: tried
     assert _peek(w.trial_state) is not None and asked[-1] == ("T3:p", ["length"])
+
+
+def test_the_fold_out_says_which_kind_of_step_the_open_trial_is(monkeypatch):
+    """The switch of the step bar may be moved while a trial is open: the trial stays what it was tried as, and its first line says so. MUTATION: the summary is a fixed text: the drop assert fails."""
+    w = _world(monkeypatch)
+    _flush()
+    _set(w, _record(w))
+    assert "Result of Try: a condition (not applied)" in _html(w)
+    record = _record(w)
+    _set(w, TrialRecord(record.world, record.places, record.nodes, record.result, record.condition, record.serial, KIND_DROP))
+    html = _html(w)
+    assert "Result of Try: a column drop (not applied)" in html and "a condition (not applied)" not in html
