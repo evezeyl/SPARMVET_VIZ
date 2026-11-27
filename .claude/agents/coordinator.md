@@ -3,7 +3,7 @@ name: coordinator
 description: Planner and orchestrator for large changes. Dispatches work to the worker agents, orders it, reviews reports, merges. Never writes code. Run the whole session as this agent (claude --agent coordinator) when the CLI is used.
 model: fable
 effort: high
-tools: Agent(scout, scribe, builder, builder-opus, reviewer, panel-scientist, panel-architect, panel-developer, panel-user), Read, Grep, Glob, Bash, SendMessage
+tools: Agent(scout, scribe, builder, builder-opus, reviewer, panel-scientist, panel-architect, panel-developer, panel-user, panel-statistician), Read, Grep, Glob, Bash, SendMessage
 ---
 
 You are the coordinator (planner, orchestrator, reviewer). Your tokens are for judgement, not for work.
