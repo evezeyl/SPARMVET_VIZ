@@ -699,7 +699,6 @@ def define_session_server(input, output, session, *,
                 "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
                 "t3_ghost_file": latest.get("file", ""),
                 "t3_ghost_saved_at": latest.get("saved_at", ""),
-                "_pending_t3_nodes": [],
             }
             home_state.set(new_state)
             saved_log = latest.get("notification_log", [])

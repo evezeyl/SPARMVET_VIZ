@@ -4,7 +4,7 @@ Run (qa app features):
     PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_audit_steps_survive_recipe_change.py -q
 
 # @deps
-# consumes: app/handlers/home_theater.py (the audit steps in the state of HOME, the recipe selector), app/handlers/filter_and_audit_handlers.py (the dialog), app/handlers/audit_stack.py (Apply), app/tests/browser_view.py
+# consumes: app/handlers/home_theater.py (the audit steps in the state of HOME, the recipe selector), app/handlers/trial_handlers.py (Try and Add to audit pipeline), app/handlers/audit_stack.py (the cards), app/tests/browser_view.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/knowledge/decision_ledger.md (D-0317, D-0302)
 # @end_deps
 
@@ -27,10 +27,9 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import preview_rows, set_mode, show_place, wait_preview_rows, wait_shiny
+from app.tests.browser_view import add_condition_step, preview_rows, set_mode, show_place, wait_preview_rows, wait_shiny
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
-from app.tests.test_shiny_smoke import _choose_fb_op, _choose_recipe, _load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
+from app.tests.test_shiny_smoke import _choose_recipe, _load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
 
 A, B = "1_test_data_ST22_dummy", "3_test_no_joins"
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,29 +68,8 @@ def test_the_steps_of_one_recipe_are_not_applied_to_another_recipe_with_a_table_
     # recipe A: a step at the tier 1 of MLST, applied
     _navigate_to_mlst_plot(page)
     set_mode(page, "audit")
-    _choose_column_firmly(page, "sequence_type")
-    _choose_fb_op(page, "ne")
-    _wait_shiny(page)
-    page.wait_for_function("() => { const e = document.getElementById('fb_value'); return e && e.selectize && Object.keys(e.selectize.options).length > 0; }", timeout=20_000)
-    page.evaluate("(v) => document.getElementById('fb_value').selectize.addItem(v)", expected["victim"])
-    _wait_shiny(page)
-    page.locator("#filter_add_row").click()
-    _wait_shiny(page)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    page.locator("#propagation_places input[value='T1:MLST']").set_checked(True, force=True)
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
-    box.fill(REASON)
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    show_place(page, "T1:MLST", keep_chosen=False)
+    add_condition_step(page, "sequence_type", "ne", expected["victim"], REASON, expected_places=1)
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at MLST: Table, T1", timeout=20_000)
     show_place(page, "T1:MLST")
     wait_preview_rows(page, expected["a_after"], timeout=60_000)

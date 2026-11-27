@@ -154,4 +154,4 @@ def test_no_code_path_knows_the_removed_type_but_the_refusal_table():
 
 def test_the_screens_do_not_offer_or_label_the_removed_type():
     from app.handlers import audit_stack
-    assert REMOVED not in audit_stack._NODE_META and REMOVED not in audit_stack._REASON_REQUIRED
+    assert REMOVED not in audit_stack._NODE_META     # FLOW-3: `_REASON_REQUIRED` is gone with the reason boxes (a reason is asked at Add for every step)

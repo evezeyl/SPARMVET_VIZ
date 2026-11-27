@@ -152,10 +152,11 @@ def test_nothing_sticks_out_of_the_real_panels_at_1100(page: Page, shiny_app: Sh
     page.locator("#filter_add_row").click()
     wait_shiny(page)
     assert page.evaluate(OVERFLOW, "#nav_sidebar") == []
-    page.locator("#filter_send_to_audit").click()
-    page.locator("#propagation_confirm").click()
-    wait_shiny(page)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
+    from app.tests.browser_view import add_to_pipeline, try_staged
+    try_staged(page)
+    assert page.evaluate(OVERFLOW, "#nav_sidebar") == [], "the panel of the trial does not overflow the left panel"
+    add_to_pipeline(page, "the widths: a step card in the right panel", expected_places=1)
+    expect(page.locator("#audit_nodes_tier3 .audit-node-tier3")).to_have_count(1, timeout=15_000)
     assert page.evaluate(OVERFLOW, "#audit_sidebar") == []
     assert page.evaluate(OVERFLOW, "#nav_sidebar") == []
     assert widths(page)["main"] / 1100 >= 0.65

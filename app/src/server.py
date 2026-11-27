@@ -124,8 +124,6 @@ def server(input, output, session):
 
     # State Management
     anchor_path = reactive.Value(None)
-    audit_pending = reactive.Value(False)
-    snapshot_steps = reactive.Value([])
     gallery_refresh_trigger = reactive.Value(0)
     gallery_state = reactive.Value({})         # what the user left in the Gallery; survives a switch of space
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
@@ -238,17 +236,14 @@ def server(input, output, session):
         session_processing_issues=session_processing_issues,
         recipe_gate_version=recipe_gate_version,
         shown_recipe=shown_recipe,
-        audit_pending=audit_pending,
     )
 
-    # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)
+    # Pipeline Audit: the recipe's tier 2 steps and the audit steps that were added (requires t3_sandbox_enabled)
     if bootloader.is_enabled("t3_sandbox_enabled"):
         from app.handlers.audit_stack import define_server as _define_audit_server
         _define_audit_server(
             input, output, session,
             wrangle_studio=wrangle_studio,
-            audit_pending=audit_pending,
-            snapshot_steps=snapshot_steps,
             active_cfg=active_cfg,
             active_collection_id=active_collection_id,
             home_mode=home_mode,

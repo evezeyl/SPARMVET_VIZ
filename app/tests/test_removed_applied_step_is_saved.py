@@ -1,11 +1,12 @@
 """Removing an applied audit step saves the session, so that a Restore no longer brings the step back (task REMOVED-APPLIED-STEP-NOT-SAVED; D-0302, D-0314, D-0680).
 
 Before: the bin of a card only changed the state; the session file (written by Apply) still held the step, and a Restore of the latest session file put it back.
-What the design expects: removing an APPLIED step writes the session as Apply writes it (`audit_stack._write_t3_ghost`: a new `t3_<time>.json` with the steps that remain); removing a step that is only
-PENDING writes nothing (pending steps are not saved, D-0302); the removal needs no reason (D-0314); with ghost save off nothing is written; a failed write is told in one plain line and the removal
-stands. A step added with "Add to audit pipeline" is removed the same way, and what stays of the file is exactly the steps that remain, marks included.
+What the design expects: removing an APPLIED step writes the session as an Add writes it (`audit_session_save.save_audit_session`: a new `t3_<time>.json` with the steps that remain) and moves the count
+of saves of the session (the session panel counts them: AUDIT-REMOVAL-SESSION-COUNT-1; nothing else of the state is touched, so a condition being built in the Filters panel stays); the removal needs
+no reason (D-0314); with ghost save off nothing is written and the count does not move; a failed write is told in one plain line and the removal stands. A step added with "Add to audit pipeline" is removed
+the same way, and what stays of the file is exactly the steps that remain, marks included. FLOW-3: there is no pending (staged) step any more, so the test of removing one is gone.
 
-Mutation index (seen failing): MUTATION R1 `_handle_delete` does not save.
+Mutation index (seen failing): MUTATION R1 `_handle_delete` does not save; MUTATION R2 the removal does not move the count of saves.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_removed_applied_step_is_saved.py -q
 
@@ -50,13 +51,12 @@ class Screen:
         self.input = LiveInput()
         self.steps = [_node("a"), _node("b", "T2:ResFinder")]
         self.state = reactive.Value({"data_analysis_recipe_sha256": RECIPE_HASH, "data_batch_hash": DATA_HASH, "data_analysis_recipe_id": "tiny",
-                                     "t3_audit_steps_by_plot": {"__places__": list(self.steps)}, "_pending_t3_nodes": []})
-        self.input.set("btn_apply", None)
+                                     "t3_audit_steps_by_plot": {"__places__": list(self.steps)}, "t3_apply_count": 0})
         for node in self.steps:
             self.input.set(f"t3_delete_{node['id']}", 0)
         bootloader = SimpleNamespace(get_automation_setting=lambda *a: ghost_save)
         audit_stack.define_server(self.input, lambda fn: fn, SimpleNamespace(), wrangle_studio=SimpleNamespace(logic_stack=reactive.Value([]), apply_logic=0),
-                                  audit_pending=reactive.Value(False), snapshot_steps=reactive.Value([]), active_cfg=lambda: SimpleNamespace(raw_config={}),
+                                  active_cfg=lambda: SimpleNamespace(raw_config={}),
                                   active_collection_id=lambda: "x", home_mode=reactive.Value("audit"), home_state=self.state, session_manager=self.manager,
                                   notification_log=reactive.Value([]), bootloader=bootloader)
 
@@ -88,18 +88,23 @@ def test_removing_an_applied_step_writes_the_session_without_it_and_a_restore_do
     asyncio.run(scenario())
 
 
-def test_removing_a_pending_step_writes_nothing_and_a_removal_needs_no_reason(tmp_path, monkeypatch):
+def test_a_removal_that_saves_moves_the_count_of_saves_and_touches_nothing_else_of_the_state(tmp_path, monkeypatch):
+    """AUDIT-REMOVAL-SESSION-COUNT-1: the session panel counts the saves of the session from `t3_apply_count`; a removal that writes a save moves it (and so the panel is current), and the rest of the state
+    (the shown place, the keys) is as it was. MUTATION R2: the removal does not move the count."""
     async def scenario():
         s = Screen(tmp_path, monkeypatch)
-        pending = _node("p")
         with reactive.isolate():
-            s.state.set({**s.state.get(), "_pending_t3_nodes": [pending]})
-        s.input.set("t3_delete_p", 0)
+            s.state.set({**s.state.get(), "audit_shown_place": "T1:ResFinder"})
         await _flush()
-        s.input.set("t3_delete_p", 1)
+        s.input.set("t3_delete_a", 1)
         await _flush()
-        assert s.files() == [], "pending steps are not saved (D-0302), so removing one changes nothing that was saved"
-        assert s.committed() == ["a", "b"]
+        with reactive.isolate():
+            state = s.state.get()
+        assert state["t3_apply_count"] == 1 and state["audit_shown_place"] == "T1:ResFinder" and state["data_batch_hash"] == DATA_HASH
+        s.input.set("t3_delete_b", 1)
+        await _flush()
+        with reactive.isolate():
+            assert s.state.get()["t3_apply_count"] == 2
     asyncio.run(scenario())
 
 
@@ -130,6 +135,8 @@ def test_with_ghost_save_off_nothing_is_written_and_the_removal_stands(tmp_path,
         s.input.set("t3_delete_a", 1)
         await _flush()
         assert s.committed() == ["b"] and s.files() == []
+        with reactive.isolate():
+            assert s.state.get()["t3_apply_count"] == 0, "nothing was saved, so the count of saves did not move"
     asyncio.run(scenario())
 
 

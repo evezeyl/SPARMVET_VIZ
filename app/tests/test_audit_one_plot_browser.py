@@ -18,12 +18,12 @@ What a person does and sees, on the demo `1_test_data_ST22_dummy` (Exploration i
 - Show of another plot swaps the figure: the first plot is no longer on the page (it is not drawn), the second is; Compare labels the panes of the plot shown;
 - Show of a table: no figure, a note that says it is a table and names the plots built from it, no Compare switch; showing a plot again brings both back;
 - the right panel names the item shown and lists the steps written at that table or above it; for a plot the steps it is built from;
-- a step written with Send to Audit goes to the plot SHOWN (which was not the tab of Exploration), and not to the tab's plot;
-- a table shown offers no Send to Audit (no plot is open);
+- a step added (Try, then Add to audit pipeline) goes to the plot SHOWN (which was not the tab of Exploration), and not to the tab's plot;
+- a table shown offers a Try on a staged condition, but no drop (a drop is tried at a plot's Result data (T3)) (no plot is open);
 - a restored session opens in Audit mode with the open plot of the tab shown.
 
 Mutation index (each seen failing): MUTATION C1 `_audit_default_plot` and the open plot ignore the shown item (the first test of Show); MUTATION C2 `_sync_open_plot` writes the tab of Exploration
-in Audit mode (the test of Send to Audit at the plot shown).
+in Audit mode (the test of the step added at the plot shown).
 """
 import os
 import re
@@ -34,7 +34,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import preview_rows, set_compare, set_mode, show_place, wait_preview_rows, wait_shiny
+from app.tests.browser_view import add_to_pipeline, preview_rows, set_compare, set_mode, show_place, try_staged, wait_preview_rows, wait_shiny
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_lineage_view_browser import _clear_choice, _line, _open_panel
@@ -76,6 +76,9 @@ def back_to_exploration(request):
     if "ready" in request.fixturenames:
         page = request.getfixturevalue("ready")
         try:
+            if page.locator("#trial_discard").count():
+                page.locator("#trial_discard").click()
+                wait_shiny(page)
             for b in page.locator("[id^='t3_delete_']").all():
                 b.click()
                 wait_shiny(page)
@@ -183,18 +186,18 @@ def test_a_table_no_plot_reads_says_that_no_plot_is_built_from_it(ready: Page):
 
 
 @NEEDS_AUDIT
-def test_a_table_shown_offers_no_step_and_the_plot_shown_does(ready: Page):
+def test_a_table_shown_offers_a_try_and_no_drop_and_the_plot_shown_offers_both(ready: Page):
     page = ready
     _enter_audit(page)
     show_place(page, "T1:ResFinder", keep_chosen=False)
-    expect(page.locator("#filter_controls_ui")).to_contain_text("Result data (T3)", timeout=15_000)      # the words that say what to show first
-    assert page.locator("#filter_send_to_audit").count() == 0
+    assert page.locator("#filter_send_to_audit").count() == 0 and page.locator("#col_drop_try").count() == 0, "a column drop is tried at the Result data (T3) of a plot only"
+    expect(page.locator("#filter_controls_ui")).to_contain_text("press Try", timeout=15_000)
     show_place(page, "T3:mlst_bar", keep_chosen=False)
-    expect(page.locator("#filter_controls_ui")).not_to_contain_text("show the Result data (T3)", timeout=15_000)
+    expect(page.locator("#col_drop_try")).to_have_count(1, timeout=15_000)
 
 
 @NEEDS_AUDIT
-def test_send_to_audit_writes_at_the_plot_shown_not_at_the_tab_exploration_had(ready: Page, tables):
+def test_a_step_is_added_at_the_plot_shown_not_at_the_tab_exploration_had(ready: Page, tables):
     page = ready
     _enter_audit(page)
     show_place(page, "T3:mlst_bar", keep_chosen=False)
@@ -204,18 +207,8 @@ def test_send_to_audit_writes_at_the_plot_shown_not_at_the_tab_exploration_had(r
     kept = tables["mlst_bar"].filter(pl.col("year") < threshold).height
     assert 0 < kept < tables["mlst_bar"].height
     _stage_year_filter(page, threshold)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
-    box.fill("one plot: the plot shown, not the tab")
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    try_staged(page)
+    add_to_pipeline(page, "one plot: the plot shown, not the tab", expected_places=1)
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at MLST Bar: Result data, T3", timeout=20_000)
     wait_preview_rows(page, kept, timeout=60_000)                                              # the rows of the plot shown went down by the rows the filter removes
     show_place(page, "T3:amr_heatmap", keep_chosen=False)
@@ -239,26 +232,3 @@ def test_the_right_panel_follows_the_item_shown_for_a_plot_and_for_a_table(ready
     show_place(page, "T3:mlst_bar", keep_chosen=False)
     expect(panel).to_contain_text("MLST Bar", timeout=15_000)
     assert "ResFinder" not in panel.inner_text()
-
-
-@NEEDS_AUDIT
-def test_a_pending_step_the_list_does_not_show_is_told_and_apply_still_asks_its_reason(ready: Page, tables):
-    page = ready
-    _enter_audit(page)
-    year = tables["mlst_bar"]["year"].drop_nulls()
-    show_place(page, "T3:mlst_bar", keep_chosen=False)
-    _stage_year_filter(page, float(year.unique().sort()[len(year.unique()) // 2]))
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
-    show_place(page, "T1:ResFinder", keep_chosen=False)
-    expect(page.locator("#audit_nodes_tier3")).to_contain_text("1 pending step is written elsewhere and not listed here", timeout=15_000)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0)
-    expect(page.locator("#btn_apply").first).to_be_disabled()                                   # nothing slips through: the step still needs its reason
-    show_place(page, "T3:mlst_bar", keep_chosen=False)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
-    page.locator("[id^='t3_delete_']").first.click()
-    wait_shiny(page)
-    assert preview_rows(page) == tables["mlst_bar"].height

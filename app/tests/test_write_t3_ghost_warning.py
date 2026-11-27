@@ -1,13 +1,13 @@
-"""_write_t3_ghost's failure path (ADR-094/PIPELINE-ERROR-WIRE-2, 2026-11-08).
+"""save_audit_session's failure path (ADR-094/PIPELINE-ERROR-WIRE-2, 2026-11-08; FLOW-3: the function is public in `app/modules/audit_session_save.py`).
 
 Before this fix: a failed T3 ghost save built a full PipelineError, printed it to the
 server console, and returned nothing — the user had no way to know their T3 state
 would not survive a page refresh. Now it returns a warning string (problem + fix) that
-the caller (handle_apply, inside define_server) shows via _notify. This test covers
+the callers ("Add to audit pipeline" in trial_handlers, the removal of a step in audit_stack) show via _notify. This test covers
 the pure function in isolation; the caller wiring is exercised indirectly by the
-existing Playwright AUDIT-GATE-UI-1 test (apply still works end to end).
+browser tests of the Add (`test_audit_add_browser.py`).
 """
-from app.handlers.audit_stack import _write_t3_ghost
+from app.modules.audit_session_save import save_audit_session
 
 
 class _BrokenSessionManager:
@@ -34,11 +34,11 @@ _STATE = {
 
 
 def test_returns_none_on_success():
-    assert _write_t3_ghost(_STATE, _WorkingSessionManager()) is None
+    assert save_audit_session(_STATE, _WorkingSessionManager()) is None
 
 
 def test_returns_a_warning_with_the_fix_text_on_failure():
-    warning = _write_t3_ghost(_STATE, _BrokenSessionManager())
+    warning = save_audit_session(_STATE, _BrokenSessionManager())
     assert warning is not None
     assert "T3 ghost save failed" in warning
     assert "writable" in warning  # the fix text, not just the raw OSError
@@ -47,7 +47,7 @@ def test_returns_a_warning_with_the_fix_text_on_failure():
 def test_keys_that_are_missing_give_a_warning_and_no_write_attempt():
     """VERIF-FIX-2 (D-0050 "No silent error that is the rule."): it returned None here and the screen said 'audit steps applied'
     although nothing was saved. It still makes no write attempt; it now says so (details: test_session_keys_missing_told.py)."""
-    warning = _write_t3_ghost({}, _BrokenSessionManager())
+    warning = save_audit_session({}, _BrokenSessionManager())
     assert warning is not None and "not saved" in warning and "Suggestion:" in warning
 
 
@@ -58,5 +58,5 @@ def test_not_writable_folder_says_not_saved_and_does_not_try():
         def write_t3_ghost(self, **kwargs):
             raise AssertionError("must not be called")
 
-    warning = _write_t3_ghost(_STATE, _Off())
+    warning = save_audit_session(_STATE, _Off())
     assert "not saved" in warning and "user folder cannot be written" in warning

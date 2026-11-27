@@ -2,7 +2,7 @@
 
 # @deps
 # consumes: app/handlers/home_theater.py (the inputs home_mode, data_view, source_table, audit_compare), app/src/www/lineage_view.js (the chosen places and their Show buttons)
-# consumed_by: app/tests/test_audit_one_plot_browser.py, app/tests/test_shiny_na_tick.py, app/tests/test_shiny_step_order.py, app/tests/test_tier_decides_filter_form.py, app/tests/test_filter_form_survives_rerender.py, app/tests/test_shiny_plot_tier3.py, app/tests/test_shiny_seed_places.py, app/tests/test_shiny_plot_errors.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_shiny_session_restore.py, app/tests/test_shiny_apply_blocked.py, app/tests/test_export_download.py, app/tests/test_shiny_smoke.py
+# consumed_by: app/tests/test_audit_add_browser.py, app/tests/test_audit_one_plot_browser.py, app/tests/test_shiny_na_tick.py, app/tests/test_shiny_step_order.py, app/tests/test_tier_decides_filter_form.py, app/tests/test_filter_form_survives_rerender.py, app/tests/test_shiny_plot_tier3.py, app/tests/test_shiny_seed_places.py, app/tests/test_shiny_plot_errors.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_shiny_session_restore.py, app/tests/test_shiny_apply_blocked.py, app/tests/test_export_download.py, app/tests/test_shiny_smoke.py
 # @end_deps
 
 The mode switch (`home_mode`: "exploration" or "audit", only with the audit on) and the data choice (`data_view`: "SRC", "T1", "T2",
@@ -118,3 +118,75 @@ def wait_preview_rows_below(page: Page, n: int, timeout: int = 20_000) -> None:
     page.wait_for_function(
         r"""(n) => { const t = (document.querySelector('#home_data_preview_badge') || {}).innerText || '';
                     const m = t.match(/(?:of )?(\d+) rows?\b/); return !!m && +m[1] < n; }""", arg=n, timeout=timeout)
+
+
+# -- the one way to create an audit step (FLOW-3): stage a condition or a drop, Try, (mark), reason, Add to audit pipeline ----------------------------------
+ADD_NOTICE = "Step added to the audit pipeline at"
+
+
+def stage_condition(page: Page, column: str, op: str, value) -> None:
+    """Audit mode or Exploration: build one condition row in the Filters panel on the table shown (a number is typed, a text is picked from the list of the column's values) and press "+ Add"."""
+    from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
+    from app.tests.test_shiny_smoke import _choose_fb_op
+    _choose_column_firmly(page, column)
+    _choose_fb_op(page, op)
+    wait_shiny(page)
+    page.wait_for_function("() => document.getElementById('fb_value') !== null", timeout=15_000)
+    if page.evaluate("() => !!document.getElementById('fb_value').selectize"):     # a list of the column's values: the value is picked from it (its text)
+        text = str(value)
+        page.wait_for_function("(v) => { const e = document.getElementById('fb_value'); return e && e.selectize && Object.keys(e.selectize.options).includes(v); }", arg=text, timeout=15_000)
+        page.evaluate("(v) => document.getElementById('fb_value').selectize.addItem(v)", text)
+        page.wait_for_function("(v) => document.getElementById('fb_value').selectize.items.includes(v)", arg=text, timeout=5_000)
+    else:
+        page.locator("#fb_value").fill(repr(value))
+        page.wait_for_timeout(200)
+    wait_shiny(page)
+    page.locator("#filter_add_row").click()
+    wait_shiny(page)
+
+
+def add_to_pipeline(page: Page, reason: str, mark: bool = False, expected_places: int | None = None) -> None:
+    """The staged step (a condition built with `stage_condition`, or columns deselected for `drop_columns`) is TRIED already (its panel is on the page): mark "User verified" on every place when
+    `mark`, write the reason, press "Add to audit pipeline" and wait for the notice that says it was added. `expected_places`: the number of places the notice must name."""
+    panel = page.locator(".spv-trial-panel")
+    expect(panel).to_be_visible(timeout=60_000)
+    if mark:
+        for tick in page.locator("input[id^='trial_verified_']").all():
+            tick.check()
+        wait_shiny(page)
+    box = page.locator("input[id^='trial_reason_']")
+    box.fill(reason)
+    box.press("Tab")
+    wait_shiny(page)
+    expect(page.locator("#trial_add")).to_be_enabled(timeout=15_000)
+    page.locator("#trial_add").click()
+    wait_shiny(page, 60_000)
+    text = f"{ADD_NOTICE} {expected_places} place" if expected_places is not None else ADD_NOTICE
+    expect(page.locator("#shiny-notification-panel")).to_contain_text(text, timeout=30_000)
+    expect(panel).to_have_count(0, timeout=15_000)
+
+
+def try_staged(page: Page) -> None:
+    """Press Try on the staged condition and wait for the panel of the trial."""
+    expect(page.locator("#filter_try")).to_be_visible(timeout=15_000)
+    page.locator("#filter_try").click()
+    wait_shiny(page, 90_000)
+    expect(page.locator(".spv-trial-panel")).to_be_visible(timeout=60_000)
+
+
+def add_condition_step(page: Page, column: str, op: str, value, reason: str, mark: bool = False, expected_places: int | None = None) -> None:
+    """The whole way, for a condition: stage it on the table shown, Try, (mark), reason, Add to audit pipeline."""
+    stage_condition(page, column, op, value)
+    try_staged(page)
+    add_to_pipeline(page, reason, mark, expected_places)
+
+
+def drop_columns(page: Page, columns: list, reason: str, mark: bool = False) -> None:
+    """The whole way, for a column drop: deselect the columns in the column chooser of the Result data (T3) shown, Try the drop, (mark), reason, Add to audit pipeline."""
+    for column in columns:
+        page.evaluate("(c) => { const s = document.getElementById('preview_col_selector').selectize; s.removeItem(c); }", column)
+    wait_shiny(page)
+    expect(page.locator("#col_drop_try")).to_be_enabled(timeout=15_000)
+    page.locator("#col_drop_try").click()
+    wait_shiny(page, 90_000)
+    add_to_pipeline(page, reason, mark)

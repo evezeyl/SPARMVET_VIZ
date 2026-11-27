@@ -177,11 +177,11 @@ def users_in(roots) -> dict:
 
 def test_the_rule_is_asked_only_for_audit_steps_by_the_source():
     """No caller of `utils.key_drop` outside the audit paths, by any form of import (F3 of the review of 2026-11-20 saw only `key_drop.<attr>`): in `utils`, `audit_copy` (add_step,
-    integrity_errors) and the checker's `audit_step_keys` (plus the annotation of `__init__`) only; in `app`, the drop of the column box (`_col_drop_to_audit`, inside
-    `define_filter_audit_server`), the same drop written at a table upstream (`_confirm_places`, demo step 3) and the restore of stored audit steps. The author's steps are walked by `_Check.steps` with `audit=False` and never reach the rule."""
+    integrity_errors) and the checker's `audit_step_keys` (plus the annotation of `__init__`) only; in `app`, the trial of a column drop (`_try_drop`, inside
+    `trial_handlers.define_trial_server`, FLOW-3: the drop at the places chosen) and the restore of stored audit steps. The author's steps are walked by `_Check.steps` with `audit=False` and never reach the rule."""
     users = users_in([ROOT / "libs/utils/src/utils", ROOT / "app"])
     assert users == {"audit_copy.py": {"_key_drop", "integrity_errors"}, "recipe_check.py": {"__init__", "audit_step_keys"},
-                     "session_manager.py": {"split_key_drops"}, "filter_and_audit_handlers.py": {"_col_drop_to_audit", "_confirm_places", "define_filter_audit_server"}}, users
+                     "session_manager.py": {"split_key_drops"}, "trial_handlers.py": {"_try_drop", "define_trial_server"}}, users
 
 
 @pytest.mark.parametrize("text", [

@@ -5,51 +5,27 @@ recipe had, so it always gave `[]` and nothing was ever refused. Now, for the de
 `sample_id`, and HOME uses them (`home_state["primary_keys"]`):
 
 - a column drop is written in the plot's own steps (the place `T3:<plot>`), after every join, so a join key dropped there is NOT refused any more: the refusal is by PLACE
-  (D-0358, which modulates D-0297; the rule is `utils.key_drop`, its tests `libs/utils/tests/test_key_drop.py`), the handler asks it with the place it has (ADAPTED: before, a key
+  (D-0358, which modulates D-0297; the rule is `utils.key_drop`, its tests `libs/utils/tests/test_key_drop.py`), the trial of the drop asks it with the place it has (ADAPTED: before, a key
   was refused by its name with "Cannot drop join key column(s): ...");
-- a filter on a join key is ALLOWED; the audit step it makes carries `primary_key_warning=True` (the yellow banner in the dialog and
-  the audit panel, a marker in the report); a filter on another column does not carry it.
+- a filter on a join key is ALLOWED; the audit step it makes carries `primary_key_warning=True` (the yellow banner on the step card, a marker in the report); a filter on another column
+  does not carry it.
 
-The closures `_col_drop_to_audit` and `_send_staged_to_audit` (the body of the "Send to Audit" button, shared with the lineage panel since D-0634) of `define_filter_audit_server` are cut out by `ast` and run with
-stand-ins for the session (as in `test_blueprint_tier_files.py`).
+FLOW-3 (2026-11-27): the closures `_col_drop_to_audit` and `_send_staged_to_audit` and the propagation dialog are gone; the drop is tried by `trial_handlers._try_drop` and the nodes of a condition are
+`audit_try.tried_nodes`, so these tests run those (the real effect on the harness of `test_trial_panel_dependencies.py`; the rule is the real `key_drop.DropGate`).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_home_join_keys.py -q
 """
-import pytest
-import ast
 from pathlib import Path
-from types import SimpleNamespace
 
-import polars as pl
+import pytest
 
-from app.handlers import filter_and_audit_handlers as handlers
+from app.modules.audit_try import tried_nodes
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.session_manager import extract_primary_keys
+from app.tests.test_audit_join_key_drops import _nodes_of, _trial_of_drop
 from utils import key_drop
 
-SOURCE = Path(handlers.__file__)
 DEMO = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml"
-
-
-class Val:
-    def __init__(self, value=None):
-        self.value = value
-
-    def get(self):
-        return self.value
-
-    def set(self, value):
-        self.value = value
-
-
-def closure(name: str, **stand_ins):
-    ns = dict(vars(handlers))
-    define = next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == "define_filter_audit_server")
-    fn = next(n for n in ast.walk(define) if isinstance(n, ast.FunctionDef) and n.name == name)
-    fn.decorator_list = []
-    ns.update(stand_ins)
-    exec(compile(ast.fix_missing_locations(ast.Module(body=[fn], type_ignores=[])), name, "exec"), ns)
-    return ns[name]
 
 
 def demo_raw() -> dict:
@@ -60,76 +36,42 @@ def demo_keys() -> list:
     return extract_primary_keys(demo_raw())
 
 
-DEMO_PLOT = "mlst_bar"      # a plot of the demo recipe: the subtab of the session below is `subtab_mlst_bar`
+DEMO_PLOT = "mlst_bar"      # a plot of the demo recipe
 
 
 def test_the_demo_recipe_gives_its_join_keys():
     assert demo_keys() == ["Gene_name", "VF_gene", "sample_id"]
 
 
-class Session:
-    """What the two handlers need from the app: notifications, the propagation dialog and the scratch they fill."""
-
-    def __init__(self, keys, frame, raw=None, plans=None):
-        self.notes, self.opened = [], []
-        self.plans = plans
-        self.scratch = Val()
-        self.raw = raw
-        self.state = Val({"primary_keys": keys, "active_plot_subtab": f"subtab_{DEMO_PLOT}"})
-        self.frame = frame
-
-    def stand_ins(self, **extra):
-        base = dict(
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True),
-            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None, recipe_plans=lambda: self.plans,
-            _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
-            _propagation_scratch=self.scratch,
-            _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
-            _clear_exploration_filters=lambda: (0, 0),
-            _can_write_audit_step=lambda: True, _selection_problem=lambda: None,
-            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
-            _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d),
-            input={},
-            ui=SimpleNamespace(update_selectize=lambda *a, **k: None, update_text=lambda *a, **k: None),   # no live session here
-        )
-        base.update(extra)
-        return base
+COLUMNS = ["sample_id", "Gene_name", "VF_gene", "year", "source"]
+PLACE = f"T3:{DEMO_PLOT}"
 
 
-FRAME = pl.DataFrame({"sample_id": ["a"], "Gene_name": ["g"], "VF_gene": ["v"], "year": [2024], "source": ["x"]})
+def drop(monkeypatch, kept, raw=None, plans=None):
+    return _trial_of_drop(monkeypatch, raw if raw is not None else demo_raw(), kept, columns=COLUMNS, shown=PLACE, plans=plans)
 
 
-def drop(session, kept):
-    session.state.set(dict(session.state.get()))
-    stand = session.stand_ins(input={"preview_col_selector": kept})
-    closure("_col_drop_to_audit", **stand)()
-
-
-def test_dropping_a_join_key_column_in_a_plots_own_steps_goes_to_the_dialog():
+def test_dropping_a_join_key_column_in_a_plots_own_steps_is_tried(monkeypatch):
     """ADAPTED (D-0358): the demo recipe joins on `sample_id`; the drop is at `T3:mlst_bar`, after every join, so nothing is refused (before: refused by name)."""
-    s = Session(demo_keys(), FRAME, demo_raw())
-    drop(s, kept=["Gene_name", "VF_gene", "year", "source"])      # `sample_id` is deselected
-    assert s.notes == []
-    (nodes, kind), = s.opened
-    assert kind == "drop" and [n["params"]["column"] for n in nodes] == ["sample_id"]
+    world = drop(monkeypatch, ["Gene_name", "VF_gene", "year", "source"])      # `sample_id` is deselected
+    assert _nodes_of(world) == [("sample_id", PLACE)] and "The drop is tried" in world.notes[-1]
 
 
-def test_the_handler_asks_the_rule_with_the_place_of_the_open_plot_and_follows_its_refusal(monkeypatch):
-    """MUTATION K4 fails here: the real rule refuses nothing at a plot, so a stand-in answer proves the handler asks `T3:<open plot>` for the deselected columns and obeys."""
+def test_the_trial_asks_the_rule_with_the_place_of_the_open_plot_and_follows_its_refusal(monkeypatch):
+    """MUTATION K4 fails here: the real rule refuses nothing at a plot, so a stand-in answer proves the trial asks `T3:<open plot>` for the deselected columns and obeys."""
     asked = []
 
     def answer(self, place, columns):
         asked.append((place, list(columns)))
         return "STAND-IN refusal"
     monkeypatch.setattr(key_drop.DropGate, "problem", answer)
-    s = Session(demo_keys(), FRAME, demo_raw())
-    drop(s, kept=["year", "source"])
-    assert asked == [(f"T3:{DEMO_PLOT}", ["sample_id", "Gene_name", "VF_gene"])]
-    assert s.opened == [] and s.scratch.get() is None and s.notes == [("⛔ STAND-IN refusal", "error")]
+    world = drop(monkeypatch, ["year", "source"])
+    assert asked == [(PLACE, ["sample_id", "Gene_name", "VF_gene"])]
+    assert _nodes_of(world) == [] and world.notes[-1] == "STAND-IN refusal Nothing was tried."
 
 
-def test_the_handler_gives_the_rule_the_engine_plan_of_the_open_recipe(monkeypatch):
-    """LBFB step 0b: the column box asks the rule with `recipe_plans()` (MUTATION PC8: the plan is not passed)."""
+def test_the_trial_gives_the_rule_the_engine_plan_of_the_open_recipe(monkeypatch):
+    """LBFB step 0b: the trial asks the rule with `recipe_plans()` (MUTATION PC8: the plan is not passed)."""
     given = []
     real = key_drop.DropGate.__init__
 
@@ -140,59 +82,43 @@ def test_the_handler_gives_the_rule_the_engine_plan_of_the_open_recipe(monkeypat
     from utils.declared_plans import declared_plan_book
     from utils.recipe_graph import build_graph
     sentinel = declared_plan_book(build_graph(demo_raw()))      # any real plan book: the test is about which one the rule gets
-    s = Session(demo_keys(), FRAME, demo_raw(), plans=sentinel)
-    drop(s, kept=["year", "source"])
+    drop(monkeypatch, ["year", "source"], plans=sentinel)
     assert given == [sentinel]
 
 
-def test_dropping_a_column_that_is_not_a_key_goes_to_the_dialog():
-    s = Session(demo_keys(), FRAME, demo_raw())
-    drop(s, kept=["sample_id", "Gene_name", "VF_gene", "source"])   # `year` is deselected
-    assert s.notes == []
-    (nodes, kind), = s.opened
-    assert kind == "drop" and [n["params"]["column"] for n in nodes] == ["year"]
-
-
-def test_with_no_recipe_nothing_is_judged_and_the_drop_goes_to_the_dialog():
-    """Without an open recipe (`recipe_raw` absent) the handler cannot ask the rule: nothing is refused, as on dev before the join keys were read."""
-    s = Session([], FRAME, None)
-    drop(s, kept=["Gene_name", "VF_gene", "year", "source"])
-    assert s.notes == [] and len(s.opened) == 1
-
-
-def send_filters(session, rows):
-    view = ("recipe", "audit", "T3", None, "table")          # the key of the table shown; the rows were built on it (a row built elsewhere is refused)
-    pending = Val([{**row, "view": view} for row in rows])
-    closure("_send_staged_to_audit", **session.stand_ins(_pending_filters=pending, current_view_key=lambda: view))()
+def test_dropping_a_column_that_is_not_a_key_is_tried(monkeypatch):
+    world = drop(monkeypatch, ["sample_id", "Gene_name", "VF_gene", "source"])   # `year` is deselected
+    assert _nodes_of(world) == [("year", PLACE)]
 
 
 def test_a_filter_on_a_join_key_is_allowed_and_its_audit_step_carries_the_warning():
-    s = Session(demo_keys(), FRAME)
-    send_filters(s, [{"column": "sample_id", "op": "eq", "value": "a", "dtype": "String"}])
-    assert s.notes == []
-    (nodes, kind), = s.opened
-    assert kind == "filter" and len(nodes) == 1
+    nodes = tried_nodes([{"column": "sample_id", "op": "eq", "value": "a", "dtype": "String", "na": "remove"}], [PLACE], primary_keys=demo_keys())
+    assert len(nodes) == 1
     assert nodes[0]["node_type"] == "filter_row"                 # kept as a filter, not turned into an exclusion (AUDIT-1)
     assert nodes[0].get("primary_key_warning") is True
     assert nodes[0]["params"]["column"] == "sample_id" and nodes[0]["params"]["op"] == "eq"
 
 
-def test_a_filter_on_another_column_carries_no_warning_and_a_mixed_send_marks_only_the_key():
-    s = Session(demo_keys(), FRAME)
-    send_filters(s, [{"column": "year", "op": "gt", "value": 2020, "dtype": "Int64"},
-                     {"column": "VF_gene", "op": "ne", "value": "z", "dtype": "String"}])
-    (nodes, _), = s.opened
+def test_a_filter_on_another_column_carries_no_warning_and_a_mixed_try_marks_only_the_key():
+    nodes = tried_nodes([{"column": "year", "op": "gt", "value": 2020, "dtype": "Int64", "na": "remove"},
+                         {"column": "VF_gene", "op": "ne", "value": "z", "dtype": "String", "na": "remove"}], [PLACE], primary_keys=demo_keys())
     assert [(n["params"]["column"], n.get("primary_key_warning", False)) for n in nodes] == [("year", False), ("VF_gene", True)]
 
 
-def test_the_handler_writes_nothing_when_the_composer_has_a_bug():
-    """A bug of the plan composer is not "cannot tell": the handler opens no dialog and writes no step (the notice is shown by `recipe_plans`)."""
+def test_nothing_is_tried_when_the_composer_has_a_bug(monkeypatch):
+    """A bug of the plan composer is not "cannot tell": the trial writes no step and tries nothing (the notice is shown by `recipe_plans`)."""
     from app.modules.plan_composer import PlanComposerBug
 
     def broken():
         raise PlanComposerBug("bug")
-    s = Session(demo_keys(), FRAME, demo_raw())
-    s.state.set(dict(s.state.get()))
-    stand = s.stand_ins(input={"preview_col_selector": ["year", "source"]}, recipe_plans=broken)
-    closure("_col_drop_to_audit", **stand)()
-    assert s.opened == [] and s.scratch.get() is None and s.notes == []
+    from app.tests.test_trial_panel_dependencies import _TrialThatCounts, _flush, _world
+    import app.handlers.trial_handlers as trial_handlers
+    trial = _TrialThatCounts()
+    monkeypatch.setattr(trial_handlers, "trial_places", lambda shown_place, chosen, graph, lineage: ((PLACE,), ""))
+    world2 = _world(monkeypatch, trial=trial, shown_place=lambda: PLACE, columns_at=lambda p: [(c, "String") for c in COLUMNS], open_graph=lambda: object(), lineage_calc=lambda: (object(), ""),
+                    recipe_raw=lambda: demo_raw(), recipe_plans=broken)
+    _flush()
+    world2.live.set("preview_col_selector", ["year", "source"])
+    world2.live.set("col_drop_try", 1)
+    _flush()
+    assert _nodes_of(world2) == [] and trial.tried == [] and world2.notes == []

@@ -36,7 +36,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_plots_area_ui, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), output:data_strip_ui (Table to view, Exploration only, slice 3a), output:shown_band_ui (the band of the shown item, slice 3a), output:trial_plot_label_ui, output:trial_left_switch_ui, effect:_track_trial_left, output:plot_cmp_left_label_{p_id}, effect:_forget_shown_item, effect:_tab_shows_its_plot, effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/handlers/audit_stack.py (_write_t3_ghost: the session save after Add to audit pipeline, FLOW-2), app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step, its panel and its ends; FLOW-2: the marks, the reason and Add), app/modules/audit_try.py (the words and rules of a trial), app/modules/audit_trial.py (PlaceTrial: the engine of a trial), app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, open_subtab_of, plot_area_title, table_shown_lines), app/modules/audit_places.py (plots_below: the plots built from a table shown), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/audit_session_save.py (save_audit_session: the session save after Add to audit pipeline), app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step, its panel and its ends; FLOW-2: the marks, the reason and Add), app/modules/audit_try.py (the words and rules of a trial), app/modules/audit_trial.py (PlaceTrial: the engine of a trial), app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, open_subtab_of, plot_area_title, table_shown_lines), app/modules/audit_places.py (plots_below: the plots built from a table shown), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -93,7 +93,7 @@ from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.lineage_handlers import define_server as define_lineage_server
 from app.handlers.trial_handlers import define_trial_server
-from app.handlers.audit_stack import _write_t3_ghost
+from app.modules.audit_session_save import save_audit_session
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-096: same check as main.py's docs_available — duplicated here, not imported, to
@@ -185,7 +185,7 @@ def define_server(input, output, session, *,
                   notification_log=None,
                   session_processing_issues=None,
                   recipe_gate_version=None, shown_recipe=None,
-                  gallery_state=None, audit_pending=None):
+                  gallery_state=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -310,7 +310,6 @@ def define_server(input, output, session, *,
     # Phase 22-J: scratch state holding nodes built during T3 promotion that
     # are awaiting the user's propagation choice (this/all/all-except).
     # The modal reads from this and writes plot_scopes_intent on confirm.
-    _propagation_scratch = reactive.Value({"nodes": [], "kind": ""})
 
     def _resolve_active_spec(p_id: str | None) -> dict | None:
         """Return the plot spec dict for the active plot_id, searching groups then top-level."""
@@ -880,41 +879,6 @@ def define_server(input, output, session, *,
             tier, target_ds, data_analysis_recipe_id, keys.tier1_key_of(target_ds),
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
             keys.plot_key_of(plot_id) if tier == "T3" and plot_id is not None else None, keys.tier2_key_of(target_ds))
-
-    def _all_plot_subtab_ids() -> list[str]:
-        """Enumerate every plot subtab id available in the active data analysis recipe.
-
-        Used by the propagation dialog to populate the "All plots except…"
-        multiselect and to expand "All plots" intent at btn_apply commit.
-        """
-        ids: list[str] = []
-        try:
-            cfg = active_cfg()
-        except Exception:
-            return ids
-        groups = cfg.raw_config.get("analysis_groups", {}) or {}
-        for _gid, gspec in groups.items():
-            for p_id in (gspec.get("plots") or {}).keys():
-                ids.append(f"subtab_{p_id}")
-        # Top-level fallback plots (no group)
-        for p_id in (cfg.raw_config.get("plots") or {}).keys():
-            sid = f"subtab_{p_id}"
-            if sid not in ids:
-                ids.append(sid)
-        return ids
-
-    def _plot_label(subtab_id: str) -> str:
-        """Pretty label for a subtab id — falls back to the bare id."""
-        p_id = subtab_id.removeprefix("subtab_")
-        try:
-            cfg = active_cfg()
-        except Exception:
-            return p_id
-        for gspec in (cfg.raw_config.get("analysis_groups") or {}).values():
-            entry = (gspec.get("plots") or {}).get(p_id)
-            if entry:
-                return plot_list_label(p_id, entry)
-        return p_id
 
     def _spec_discrete_axes(spec: dict | None) -> tuple[set[str], set[str]]:
         """
@@ -1868,7 +1832,7 @@ def define_server(input, output, session, *,
     # `test_filters_cleared_on_recipe_change.py` has always expected: "the audited step of recipe A is back after returning"; the browser run found that this test and an emptying of the
     # state disagree, and nothing is lost this way). They are also in the session of their own recipe (a step is saved when it is applied, D-0302; D-0317). The words are PROVISIONAL.
     _steps_recipe = {"id": None}
-    _steps_set_aside: dict = {}      # recipe id -> (applied steps, pending steps)
+    _steps_set_aside: dict = {}      # recipe id -> the applied steps (the stored form of `t3_audit_steps_by_plot`)
 
     @reactive.Effect
     def _set_audit_steps_aside_on_recipe_change():
@@ -1880,13 +1844,13 @@ def define_server(input, output, session, *,
             if previous is None or previous == recipe:
                 return
             cur = home_state.get()
-            leaving = (cur.get("t3_audit_steps_by_plot", {}) or {}, list(cur.get("_pending_t3_nodes", []) or []))
-            coming = _steps_set_aside.pop(recipe, ({}, []))
-            n = len({n.get("id") for n in place_nodes(leaving[0])}) + len({n.get("id") for n in leaving[1]})
+            leaving = cur.get("t3_audit_steps_by_plot", {}) or {}
+            coming = _steps_set_aside.pop(recipe, {})
+            n = len({n.get("id") for n in place_nodes(leaving)})
             if n:
                 _steps_set_aside[previous] = leaving
-            if n or coming[0] or coming[1]:
-                home_state.set({**cur, "t3_audit_steps_by_plot": coming[0], "_pending_t3_nodes": coming[1]})
+            if n or coming:
+                home_state.set({**cur, "t3_audit_steps_by_plot": coming})
             if n:
                 _notify(f"The audit steps of the recipe '{previous}' ({n}) are not applied to '{recipe}': a step is written at a table or a plot by name, and another recipe can hold one of the "
                         f"same name. They are kept for '{previous}' and are back when you return to it.", type="warning", duration=15)
@@ -2355,7 +2319,7 @@ def define_server(input, output, session, *,
             cols = list(lf.collect_schema().names())
             # Dropping via audit exists in Audit mode on T3 only.
             label_text = (
-                "Columns (drop unselected via audit):"
+                "Columns (deselect to drop via audit):"
                 if audit_t3
                 else "Table columns (view only — no effect on plot):"
             )
@@ -2415,13 +2379,13 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def col_drop_audit_btn_ui():
-        """Live count of deselected columns — re-renders on selection change.
+        """Live count of deselected columns — re-renders on selection change. The button tries the drop (FLOW-3).
 
         Kept SEPARATE from home_col_selector_ui so reading the selector input
         here does not invalidate the selectize component itself.
         """
-        # Slice B (P-B3): a column drop is an audit step; it is offered in Audit mode while T3 is viewed (an audit step is written at the
-        # plot's table). In Exploration there is nothing to send drops to - no button.
+        # A column drop is an audit step, tried like a condition (FLOW-3: `trial_handlers`, the button "Try the drop"); it is offered in Audit mode while the Result data (T3) of a plot is
+        # shown (as the old drop was; PROVISIONAL). In Exploration there is nothing to send drops to - no button.
         if not (_in_audit() and _audit_write_ok()):
             return ui.span()
         subtab = active_home_subtab.get()
@@ -2436,10 +2400,11 @@ def define_server(input, output, session, *,
         vis_set = set(visible) if isinstance(visible, (list, tuple)) else set(cols)
         n_drop = len([c for c in cols if c not in vis_set])
         return ui.input_action_button(
-            "col_drop_to_audit", f"➜ Audit drops ({n_drop})",
-            class_="btn-warning btn-sm spv-text-xxs",
+            "col_drop_try", f"Try the drop ({n_drop})",
+            class_="btn-primary btn-sm spv-text-xxs",
             style="white-space:nowrap;",
             disabled=(n_drop == 0),
+            title="Computes what dropping the deselected columns would do at the place shown (and the other places you chose in Path of the data). Nothing is applied until you add the step to the audit pipeline.",
         )
 
     @render.ui
@@ -2885,7 +2850,6 @@ def define_server(input, output, session, *,
                         style="background:#fffde7;"
                     ),
                     ui.div(
-                        ui.output_ui("audit_pending_badge_ui"),
                         ui.output_ui("audit_nodes_header_ui"),
                         # PROP-2: effective filter summary (sidebar + T3 nodes)
                         ui.output_ui("filter_inventory_ui"),
@@ -2897,12 +2861,6 @@ def define_server(input, output, session, *,
                     ),
                     class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto",
                 ),
-                ui.output_ui("audit_stack_tools_ui"),
-                # The "Plot Style" panel (aesthetic_style_panel_ui, defined in audit_stack.py) is NOT
-                # mounted: letting users change in HOME what the data analysis recipe defines is too much for
-                # now, and using it broke the plot (test plan HOM-47). Its code is kept, unused, as
-                # an eventual enhancement (fork issue #15). To bring it back, add
-                # ui.output_ui("aesthetic_style_panel_ui") here, after fixing HOM-47.
             )
 
         def _render_gallery_right_info():
@@ -3243,12 +3201,10 @@ def define_server(input, output, session, *,
         input, output, session,
         applied_filters=applied_filters,
         _pending_filters=_pending_filters,
-        _propagation_scratch=_propagation_scratch,
         home_state=home_state,
         in_audit=_in_audit,
         data_view=_view_for_handlers,
         audit_write_ok=_audit_write_ok,
-        shown_place=_effective_shown_place,
         view_source_table=_view_source_table,
         current_view_key=_current_view_key,
         active_home_subtab=active_home_subtab,
@@ -3256,22 +3212,17 @@ def define_server(input, output, session, *,
         _resolve_active_spec=_resolve_active_spec,
         _resolve_active_lf=_resolve_active_lf,
         _spec_discrete_axes=_spec_discrete_axes,
-        audit_nodes_for=_audit_nodes_for,
-        _all_plot_subtab_ids=_all_plot_subtab_ids,
-        _plot_label=_plot_label,
         _table_identity=_dialog_table_identity,
         notification_log=notification_log,
-        recipe_raw=_recipe_raw,
-        recipe_plans=_recipe_plans,
         trial_alive=lambda: trial_state.get() is not None,
     )
 
     def _save_session_after_step(state: dict):
-        """Write the session file as the old Apply writes it (`audit_stack._write_t3_ghost`: the same file, the same checksum); a plain warning when it could not be written, None when it was
-        or when ghost save is off. Called by "Add to audit pipeline" (FLOW-2) after the step is in the state."""
+        """Write the session file (`audit_session_save.save_audit_session`); a plain warning when it could not be written, None when it was
+        or when ghost save is off. Called by "Add to audit pipeline" after the step is in the state."""
         if session_manager is None or not bootloader.get_automation_setting("ghost_save", "enabled"):
             return None
-        return _write_t3_ghost(state, session_manager, notif_log=notification_log.get() if notification_log is not None else [])
+        return save_audit_session(state, session_manager, notif_log=notification_log.get() if notification_log is not None else [])
 
     # ── FLOW-1: Try an audit step before it is applied; FLOW-2: add it (the button is in the Filters panel; the answer, the marks, the reason, the Add, the discard and the ends of a trial are here) ──
     define_trial_server(
@@ -3297,7 +3248,7 @@ def define_server(input, output, session, *,
         notification_log=notification_log,
         current_view_key=_current_view_key,
         save_session=_save_session_after_step,
-        audit_pending=audit_pending,
+        recipe_raw=_recipe_raw,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──

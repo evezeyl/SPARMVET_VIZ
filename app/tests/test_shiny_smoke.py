@@ -324,51 +324,38 @@ class TestFilterPipeline:
 
 
 # ---------------------------------------------------------------------------
-# T4-B — The Apply gate (AUDIT-GATE-UI-1): a T3 node with no reason blocks
-# btn_apply ("Apply ⛔"); filling the reason unblocks it ("Apply"). Replaces
-# the removed test_reactive_shell.py::test_reactive_audit_gate — the gate
-# LOGIC is already covered by test_session_manager.py::test_gatekeeper_blocked,
-# this is the UI-level wiring check.
+# T4-B — The reason gate at "Add to audit pipeline" (AUDIT-GATE-UI-1, FLOW-3): a tried step with no
+# reason cannot be added ("Add to audit pipeline" is disabled and one line says why); typing the reason
+# unblocks it. Replaces the removed test_reactive_shell.py::test_reactive_audit_gate and the Apply gate
+# of the old way; the gate LOGIC is `audit_add.can_add`, this is the UI-level wiring check.
 # ---------------------------------------------------------------------------
 
 class TestAuditGate:
-    def test_unreasoned_node_blocks_apply_then_reason_unblocks_it(
+    def test_unreasoned_step_blocks_add_then_reason_unblocks_it(
             self, page: Page, shiny_app: ShinyAppProc):
+        from app.tests.browser_view import stage_condition, try_staged
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
 
-        # Switch to Audit mode on T3 — Send to Audit only renders there (slice B).
+        # Switch to Audit mode on T3 — Try only renders in Audit mode (slice B).
         set_mode(page, "audit")
         set_view(page, "T3")
 
-        _wait_for_fb_col_option(page, "year")
-        page.locator("#fb_col").select_option("year")
-        _wait_shiny(page)
-        _choose_fb_op(page, "gt")
-        _wait_shiny(page)
-        page.locator("#fb_value").fill("2000")
-        page.wait_for_timeout(200)
-        page.locator("#filter_add_row").click()
-        _wait_shiny(page)
+        stage_condition(page, "year", "gt", 2000)
+        try_staged(page)
 
-        page.locator("#filter_send_to_audit").click()
-        _wait_shiny(page)
-        # Propagation modal: accept the default scope ("this plot only").
-        page.locator("#propagation_confirm").click()
-        _wait_shiny(page)
+        add_btn = page.locator("#trial_add")
+        expect(add_btn).to_be_disabled(timeout=8_000)
+        expect(page.locator(".spv-trial-add")).to_contain_text("Write a reason to add this step")
 
-        apply_btn = page.locator("#btn_apply, #audit_stack_tools_ui #btn_apply").first
-        expect(apply_btn).to_have_text("Apply ⛔", timeout=8_000)
-        expect(apply_btn).to_be_disabled()
-
-        reason_input = page.locator('input[id^="t3_reason_"]').first
+        reason_input = page.locator("input[id^='trial_reason_']").first
         expect(reason_input).to_be_visible(timeout=8_000)
         reason_input.fill("Test: dropping pre-2000 samples for AUDIT-GATE-UI-1.")
+        reason_input.press("Tab")
         _wait_shiny(page)
 
-        expect(apply_btn).to_have_text("Apply", timeout=8_000)
-        expect(apply_btn).to_be_enabled()
+        expect(add_btn).to_be_enabled(timeout=8_000)
 
 
 # ---------------------------------------------------------------------------

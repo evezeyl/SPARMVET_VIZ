@@ -479,20 +479,3 @@ def test_a_failure_that_depends_on_a_value_is_named_by_the_plot_and_the_step_whe
     assert not (world.anchors / "C__T3_p_steps.parquet").exists(), "a table that failed is not stored"
     raw_text = "boom"
     assert plot_read_error_text(world.raw(), "p_plain", ValueError(raw_text)) == raw_text, "a plot without tier-3 steps: the error as it is"
-
-
-def test_the_propagation_dialogs_column_check_reads_each_plot_own_table_not_the_first_plots_of_the_same_target(tmp_path):
-    """L1: two plots on one table with different tier-3 steps (one drops `group`) must not share a schema in the dialog's check."""
-    from types import SimpleNamespace
-    from app.tests.test_audit_join_key_drops import closure
-    world = Tier3World(tmp_path)                      # p_steps drops `group`; p_plain keeps it
-    subtabs = ["subtab_p_steps", "subtab_p_plain"]
-    check = closure(
-        "_column_presence_per_plot",
-        _resolve_active_spec=lambda p_id: {"target_dataset": "C", "plot": p_id},
-        # an audit step is written at the plot's table: the check asks for T3 explicitly, whatever table the data choice shows (slice B)
-        _resolve_active_lf=lambda spec, tier=None: (world.orch.materialize_tier3("tiny", spec["plot"], world.anchors, keys=world.keys())
-                                                    if tier == "T3" else pytest.fail(f"the column check read tier {tier!r}, not T3")))
-    node = {"params": {"column": "group"}}
-    assert check([node], subtabs) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}
-    assert check([node], subtabs[::-1]) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}, "the order of the plots does not matter"

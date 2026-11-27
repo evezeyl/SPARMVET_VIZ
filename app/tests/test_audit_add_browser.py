@@ -116,7 +116,7 @@ def test_add_after_the_mark_and_the_reason_writes_the_step_and_it_equals_a_fresh
     expect(page.locator(CARDS)).to_contain_text("Written at ResFinder: Table, T1", timeout=20_000)
     expect(page.locator(CARDS)).to_contain_text("User verified")
     expect(page.locator(CARDS)).not_to_contain_text("PENDING")
-    expect(page.locator("#audit_pending_badge_ui")).not_to_contain_text("Pending")     # nothing is pending after Add (the old badge says it when it is)
+    assert page.locator("#audit_pending_badge_ui").count() == 0 and page.locator(".audit-pending-badge").count() == 0, "FLOW-3: there is no Pending badge any more"
     wait_preview_rows(page, tables["kept_resfinder"], timeout=60_000)
     expect(page.locator("#shown_band_ui")).to_contain_text("Audited: your applied steps")
     expect(page.locator("#shown_band_ui")).not_to_contain_text("TRIAL")

@@ -101,12 +101,12 @@ The **Filters** accordion in the left sidebar lets you narrow down what is previ
    The line under the column says what it holds ("year holds whole numbers (Int64)"). A number column that the plot draws as categories offers both the list operators and the comparisons (`>`, `<`, `↔ between` use number boxes).
 3. Select or type a value, then click **+ Add** to stage the row. `↔ between` asks which ends are included (both, only min, only max, neither).
 4. Repeat for as many conditions as you need — rows on the same column use AND logic.
-5. In Exploration, click **Apply** to show the filter in the data table. A badge says "N preview filter(s) on, not saved". The 🗑 icon removes a row and its effect at once. In Audit mode there is no Apply: the form builds audit steps.
+5. In Exploration, click **Apply** to show the filter in the data table. A badge says "N preview filter(s) on, not saved". The 🗑 icon removes a row and its effect at once. In Audit mode there is no Apply: the form builds the condition of an audit step, which you Try and add.
 6. Click **Reset** to clear all filters.
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.
 
-> **Note:** In **Audit** mode, while **T3** is viewed, a **"➜ Send to Audit (N)"** button is offered (on another table the panel says "To create an audit step, view T3."). This is a shipped feature, not in progress: it promotes your staged rows into reason-gated audit nodes (not "wrangling steps" — T3 never authors wrangling, only filters, exclusions, column drops, and aesthetic overrides). See [The Audit Pipeline](audit_pipeline.qmd) for the full propagation workflow.
+> **Note:** In **Audit** mode a staged row has a **Try** button (on any table you show): it computes what the step would do, and **Add to audit pipeline** (with a reason) makes it a reason-gated audit step (not a "wrangling step": the audit only adds filters and column drops). See [The Audit Pipeline](audit_pipeline.qmd) for the full workflow.
 
 ### Exporting your results (Export panel)
 

@@ -20,7 +20,7 @@ order of the clicks).
 Consumed by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/tests/test_audit_shown.py. If deleted: HOME's Audit mode has no shown item.
 
 # @deps
-# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:open_subtab_of, function:table_shown_in_panel, function:unlisted_pending_line, function:plot_area_title, function:table_shown_lines, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
+# provides: function:request_to_show, function:others_chosen, function:band_lines, function:selection_problem, function:open_subtab_of, function:table_shown_in_panel, function:plot_area_title, function:table_shown_lines, class:ShowOutcome, constant:CHOOSE_FIRST, constant:SHOW_SELECTION_FIRST
 # consumes: app/modules/audit_place_view.py (viewed, TableFacts), libs/utils/src/utils/lineage_data.py (Lineage), libs/utils/src/utils/recipe_graph.py (RecipeGraph)
 # consumed_by: app/handlers/lineage_handlers.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/audit_stack.py, app/tests/test_audit_shown.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0653, D-0654, D-0655, D-0657)
@@ -37,7 +37,7 @@ from utils.recipe_graph import RecipeGraph
 
 CHOOSE_FIRST = "Choose a place in Path of the data first. Nothing was shown."
 SHOW_SELECTION_FIRST = ("Show your selection first: the place you chose is not the table shown, and the condition was built on the table shown. "
-                        "Press Show beside the place, then build the condition on it. Nothing was sent.")
+                        "Press Show beside the place, then build the condition on it. Nothing was tried.")
 
 
 @dataclass(frozen=True)
@@ -136,13 +136,3 @@ def table_shown_in_panel(shown_place: Optional[str]) -> str:
     steps of the TABLE then, not of a plot."""
     place = shown_place or ""
     return place if place[:3] in ("T1:", "T2:") else ""
-
-
-def unlisted_pending_line(pending_steps: int, listed: int) -> str:
-    """The note of the right panel when pending steps exist that the list does not show (they are written at a place the item shown is not built from): "" when there is none. Apply asks a reason
-    for EVERY pending step and refuses without a word of the step; the panel says that some are not listed. PROVISIONAL words."""
-    hidden = pending_steps - listed
-    if hidden <= 0:
-        return ""
-    return (f"{hidden} pending step{' is' if hidden == 1 else 's are'} written elsewhere and not listed here. Apply needs a reason for every step: "
-            "show the plot or the table it is written at to type it.")

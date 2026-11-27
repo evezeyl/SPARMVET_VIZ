@@ -52,8 +52,7 @@ DEFAULT_HOME_STATE: dict = {
     # Propagated nodes appear in multiple stacks but share the same `id`
     # for linked deletion.
     "t3_audit_steps_by_plot": {},               # {plot_subtab_id: [AuditStep]}
-    "_pending_t3_nodes": [],               # pending nodes (carry plot_scopes_intent)
-    "t3_apply_count": 0,                   # bumps on commit — triggers filter clear
+    "t3_apply_count": 0,                   # bumps at each save of the session (an Add, a removal): the session panel counts the saves
     "primary_keys": [],                    # union of all join keys (§12g.2)
     "orphaned_t3_nodes": [],               # legacy/orphan nodes from ghost restore
     # T3 plot aesthetic overrides {plot_subtab_id: {fill, colour, alpha, shape}}

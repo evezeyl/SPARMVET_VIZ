@@ -2,7 +2,7 @@
 
 Run (qa app features): PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_audit_tier_views_browser.py -q
 
-What a person sees on the demo `1_test_data_ST22_dummy`, plot "AMR Heatmap": a filter `identity < 99` written at tier 1 of ResFinder with a reason (Apply), then
+What a person sees on the demo `1_test_data_ST22_dummy`, plot "AMR Heatmap": a filter `identity < 99` written at tier 1 of ResFinder with a reason (Try, then Add to audit pipeline), then
 - in Audit mode the table shown at T1:ResFinder (chosen in Path of the data and shown, slice 3a) is the AUDITED table (fewer rows than the original) and its badge says "Viewing: T1, audited";
 - a table the step does not change keeps the original: the badge of the MLST plot's T1 view says "Viewing: T1, original" and "no audit step changes this table";
 - switching to Exploration shows the ORIGINAL table again (the original row count) and the old badge;
@@ -16,7 +16,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.browser_view import set_mode, set_view, show_place, show_plot, wait_preview_rows
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_audit_places_browser import REASON, _amr_plot, _send_filter, _tick, expected  # noqa: F401
+from app.tests.test_audit_places_browser import REASON, _add_step_at, _amr_plot, expected  # noqa: F401
 from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _open_filters_panel, _wait_shiny
 
 
@@ -35,19 +35,7 @@ def test_the_t1_view_shows_the_audited_table_in_audit_mode_and_the_original_in_e
     page = ready
     before, after = expected["amr_before"], expected["amr_after"]
     wait_preview_rows(page, before, timeout=30_000)
-    _send_filter(page)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    _tick(page, "T1:ResFinder")
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
-    box.fill(REASON)
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    _add_step_at(page, "T1:ResFinder")
     try:
         wait_preview_rows(page, after, timeout=60_000)
         show_place(page, "T1:ResFinder")      # Audit mode (slice 3a): the table shown is the place chosen in Path of the data and shown, not a data choice

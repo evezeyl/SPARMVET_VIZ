@@ -144,7 +144,7 @@ new MutationObserver(() => {
     window.__snap = {cover: c ? c.innerText : '', cover_shown: shown(c), theater_shown: shown(t),
                      audit: a && shown(a) ? a.innerText : '',
                      right_text: Array.from(document.querySelectorAll('#right_sidebar_content_ui *')).filter(shown).map(e => e.children.length ? '' : (e.innerText || '')).join(' ').trim(),
-                     apply_shown: shown(document.querySelector('#btn_apply')),
+                     mine_shown: shown(document.querySelector('#audit_nodes_tier3 .spv-audit-mine')),
                      left_old: ['#data_analysis_recipe_info_ui', '#sidebar_filters', '#data_import_ui', '#system_tools_ui', '#session_management_ui'].filter(i => shown(document.querySelector(i))),
                      selector_shown: shown(document.querySelector('#data_analysis_recipe_id')),
                      tabs: Array.from(document.querySelectorAll('#dynamic_tabs .nav-link')).filter(shown).length};
@@ -164,7 +164,7 @@ def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Pag
         # the right panel is closed and empty in Exploration (D-0375, D-0383) and opens with Audit mode, where the Apply button is shown (D-0377)
         set_mode(page, "audit")
         expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.STAGE, timeout=60_000)   # the first recipe is shown, the right panel names it
-        expect(page.locator("#btn_apply")).to_be_visible()   # before: the right panel is there with its Apply button
+        expect(page.locator("#audit_nodes_tier3 .spv-audit-mine")).to_be_visible()   # before: the right panel is there with its list of audit steps
         page.evaluate(SNAPSHOT_AT_PROGRESS % g.OTHER)
         page.select_option("#data_analysis_recipe_id", g.OTHER)
         page.wait_for_function("() => window.__snap !== null", timeout=240_000)
@@ -172,12 +172,12 @@ def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Pag
         assert snap["cover_shown"] and g.OTHER in snap["cover"] and "Opening" in snap["cover"], snap
         assert not snap["theater_shown"] and snap["tabs"] == 0, f"nothing of the previous recipe is visible while the opening runs: {snap}"
         assert g.STAGE not in snap["audit"], f"the right panel does not name the previous recipe: {snap}"
-        # D-0372: the previous recipe is not kept on the screen: nothing of the right panel and of the left panels' bodies is visible, no Apply to click
-        assert snap["right_text"] == "" and not snap["apply_shown"], f"the right panel shows nothing of the previous recipe during the opening: {snap}"
+        # D-0372: the previous recipe is not kept on the screen: nothing of the right panel and of the left panels' bodies is visible, no list of steps to click
+        assert snap["right_text"] == "" and not snap["mine_shown"], f"the right panel shows nothing of the previous recipe during the opening: {snap}"
         assert snap["left_old"] == [], f"the left panel bodies of the previous recipe are hidden: {snap}"
         assert snap["selector_shown"], snap   # the recipe selector stays (PROVISIONAL)
         page.wait_for_selector(".spv-audit-plot-area", timeout=240_000)   # Audit mode has no group tabs (slice 3b): the plot area is what the opening brings back
         wait_shiny(page, 120_000)
         expect(page.locator("#home_opening_cover")).to_have_count(0)
-        expect(page.locator("#btn_apply")).to_be_visible()   # after: back
+        expect(page.locator("#audit_nodes_tier3 .spv-audit-mine")).to_be_visible()   # after: back
         expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.OTHER)   # when the opening ends the recipe shows

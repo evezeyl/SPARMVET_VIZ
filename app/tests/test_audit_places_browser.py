@@ -1,25 +1,27 @@
-"""An audit step written at a table upstream of the plot, in the browser (HOME audit, demo step 3): the dialog, the audit panel, the plots, Compare, Remove.
+"""An audit step written at a table upstream of the plot, in the browser (HOME audit, demo step 3): the trial, the audit panel, the plots, Compare, Remove, the export.
 
 Run (qa app features: every flag on, ghost save off):
     PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_audit_places_browser.py -q
 
+FLOW-3 (2026-11-27): the dialog of "Send to Audit" is gone, so a step at a table is written the one way: SHOW the table (Path of the data), build the condition on it, Try, reason,
+Add to audit pipeline (`browser_view.add_condition_step`); the dialog's own test (the nested choice refused, the lines offered) is gone with it (the rule is tested headless:
+`test_audit_try.py`, `libs/utils/tests/test_rule_of_places.py`).
+
 What a person does on the demo `1_test_data_ST22_dummy`, and sees (D-0535: "the user must be able to choose, through the scope, where the step is added"):
-- on the plot "AMR Heatmap" (built from the ResFinder table) in Audit mode, T3: a filter `identity < 99` is sent to audit; the dialog offers, besides the three
-  plot-level choices, "At a table this plot is built from", with the table ResFinder at tier 1 and tier 2 and how many tables and plots are built from each;
-- a choice that breaks the rule (the tier 1 and the tier 2 of the same table: one below the other) is refused in one plain line and the dialog stays open; no table ticked is refused;
-- with the tier 1 of ResFinder ticked, a reason, Apply: the audit panel says "Written at ResFinder: Table, T1"; the data table of the plot has fewer rows than before; the plot's badge
-  says the step was written upstream and that its table changed;
+- with the tier 1 of ResFinder shown, a filter `identity < 99` is added; the audit panel says "Written at ResFinder: Table, T1"; the data table of the plot built from it has fewer rows than before; the
+  plot's badge says the step was written upstream and that its table changed;
 - the plot "MLST Bar" (a plot beside ResFinder) has no audited step and the same rows as before; its badge says so;
 - Compare shows the Original and the Audited pane of the AMR plot; the data table of the AMR plot in T1 shows the AUDITED table (D-0622: the same filter, written at tier 1 of ResFinder) and its badge says "audited";
-- "Remove step" (the bin of the card) gives every plot its original table back.
+- "Remove step" (the bin of the card) gives every plot its original table back;
+- a column drop at the Result data (T3) of the plot is tried and added the same way.
 
-Mutation index (each seen failing): MUTATION B1 `_audited_t3_lf` returns None (HOME never reads the audited table: the rows do not drop); MUTATION B2 `choice_problem` skips the rule (the nested choice is accepted).
+Mutation index (each seen failing): MUTATION B1 `_audited_t3_lf` returns None (HOME never reads the audited table: the rows do not drop).
 """
 import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import in_audit_mode, preview_rows, set_compare, set_mode, set_view, show_place, show_plot, wait_preview_rows, wait_preview_rows_below
+from app.tests.browser_view import add_condition_step, add_to_pipeline, drop_columns, try_staged, in_audit_mode, preview_rows, set_compare, set_mode, set_view, show_place, show_plot, wait_preview_rows, wait_preview_rows_below
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_smoke import (_load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _choose_fb_op, _wait_shiny)
@@ -68,21 +70,12 @@ def _close_notices(page: Page) -> None:
     page.evaluate("() => document.querySelectorAll('#shiny-notification-panel .shiny-notification-close').forEach(b => b.click())")
 
 
-def _send_filter(page: Page) -> None:
-    _choose_column_firmly(page, "identity")
-    _choose_fb_op(page, "lt")
-    _wait_shiny(page)
-    page.locator("#fb_value").fill("99")
-    page.wait_for_timeout(200)
-    page.locator("#filter_add_row").click()
-    _wait_shiny(page)
-    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-
-
-def _tick(page: Page, place: str, on: bool = True) -> None:
-    page.locator(f"#propagation_places input[value='{place}']").set_checked(on, force=True)
+def _add_step_at(page: Page, place: str, column: str = "identity", op: str = "lt", value=99, reason: str = REASON) -> None:
+    """FLOW-3: write a filter at `place` the one way: show the place (nothing else chosen), build the condition on the table shown, Try, mark "User verified", reason, Add to audit pipeline;
+    then show the AMR plot again, as the old dialog left the page (the plot's Result data on screen)."""
+    show_place(page, place, keep_chosen=False)
+    add_condition_step(page, column, op, value, reason, mark=True, expected_places=1)
+    _amr_plot(page)
 
 
 @pytest.fixture(scope="module")
@@ -96,62 +89,13 @@ def ready(page: Page, shiny_app: ShinyAppProc):
     set_mode(page, "exploration")
 
 
-def test_the_dialog_offers_the_tables_the_plot_is_built_from_and_refuses_a_nested_choice(ready: Page, expected):
-    page = ready
-    assert preview_rows(page) > 50
-    _send_filter(page)
-    expect(page.locator("#propagation_choice input[value=place]")).to_have_count(1)
-    labels = page.locator("#propagation_choice").inner_text()
-    assert "This plot only" in labels and "All plots" in labels and "At a table this plot is built from" in labels
-    assert page.locator("#propagation_choice input[value=this]").is_checked(), "it opens on 'This plot only', as before"
-    expect(page.locator("#propagation_places_wrapper")).to_be_hidden()
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    text = page.locator("#propagation_places_wrapper").inner_text()
-    assert "Table ResFinder (tier 1)" in text and "Table ResFinder (tier 2)" in text
-    assert "built from it" in text and "changed" not in text.split("Choose one table")[-1], text
-    assert page.locator("#propagation_places input[value='T1:ResFinder']").count() == 1
-    # nothing ticked: refused
-    page.locator("#propagation_confirm").click()
-    expect(page.locator(NOTICE)).to_contain_text("Choose at least one place", timeout=10_000)
-    expect(page.locator("#propagation_confirm")).to_be_visible()
-    _close_notices(page)
-    # the tier 1 and the tier 2 of one table: one below the other, refused in one line, the dialog stays
-    _tick(page, "T1:ResFinder")
-    expect(page.locator("#propagation_places input[value='T2:ResFinder']")).to_be_disabled()   # the dialog already shows it as derived
-    # the server's refusal is the safety net: force the second tick past the disabled box and confirm
-    page.evaluate("() => { const i = document.querySelector(\"#propagation_places input[value='T2:ResFinder']\"); i.disabled = false; i.checked = true; "
-                  "i.dispatchEvent(new Event('change', {bubbles: true})); }")
-    page.wait_for_timeout(300)
-    page.locator("#propagation_confirm").click()
-    expect(page.locator(NOTICE)).to_contain_text("lies below", timeout=10_000)
-    expect(page.locator("#propagation_confirm")).to_be_visible()
-    assert page.locator('input[id^="t3_reason_"]').count() == 0, "nothing was staged"
-    _close_notices(page)
-    page.keyboard.press("Escape")
-    expect(page.locator("#propagation_confirm")).to_have_count(0, timeout=5_000)
-
-
 def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot_beside_and_remove_gives_it_back(ready: Page, expected):
     page = ready
     rows_before = expected["amr_before"]
     wait_preview_rows(page, rows_before, timeout=30_000)
-    _send_filter(page)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    _tick(page, "T1:ResFinder")
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    # staged, with the place named, waiting for its reason
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
+    _add_step_at(page, "T1:ResFinder")
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at ResFinder: Table, T1", timeout=10_000)
-    expect(page.locator("#btn_apply").first).to_be_disabled()
-    box = page.locator('input[id^="t3_reason_"]').first
-    box.fill(REASON)
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("User verified")
     # the plot and its table are the audited ones
     wait_preview_rows(page, expected["amr_after"], timeout=60_000)
     rows_after = expected["amr_after"]
@@ -188,19 +132,7 @@ def test_a_filter_at_tier1_of_resfinder_changes_the_plots_below_and_not_the_plot
 
 
 def _stage_and_apply_step_at_resfinder(page: Page) -> None:
-    _send_filter(page)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    _tick(page, "T1:ResFinder")
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
-    box.fill(REASON)
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    _add_step_at(page, "T1:ResFinder")
 
 
 def test_the_export_holds_the_audited_table_the_step_with_its_place_and_a_recipe_that_builds_it(ready: Page, expected):
@@ -269,25 +201,16 @@ def test_the_added_lines_of_resfinder_are_removed_by_a_filter_on_its_marker_at_t
     _amr_plot(page)
     set_view(page, "T3")
     wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+    show_place(page, "T1:ResFinder", keep_chosen=False)
     _choose_column_firmly(page, "ResFinder_not_in_original_data")
     _choose_fb_op(page, "eq")
     _wait_shiny(page)
     page.locator("#fb_value_ui input[value=false], #fb_value input[value=false]").first.check(force=True)
     page.locator("#filter_add_row").click()
     _wait_shiny(page)
-    page.locator("#filter_send_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    _tick(page, "T1:ResFinder")
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
-    box.fill("the added lines are not results of the tool: left out of the analyses")
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
+    try_staged(page)
+    add_to_pipeline(page, "the added lines are not results of the tool: left out of the analyses", mark=True, expected_places=1)
+    _amr_plot(page)
     try:
         wait_preview_rows(page, expected["amr_no_added"], timeout=60_000)
         expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)
@@ -309,29 +232,29 @@ def test_the_added_lines_of_resfinder_are_removed_by_a_filter_on_its_marker_at_t
             wait_preview_rows(page, expected["amr_before"], timeout=60_000)
 
 
-def test_a_drop_of_a_key_column_at_a_table_whose_join_reads_it_is_refused_in_the_dialog_and_nothing_is_staged(ready: Page):
-    """D-0358, D-0297 by place: `sample_id` is read as a key by the joins below ResFinder, so a drop of it written at the ResFinder table is refused with the sentence of the
-    rule (the dialog stays open, nothing is staged); a drop of a column no join reads there (`overlap`) is accepted."""
+def test_a_column_drop_at_the_result_data_of_the_plot_is_tried_and_added_and_the_bin_gives_the_column_back(ready: Page, expected):
+    """FLOW-3: the column drop has the one way in (the column chooser, "Try the drop", the same panel, reason, Add to audit pipeline). A drop is offered at the Result data (T3) of a plot only, so the
+    refusal of a key a later join reads (D-0358, by place) has no route at a table here (it is tested headless: `test_audit_join_key_drops.py`, `libs/utils/tests/test_key_drop.py`, the engine's
+    `test_audit_trial.py`)."""
     page = ready
     _amr_plot(page)
     set_view(page, "T3")
-    expect(page.locator("#col_drop_to_audit")).to_have_count(1, timeout=15_000)
-    # the column chooser: deselect sample_id, send the drop to audit
+    wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+    expect(page.locator("#col_drop_try")).to_have_count(1, timeout=15_000)
     page.locator("#preview_col_selector-selectized, #preview_col_selector").first.wait_for(state="attached", timeout=10_000)
-    page.evaluate("""() => { const el = document.getElementById('preview_col_selector');
-        const s = el.selectize; if (s) { s.removeItem('sample_id'); } }""")
-    _wait_shiny(page)
-    page.locator("#col_drop_to_audit").click()
-    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    _tick(page, "T1:ResFinder")
-    page.locator("#propagation_confirm").click()
-    expect(page.locator(NOTICE)).to_contain_text("sample_id", timeout=10_000)
-    expect(page.locator("#propagation_confirm")).to_be_visible()
-    assert page.locator('input[id^="t3_reason_"]').count() == 0, "nothing was staged"
-    _close_notices(page)
-    page.keyboard.press("Escape")
-    expect(page.locator("#propagation_confirm")).to_have_count(0, timeout=5_000)
+    before = page.evaluate("() => Object.keys(document.getElementById('preview_col_selector').selectize.options)")
+    assert "overlap" in before
+    drop_columns(page, ["overlap"], "overlap is not used by this check", mark=True)
+    try:
+        expect(page.locator("#audit_nodes_tier3")).to_contain_text("Drop Column", timeout=20_000)
+        expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at AMR Heatmap: Result data, T3")
+        wait_preview_rows(page, expected["amr_before"], timeout=60_000)          # a drop changes columns, never rows
+        page.wait_for_function("() => !Object.keys(document.getElementById('preview_col_selector').selectize.options).includes('overlap')", timeout=20_000)
+    finally:
+        if page.locator("[id^='t3_delete_']").count():
+            page.locator("[id^='t3_delete_']").first.click()
+            _wait_shiny(page)
+    page.wait_for_function("() => Object.keys(document.getElementById('preview_col_selector').selectize.options).includes('overlap')", timeout=30_000)
 
 
 def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_and_remove_gives_it_back(ready: Page, expected):
@@ -342,20 +265,8 @@ def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_a
     _amr_plot(page)
     set_view(page, "T3")
     wait_preview_rows(page, expected["amr_before"], timeout=30_000)
-    _send_filter(page)
-    page.locator("#propagation_choice input[value=place]").check(force=True)
-    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
-    _tick(page, "T2:ResFinder")
-    page.locator("#propagation_confirm").click()
-    _wait_shiny(page)
-    box = page.locator('input[id^="t3_reason_"]').first
-    expect(box).to_be_visible(timeout=15_000)
+    _add_step_at(page, "T2:ResFinder")
     expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at ResFinder: Table, T2", timeout=10_000)
-    box.fill(REASON)
-    box.press("Tab")
-    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
     try:
         wait_preview_rows(page, expected["amr_after"], timeout=60_000)
         expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)

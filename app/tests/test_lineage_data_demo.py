@@ -7,11 +7,10 @@ no place anywhere a place is offered or written):
 - the independent graphs and their original parents (the metadata no longer joins them: six graphs);
 - two plots read ResFinder through different tables (its tier 2, and the joins that read its tier 1): the paths and their steps are listed for each result;
 - the columns of a node are the plan's names and types at the end of its steps and equal the table really built (ResFinder with its marker column, a join, a table with tier-2 steps);
-- D-0632: `place_lines` no longer offers the metadata for a column the metadata holds; `choice_problem` and `_confirm`-style refusal say it in one line; an audit step at the metadata is
-  refused by the audit copy (this is what a stored session meets: Restore puts a stored step into the view and the first read of the copy refuses it, never skipping it).
+- D-0632: the metadata is never a place: it cannot be shown or tried (`request_to_show`, `trial_places` say it in one line, FLOW-3: the dialog's `place_lines` and `choice_problem` are gone);
+  an audit step at the metadata is refused by the audit copy (this is what a stored session meets: Restore puts a stored step into the view and the first read of the copy refuses it, never skipping it).
 
-Mutation index (each seen failing): MUTATION A1 `lineage_of` reads the columns at the start of the node (k = 0); A2 `place_lines` allows the metadata again (`places()` lists it);
-A3 `choice_problem` leaves the metadata line out.
+Mutation index (each seen failing): MUTATION A1 `lineage_of` reads the columns at the start of the node (k = 0); A2 `request_to_show` allows the metadata again.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_lineage_data_demo.py -q
 """
@@ -21,7 +20,9 @@ from pathlib import Path
 
 import pytest
 
-from app.modules.audit_places import audit_copy_for, choice_problem, place_lines
+from app.modules.audit_places import audit_copy_for
+from app.modules.audit_shown import request_to_show
+from app.modules.audit_try import trial_places
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.plan_composer import compose_plan_book
@@ -118,14 +119,16 @@ def test_without_the_book_no_column_is_given(world):
 
 
 def test_the_metadata_is_never_offered_as_a_place(world):
-    _, _, graph, book, _ = world
+    _, _, graph, book, lin = world
     holds = [c for c, _ in book.get(f"T1:{META}", 0).columns if c == "sample_id"]
     assert holds                                                              # the metadata does hold the column the step is about
-    found = place_lines(graph, book, "virulence_bar", ["sample_id"])
-    assert f"T1:{META}" not in [l.place for l in found.lines] and "T1:ResFinder" in [l.place for l in found.lines]
-    assert choice_problem(graph, found.lines, [f"T1:{META}"]) == recipe_tiers.METADATA_NOT_A_PLACE
-    assert choice_problem(graph, found.lines, [f"T2:{META}"]) == recipe_tiers.METADATA_NOT_A_PLACE
-    assert choice_problem(graph, found.lines, ["T1:ResFinder"]) is None
+    for place in (f"T1:{META}", f"T2:{META}"):
+        outcome = request_to_show(place, [], graph, lin)
+        assert outcome.place is None and recipe_tiers.METADATA_NOT_A_PLACE in outcome.problem, outcome
+        places, problem = trial_places("T1:ResFinder", [place], graph, lin)
+        assert places == () and problem, "a trial is never written at the metadata"
+    assert request_to_show("T1:ResFinder", [], graph, lin).place == "T1:ResFinder"
+    assert trial_places("T1:ResFinder", [], graph, lin) == (("T1:ResFinder",), "")
 
 
 def test_a_stored_step_at_the_metadata_is_refused_by_the_audit_copy_with_the_plain_line(world):

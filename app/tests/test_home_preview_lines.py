@@ -195,7 +195,8 @@ def test_a_real_selection_is_still_counted_once_every_name_is_a_column(world, mo
     assert "1 column hidden; add it back in the column chooser" in badge_text(home)
 
 
-def test_audit_t3_counts_the_audited_table_and_a_pending_step_changes_nothing(world, monkeypatch):
+def test_audit_t3_counts_the_audited_table(world, monkeypatch):
+    """FLOW-3: there is no pending (staged) audit step any more, only a step that was added; so the count is the audited table's, and a trial is a state of its own (`test_audit_place_view.py`)."""
     applied = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
     expected = sum(1 for i in range(ROWS) if 1 + i % 4 >= 4)
     assert 0 < expected < ROWS
@@ -203,11 +204,6 @@ def test_audit_t3_counts_the_audited_table_and_a_pending_step_changes_nothing(wo
                 home_state=audit_state("p_table", applied))
     text = badge_text(home)
     assert f"{expected} rows" in text and f"of {ROWS} rows" not in text
-    # a step that is only pending (not applied) does not change the table, so it does not change the count
-    pending = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
-    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                home_state={"_pending_t3_nodes": pending})
-    assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in badge_text(home)
 
 
 def test_the_badge_total_is_the_true_height_while_the_grid_holds_the_cut(world, monkeypatch):

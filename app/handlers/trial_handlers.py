@@ -12,12 +12,17 @@ The item shown shows the trial (`home_theater`: the preview, the band, the badge
 
 ADD (FLOW-2). "Add to audit pipeline" applies the step through `PlaceTrial.apply_trial` (the tables the trial computed are moved into the audit folder when their keys are the keys now wanted: never a second
 computation path) and writes it at ALL the places of the trial, also those not marked (D-0669), as committed nodes (`t3_audit_steps_by_plot["__places__"]`), each with `user_verified` (and
-`verified_at`). Then the trial ends, the staged condition (through `t3_apply_count`, as the old Apply does) and the reason are cleared, the session is saved as the old Apply saves it, and one
-notice says what was added. Anything that goes wrong leaves NOTHING applied (`apply_trial` is all or nothing for a reader; the committed list and the session file are written only after it succeeded).
+`verified_at`). Then the trial ends, the staged condition (a condition trial) and the reason are cleared, the session is saved, and one notice says what was added. Anything that goes wrong leaves
+NOTHING applied (`apply_trial` is all or nothing for a reader; the committed list and the session file are written only after it succeeded).
+
+THE ONE WAY (FLOW-3, D-0662, D-0663, D-0672). This is the only way to create an audit step: show an item, stage the step, Try, (mark), reason, Add; one step at a time. A staged CONDITION is tried
+with the button "Try" of the Filters panel (`filter_try`); a COLUMN DROP is tried with the button "Try the drop" under the column chooser (`col_drop_try`, drawn by `home_theater`): the columns the chooser
+does not select, at the Result data (T3) shown (PROVISIONAL, as the old drop was offered) and the other places chosen. Both give the same panel, marks, reason and Add; the panel says "drops N columns"
+for a drop. The old entries (the pop-up of "Send to Audit", the button of the lineage panel, the small form of a table no plot reads, the staged cards and the separate Apply) are gone.
 
 WHEN A TRIAL ENDS (`audit_try.end_cause`): her own Discard (no notice); or one plain notice for the first thing that changed: the condition, the places chosen, the mode, the recipe or the data, the applied
-steps, a restored session. Using the old entries (Send to Audit, the lineage button, the column drop, the small form of a table no plot reads) discards the trial first, with a notice. The browser session's end
-empties the trial folder.
+steps, a restored session. A drop trial is bound to the columns it was made for (a change of the column chooser or of the staged rows does not end it; the panel names the columns). The browser
+session's end empties the trial folder.
 
 NOTHING OF A TRIAL REACHES the session file, the export, the audit folder or a key of a stored audited table: the trial is held here as a reactive value (`trial_state`) that no saver reads, its tables are in
 the trial's own folder (`<user data>/audit_trial/<token>`, `PlaceTrial`), and the tried nodes are never written to `home_state`.
@@ -32,32 +37,37 @@ Why the marks and the reason are inputs with the number of the Try in their id (
 new trial with the same ids could read a mark ticked in an OLDER trial before the new widget reports its own value. A new id has no value yet, so a mark is never inherited.
 
 # @deps
-# provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, effect:_try, effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world, effect:_old_entries_end_the_trial
-# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature, PLACES_BUCKET), app/modules/notification_utils.py
+# provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, button:col_drop_try (drawn by home_theater), effect:_try, effect:_try_drop, effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world
+# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature, PLACES_BUCKET), app/modules/notification_utils.py, libs/utils/src/utils/key_drop.py (DropGate: the refusal of a key drop by place at Try)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
 """
 from __future__ import annotations
 
+import dataclasses
 from typing import Callable, Optional
 
 from shiny import reactive, render, ui
 
+from app.modules.frame_widths import HOME as HOME_SPACE
 from app.modules.audit_add import (ADD_LABEL, REASON_LABEL, REASON_PLACEHOLDER, VERIFIED_LABEL, VERIFIED_LEGEND, added_notice, can_add, marks_summary, stamp_marks)
 from app.modules.audit_places import PLACES_BUCKET, nodes_signature
 from app.modules.audit_shown import request_to_show
 from app.modules.audit_trial import TrialRefused, now_iso
-from app.modules.audit_try import (DISCARD_LABEL, NO_CONDITION, TrialRecord, condition_lines, end_cause, fit_problem, panel_model, trial_has_state, trial_places, tried_nodes, world_of)
+from app.modules.audit_try import (DISCARD_LABEL, KIND_DROP, KIND_FILTER, NO_CONDITION, TrialRecord, condition_lines, drop_condition_lines, drop_fit_problem, drops_from_selection, end_cause, fit_problem, panel_model,
+                                   trial_has_state, trial_places, tried_drop_nodes, tried_nodes, world_of)
 from app.modules.notification_utils import make_notifier
+from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import BUILT_ELSEWHERE_LINE, rows_built_elsewhere
+from utils import key_drop
 
 
 def define_trial_server(input, output, session, *,
                         trial_state, trial_left_original, in_audit, home_state, pending_filters, safe_input,
                         recipe_id: Callable[[], str], recipe_keys: Callable[[], tuple], open_graph, lineage_calc, recipe_plans,
                         shown_place: Callable[[], Optional[str]], committed_nodes: Callable[[], list], columns_at, place_name: Callable[[str], str],
-                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None, save_session=None, audit_pending=None):
+                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None, save_session=None, recipe_raw=None):
     """Register the Try button's effect, the panel and the ends of a trial.
 
     Parameters (kwargs):
@@ -77,7 +87,7 @@ def define_trial_server(input, output, session, *,
       shown_item            reactive.Value of the place shown (written by "Show" beside a place or a reached item of the panel)
       current_view_key()    the view key of the table shown (the rows a condition is stamped with): a condition built on another table is refused
       restored_steps        reactive.Value: the band's note of a restored session, cleared when the user shows something
-      audit_pending         reactive.Value[bool] of the badge "Pending" of the Pipeline Audit panel (the old Apply sets it False): nothing is pending after an Add, so it is set False there; None: untouched
+      recipe_raw()          the resolved dictionary of the open recipe, for the rule of a key drop at Try (`utils.key_drop`); None: no drop is refused here (the engine still refuses it when it runs)
       save_session(state)   writes the session file as the old Apply writes it and returns a plain warning when it could not (None when saved or when ghost save is off); None: nothing is saved
     """
     _notify = make_notifier(notification_log)
@@ -92,8 +102,9 @@ def define_trial_server(input, output, session, *,
             return [value]
         return [v for v in (value or []) if isinstance(v, str)]
 
-    def _world_now():
-        """What a trial depends on, now. Reads the reactive values it names, so that the watcher below runs again when any of them changes."""
+    def _world_now(drop_of: Optional[TrialRecord] = None):
+        """What a trial depends on, now. Reads the reactive values it names, so that the watcher below runs again when any of them changes. For the trial of a DROP (`drop_of`: its record) the
+        condition is the columns it was made for: the staged rows of the Filters panel are another thing and a change of the column chooser does not end it (PROVISIONAL: the panel names the columns tried)."""
         try:
             rid = recipe_id()
         except Exception:
@@ -103,8 +114,9 @@ def define_trial_server(input, output, session, *,
         except Exception:
             keys = ("?", "?")
         state = home_state.get() if home_state is not None else {}
-        return world_of("audit" if in_audit() else "exploration", rid, keys, list(pending_filters.get()), _chosen(),
-                        nodes_signature(committed_nodes()), str((state or {}).get("t3_ghost_file") or ""))
+        world = world_of("audit" if in_audit() else "exploration", rid, keys, list(pending_filters.get()), _chosen(),
+                         nodes_signature(committed_nodes()), str((state or {}).get("t3_ghost_file") or ""))
+        return dataclasses.replace(world, rows=drop_of.world.rows) if drop_of is not None and drop_of.kind == KIND_DROP else world
 
     def _end(notice: Optional[str]) -> None:
         """End the trial (empty its folder, forget it) and say why when it was not the user's own Discard. Idempotent: no trial, no notice."""
@@ -122,6 +134,33 @@ def define_trial_server(input, output, session, *,
                 _notify(notice, type="warning", duration=10)
 
     # ── Try ─────────────────────────────────────────────────────────────────────────────────────────────────────
+    def _ready_to_try():
+        """(graph, lineage) when the path of the data can be read, else None (one plain notice was shown)."""
+        try:
+            graph = open_graph()
+            lineage, why = lineage_calc()
+        except Exception as exc:
+            _notify(f"The recipe cannot be read, so nothing was tried: {exc}", type="error", duration=10)
+            return None
+        if lineage is None:
+            _notify(f"The path of the data cannot be drawn, so nothing was tried. {why}", type="warning", duration=10)
+            return None
+        return graph, lineage
+
+    def _compute(kind: str, places, nodes, condition, world) -> None:
+        """Run the engine on the tried nodes and keep the answer as THE trial. A failure of the engine is one plain notice and no trial."""
+        try:
+            result = get_trial().try_step(recipe_id(), committed_nodes(), nodes, recipe_plans())
+        except Exception as exc:
+            _end(None)
+            _notify(f"The trial could not be computed, so nothing was tried: {exc}", type="error", duration=12)
+            return
+        trial_left_original.set(False)
+        _counter[0] += 1
+        if trial_marks.get():
+            trial_marks.set({})                                         # a new Try never inherits a mark
+        trial_state.set(TrialRecord(world, places, tuple(nodes), result, condition, _counter[0], kind))
+
     @reactive.Effect
     @reactive.event(input.filter_try)
     def _try():
@@ -135,15 +174,10 @@ def define_trial_server(input, output, session, *,
         if current_view_key is not None and rows_built_elsewhere(rows, current_view_key()):
             _notify(BUILT_ELSEWHERE_LINE.format(done="tried"), type="warning", duration=10)
             return
-        try:
-            graph = open_graph()
-            lineage, why = lineage_calc()
-        except Exception as exc:
-            _notify(f"The recipe cannot be read, so nothing was tried: {exc}", type="error", duration=10)
+        ready = _ready_to_try()
+        if ready is None:
             return
-        if lineage is None:
-            _notify(f"The path of the data cannot be drawn, so nothing was tried. {why}", type="warning", duration=10)
-            return
+        graph, lineage = ready
         places, problem = trial_places(shown_place(), _chosen(), graph, lineage)
         if problem:
             _notify(problem, type="warning", duration=10)
@@ -154,18 +188,51 @@ def define_trial_server(input, output, session, *,
             return
         state = home_state.get() if home_state is not None else {}
         nodes = tried_nodes(rows, places, (state or {}).get("primary_keys") or [])
-        world = _world_now()
-        try:
-            result = get_trial().try_step(recipe_id(), committed_nodes(), nodes, recipe_plans())
-        except Exception as exc:
-            _end(None)
-            _notify(f"The trial could not be computed, so nothing was tried: {exc}", type="error", duration=12)
+        _compute(KIND_FILTER, places, nodes, condition_lines(rows), _world_now())
+
+    @reactive.Effect
+    @reactive.event(input.col_drop_try)
+    def _try_drop():
+        """FLOW-3: the column drop is tried like a condition (the one way to create a step). The columns to drop are the ones the column chooser of the table shown does NOT select; the drop is
+        written at the places of the trial (the Result data (T3) of a plot is shown, as the drop was always offered; the other places chosen in Path of the data too, D-0669). A column a join
+        step later reads as a key is refused BY PLACE (D-0358, D-0371: `utils.key_drop`), with the sentence of the rule, before anything is computed."""
+        if not in_audit():
             return
-        trial_left_original.set(False)
-        _counter[0] += 1
-        if trial_marks.get():
-            trial_marks.set({})                                         # a new Try never inherits a mark
-        trial_state.set(TrialRecord(world, places, tuple(nodes), result, condition_lines(rows), _counter[0]))
+        shown = shown_place()
+        if not shown or not str(shown).startswith("T3:"):
+            _notify("A column drop is tried on the Result data (T3) of a plot: show a plot's Result data in Path of the data first. Nothing was tried.", type="warning", duration=8)
+            return
+        names = [name for name, _ in (columns_at(shown) or ())]
+        to_drop = drops_from_selection(names, safe_input(input, "preview_col_selector", None))
+        if not to_drop:
+            _notify("No column is deselected. Uncheck the columns to drop in the column chooser, then press Try the drop. Nothing was tried.", type="warning", duration=6)
+            return
+        ready = _ready_to_try()
+        if ready is None:
+            return
+        graph, lineage = ready
+        places, problem = trial_places(shown, _chosen(), graph, lineage)
+        if problem:
+            _notify(problem, type="warning", duration=10)
+            return
+        problem = drop_fit_problem(to_drop, places, lineage, columns_at, place_name)
+        if problem:
+            _notify(problem, type="warning", duration=12)
+            return
+        if recipe_raw is not None:
+            try:
+                gate = key_drop.DropGate(recipe_raw(), recipe_plans())
+            except PlanComposerBug:
+                return                                                  # the plain notice was shown by `recipe_plans` (an error of the app): nothing is tried
+            for place in places:
+                refusal = gate.problem(place, to_drop)
+                if refusal:
+                    _notify(f"{refusal} Nothing was tried.", type="error", duration=10)
+                    return
+        nodes = tried_drop_nodes(to_drop, places)
+        _compute(KIND_DROP, places, nodes, drop_condition_lines(to_drop), _world_now())
+        if trial_state.get() is not None:
+            _notify("The drop is tried: the answer is in the Filters panel of the left column (the effect at each place, the reason and Add to audit pipeline).", type="message", duration=8)
 
     # ── Discard (her own: no notice) ────────────────────────────────────────────────────────────────────────
     @reactive.Effect
@@ -181,7 +248,9 @@ def define_trial_server(input, output, session, *,
         # runs again when a trial begins and then watches.
         if trial_state.get() is None:
             return
-        now = _world_now()
+        with reactive.isolate():
+            record = trial_state.get()
+        now = _world_now(record)
         with reactive.isolate():
             record = trial_state.get()
             if record is None:
@@ -189,30 +258,6 @@ def define_trial_server(input, output, session, *,
             cause = end_cause(record.world, now)
         if cause:
             _end(cause)
-
-    # ── The old entries that write a step end the trial first ────────────────────────────────────────────────────
-    def _old_entry(what: str) -> None:
-        _end(f"You used {what}. The trial ended: it was not applied, not saved and not exported.")
-
-    @reactive.Effect(priority=5)
-    @reactive.event(input.filter_send_to_audit)
-    def _ended_by_send():
-        _old_entry("Send to Audit")
-
-    @reactive.Effect(priority=5)
-    @reactive.event(input.lineage_create)
-    def _ended_by_lineage_button():
-        _old_entry("the button of Path of the data")
-
-    @reactive.Effect(priority=5)
-    @reactive.event(input.col_drop_to_audit)
-    def _ended_by_drop():
-        _old_entry("the column drop")
-
-    @reactive.Effect(priority=5)
-    @reactive.event(input.lineage_step_add)
-    def _ended_by_leaf_form():
-        _old_entry("the form of a table no plot reads")
 
     # ── The end of the browser session empties the trial's folder ───────────────────────────────────────────────
     def _on_ended():
@@ -275,15 +320,23 @@ def define_trial_server(input, output, session, *,
             if trial_marks.get() != found:
                 trial_marks.set(found)
 
+    _last_typed = {}                                    # {serial of the Try: the last raw value its box reported}
+
     @reactive.Effect
     def _track_reason():
-        """Copy the reason typed into the draft and into `reason_ok` (equality-guarded, R3). The input of THIS trial only (its id carries the number of the Try); before its widget has reported a value the draft stands."""
+        """Copy the reason typed into the draft and into `reason_ok` (equality-guarded, R3). The input of THIS trial only (its id carries the number of the Try); before its widget has reported a value the
+        draft stands. A box that leaves the page (the user goes to another user space) is reported by Shiny as empty text, and that stale empty value is still there when the user comes back: only a raw value
+        that CHANGED while the panel is on the page is the user's, so only that one is kept (the same rule as the reason boxes of the old way; D-0050: a text typed is never dropped silently)."""
         record = trial_state.get()
         if record is None:
             return
         typed = safe_input(input, f"trial_reason_{record.serial}", None)
+        space = safe_input(input, "sidebar_nav", HOME_SPACE)
         with reactive.isolate():
-            text = reason_text.get() if typed is None else str(typed)
+            changed = _last_typed.get(record.serial) != typed
+            _last_typed[record.serial] = typed
+            on_page = space in (None, HOME_SPACE)
+            text = reason_text.get() if (typed is None or not (changed and on_page)) else str(typed)
             if text != reason_text.get():
                 reason_text.set(text)
             ok = can_add(text)[0]
@@ -306,7 +359,7 @@ def define_trial_server(input, output, session, *,
         if not ok:
             _notify(why, type="warning", duration=8)
             return
-        cause = end_cause(record.world, _world_now())
+        cause = end_cause(record.world, _world_now(record))
         if cause:
             _end(cause)
             return
@@ -328,11 +381,11 @@ def define_trial_server(input, output, session, *,
         by_plot = {k: [dict(n) for n in v] for k, v in ((state or {}).get("t3_audit_steps_by_plot") or {}).items()}
         by_plot[PLACES_BUCKET] = by_plot.get(PLACES_BUCKET, []) + added
         new_state = {**state, "t3_audit_steps_by_plot": by_plot, "t3_apply_count": int((state or {}).get("t3_apply_count", 0)) + 1}
-        home_state.set(new_state)                               # the count clears the staged condition, as the old Apply does (`filter_and_audit_handlers._clear_filters_on_t3_apply`)
+        home_state.set(new_state)                               # the count is the saves of the session (the session panel reads it)
+        if record.kind == KIND_FILTER:
+            pending_filters.set([])                             # the condition was added: the staged rows go (a drop leaves them: they are another step)
         reason_text.set("")
         reason_ok.set(False)
-        if audit_pending is not None:
-            audit_pending.set(False)
         if save_session is not None:
             warning = save_session(new_state)
             if warning:
@@ -350,17 +403,20 @@ def define_trial_server(input, output, session, *,
         of their own."""
         if not in_audit():
             return ui.div()
+        safe_input(input, "sidebar_nav", HOME_SPACE)    # the user space: the panel is drawn again when the user comes back to HOME, so that its box holds the draft and its ticks stay (D-0050); never read by the widgets
         record = trial_state.get()
         if record is None:
             return ui.div()
-        model = panel_model(record.result, record.condition, place_name)
+        with reactive.isolate():
+            marked = dict(trial_marks.get())
+        model = panel_model(record.result, record.condition, place_name, record.kind)
         body = [ui.div(model.heading, class_="spv-trial-heading", role="status")]
         if model.condition:
             body.append(ui.div(*[ui.div(line, class_="spv-trial-line") for line in model.condition], class_="spv-trial-condition"))
         if model.error:
             body.append(ui.div(model.error, class_="spv-trial-error"))
         else:
-            body.append(ui.tags.ul(*[ui.tags.li(line, _show_button(node), ui.div(ui.input_checkbox(f"trial_verified_{record.serial}_{number}", VERIFIED_LABEL, value=False), class_="spv-trial-mark"))
+            body.append(ui.tags.ul(*[ui.tags.li(line, _show_button(node), ui.div(ui.input_checkbox(f"trial_verified_{record.serial}_{number}", VERIFIED_LABEL, value=node in marked), class_="spv-trial-mark"))
                                      for number, (line, node) in enumerate(zip(model.effects, model.effect_nodes))], class_="spv-trial-effects"))
             body.append(ui.div(VERIFIED_LEGEND, class_="spv-trial-note"))
             body.append(ui.output_ui("trial_marks_summary_ui"))

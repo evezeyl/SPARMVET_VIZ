@@ -43,62 +43,53 @@ Every removal is named, dated, and justified. You take responsibility for the de
 
 ## How to author audit decisions
 
-In **Audit** mode, with the Result data (T3) of the open plot shown, the left sidebar is your only authoring surface (otherwise the panel says "To create an audit step, show the Result data (T3) of the open plot ..."):
+There is **one way** to create an audit step, one step at a time (no staged list, no separate Apply button): **show** the table or the plot, **stage** the step, **Try** it, write the **reason**, press **Add to audit pipeline**.
 
-- The **filter builder** (button labelled "➜ Send to Audit (N)") — turn the rows you've staged into audit nodes.
-- The **column selector above the data preview** ("➜ Audit drops (N)" button) — turn deselected columns into `drop_column` audit nodes.
+1. **Show an item.** In Audit mode choose a place in **Path of the data** and press **Show** (nothing else changes when you only choose). A table shows its table; a plot shows its Result data (T3). The condition is built on the table you see.
+2. **Stage the step.**
+   - A **condition**: in the **Filters** panel build a row (column, operator, value) and press "+ Add".
+   - A **column drop**: with the Result data (T3) of a plot shown, deselect the columns to drop in the column chooser above the data preview.
+3. **Try it.** "Try" (for a condition) or "Try the drop" (for columns). Nothing is applied, saved or exported yet.
+4. **Mark, reason, add.** Tick **User verified** on each place you have looked at (advice only), write the **reason** (required) and press **Add to audit pipeline**.
 
-The right sidebar is the **audit panel**: it shows the audit decisions for the *currently active plot*. Every decision lives there with its reason text-box. Until you fill in a reason, the bottom **Apply** button stays locked. Once you Apply, the decisions move from "pending" to "committed" and the change is reflected in the data.
+The right sidebar is the **audit panel**: it lists the steps you have **added** for the item shown (the plot shown, or the table shown and the tables above it), each with the place it was written at, whether the place was marked "User verified", its reason and a 🗑 bin. A step is never added without a reason: the button stays disabled and says why.
 
-To remove an audit decision, click the 🗑 next to it. The data immediately reappears (audit nodes only ever *remove* data; deleting a node is the only "undo").
+To remove an added step, click the 🗑 next to it. It is removed from every place it was written at, the session is saved without it, and the data reappears (audit steps only ever *remove* data; removing a step is the only "undo").
 
-## Per-plot vs. all-plots: the propagation choice
+## Where the step is written: the places
 
-Most adjustments only make sense on one plot. If you filter "value > 90" on a similarity plot, that doesn't apply to your QC plot — they have different data. So by default, every audit decision is **per-plot only**. Switching plots in T3 mode shows you a different audit panel.
+The scope of a step is the **place** (a table at its tier 1 or tier 2, or the Result data (T3) of a plot) that you choose in **Path of the data**, never a choice of plots. There is no "this plot only / all plots / all plots except" question any more. What the step reaches is shown to you, not chosen: every table and plot built from the place is built again from it (for example a step at the table *ResFinder* reaches the plots built from ResFinder), and the panel of the trial says so with a count and a list. A step wanted in several plots separately: choose the Result data (T3) of each of those plots as places and Try once: the step is written at all of them. Linked removal: a step written at several places is one decision; the 🗑 on any of its cards removes it from all of them.
 
-**But sometimes a decision should propagate.** A clear example: if sample `S2` has poor sequencing quality, you'll want to remove it from every plot — except possibly the QC contamination plot, which is precisely where you'd point a reviewer to *show* that S2 was bad.
+### Trying a step before you add it
 
-When you author an audit decision that's eligible for propagation, SPARMVET shows you a small dialog with three choices:
-
-- **This plot only** — the default, fastest path. Applies just to the plot you're currently looking at.
-- **All plots** — the decision is copied into every plot's audit panel. New plots added to your data analysis recipe later will *not* automatically inherit this decision; you'd need to re-propagate.
-- **All plots except…** — pick which plots to skip. This is the "remove S2 everywhere except the QC contamination plot" case.
-
-Linked deletion: if you've propagated to multiple plots and later click 🗑 on the node in *any* of those plots, the node is removed from *all* of them. The audit pipeline thinks of a propagated node as one decision applied many places, not many independent decisions.
-
-## Where the step is written: at this plot, or at a table it is built from
-
-The three choices above write the step at the **tier 3 of each plot** (the last step of the plot's own table). A fourth choice acts **earlier in the recipe**:
-
-- **At a table this plot is built from** — the step is written at the tier 1 (or the tier 2) of a table the plot is built from, for example the table *ResFinder*. Every table and every plot built from that table is then built again from it, and they all show the audited result. The dialog lists each table with what is built from it ("2 other tables and 5 plots are built from it"), so you see how far the step reaches before you confirm. "Built from it" does not say that the table changes: the plot badge tells you afterwards, for each plot, whether its table changed or is the same as the original.
-
-#### Trying a step before you apply it
-
-In Audit mode, once you have added a condition in the **Filters** panel (the "+ Add" button), a button **Try** appears. It works on the item shown, also when a **table** is shown, and not only on the Result data (T3) of a plot. Try tells you what the step would do and changes nothing: it is **not applied, not saved and not exported**.
+In Audit mode, once you have added a condition in the **Filters** panel (the "+ Add" button), a button **Try** appears. It works on the item shown, also when a **table** is shown, and not only on the Result data (T3) of a plot. A column drop is tried the same way with the button **Try the drop** (see below). Try tells you what the step would do and changes nothing: it is **not applied, not saved and not exported**.
 
 - **Where it is tried.** At the place shown. If you chose other places in **Path of the data**, the place shown must be one of them (otherwise the app says "Show your selection first"), and the step is then tried at **all** the places you chose. If the condition does not fit one of them (the column is not there, or has another type), the app names that place and tries nothing.
 - **What you see.** A small panel under the Filters buttons says, for each place, how many rows the step removes **there** ("removes no row" is said plainly: it may mean you chose the wrong place), and what is built from those places (a count and a list, each marked "table changed" or "no row changed"; this is information, not something to tick). Press **Show** beside a place or a reached item to look at it with the step tried. While the app counts, a line says so.
 - **The three states, always in words.** "Original (as read)", "Audited: your applied steps" and "TRIAL: with the step you are trying. Not applied, not saved, not exported." The table, the title, the badge, the band above the table and the figure all say which one you are looking at. An item the step does not change says "The step you are trying does not change this."
 - **Compare beside a trial.** With Compare on, the left pane is "Before this step" (your applied steps as they are now), the right pane is the trial, and a switch lets you show the original on the left instead.
-- **When a trial ends.** Press **Discard**, or it ends by itself, with one plain notice, when you change the condition, change the places chosen, leave Audit mode, open another recipe, restore a session, apply or remove a step, or use Send to Audit.
+- **When a trial ends.** Press **Discard**, or it ends by itself, with one plain notice, when you change the condition, change the places chosen, leave Audit mode, open another recipe, restore a session, or add or remove a step.
 
-#### Adding the step you tried: "Add to audit pipeline"
+### Adding the step you tried: "Add to audit pipeline"
 
 Under the lines of the trial panel you find, for each place, a tick **User verified**: tick it when you have looked at the table at that place (use **Show**) and accept the step there. The mark is advice: the step is written at **every** place of the trial, also at those you did not tick, and the panel says "N of M places user verified" so that you see it. Then write the **Reason** (required: the button **Add to audit pipeline** stays disabled, with one line that says why, until there is one) and press the button.
 
-- **What happens.** The step is applied with the tables the trial already computed (nothing is calculated twice), written at all the places, and saved in the session as the Apply button saves it. One notice says "Step added to the audit pipeline at N places (K of N places user verified)". The table you look at now says "Audited: your applied steps", and the step is listed in the right panel under "Written at ...", with "User verified" or "not marked as verified" for that place.
+- **What happens.** The step is applied with the tables the trial already computed (nothing is calculated twice), written at all the places, and saved in the session. One notice says "Step added to the audit pipeline at N places (K of N places user verified)". The table you look at now says "Audited: your applied steps", and the step is listed in the right panel under "Written at ...", with "User verified" or "not marked as verified" for that place.
 - **If something goes wrong,** nothing is applied: the notice says so and you try the step again.
 - **The marks and the export.** Which places you marked is kept with each step: in the session, in `t3_steps.yaml` (`user_verified`), and in the README and the report ("2 of 3 places user verified; not marked: ..."). The app does not record who ticked.
 - **Remove a step** with the bin on its card, as always; the session is saved without it, so a Restore does not bring it back.
 - **A new Try starts the marks again** at zero, and so does a change of the condition or of the places. The reason you typed is kept as a draft until you add the step.
 
-#### Choosing the place on the "Path of the data"
+### Dropping columns
 
-In Audit mode, below the strip at the top of HOME, the panel **Path of the data** (open when you enter Audit mode) shows the tables and the plots of the recipe as a list and as a map of dots, with arrows from a table to what is built from it. Hover or focus a table to read what it is and what is built from it; click it (or press Enter) to choose it as the place of your step. Choose one place for each independent graph, or press **All original tables of this group**. What is built from the chosen place is marked. **Choosing only stages the place**: nothing on screen changes. The chosen places are listed under the bar ("Chosen places"), each with a button **Show**, and **Show selection** shows the first place you clicked. The place shown is marked with the word "shown", and a band above the data preview says what you are looking at: the table or the Result data (T3), original or audited, and how many other places are chosen and not shown. The data preview, its title, the column chooser and the filter form of the Filters panel all follow the place shown. A condition you are building in the Filters panel belongs to the table shown: it is kept when you show the same table again, and removed (with a notice) when you show another table. Then press **Create an audit step here...**: the dialog of *Send to Audit* opens with your place ticked (build the filter in the Filters panel first, with the table of a plot in view T3). The switch **Around my selection** hides everything that is neither upstream nor downstream of your choice. A table that no plot reads is a place too: choose it and the panel offers a small form for a filter on that table; the table changes and no figure does, and the audited table is in the export made in Audit mode.
+With the Result data (T3) of a plot shown, deselect the columns to drop in the column chooser; the button **Try the drop (N)** appears. The panel of the trial says, for each place, "the step drops N columns of M here" (a drop changes the columns, not the rows, and the panel says so), then the marks, the reason and **Add to audit pipeline** work as for a condition. A column that a later join of your recipe still reads as a key is refused at its place with the join named; nothing is tried.
 
-  The places are listed as the path of the lineage, from the original tables down to your plot, each line indented by how far down the path it is; the plot's own tier 3 is the last line. You choose one place on a path. As soon as you tick a place, the places below it are shown greyed with a "~" ("follows from the place chosen above"): they are built from the one you chose and cannot be chosen too; the places above it cannot be chosen either. Untick it and they are free again. Several original tables that feed the plot each start their own path, so you may tick the first place of each. (The words on screen are provisional.)
-- You choose **one place on a path**. A table and a table built from it cannot both be chosen in one step, and neither can a table and the plot built from it (the list also holds the line "Plot … (tier 3)"); the dialog says which two. The first tables of several *original* tables may be chosen together. Two separate decisions at different places are fine: they are applied tier by tier (tier 1, then tier 2, then tier 3), and inside a tier in the order you wrote them.
-- Only the tables that hold the column of your step are listed.
+### Choosing the place on the "Path of the data"
+
+In Audit mode, below the strip at the top of HOME, the panel **Path of the data** (open when you enter Audit mode) shows the tables and the plots of the recipe as a list and as a map of dots, with arrows from a table to what is built from it. Hover or focus a table to read what it is and what is built from it; click it (or press Enter) to choose it as the place of your step. Choose one place for each independent graph, or press **All original tables of this group**. What is built from the chosen place is marked. **Choosing only stages the place**: nothing on screen changes. The chosen places are listed under the bar ("Chosen places"), each with a button **Show**, and **Show selection** shows the first place you clicked. The place shown is marked with the word "shown", and a band above the data preview says what you are looking at: the table or the Result data (T3), original or audited, and how many other places are chosen and not shown. The data preview, its title, the column chooser and the filter form of the Filters panel all follow the place shown. A condition you are building in the Filters panel belongs to the table shown: it is kept when you show the same table again, and removed (with a notice) when you show another table. The places you chose are the places your step is **tried** at: build the condition on the table shown (the place shown must be one of the places chosen, else the app says "Show your selection first"), press **Try**, and the step is tried at all of them. The switch **Around my selection** hides everything that is neither upstream nor downstream of your choice. A table that no plot reads is a place too: show it, build the filter in the Filters panel on its table, and add it the same way; the table changes and no figure does, and the audited table is in the export made in Audit mode.
+
+- You choose **one place on a path**. A table and a table built from it cannot both be chosen in one step, and neither can a table and the plot built from it; the app says which two. The first tables of several *original* tables may be chosen together. Two separate steps at different places are fine: they are applied tier by tier (tier 1, then tier 2, then tier 3), and inside a tier in the order you added them.
+- A place where the column of your step is not there (or has another type) stops the trial and is named.
 - A drop of a column that a later join reads as a key is refused at its place, with the join named.
 
 A typical case: the app adds a line "missing in original table" for a sample that has no ResFinder result (its marker column `ResFinder_not_in_original_data` is true). To leave these lines out of every analysis built from ResFinder, filter on the marker at the **tier 1 of ResFinder**, with your reason. The plots that read those lines lose them; a plot that does not read them keeps its table and says so in its badge; a plot built from other tables is not touched.
@@ -112,41 +103,6 @@ When you export while you are in **Audit** mode, every table that an audit step 
 ### The audit recipe of an export made in Audit mode
 
 An export made in **Audit** mode also holds the **audit recipe**, in the folder `audit_recipe/`, as `<recipe id>_audited.yaml`. It is the original recipe with every audit step written at its place (the end of the tier you wrote it at), each step with its reason, its audit id and its day in its own comment, so no step is hidden. It is a recipe like any other: put the file in the recipes folder with the data it reads (its data references are the original's, the data files are not copied) and the app opens it and runs it on its own, with no session. Running it gives the audited tables at every tier and the audited Result data (T3) of every plot of that export. The README and the report say where it is.
-
-### Propagation preview — read it before you confirm
-
-Before you click *Add to audit pipeline*, the modal shows a per-plot preview of where the filter will actually land:
-
-> 📍 **Propagation preview:** ✅ 5 apply  •  ⚠️ 2 skip (col missing)
->
-> ▶ Show details
->   ⚠️ *Plasmid Prevalence by Country* — column not in the Result data (T3) of this plot; will be SKIPPED
->   ⚠️ *Phenotype Genome Length* — column not in the Result data (T3) of this plot; will be SKIPPED
->
-> 👉 Apply filters one at a time and verify each plot before stacking. A skipped plot is **NOT filtered** — it shows the unfiltered data.
-
-**Three states per target plot:**
-
-- ✅ **column present** → the filter will apply
-- ⚠️ **column absent** → the filter is silently skipped on that plot (the plot shows unfiltered data; verify it's what you want)
-- ❓ **dataset unknown** → SPARMVET couldn't find the table that plot reads; verify by hand after applying
-
-**Why "apply one at a time"?** When you author multiple filters and propagate them in batch, every skipped plot becomes a question: *did the user mean to skip it, or did they not realise their filter wouldn't take effect there?* By applying one filter, switching tabs, and verifying the effect before authoring the next, you build an honest, defensible audit trail.
-
-### One-at-a-time review workflow
-
-This is the recommended sequence for building a clean audit trail:
-
-1. **Stage one filter** in the Filters accordion. Don't stage others yet.
-2. **Click "➜ Send to Audit (1)"**. The propagation modal opens.
-3. **Read the preview**. Check which plots show ✅, which show ⚠️ (column absent). If a plot you expected to be affected shows ⚠️, that means the column name differs in the table that plot reads — fix the source data or author the filter separately for that plot with the correct column name.
-4. **Choose scope** — "This plot only", "All plots", or "All plots except…". When in doubt, start with "This plot only" and expand scope once you've confirmed the effect.
-5. **Fill in the reason** in the right sidebar audit panel (see [Writing good reasons](#writing-good-reasons) below). The Apply button stays locked until a reason is entered.
-6. **Click Apply**. The node commits. Verify the data preview and the plot shown.
-7. **Show every other affected plot** (press **Show** on its square in **Path of the data**; check the ones that showed ✅ in the preview). Confirm the filter took effect as expected.
-8. **Only then** return to the Filters accordion and stage the next filter.
-
-Stacking multiple uncommitted nodes before verifying any of them is the most common way to end up with an audit trail that's technically complete but analytically opaque.
 
 ### Writing good reasons {#writing-good-reasons}
 
@@ -175,7 +131,7 @@ When you target a primary key with an audit decision, SPARMVET applies extra rul
 
 ### Dropping a primary-key column is **blocked where a later join still uses it**
 
-You can't add a `drop_column` node for a join key (for example `sample_id`) when a later join of your recipe still uses that column: the link between your tables would break. The refusal is given for that place only. Where no later join uses the column, for example a drop in a plot's own steps, the drop is allowed. Steps written in the recipe itself are never refused. If you click "➜ Audit drops" with such a primary key in the deselected list, the message names the join that needs the column and says to use a row filter or row exclusion instead.
+You can't add a `drop_column` node for a join key (for example `sample_id`) when a later join of your recipe still uses that column: the link between your tables would break. The refusal is given for that place only. Where no later join uses the column, for example a drop in a plot's own steps, the drop is allowed. Steps written in the recipe itself are never refused. If you press "Try the drop" with such a primary key in the deselected list, the message names the join that needs the column and says to use a row filter instead; nothing is tried.
 
 If your need is to *anonymize* the IDs in the published report (e.g. the journal asks you not to expose internal sample IDs), that is a different problem and currently outside SPARMVET's scope. For now, the report shows whatever IDs your data analysis recipe uses; consider relabelling samples *before* assembly if anonymization is a hard requirement.
 
@@ -183,7 +139,7 @@ If your need is to *anonymize* the IDs in the published report (e.g. the journal
 
 You *can* filter on a primary-key column — for example `sample_id == "S2"` to keep only that sample. SPARMVET keeps the node as a regular `filter_row` and **does not silently convert it** to an exclusion. The semantics are: the operator does exactly what it says (`eq` keeps the matched value; `ne`/`not_in` excludes it).
 
-A ⚠️ **Primary key** banner is added to the node automatically, both in the modal and in the right-sidebar audit panel, to remind you that this decision changes which samples flow into joined plots downstream.
+A ⚠️ **Primary key** banner is added to the node automatically, on the card of the step in the right-sidebar audit panel, to remind you that this decision changes which samples flow into joined plots downstream.
 
 If your intent is *exclusion* ("remove S2 from everything"), use `ne` or `not_in` directly — the audit will then read as "rows removed where `sample_id == S2`" which is exactly the right framing for a methods section.
 
@@ -216,23 +172,23 @@ To make the rules concrete, these are the cases the design accommodates:
 
 **Case A — Bad sample, but keep it on the plot that justifies the removal.**
 Sample `S2` had poor quality. You want it gone from your analytical figures, *but* you want the QC contamination plot to still show S2's high contamination bar so your report can point to that plot as evidence.
-→ Author the exclusion → propagate to **All plots except…** → select the QC plot in the multiselect.
+→ Choose the place that feeds your analytical plots (a table they are built from, or the Result data (T3) of each of those plots) and not the place that feeds the QC plot; build the exclusion (`sample_id` not in S2) on the table shown, Try, reason, Add. The QC plot reads other places and keeps S2.
 
 **Case B — Wrong sample, remove everywhere.**
 You discover S2 was mis-labelled or contaminated upstream. It shouldn't be in any plot.
-→ Author the exclusion → propagate to **All plots**.
+→ Choose the first place the data of all the plots comes from (the table every plot is built from, or the first place of each original table), then Try and Add: every table and plot built from the place is built again without S2.
 
 **Case C — Long-format value filter (not a sample-ID exclusion).**
 Your long-format table has rows like `(sample, gene, similarity)`. You want similarity ≥ 90.
-→ Build the filter on the `similarity` column, not on `sample`. Per-plot scope is fine. No primary-key warning fires (similarity isn't a join key). If S2 ends up with no rows, the audit correctly says "filtered to similarity ≥ 90" rather than "excluded S2".
+→ Build the filter on the `similarity` column, not on `sample`; write it at the Result data (T3) of that plot. No primary-key warning fires (similarity isn't a join key). If S2 ends up with no rows, the audit correctly says "filtered to similarity ≥ 90" rather than "excluded S2".
 
 ## Saving and restoring your work
 
-Every time you click **Apply**, your committed audit decisions are saved to a **T3 ghost** file alongside the assembly results. If you close SPARMVET and come back later with the same data analysis recipe and the same data files, the ghost is restored automatically — your audit decisions reappear in their per-plot panels exactly as you left them.
+Every time you add a step ("Add to audit pipeline") or remove one, your added audit steps are saved to a **T3 ghost** file alongside the assembly results (a trial and a condition you are still building are never saved). If you close SPARMVET and come back later with the same data analysis recipe and the same data files, the ghost is restored automatically: your audit steps reappear in their places exactly as you left them.
 
-If your data files have changed since the last session, SPARMVET notices and warns you: the assembly is rebuilt, but the audit decisions persist (a row filter on `sample_id == S2` keeps applying as long as `sample_id` exists in the new data; the audit pipeline doesn't care that the assembly was redone).
+If your data files have changed since the last session, SPARMVET notices and warns you: the assembly is rebuilt, but the audit steps persist (a row filter on `sample_id == S2` keeps applying as long as `sample_id` exists in the new data; the audit pipeline doesn't care that the assembly was redone).
 
-If you restructure your data analysis recipe — rename a plot, remove a plot — any audit nodes that target the missing plot become **orphaned**. SPARMVET tells you about them at restore time and lists them in an "Orphaned" section so you can re-target or delete them. They never apply silently; you always make a deliberate choice.
+A session file saved by an older version of the app is refused with a plain line and is not converted: delete it from the session panel and start again. A restored step whose place the recipe no longer has is refused by the audit copy and the plot or table it would reach says why; it is never applied silently, and you remove it with its bin.
 
 ## The bottom line
 

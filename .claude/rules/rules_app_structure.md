@@ -66,8 +66,9 @@ app/
 ├── handlers/              # Shiny wiring only. One concern per file.
 │   ├── __init__.py
 │   ├── home_theater.py         # Home mode: tabs, sidebar, plots, tables, panel dispatch.
-│   ├── audit_stack.py          # Pipeline Audit: T2/T3 nodes, Apply gate, Revert.
-│   ├── filter_and_audit_handlers.py # Filter builder, Send to Audit, propagation dialog (DEPRECATED 2026-11-26, D-0662: removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold).
+│   ├── audit_stack.py          # Pipeline Audit: the recipe's tier 2 steps, the audit steps that were added (cards, the bin that removes one and saves the session).
+│   ├── filter_and_audit_handlers.py # Filter builder: the condition, Apply (Exploration), Try (Audit mode). FLOW-3: Send to Audit and its pop-up are removed (D-0662, D-0672).
+│   ├── trial_handlers.py       # The ONE way to create an audit step: Try (a condition, or a column drop), the marks, the reason, Add to audit pipeline.
 │   ├── session_handlers.py     # Session panel: import, restore, delete.
 │   ├── export_handlers.py      # Export panel and bundle; the key check (ADR-089).
 │   ├── data_import_handlers.py # Data Import panel: upload, assign, replace metadata.
@@ -158,13 +159,14 @@ def define_server(input, output, session, *,
 |---|---|
 | How the Home tabs are built / dynamic tabs / plots / data preview | `app/handlers/home_theater.py` |
 | Left sidebar panel dispatch (which panel renders for which workspace) | `app/handlers/home_theater.py` (`sidebar_tools_ui`, `_build_left_sidebar`) |
-| Filter builder (add row / apply / Send to Audit / reset) | `app/handlers/filter_and_audit_handlers.py` |
+| Filter builder (add row / apply / reset) | `app/handlers/filter_and_audit_handlers.py` |
+| Try, the marks, the reason and Add to audit pipeline (a condition or a column drop) | `app/handlers/trial_handlers.py` (rules: `app/modules/audit_try.py`, `audit_add.py`; engine: `audit_trial.py`) |
 | Data preview column selector | `app/handlers/home_theater.py` |
 | Export results bundle (zip / plots / data / Quarto) | `app/handlers/export_handlers.py` |
 | Import a reproducibility bundle + per-leg hash verification (ADR-097, #48) | `app/modules/bundle_importer.py` (pure logic) / `app/handlers/export_handlers.py` (Import control in the Export panel) |
 | Session save / restore / import / delete | `app/handlers/session_handlers.py` |
 | Data Import panel (upload, assign, replace metadata) | `app/handlers/data_import_handlers.py` |
-| The Pipeline Audit stack (Violet/Yellow nodes, Apply gate) | `app/handlers/audit_stack.py` |
+| The Pipeline Audit stack (Violet recipe steps, the cards of the added steps, the bin) | `app/handlers/audit_stack.py` (the session save: `app/modules/audit_session_save.py`) |
 | Blueprint Architect data analysis recipe import / TubeMap / Lineage Rail | `app/handlers/blueprint_handlers.py` |
 | Gallery filtering, preview, clone, submission | `app/handlers/gallery_handlers.py` |
 | Data ingestion (btn_ingest) | `app/handlers/ingestion_handlers.py` |

@@ -342,7 +342,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | 18 | 626 | Accordion normalisation | `.theater-container-main` + `.wrangle-studio-container` accordion globals; Bootstrap collapse cards |
 | THEATER-1 | ~660 | Plot accordion | `.spv-plot-accordion` — collapsible plot panel inside navset |
 | 19 | ~690 | Blueprint Agent Chat Panel | `.bp-agent-container`, `.bp-agent-messages`, `.bp-agent-message`, `.bp-agent-status-banner` |
-| 20 | ~790 | Filter & Audit Panel Utilities | `.spv-badge-pending`, `.spv-badge-propagation`, `.spv-badge-pk-warn`, `.spv-info-bg`, `.spv-t3-bg` |
+| 20 | ~790 | Filter & Audit Panel Utilities | `.spv-badge-pk-warn`, `.spv-info-bg`, `.spv-t3-bg` |
 | 21 | ~820 | Notification log | `.spv-notification-log`, `.spv-notif-*` |
 
 ---

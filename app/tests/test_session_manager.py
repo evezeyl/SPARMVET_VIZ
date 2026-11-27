@@ -22,8 +22,6 @@ from app.modules.session_manager import (
     SESSION_FORMAT_VERSION,
     SessionManager,
     make_audit_step,
-    node_blocks_apply,
-    gatekeeper_blocked,
     audit_steps_sha256,
 )
 
@@ -397,39 +395,6 @@ def test_make_audit_step_defaults():
     assert "id" in node
     assert "created_at" in node
 
-
-def test_node_blocks_apply_empty_reason():
-    node = make_audit_step("filter_row", {}, reason="")
-    assert node_blocks_apply(node) is True
-
-
-def test_node_blocks_apply_filled_reason():
-    node = make_audit_step("filter_row", {}, reason="Outlier removed.")
-    assert node_blocks_apply(node) is False
-
-
-def test_node_blocks_apply_aesthetic_never_blocks():
-    node = make_audit_step("aesthetic_override", {}, reason="")
-    assert node_blocks_apply(node) is False
-
-
-def test_node_blocks_apply_inactive_never_blocks():
-    node = make_audit_step("filter_row", {}, reason="")
-    node["active"] = False
-    assert node_blocks_apply(node) is False
-
-
-def test_gatekeeper_blocked():
-    audit_steps = [
-        make_audit_step("filter_row", {}, reason="ok"),
-        make_audit_step("exclusion_row", {}, reason=""),
-        make_audit_step("drop_column", {"column": "x"}, reason=""),
-        make_audit_step("aesthetic_override", {}, reason=""),
-    ]
-    blocked = gatekeeper_blocked(audit_steps)
-    assert len(blocked) == 2
-    assert audit_steps[1]["id"] in blocked
-    assert audit_steps[2]["id"] in blocked
 
 
 def test_transformation_sha256_active_only():

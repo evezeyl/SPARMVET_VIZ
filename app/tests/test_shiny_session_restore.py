@@ -111,15 +111,19 @@ def _show_card(page: Page, label: str, button: str) -> None:
     expect(page.locator(button)).to_be_visible(timeout=10_000)
 
 
+_REASONS_JS = "() => [...document.querySelectorAll('#audit_nodes_tier3 .spv-audit-reason')].map(e => e.textContent.replace(/^Reason: /, ''))"
+
+
 def _reasons(page: Page) -> list[str]:
-    return page.evaluate("() => [...document.querySelectorAll('input[id^=t3_reason_]')].map(e => e.value)")
+    """The reasons of the step cards of the right panel (FLOW-3: a card shows the reason it was added with, as text)."""
+    return page.evaluate(_REASONS_JS)
 
 
 def _wait_reasons(page: Page, step: str, expected: list[str], timeout: int = 15_000) -> None:
     """Wait until the audit panel holds exactly the reasons `expected` (as a set, in any order)."""
     try:
         page.wait_for_function(
-            "(want) => { const got = [...document.querySelectorAll('input[id^=t3_reason_]')].map(e => e.value).sort();"
+            "(want) => { const got = (" + _REASONS_JS[len("() => "):] + ").sort();"
             " return JSON.stringify(got) === JSON.stringify(want.slice().sort()); }", arg=expected, timeout=timeout)
     except Exception as exc:  # noqa: BLE001
         raise AssertionError(f"[{step}] the audit panel holds {_reasons(page)}, expected {expected}") from exc
@@ -179,39 +183,15 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         page.wait_for_timeout(200)   # the number box is mounted again after the operator changes: a value typed in that moment is lost
         page.locator("#filter_add_row").click()
         _wait_shiny(page)
-        expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
-        page.locator("#filter_send_to_audit").click()
-        expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
-        page.locator("#propagation_confirm").click()
-        _wait_shiny(page)
+        from app.tests.browser_view import add_to_pipeline, try_staged
         new_reason = "a step added after the restore"
-        apply = page.locator("#btn_apply").first
-        # Wait for each state in turn, never for the first sign of it: the audit panel and the Apply button are drawn one after the
-        # other, so "Apply is enabled" can still be the state from before the new step arrived (a click then found the step
-        # without its reason, or no step at all: seen in repeated runs). (a) the new step is in the panel (two reason boxes),
-        # (b) the server has closed the gate for it (the button says "Apply" with the stop sign and is disabled), (c) the reason is
-        # typed and read (the button says "Apply" and is enabled).
-        try:
-            expect(page.locator('input[id^="t3_reason_"]')).to_have_count(2, timeout=15_000)
-        except AssertionError as exc:
-            raise AssertionError(f"[3 add a step] the new step never reached the audit panel: {_reasons(page)}") from exc
-        expect(apply).to_have_text("Apply \u26d4", timeout=15_000)
-        expect(apply).to_be_disabled()
-        empty = page.locator('input[id^="t3_reason_"]').evaluate_all("(boxes) => boxes.findIndex(b => !b.value)")
-        assert empty >= 0, f"[3 add a step] no reason box is empty although the gate is closed: {_reasons(page)}"
-        box = page.locator('input[id^="t3_reason_"]').nth(empty)
-        box.fill(new_reason)
-        box.press("Tab")   # leaving the box sends the text; a click sent before it would be refused by the Apply gate
-        expect(apply).to_have_text("Apply", timeout=15_000)
-        expect(apply).to_be_enabled()
-        # the state at the click, kept for the message of a failure: what the button said and what every reason box held
-        at_click = f"; at the click the button said {apply.inner_text()!r} and the reason boxes held {_reasons(page)}"
-        page.eval_on_selector("#btn_apply", "e => e.click()")
-        _notices(page, "3 Apply", "audit steps applied", 1, context=at_click)
-        _free(page, "3 Apply")
-        _wait_reasons(page, "3 the new step is in the audit panel after Apply", [SAVED_REASON, new_reason])
+        try_staged(page)
+        add_to_pipeline(page, new_reason, expected_places=1)
+        _notices(page, "3 Add", "Step added to the audit pipeline", 1)
+        _free(page, "3 Add")
+        _wait_reasons(page, "3 the new step is in the audit panel after Add", [SAVED_REASON, new_reason])
         page.wait_for_timeout(5_000)   # the time in which a repeated restore would overwrite the step (a repeat came every second or less)
-        _wait_reasons(page, "3 the new step is still there 5 s after Apply", [SAVED_REASON, new_reason], timeout=3_000)
+        _wait_reasons(page, "3 the new step is still there 5 s after Add", [SAVED_REASON, new_reason], timeout=3_000)
 
         # 4. Delete on the other card runs once and the card is gone
         _show_card(page, "restore_once_empty", f"#session_delete_{safe(key_empty)}")

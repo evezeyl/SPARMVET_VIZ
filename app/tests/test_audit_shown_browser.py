@@ -22,7 +22,7 @@ What a person does and sees, on the demo `1_test_data_ST22_dummy`:
 - two places in two graphs: "Show selection" shows the first clicked and the band says "1 other place chosen, not shown"; clicking in the other order shows the other;
 - a table no plot reads says so; a plot node shows its Result data (there are no plot tabs in Audit mode, slice 3b: `test_audit_one_plot_browser.py`);
 - a staged condition survives showing the same table again and is cleared, with a notice, when another table is shown;
-- a selection that is not the table shown is refused at the Filters panel's "Send to Audit" with "Show your selection first", and nothing opens;
+- a selection that is not the table shown is refused at "Try" of the Filters panel with "Show your selection first", and nothing is tried;
 - leaving Audit mode forgets the shown item; entering it again shows the open plot's table;
 - pipeline-exploration-simple (no audit): no band, no lineage, the data choice is there.
 
@@ -264,7 +264,7 @@ def test_a_staged_condition_is_kept_when_the_same_table_is_shown_again_and_clear
 
 
 @NEEDS_AUDIT
-def test_a_selection_that_is_not_the_table_shown_is_refused_at_the_filters_panel(ready: Page, tables):
+def test_a_selection_that_is_not_the_table_shown_is_refused_at_try(ready: Page, tables):
     page = ready
     _enter_audit(page)
     threshold = float(tables["amr_heatmap"]["identity"].drop_nulls().median())
@@ -273,11 +273,11 @@ def test_a_selection_that_is_not_the_table_shown_is_refused_at_the_filters_panel
     _line(page, "T1:MLST").click()                         # chosen, not shown
     _wait_shiny(page)
     page.evaluate("() => document.querySelectorAll('#shiny-notification-panel .shiny-notification-close').forEach(b => b.click())")
-    page.locator("#filter_send_to_audit").click()
+    page.locator("#filter_try").click()
     _wait_shiny(page)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("Show your selection first", timeout=15_000)
-    assert page.locator("#propagation_confirm").count() == 0, "no dialog opens"
-    assert _staged_rows(page) == 1, "the condition is kept: nothing was sent"
+    assert page.locator(".spv-trial-panel").count() == 0, "no trial is made"
+    assert _staged_rows(page) == 1, "the condition is kept: nothing was tried"
     page.evaluate("() => document.querySelectorAll('#shiny-notification-panel .shiny-notification-close').forEach(b => b.click())")
 
 

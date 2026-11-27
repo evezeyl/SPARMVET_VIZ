@@ -16,7 +16,7 @@ Same data + edited data analysis recipe → different session.
 Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 ---------------------------------------------------------------------------
   assembly.json          — T1/T2 provenance (written once per assembly)
-  t3_{timestamp}.json   — audit steps snapshots (one per btn_apply / panel leave)
+  t3_{timestamp}.json   — audit steps snapshots (one per added or removed step)
 
 Both carry `schema_version` = SESSION_FORMAT_VERSION; every reader refuses a file with another number (D-0312).
 """
@@ -194,13 +194,6 @@ def key_drop_notice(refused: list[dict], restored_ids: int) -> str:
     n = len(by_decision)
     what = f"{n} step(s) of the saved session were not restored: {' '.join(parts)} The other {restored_ids} step(s) were restored"
     return notice(what, "use a row filter or row exclusion instead; the saved file is not changed")
-
-
-def node_blocks_apply(node: AuditStep) -> bool:
-    """True if this node must have a non-empty reason before btn_apply."""
-    return node.get("active", True) and node.get("node_type") in {
-        "filter_row", "exclusion_row", "drop_column"
-    } and not node.get("reason", "").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -885,11 +878,6 @@ def audit_steps_sha256(t3_audit_steps: list[dict]) -> str:
     active = [n for n in t3_audit_steps if n.get("active", True)]
     serialized = json.dumps(active, sort_keys=True, ensure_ascii=False).encode()
     return hashlib.sha256(serialized).hexdigest()
-
-
-def gatekeeper_blocked(t3_audit_steps: list[dict]) -> list[str]:
-    """Return list of node IDs that block btn_apply (active nodes with empty reason)."""
-    return [n["id"] for n in t3_audit_steps if node_blocks_apply(n)]
 
 
 # ---------------------------------------------------------------------------
