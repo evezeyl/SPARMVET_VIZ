@@ -19,10 +19,12 @@ The walk (each stage is a small function, so that a later slice changes one stag
                   (the plot area says "No figure: ResFinder ... is a table" and the Compare switch is absent while the table is shown);
                   show the Result data (T3) of the plot again, which the filter is built on, and choose ResFinder again, to write the step there
   4 filter        build a filter on a column of the table the open plot reads, a value taken from the data (never a fixed count), sent to audit at that place
-  5 apply         a reason, Apply: the card says where it was written, the place is marked, the plot is the audited one, the data preview has the rows expected
-  6 compare       Compare shows the two panes with their labels
-  7 export        an export made in Audit mode holds the audited table file and the audit recipe
-The step is removed at the end (the bin of its card) and the mode goes back to Exploration, so that the next test finds the page as it was.
+  5 apply         (the OLD way, kept while it exists) a reason, Apply: the card says where it was written, the place is marked, the plot is the audited one, the data preview has the rows expected
+  5a add          (FLOW-2, the NEW way) a second condition on the Result data (T3) of the plot shown: Try, look at the table, mark the place "User verified", a reason, "Add to audit pipeline": the
+                  notice, the card with its mark, the rows equal an independent count of BOTH steps
+  6 compare       Compare shows the two panes with their labels (two steps now)
+  7 export        an export made in Audit mode holds the audited table file, the audit recipe, the mark of the added step in t3_steps.yaml and its sentence in README.txt
+The steps are removed at the end (the bin of their cards) and the mode goes back to Exploration, so that the next test finds the page as it was.
 
 The expected rows are computed in the test with polars from the same recipe and data (the engine's own tables), never typed in.
 
@@ -47,6 +49,7 @@ RECIPE = "1_test_data_ST22_dummy"
 PLOT = "amr_heatmap"
 PLACE = "T1:ResFinder"
 REASON = "walk: keep only the hits below the median identity"
+REASON_NEW = "walk: and then only the lower half of what remains"
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -62,7 +65,12 @@ def expected(tmp_path_factory):
     threshold = float(identity.unique().sort()[len(identity.unique()) // 2])      # a value the data holds: some rows are below it, some are not
     kept = table.filter(pl.col("identity") < threshold).height
     assert 0 < kept < table.height, "the walk needs a value that removes some rows and keeps others"
-    return {"before": table.height, "after": kept, "removed": table.height - kept, "threshold": threshold, "resfinder": resfinder_rows}
+    audited = table.filter(pl.col("identity") < threshold)["identity"].drop_nulls()
+    threshold2 = float(audited.unique().sort()[len(audited.unique()) // 2])         # the second step (the new way) cuts the audited table again
+    kept2 = table.filter(pl.col("identity") < threshold).filter(pl.col("identity") < threshold2).height
+    assert 0 < kept2 < kept, "the walk needs a second value that removes some of the remaining rows and keeps others"
+    return {"before": table.height, "after": kept, "removed": table.height - kept, "threshold": threshold, "resfinder": resfinder_rows,
+            "threshold2": threshold2, "after2": kept2, "removed2": kept - kept2}
 
 
 # -- the stages ---------------------------------------------------------------------------------------------------
@@ -166,13 +174,49 @@ def stage_apply(page: Page, expected: dict) -> None:
     assert expected["before"] - expected["after"] == expected["removed"] > 0
 
 
+def stage_add(page: Page, expected: dict) -> None:
+    """FLOW-2: the NEW way. A second condition on the Result data (T3) of the plot shown (already audited by the first step) is tried, the place is marked "User verified", a reason is written, and
+    "Add to audit pipeline" writes it. The rows are the independent count of both steps (computed in the fixture)."""
+    show_place(page, f"T3:{PLOT}", keep_chosen=False)
+    wait_preview_rows(page, expected["after"], timeout=60_000)
+    _choose_column_firmly(page, "identity")
+    _choose_fb_op(page, "lt")
+    _wait_shiny(page)
+    page.locator("#fb_value").fill(repr(expected["threshold2"]))
+    page.wait_for_timeout(200)
+    page.locator("#filter_add_row").click()
+    _wait_shiny(page)
+    page.locator("#filter_try").click()
+    page.wait_for_function("() => !document.documentElement.classList.contains('shiny-busy')", timeout=90_000)
+    panel = page.locator(".spv-trial-panel")
+    expect(panel).to_contain_text(f"the step removes {expected['removed2']} rows of {expected['after']} here", timeout=60_000)
+    wait_preview_rows(page, expected["after2"], timeout=60_000)
+    expect(panel).to_contain_text("0 of 1 place user verified")
+    expect(page.locator("#trial_add")).to_be_disabled()
+    page.locator("input[id^='trial_verified_']").check()
+    _wait_shiny(page)
+    expect(panel).to_contain_text("1 of 1 place user verified")
+    page.locator("input[id^='trial_reason_']").fill(REASON_NEW)
+    page.locator("input[id^='trial_reason_']").press("Tab")
+    expect(page.locator("#trial_add")).to_be_enabled(timeout=15_000)
+    page.locator("#trial_add").click()
+    page.wait_for_function("() => !document.documentElement.classList.contains('shiny-busy')", timeout=60_000)
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("Step added to the audit pipeline at 1 place (1 of 1 place user verified).", timeout=30_000)
+    expect(panel).to_have_count(0, timeout=15_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("User verified", timeout=20_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at AMR Heatmap: Result data, T3")
+    wait_preview_rows(page, expected["after2"], timeout=60_000)
+    assert expected["after"] - expected["after2"] == expected["removed2"] > 0
+    expect(page.locator("#shown_band_ui")).to_contain_text("Audited: your applied steps")
+
+
 def stage_compare(page: Page) -> None:
     set_compare(page, True)
     expect(page.locator("[id$='_cmp_base'].shiny-plot-output").first).to_be_visible(timeout=30_000)
     expect(page.locator(f"#plot_group_{PLOT}")).to_be_visible(timeout=30_000)
     body = page.locator("body")
     expect(body).to_contain_text("Original (before your audit steps)")
-    expect(body).to_contain_text("Audited (after 1 step)")
+    expect(body).to_contain_text("Audited (after 2 steps)")
     set_compare(page, False)
     expect(page.locator("[id$='_cmp_base'].shiny-plot-output")).to_have_count(0, timeout=15_000)
 
@@ -192,16 +236,28 @@ def stage_export(page: Page, expected: dict) -> None:
     assert audited, f"no audited table file of ResFinder in {names}"
     assert 0 < len(z.read(audited).decode().strip().splitlines()) - 1
     plot_table = next(z.read(n).decode() for n in names if n.endswith(f"/T3_data_{PLOT}.tsv"))
-    assert len(plot_table.strip().splitlines()) - 1 == expected["after"], "the data file of the plot is the audited table HOME shows"
+    assert len(plot_table.strip().splitlines()) - 1 == expected["after2"], "the data file of the plot is the audited table HOME shows (both steps)"
+    import yaml
+    steps = yaml.safe_load(z.read(next(n for n in names if n.endswith("/t3_steps.yaml"))))["steps_by_place"]
+    added = [r for r in steps if r["reason"] == REASON_NEW]
+    assert len(added) == 1 and added[0]["user_verified"] is True and added[0]["verified_at"] and "user_verified" not in [r for r in steps if r["reason"] == REASON][0], "the mark of the added step is in t3_steps.yaml, the old step carries none"
+    readme = z.read(next(n for n in names if n.endswith("/README.txt"))).decode()
+    assert "1 of 1 place user verified" in readme, "README says how many places of the added step were user verified"
+    report = z.read(next(n for n in names if n.endswith("report.qmd"))).decode()
+    assert "1 of 1 place user verified" in report
     recipes = [n for n in names if "/audit_recipe/" in n and n.endswith("_audited.yaml")]
     assert len(recipes) == 1, f"the audit recipe is in the bundle: {recipes}"
 
 
 def stage_clean_up(page: Page, expected: dict) -> None:
-    if page.locator("[id^='t3_delete_']").count():
+    for _ in range(4):
+        if not page.locator("[id^='t3_delete_']").count():
+            break
         page.locator("[id^='t3_delete_']").first.click()
         _wait_shiny(page)
-        wait_preview_rows(page, expected["before"], timeout=60_000)
+    if page.locator("#trial_discard").count():
+        page.locator("#trial_discard").click()
+        _wait_shiny(page)
     _clear_choice(page)
     set_mode(page, "exploration")
 
@@ -217,6 +273,7 @@ def test_the_demo_recipe_in_audit_mode_from_opening_to_export(page: Page, shiny_
         stage_lineage(page, expected)
         stage_filter(page, expected)
         stage_apply(page, expected)
+        stage_add(page, expected)
         stage_compare(page)
         stage_export(page, expected)
     finally:
