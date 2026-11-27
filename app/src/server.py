@@ -238,6 +238,7 @@ def server(input, output, session):
         session_processing_issues=session_processing_issues,
         recipe_gate_version=recipe_gate_version,
         shown_recipe=shown_recipe,
+        audit_pending=audit_pending,
     )
 
     # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)

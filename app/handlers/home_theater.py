@@ -185,7 +185,7 @@ def define_server(input, output, session, *,
                   notification_log=None,
                   session_processing_issues=None,
                   recipe_gate_version=None, shown_recipe=None,
-                  gallery_state=None):
+                  gallery_state=None, audit_pending=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -3297,6 +3297,7 @@ def define_server(input, output, session, *,
         notification_log=notification_log,
         current_view_key=_current_view_key,
         save_session=_save_session_after_step,
+        audit_pending=audit_pending,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──

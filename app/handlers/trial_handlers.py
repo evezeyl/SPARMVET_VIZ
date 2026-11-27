@@ -57,7 +57,7 @@ def define_trial_server(input, output, session, *,
                         trial_state, trial_left_original, in_audit, home_state, pending_filters, safe_input,
                         recipe_id: Callable[[], str], recipe_keys: Callable[[], tuple], open_graph, lineage_calc, recipe_plans,
                         shown_place: Callable[[], Optional[str]], committed_nodes: Callable[[], list], columns_at, place_name: Callable[[str], str],
-                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None, save_session=None):
+                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None, save_session=None, audit_pending=None):
     """Register the Try button's effect, the panel and the ends of a trial.
 
     Parameters (kwargs):
@@ -77,6 +77,7 @@ def define_trial_server(input, output, session, *,
       shown_item            reactive.Value of the place shown (written by "Show" beside a place or a reached item of the panel)
       current_view_key()    the view key of the table shown (the rows a condition is stamped with): a condition built on another table is refused
       restored_steps        reactive.Value: the band's note of a restored session, cleared when the user shows something
+      audit_pending         reactive.Value[bool] of the badge "Pending" of the Pipeline Audit panel (the old Apply sets it False): nothing is pending after an Add, so it is set False there; None: untouched
       save_session(state)   writes the session file as the old Apply writes it and returns a plain warning when it could not (None when saved or when ghost save is off); None: nothing is saved
     """
     _notify = make_notifier(notification_log)
@@ -326,6 +327,8 @@ def define_trial_server(input, output, session, *,
         home_state.set(new_state)                               # the count clears the staged condition, as the old Apply does (`filter_and_audit_handlers._clear_filters_on_t3_apply`)
         reason_text.set("")
         reason_ok.set(False)
+        if audit_pending is not None:
+            audit_pending.set(False)
         if save_session is not None:
             warning = save_session(new_state)
             if warning:

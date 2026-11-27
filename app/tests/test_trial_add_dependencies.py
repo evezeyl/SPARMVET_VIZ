@@ -61,9 +61,10 @@ def _record(w, serial=1, error=None, committed=()):
 def _setup(monkeypatch, raises=None, committed=(), steps=None):
     saved = []
     trial = FakeTrial(raises)
-    w = _world(monkeypatch, trial=trial, save_session=lambda state: saved.append(state) or None, committed=lambda: list(committed),
+    pending = reactive.Value(True)                      # the badge "Pending" of the Pipeline Audit panel is on until something clears it
+    w = _world(monkeypatch, trial=trial, save_session=lambda state: saved.append(state) or None, committed=lambda: list(committed), audit_pending=pending,
                extra_inputs=("trial_reason_1", "trial_verified_1_0", "trial_verified_1_1", "trial_verified_1_2"))
-    w.saved, w.fake = saved, trial
+    w.saved, w.fake, w.pending_badge = saved, trial, pending
     w.home_state_set = lambda **kw: w.home_state.set({**_peek(w.home_state), **kw})
     with reactive.isolate():
         w.home_state.set({"t3_audit_steps_by_plot": steps or {}, "t3_apply_count": 0, "t3_ghost_file": ""})
@@ -166,6 +167,7 @@ def test_add_writes_the_step_at_all_the_places_with_the_marks_and_ends_the_trial
     assert state["t3_apply_count"] == 1, "the count moves: it clears the staged condition as the old Apply does"
     assert len(w.saved) == 1 and w.saved[0]["t3_audit_steps_by_plot"][PLACES_BUCKET] == nodes, "the session is saved once, with the step"
     assert w.notes == ["Step added to the audit pipeline at 3 places (2 of 3 places user verified)."]
+    assert _peek(w.pending_badge) is False, "nothing is pending after an Add: the badge goes, as it does after the old Apply"
     applied_arg, tried_arg, reason_arg = w.fake.calls[0]
     assert applied_arg == [] and len(tried_arg) == 3 and reason_arg == "poor sequencing quality", "the engine's apply_trial got the trial's own nodes"
 

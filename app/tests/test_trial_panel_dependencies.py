@@ -29,7 +29,7 @@ class _Trial:
         self.discards += 1
 
 
-def _world(monkeypatch, trial=None, save_session=None, committed=None, extra_inputs=()):
+def _world(monkeypatch, trial=None, save_session=None, committed=None, extra_inputs=(), audit_pending=None):
     found, notes = {}, []
     monkeypatch.setattr(render, "ui", lambda fn=None, **k: fn if fn else (lambda f: f))
     monkeypatch.setattr(ui, "notification_show", lambda message, **k: notes.append(str(message)))
@@ -51,7 +51,7 @@ def _world(monkeypatch, trial=None, save_session=None, committed=None, extra_inp
         pending_filters=pending, safe_input=lambda i, k, d: (live.values[k].get() if k in live.values and live.values[k].get() is not LiveInput.MISSING else d),
         recipe_id=lambda: "r", recipe_keys=lambda: ("a", "b"), open_graph=lambda: None, lineage_calc=lambda: (None, "x"), recipe_plans=lambda: None,
         shown_place=lambda: "T3:p", committed_nodes=(committed if committed is not None else (lambda: [])), columns_at=lambda p: None, place_name=lambda n: f"name of {n}", get_trial=lambda: trial,
-        notification_log=reactive.Value([]), save_session=save_session)
+        notification_log=reactive.Value([]), save_session=save_session, audit_pending=audit_pending)
     return SimpleNamespace(found=found, notes=notes, live=live, pending=pending, home_state=home_state, trial_state=trial_state, mode=mode, trial=trial)
 
 
