@@ -26,6 +26,7 @@ Command line instead of VS Code: `claude --agent coordinator` (the agent file re
 | `panel-architect` | sonnet | high | read + Bash (scratch only) | viewpoint: software architect, ADRs |
 | `panel-developer` | sonnet | medium | read + Bash (scratch only) | viewpoint: developer, effort and order |
 | `panel-user` | sonnet | medium | read-only | viewpoint: a user who is not a developer |
+| `panel-statistician` | sonnet | medium | read + Bash (scratch only) | viewpoint: statistician, claims, assumptions, misuse |
 
 All agents follow `.claude/workflows/agent_principles.md` (verify, transparent and reproducible science, inform the user and do not choose for them, no half fixes or shims, tests that can fail, check what is decided). The viewpoints and the `reviewer` use the method of `.claude/workflows/design_review_personas.md`.
 
@@ -63,6 +64,7 @@ Use it when a choice has two or more valid approaches, not for routine work.
 2. It starts at most 3 viewpoints **at once**, one round. Choose by the question:
    - affects results or data: `panel-scientist` + `panel-architect` (+ `panel-developer` if the build is big);
    - affects what the user sees or decides: `panel-user` + `panel-scientist` + `panel-architect`;
+   - a statistics claim or a text that explains a method or a figure: `panel-statistician` + `panel-scientist`;
    - small technical choice: `panel-architect` (it also covers the developer) + `panel-scientist`.
    Each answers in at most 250 words.
 3. The coordinator puts them in one tab-delimited table (option, viewpoint, pro, con, evidence class), adds its recommendation, and **stops**. Eve decides. No agent decides.
