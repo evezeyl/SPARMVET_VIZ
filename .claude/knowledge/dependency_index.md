@@ -520,7 +520,7 @@
 
 ## `app/modules/step_bar.py`
 - **Role:** `ref`
-- **provides:** `function:try_state`, `function:drop_words`, `function:kind_of_input`, `const:KIND_CHOICES`, `const:TRY_BUTTON`, `const:STEP_BAR_LABEL`
+- **provides:** `function:try_state`, `function:drop_words`, `function:kind_of_input`, `function:fold_summary`, `const:KIND_CHOICES`, `const:TRY_BUTTON`, `const:STEP_BAR_LABEL`
 - **consumes:** `app/modules/audit_try.py (KIND_FILTER`, `KIND_DROP`, `drops_from_selection)`
 - **consumed_by:** `app/handlers/step_bar_handlers.py`, `app/handlers/trial_handlers.py`, `app/tests/test_step_bar.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/knowledge/decision_ledger.md (D-0663`, `D-0672)`

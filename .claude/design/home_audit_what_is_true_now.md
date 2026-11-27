@@ -72,6 +72,7 @@ Details with file and line: `tmpAI/panel/review_queue/OLD_THINKING_IN_CODE.md`.
 5. Older open points, unchanged: uploaded data; plot ids across dated copies; the Gallery list (`tmpAI/status/QUESTIONS_HOME_2026-11-26.md`, `QUESTIONS_GALLERY_2026-11-26.md`; not in git).
 
 ## Where things are
+- The guardrails (what protects the user, where in the code, the test, the state, the known gaps): `.claude/design/home_guardrails.md`; the limits: `.claude/design/current_limits.md`.
 - The behaviour page and its mock: `tmpAI/panel/review_queue/BEHAVIOUR.md`, `mock_flow.html`. (The study page beside it, `DESIGN_FOR_THE_OWNER.md`, is superseded in its flow and questions; its part on the reuse at apply holds.)
 - The header and Audit-mode design: `tmpAI/panel/header_strip_audit/DESIGN_FOR_THE_OWNER.md` (the dated updates at its top win), `mock_strip.html`.
 - The plan: `tmpAI/status/DEMO_BUILD_PLAN_2026-11-26.md`.
