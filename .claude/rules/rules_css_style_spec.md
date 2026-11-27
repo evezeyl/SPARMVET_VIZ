@@ -93,7 +93,6 @@ These are the ONLY allowed values for informational banners (connected/error/bus
 | Gallery guidance even-row | `#fffde7` | Even rows in guidance table |
 | Gallery guidance row hover | `#fff8a0` | Row hover in guidance table |
 | PK-warn badge border | `#ffeeba` | `.spv-badge-pk-warn` border |
-| Propagation badge (pending fix) | `#cfe2ff` bg / `#0a3678` text | `.spv-badge-propagation` — **Bootstrap info colors, added today (§20). Should be migrated to `#eef0fb` bg / `#345beb` text in next session.** |
 
 ### 1g. Code Editor Surface (YAML / docstring blocks only)
 

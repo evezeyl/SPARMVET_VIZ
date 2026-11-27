@@ -119,7 +119,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Shiny sets margin-top:-10px on stacked radio/checkbox .shiny-options-group to cancel
    the control-label's margin-bottom — this leaves 0px gap between label and first option.
    Inline groups get margin-top:-1px (9px net). Neutralize the stacked case so both match.
-   Applied to sidebar AND modals (T3 propagation modal uses stacked radio with "Apply to:"). */
+   Applied to sidebar AND modals (a modal that holds a stacked radio group). */
 #nav_sidebar .shiny-input-radiogroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,
 #nav_sidebar .shiny-input-checkboxgroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,
 .modal .shiny-input-radiogroup:not(.shiny-input-container-inline) label ~ .shiny-options-group,

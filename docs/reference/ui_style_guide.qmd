@@ -125,10 +125,9 @@ CENTRAL THEATER (.theater-container-main)
 RIGHT SIDEBAR (#audit_sidebar)
 │  Pipeline Audit card
 │  ├── card-header           "Pipeline Audit"
-│  ├── ⏳ Pending badge
 │  ├── Tier 2 ─ h6          (repeats)
 │  ├── Tier 3 ─ h6          (repeats)
-│  └── [Apply] button        #btn_apply
+│  └── a card for each audit step added (the place it is written at, "User verified", its reason, a bin)
 ```
 
 ### Home — element selectors and style notes
@@ -156,8 +155,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Tier divider h6 (Active Logic Stack etc.) | `#audit_sidebar h6` | `#345beb`, 0.85rem/700 | Yes — §16 |
 | Tier 2 node | `.audit-node-tier2` | bg `#eef0fb` | Yes — §2 |
 | Tier 3 node | `.audit-node-tier3` | bg `#e6f7f5` | Yes — §2 |
-| Pending badge | `.audit-pending-badge` | amber chip | Yes — §6 |
-| Apply button | `#btn_apply` | `#345beb` bg, `.btn-primary` | Yes — §6 |
+| Add to audit pipeline button | `#trial_add` | `#345beb` bg, `.btn-primary` | Yes — §6 |
 | Session delete button | `[id^="session_delete_"]` | amber `#ffc107` bg, black text | Yes — §6 |
 
 ---

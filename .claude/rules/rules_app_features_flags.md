@@ -39,7 +39,7 @@ No dependencies. Safe to enable in any app features.
 interactivity_enabled: true/false   ← MASTER GATE for all below
   │
   ├─ (header strip: "Table to view" Source/T1/T2/T3 + Exploration)  ← gated on interactivity_enabled alone
-  ├─ t3_sandbox_enabled             ← the audit: "Mode: Exploration | Audit" switch, Send to Audit, right sidebar audit panel
+  ├─ t3_sandbox_enabled             ← the audit: "Mode: Exploration | Audit" switch, Try and Add to audit pipeline, right sidebar audit panel
   │                                    REQUIRES comparison_mode_enabled, session_management_enabled, export_enabled (FATAL, D-0018)
   ├─ comparison_mode_enabled        ← the Compare switch of Audit mode ("Original" | "Audited"); REQUIRES t3_sandbox_enabled (FATAL, D-0018)
   └─ session_management_enabled     ← Session Save/Import + ghost save

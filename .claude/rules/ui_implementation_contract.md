@@ -83,7 +83,7 @@ Tests: `app/tests/test_lineage_view.py` (headless), `test_lineage_view_browser.p
 
 **The lineage as data (built 2026-11-25, PROVISIONAL, no screen yet; D-0627, D-0630 to D-0632).** `utils.lineage_data.lineage_of(raw, plans)` returns the nodes (tier 1 and tier 2 of the tables, tier 3 of the plots, a leaf `result` for a table nothing is built from, which can be chosen as a place), the arrows (every parent of a joined table; the original files and the metadata are not drawn; a table that takes the metadata in carries `brings_metadata`), for each place what is built from it and every path to each result with the steps on it, the columns from the engine's plan book, and the independent graphs with their original parents. The view G of HOME reads it; it is not built.
 
-**What HOME reads (built for the demo 2026-11-24, `audit_places.py`, `audit_view.py`; PROVISIONAL):** a step so written is ONE audit node with a `place` in the bucket `__places__` of `t3_audit_steps_by_plot` (the only bucket: the name is the old one, it no longer holds one list per plot; PROVISIONAL); HOME builds the audit copy of the recipe from the committed place nodes (`utils.audit_copy`, the reason is the `audit_comment`), runs it (`audit_run.run_audit`, folder `user_data/audit_anchors`, own keys) and reads the audited table in Audit mode for the plot, the T3 view, the column chooser, the filter form and Compare's audited pane (nothing is applied on top of that table by the callers); the steps of the three tiers run in the order tier 1, tier 2, tier 3 and inside a tier in the order written; a step that cannot run raises one plain error that names the step id and its place, for every plot it breaks (`AuditRunError`); Compare's original pane reads the original table; the T1 and T2 views read the original in Exploration and the AUDITED table in Audit mode where an audit step changes it (D-0622, see the next paragraph). The session file is format number 5 (an older file is refused, never converted; every stored step must carry its place). Not built: "table changed / picture changed" per line, the audit folder inside the session folder.
+**What HOME reads (built for the demo 2026-11-24, `audit_places.py`, `audit_view.py`; PROVISIONAL):** a step so written is ONE audit node with a `place` in ONE flat list, `audit_pipeline`, of HOME's state and of the session file (the committed steps of every tier, in the order added; FLOW-3 stage B, PROVISIONAL name); HOME builds the audit copy of the recipe from the committed place nodes (`utils.audit_copy`, the reason is the `audit_comment`), runs it (`audit_run.run_audit`, folder `user_data/audit_anchors`, own keys) and reads the audited table in Audit mode for the plot, the T3 view, the column chooser, the filter form and Compare's audited pane (nothing is applied on top of that table by the callers); the steps of the three tiers run in the order tier 1, tier 2, tier 3 and inside a tier in the order written; a step that cannot run raises one plain error that names the step id and its place, for every plot it breaks (`AuditRunError`); Compare's original pane reads the original table; the T1 and T2 views read the original in Exploration and the AUDITED table in Audit mode where an audit step changes it (D-0622, see the next paragraph). The session file is format number 6 (an older file is refused as a whole, never converted; every stored step must carry its place; no `plot_scope` field). Not built: "table changed / picture changed" per line, the audit folder inside the session folder.
 
 **The T1 and T2 views in Audit mode (D-0622; built 2026-11-24, the words are PROVISIONAL).** In Audit mode the T1 and T2 views of the data preview show the AUDITED table of the plot's table when a committed audit step is written at the table or above it and the copy changes the table (`PlaceAudit.table_lazy`, through `_resolve_active_lf`: the one reader, so the column chooser, the filter dialog and the row count read the same table; the filter dialog is offered on T3 only and acts on the table of the view). A table with no tier-2 steps shows its audited T1 as its T2. A table no step changes shows the original. The badge says which: "Viewing: T1, audited" with a note, or "Viewing: T1, original" with "no audit step changes this table: this is the original". A step that cannot run is shown in the table's place only for a table it reaches. Source stays the file as read. In Exploration nothing changes: originals. Tests: `app/tests/test_audit_tier_views.py`, `test_audit_tier_views_browser.py`.
 
@@ -161,7 +161,7 @@ The theater layout is controlled by the mode (Exploration or Audit, which decide
 |---|---|---|
 |**Table Ref**|`table_ref`|**Visual Only**: Filtering here updates the table view but creates NO audit nodes and does NOT trigger the Apply button.|
 |**Table Active**|`table_active`|**Audit trail Driver**: "Brush" events or column de-selections automatically generate a new **Yellow Node** in the Audit Stack.|
-|**Audit Stack**|`audit_stack`|**Order Matters**: Drag-and-drop reordering of nodes marks `audit_pending = True`.|
+|**Audit Stack**|`audit_stack`|**Order Matters**: the steps are kept and run in the order they were added (tier 1, then tier 2, then tier 3; inside a tier in the order added); a step is taken out with the bin of its card.|
 
 ## 7. Session Management vs. Global Export
 
@@ -174,7 +174,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 **Function:** Persists and restores the full working state so a user can resume interrupted work, or maintain separate sessions for different pipeline runs (e.g., AMR pipeline run 2025-01 vs run 2025-06).
 
 **What is saved per session:**
-- Active `t3_audit_steps` (all Yellow nodes and their comment fields)
+- The audit steps added (`audit_pipeline`: each with its place, its reason and its `user_verified` mark)
 - Reference to the active data analysis recipe and data source (so the session knows which pipeline run it belongs to)
 - If metadata was replaced (see §9): reference to the uploaded metadata filename
 
@@ -189,7 +189,7 @@ Not saved: exploration filters (`applied_filters`; they are never saved or expor
 
 **Ghost save (see §12d for the authoritative two-slot spec):**
 - T1/T2 Ghost (`assembly.json`) — written once per assembly, rewritten when data analysis recipe or source data changes.
-- T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` press: only audited steps applied with a reason are saved; pending steps are not; there is no save on a panel switch (D-0302). Each save is a new timestamped file, not an overwrite — the session panel lets the user pick which T3 snapshot to restore.
+- T3 Ghost (`t3_{timestamp}.json`) — written on every Add to audit pipeline and on every removal of a step: the steps added (each with its reason) are saved, a staged condition and a trial are not; there is no save on a panel switch (D-0302). Each save is a new timestamped file, not an overwrite — the session panel lets the user pick which T3 snapshot to restore.
 - Restored automatically via the T1/T2 "Prepped Chef" check at startup, matching on `session_key`.
 
 **Save location:** `user_data` (Location 4) from the active deployment. This path is deployment-specific — on Galaxy it maps to a Galaxy-accessible path; on a local machine it is a local directory. Users only have write access to Location 4 — they cannot choose an arbitrary path.
@@ -244,26 +244,35 @@ Not saved: exploration filters (`applied_filters`; they are never saved or expor
 | `data/<ds>_T2.tsv` | T2 (Analysis-ready) — only when the join has tier2 steps; read from the stored Tier 2 parquet (issue #10) |
 | `<ds>/T3_data_<plot>.tsv` | Audited data of a plot (T3): stored T2 (T1 without tier2 steps) plus that plot's AUDITED filters and drops. Written for every plot with audited steps, never for others; no checkbox (EXPORT-T3-1, issue #25, 2026-11-06) |
 | `data_analysis_recipes/<proj>/` | All YAML wrangling/join/plot files for the active data analysis recipe |
-| ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `data_analysis_recipes/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
+| ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `data_analysis_recipes/t3_steps.yaml` and the section *Audit steps* of `report.qmd` |
 | `data_analysis_recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
-| `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
+| `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **Audit steps** section (one table: Step / Written at / Action / Details / Justification / Plots built from it) |
 | `README.txt` | Bundle data analysis recipe: timestamp, data analysis recipe, app features, scope, tiers, metadata source filename, counts |
 
-**T3 Audit Trail in report.qmd:** Auto-generated `## T3 Audit Trail` section with one table per plot (Step / Action / Details / Justification). Deactivated nodes excluded. Only present when `t3_sandbox_enabled` and committed active nodes exist.
+**Audit steps in report.qmd (FLOW-3, 2026-11-27):** one section `## Audit steps` with one table (Step / Written at / Action / Details / Justification / Plots built from it); the seed pin of a plot (Reshuffle) is a row of the same table, written at the plot. Present when an audit step or a seed pin exists. Deactivated nodes excluded.
 
-**`t3_steps.yaml` format:**
+**`t3_steps.yaml` format (FLOW-3, 2026-11-27; the names `steps_by_place` and `plot_seeds` are PROVISIONAL):**
 ```yaml
-generated: "2026-05-04T12:00:00"
-export_scope: "global"          # or group_id or plot_id
-t3_steps:
+generated: "2026-11-27T12:00:00"
+steps_by_place:                 # every audit step, at the place it is written, in the order added
+  - id: "..."
+    written_at: "T1:ResFinder"  # T1:<table>, T2:<table> or T3:<plot>
+    written_at_words: "Table ResFinder (tier 1)"
+    started_from_plot: "..."
+    action: filter_row           # filter_row | exclusion_row | drop_column
+    # ...params...
+    reason: "..."
+    committed_at: "..."
+    plots_built_from_it: [...]
+    user_verified: true          # the mark of the place, advice (D-0669)
+plot_seeds:                     # the seed pins of the plots (Reshuffle): not a step on data, listed apart
   <plot_id>:
-    - action: <node_type>       # filter_row | exclusion_row | drop_column | aesthetic_override
-      # ...params...
+    - action: random_seed
+      seed: 7
       reason: "..."
-      committed_at: "..."
 ```
 
-> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The per-plot list `t3_steps` of `t3_steps.yaml` above (and the sentences of README and report that say "(plot: ...)"): only the per-place list `steps_by_place` is kept (decided 2026-11-26, D-0665; ON HOLD). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+> **REMOVED (FLOW-3, 2026-11-27; D-0665):** the per-plot list `t3_steps` of `t3_steps.yaml` (it held only the seed pins since the places were built; they are `plot_seeds` now) and the sentences of README and report that said "(plot: ...)": a step says where it is written. **Tombstone expires:** Phase 40 (PROVISIONAL, delete this block after two phases; task TOMBSTONE-AUDIT-OLD-WAY in `.claude/tasks/tasks.md`).
 
 **No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
@@ -506,7 +515,7 @@ Each node in the audit steps is a YAML mapping:
 - node_type: filter_row          # filter_row | exclusion_row | drop_column
   id: "t3_node_001"              # auto-generated UUID on creation
   created_at: "2026-04-24T14:30" # ISO timestamp
-  plot_scope: "__all__"          # "__all__" or a specific plot sub-tab id
+  place: "T3:amr_heatmap"        # where the step is written: T1:<table>, T2:<table> or T3:<plot>
   params:
     column: "species"
     op: "in"
@@ -516,7 +525,7 @@ Each node in the audit steps is a YAML mapping:
 
 **Optional fields of a node (FLOW-2, 2026-11-27; PROVISIONAL names):** `applied_at` (the moment the step was applied; UTC to the second, no zone, as `created_at`), and, for a step added with "Add to audit pipeline", `user_verified` (true when the user marked the place of this node "User verified" before adding, else false) and `verified_at` (the moment the mark was set; only when `user_verified` is true). A node without them is a step of the old way or an older file: it is read as before and says nothing about a mark. The session format number does not change (an older file has no such field). Nothing records who marked (D-0670: NOT decided; the app has no user identity).
 
-> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The field `plot_scope` of the example above and the names that speak of plots as the scope (`plot_scope`, `t3_audit_steps_by_plot`): every step carries its `place` (section 12g.1) and the one list is the bucket `__places__`; the names are renamed ONCE, with a new session format number, together with the removal of the pop-up (D-0665; the new names are not decided). It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
+> **REMOVED (FLOW-3, 2026-11-27; D-0665):** the field `plot_scope` of a step, the bucket `__places__`, the store `t3_audit_steps_by_plot` and the flat copy `t3_audit_steps`: every step carries its `place`; the steps are ONE flat list `audit_pipeline` (PROVISIONAL name); the count of saves of a session is `audit_saves_count` (it was `t3_apply_count`); the checksum is `audit_steps_sha256`. A session file with the old names is older than format 6 and is refused as a whole. **Tombstone expires:** Phase 40 (PROVISIONAL, delete this block after two phases; task TOMBSTONE-AUDIT-OLD-WAY in `.claude/tasks/tasks.md`).
 
 `reason` is a free-text string, written in the panel of the trial before the step is added; the card of an added step shows it as text ("Reason: ...").
 
@@ -524,13 +533,11 @@ Each node in the audit steps is a YAML mapping:
 
 There is **no separate FILTERS.txt** for T3. The T3 YAML audit trail is the complete audit trail.
 
-- Every Yellow node has `id`, `created_at`, `plot_scope`, `params`, and `reason`.
+- Every Yellow node has `id`, `created_at`, `place`, `params`, and `reason`.
 - **Design intent (not yet built, F-07):** the audit trail was designed to be append-only, with deletions marking nodes `active: false` rather than removing them, so the sequence of decisions is preserved. **As built,** there is no control that ever sets `active: false` — deletion is real removal from the list (`audit_stack.py:585`). The `active: false` / "deactivated node" path below describes the intended future behaviour once the Power-icon toggle (§1) is implemented; today it never triggers. Tracked as task STM-NODE.
 - **Export warning for deactivated nodes (not yet reachable, see above):** If any node has `active: false` at export time, the UI shows a blocking warning dialog: *"You have [N] deactivated filter(s) / exclusion(s) / column drop(s). Export reflects only active nodes. Deactivated nodes will NOT appear in the exported data or Methods section. Confirm you want to discard them from this export?"* The user must explicitly confirm. The export is the unambiguous truth — deactivated nodes are absent from the exported data and from the Methods section. They are listed in an appendix ("Decisions Considered and Discarded") for transparency only.
 
-> **DEPRECATED (2026-11-26, records pass; ledger D-0662, D-0663, D-0665; replaced by the place model, D-0553, D-0621, D-0662, D-0663; D-0022, D-0093 and D-0535 are earlier lines in the same direction, their tick-line wording is not the target):** The `plot_scope` field in the list above and the overrides stored per plot sub-tab (`t3_plot_overrides`) below: see 12b and 12g.9. It is how the app is built TODAY and is kept below as built; read `.claude/design/home_audit_what_is_true_now.md` first. **Removal task:** AUDIT-OLD-SCOPE-REMOVE-1 (`.claude/tasks/tasks.md`, ON HOLD until the owner has read the behaviour page).
-
-`aesthetic_override` nodes are stored **separately** from the wrangling steps as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13). They are included in the export report but do not block `btn_apply`.
+The seed pin of a plot (Reshuffle) is stored **separately** from the audit steps as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13); the Plot Style panel that authored the other `aesthetic_override` nodes is removed (D-0665). The pin is included in the export report (a row of *Audit steps*, `plot_seeds` of `t3_steps.yaml`).
 
 ### 12d. Ghost Save — Two Slots
 
@@ -555,7 +562,7 @@ Using content hashes (not IDs or names) means the key is invariant to data analy
 | Slot | File | Written when | Content |
 |---|---|---|---|
 | **T1/T2 Ghost** | `_sessions/{session_key}/assembly.json` | Once on first assembly; re-written when data analysis recipe or source data changes | Data analysis recipe ID + SHA256, source files + per-file SHA256, `data_batch_hash`, assembled Parquet paths, assembly timestamp |
-| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply` (no save on a panel switch, D-0302) | Full audit steps YAML + `t3_plot_overrides` + `session_key` + `saved_at` + `schema_version` (no tier toggle) |
+| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every Add to audit pipeline and every removal of a step (no save on a panel switch, D-0302) | `audit_pipeline` (the one flat list of the audit steps) + `audit_steps_sha256` + `t3_plot_overrides` + `session_key` + `saved_at` + `schema_version` (no tier toggle) |
 
 Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files for a session are co-located, making it easy to archive, share, or delete a full session as a unit.
 
@@ -605,18 +612,17 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
   "data_batch_hash": "c4d29e1a3f80...",
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
-  "schema_version": 5,
-  "t3_audit_steps": [],
-  "t3_audit_steps_by_plot": {},
+  "schema_version": 6,
+  "audit_pipeline": [],
   "t3_plot_overrides": {},
   "notification_log": [],
-  "t3_audit_steps_sha256": "..."
+  "audit_steps_sha256": "..."
 }
 ```
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`, `session_manager.py:525-585`). `t3_audit_steps` is a flat copy of the same steps, kept for readers that do not know the per-plot form; `t3_audit_steps_by_plot` holds the one bucket `__places__` (section 12g.1: the name is the old one, each step carries its `place`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 5 today, `session_manager.py:229`): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
+There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`, `session_manager.py:525-585`). `audit_pipeline` is the one flat list of the audit steps, in the order added, each with its `place` (section 12g.1; the name is PROVISIONAL); `audit_steps_sha256` is the checksum of that list and of `t3_plot_overrides`. `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 6 today, `session_manager.py:229`): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
 
 **Session of another recipe:** Restore of a session saved against another recipe is refused with a plain line (it belongs to another recipe; open that recipe first); nothing is applied (D-0317; built, `session_manager.session_recipe_refusal`, compared by recipe id).
 
@@ -661,9 +667,9 @@ T3 ghost is never written on intermediate filter edits — only on apply (D-0302
 
 ### 12f. Export Report Spec
 
-**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
+**Location:** Auto-included as the `## Audit steps` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
-**Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The T3 Audit Trail section is part of this file.
+**Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The Audit steps section is part of this file.
 
 **Front-matter block:**
 ```yaml
@@ -671,7 +677,7 @@ title: "SPARMVET Audit Report"
 date: "2026-04-24"
 data_analysis_recipe_id: "my_pipeline_v2"
 data_analysis_recipe_sha256: "a3f9..."   # SHA256 of the pipeline data analysis recipe YAML at time of export
-t3_audit_steps_sha256: "b7c1..."  # SHA256 of the serialized audit steps
+audit_steps_sha256: "b7c1..."  # SHA256 of the serialized audit steps
 ```
 
 **Report sections:**
@@ -682,8 +688,7 @@ t3_audit_steps_sha256: "b7c1..."  # SHA256 of the serialized audit steps
    - `filter_row`: *"Rows were filtered to include only [column] [op] [value]. Reason: [reason]."*
    - `exclusion_row`: *"The following [column] values were explicitly excluded: [value]. Reason: [reason]."*
    - `drop_column`: *"Column '[column]' was permanently removed from the exported dataset. Reason: [reason]."*
-   - `aesthetic_override`: *"Plot aesthetics were adjusted for [plot_scope]: [params summary]."*
-   - `developer_raw_yaml`: *"A custom data analysis recipe fragment was applied to [plot_scope]. Reason: [reason]."*
+   - `random_seed`: *"The arrangement of the random points of plot [plot] was fixed with the seed [seed]."*
 4. **Figures** — embedded PNG outputs for each active plot sub-tab.
 5. **Appendix: Decisions Considered and Discarded** — lists any `active: false` nodes by type, params, and reason. Present only if deactivated nodes exist. Framed as transparency, not Methods.
 6. **Raw audit steps** — full YAML (active nodes only) appended as a fenced code block for reproducibility.
@@ -698,10 +703,10 @@ FLOW-3 (D-0662, D-0665, D-0672) removed the idea that this section was built on:
 
 #### 12g.1. Storage shape
 
-Every committed audit step is a node in ONE list (the bucket `__places__`, in the order committed); each node carries its `place` (`T1:<table>`, `T2:<table>` or `T3:<plot>`; the three tiers are one mechanism):
+Every committed audit step is a node in ONE flat list (`audit_pipeline`, in the order committed); each node carries its `place` (`T1:<table>`, `T2:<table>` or `T3:<plot>`; the three tiers are one mechanism):
 
 ```python
-"t3_audit_steps_by_plot": {"__places__": [node_a_at_T1_ResFinder, node_b_at_T3_amr_heatmap, node_b_at_T3_mlst_bar, ...]}   # the key is the old name: one list for every tier (renamed in stage B of FLOW-3 when the session format number moves)
+"audit_pipeline": [node_a_at_T1_ResFinder, node_b_at_T3_amr_heatmap, node_b_at_T3_mlst_bar, ...]   # one list for every tier (FLOW-3 stage B, session format number 6; PROVISIONAL name)
 ```
 
 A decision written at several places is one node per place, all with **the same `id`**: removal by that id removes every copy. There is no pending list: a step is in the list only once it was added with its reason (section 2, "The one way to create an audit step").
@@ -751,7 +756,6 @@ At the places of the trial: the place shown, plus the other places chosen in "Pa
 ```yaml
 - node_type: filter_row
   id: "8a3f9c1d…"
-  plot_scope: "__places__"             # the bucket of the one list (the name is the old one)
   place: "T1:ResFinder"                # where the step is written
   primary_key_warning: true             # set when the targeted column is in the primary-key set
   params:
@@ -762,7 +766,7 @@ At the places of the trial: the place shown, plus the other places chosen in "Pa
 ```
 
 - `primary_key_warning: bool` — set to `true` (default `false`) when authoring touched a join key. Persists in the session file. Renders as a banner on the audit card and as a marker in the export report.
-- `place` and `started_from` (the plot sub-tab the user was on): where the step is written; `plot_scope` is only the bucket name `__places__` (renamed with the list, stage B).
+- `place` and `started_from` (the plot sub-tab the user was on): where the step is written (there is no `plot_scope` field any more: the place is the scope).
 
 #### 12g.6. Right-sidebar audit panel
 
@@ -784,7 +788,7 @@ There is no pending (staged) step and no separate Apply since FLOW-3 (D-0672: st
 
 #### 12g.8. Ghost save & restore
 
-T3 ghost format stores `t3_audit_steps_by_plot: {"__places__": [nodes]}` (written by `audit_session_save.save_audit_session` after an Add and after a removal). A session file saved by an older version of the app is refused with a plain line and never converted (D-0312); the bucket `__legacy__` and the "orphaned nodes" list that the 2026-04 text described for pre-22-J files are not built for a current file.
+T3 ghost format stores `audit_pipeline: [nodes]` (written by `audit_session_save.save_audit_session` after an Add and after a removal). A session file saved by an older version of the app is refused with a plain line and never converted (D-0312); the bucket `__legacy__` and the "orphaned nodes" list that the 2026-04 text described for pre-22-J files are not built for a current file.
 
 #### 12g.9. Aesthetic propagation: removed
 
@@ -827,9 +831,8 @@ home_state = reactive.Value({
     "applied_filters": [],             # list of {column, op, value, ...} — exploration rows applied on filter_apply, for the view they were built on
 
     # audit steps (wrangling nodes — filter, exclusion, drop_column, developer_raw_yaml)
-    # DEPRECATED (2026-11-26, D-0665; removal task AUDIT-OLD-SCOPE-REMOVE-1, on hold): the names below speak of plots as scope; one list, every tier, each step with its place; renamed once with a new session format number. See §12g.
-    "t3_audit_steps_by_plot": {},           # {"__places__": list[AuditStep]} — the committed steps of every tier, each with its place (the key is the old name; §12g.1)
-    "_pending_t3_nodes": [],           # pending nodes: one per chosen place, each with its `place` (§12g.7)
+    "audit_pipeline": [],                   # the committed audit steps of every tier, ONE flat list in the order added, each with its place (FLOW-3 stage B; PROVISIONAL name; §12g.1)
+    "audit_saves_count": 0,            # how many times the audit steps were saved in this session (the session panel counts the saves; it was `t3_apply_count`)
     "primary_keys": [],                # list of column names — union of all assembly join keys (§12g.2)
 
     # T3 session provenance (links state to ghost file and data analysis recipe)
@@ -847,7 +850,7 @@ home_state = reactive.Value({
 
 **Panel independence rule:** Every top-level panel (Home, Gallery, Blueprint Architect, Test Lab) maintains its own independent state object. Switching panels never resets another panel's state. Gallery sub-tab position, Blueprint selected node, and the Home mode and data choice are all independently preserved.
 
-**State persistence:** On every `btn_apply` a T3 Ghost `t3_{timestamp}.json` is written (§12d). It holds the audit steps, `t3_plot_overrides` and the notification log; no mode, data choice or filter state (exploration filters are never saved, D-0327).
+**State persistence:** On every Add to audit pipeline and every removal of a step a T3 Ghost `t3_{timestamp}.json` is written (§12d). It holds the audit steps, `t3_plot_overrides` and the notification log; no mode, data choice or filter state (exploration filters are never saved, D-0327).
 
 **Reactive dependency graph:**
 
@@ -855,7 +858,7 @@ home_state = reactive.Value({
 active_group_tab ──► active_plot_subtab ──► T3 table of the plot
                                           │
                         home_mode ───────►│──► plot render (Exploration: the Result; Audit: + audit steps)
-                        t3_audit_steps ──►│
+                        audit_pipeline ──►│
                         t3_plot_overrides►│
 data_view, source_table, applied_filters ──► data preview only
 ```

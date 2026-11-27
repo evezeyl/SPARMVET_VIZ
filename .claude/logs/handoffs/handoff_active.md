@@ -14,11 +14,15 @@ The full one-page version, trusted over any older text on the same subject: `.cl
 |---|---|
 | Result data (T3) | plot data, the plot's table |
 | the table the plot reads (T1, T2 or T3) | the plot's table |
-| place; the places chosen; what the step reaches | "This plot only", "All plots", "All plots except" (old thinking of ADR-049; still built in the pop-up, to be removed) |
+| place; the places chosen; what the step reaches | "This plot only", "All plots", "All plots except" (old thinking of ADR-049; removed in FLOW-3, 2026-11-27) |
 | applied step, audit step, trial | "My view" (gone since 2026-11-20) |
 
 
 Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE 2026-11-26 below (the section of 2026-11-25 after it is kept as history); one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
+
+## OPEN STATE 2026-11-27, FLOW-3 (the newest block, read it first)
+
+FLOW-3 of the new Audit flow is BUILT on branch `task/audit-old-way-out` (worktree `SPARMVET_VIZ_wt_lineage_look`, from `dev` 1136ab1a), waiting for the review and the merge; not pushed. Two commits of work: stage A (`refactor(audit)!: remove the old ways of creating an audit step`, plus `feat(audit): try a column drop like a condition`) and stage B (`refactor(audit)!` the one rename of the stored names, session format number 6). What the user sees: a step is created in ONE way (stage the condition in the Filters panel or the columns to drop in the column chooser, Try, mark each place "User verified", write the reason, "Add to audit pipeline"); the pop-up of "Send to Audit", the lineage button and its small form, the staged cards, the separate Apply, the Pending badge and the Plot Style panel are gone. The stored names (PROVISIONAL): the steps are ONE list `audit_pipeline` (state and session file), no `plot_scope`, `audit_saves_count`, `audit_steps_sha256`, `t3_steps.yaml` with `steps_by_place` and `plot_seeds`, one report section "Audit steps", session format number 6 (an older file is refused as a whole). The name `audit_steps` was not used for the list on purpose: it is the recipe tier key of D-0329 and a guard test looks for it. Not renamed: the file names `t3_<time>.json`, `t3_steps.yaml`, `T3_data_<plot>.tsv`, the leg name `t3_steps` of the bundle import, `t3_plot_overrides` (it holds the Reshuffle pin). Records changed in the same branch: the contract (sections 2, 3, 4, 7, 12a-12g, 13), `rules_ui_dashboard.md`, `rules_app_structure.md`, `rules_css_style_spec.md`, `home_audit_what_is_true_now.md`, the user guide pages, `changelog.md`, `tasks.md` (AUDIT-OLD-SCOPE-REMOVE-1, AUDIT-REMOVAL-SESSION-COUNT-1, AUDIT-PENDING-BADGE-STARTS-ON closed; TOMBSTONE-AUDIT-OLD-WAY and four small tasks opened). The DEPRECATED banners that named the removal task are REMOVED tombstones (expiry Phase 40, PROVISIONAL). Next: the review, the merge, HOME-SLICE-S-BAR-STEP-BAR (the step bar), the UML session removes the elements named "(built, to go)".
 
 ## OPEN STATE 2026-11-27, later (FLOW-2; the newest block, read it first)
 

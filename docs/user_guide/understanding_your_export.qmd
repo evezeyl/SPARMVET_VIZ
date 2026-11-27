@@ -18,7 +18,7 @@ Every bundle — with or without that checkbox — contains a file called **`eff
 ```yaml
 data_analysis_recipe_sha256: 8b2b554ec00a6c2b0e2485750255812a30fb37c9...
 data_batch_hash:             d980020899395837fdce2847d1b762a0e2e0f77e...
-t3_audit_steps_sha256:       f1a9c3e7b6d2a805...
+audit_steps_sha256:       f1a9c3e7b6d2a805...
 engine_fingerprint:          ...
 git_commit:                  a3f9c81b...
 release_version:             ...
@@ -79,7 +79,7 @@ This is the fingerprint of your **raw source data files** — the TSV files that
 
 ---
 
-### 3. t3_audit_steps_sha256 — "Which audit decisions were applied?"
+### 3. audit_steps_sha256 — "Which audit decisions were applied?"
 
 This is the fingerprint of your full T3 audit trail — every filter, exclusion, column drop and plot-style override you sent to audit, with its reason, exactly as it appears in `t3_steps.yaml` and the report's Methods section.
 
@@ -107,7 +107,7 @@ The **Tier 1 key** is made for each table. It is built from the processing rules
 
 `engine_fingerprint` summarises the installed package versions (Polars, Plotnine, etc.) and `git_commit` records the exact commit of SPARMVET_VIZ itself that generated the bundle. `release_version`, `containerized` and `image_ref` record whether this ran from a tagged release or a container, and which one.
 
-**What it guarantees:** Two exports with identical `data_analysis_recipe_sha256`, `data_batch_hash` and `t3_audit_steps_sha256` but **different** `engine_fingerprint`/`git_commit` were produced by the same recipe, the same data and the same audit decisions, run through two different versions of the software. If the plots differ, the difference came from the software, not from your analysis choices — useful if a bug was found and fixed between two runs, and you need to show a reviewer that the change in results is not a change in your reasoning.
+**What it guarantees:** Two exports with identical `data_analysis_recipe_sha256`, `data_batch_hash` and `audit_steps_sha256` but **different** `engine_fingerprint`/`git_commit` were produced by the same recipe, the same data and the same audit decisions, run through two different versions of the software. If the plots differ, the difference came from the software, not from your analysis choices — useful if a bug was found and fixed between two runs, and you need to show a reviewer that the change in results is not a change in your reasoning.
 
 **When to use it:** Comparing two `effective_run.yaml` files field by field (see below) when results changed between runs and you need to know why.
 
@@ -130,8 +130,8 @@ A data analysis recipe names its engines: `data_engine` and `plot_engine` at its
 
 Because `effective_run.yaml` is written the same way in every bundle, comparing two exports of the same analysis is a matter of diffing two small YAML files, not eyeballing plots:
 
-- Same `data_analysis_recipe_sha256`, `data_batch_hash`, `t3_audit_steps_sha256`, different `engine_fingerprint`/`git_commit` → same analysis, different software version. Any difference in the plots is a software change, not an analysis change.
-- Different `data_analysis_recipe_sha256` or `t3_audit_steps_sha256` → the recipe or the audited decisions changed.
+- Same `data_analysis_recipe_sha256`, `data_batch_hash`, `audit_steps_sha256`, different `engine_fingerprint`/`git_commit` → same analysis, different software version. Any difference in the plots is a software change, not an analysis change.
+- Different `data_analysis_recipe_sha256` or `audit_steps_sha256` → the recipe or the audited decisions changed.
 - Different `data_batch_hash` → the raw data changed (a pipeline rerun, new samples).
 
 Checking field by field, rather than one collapsed summary, tells you exactly *where* two runs diverge instead of just *that* they diverge.
@@ -188,7 +188,7 @@ The fingerprints together answer:
 |---|---|
 | Did I use the same pipeline configuration? | `data_analysis_recipe_sha256` |
 | Did I use the same batch of raw results? | `data_batch_hash` |
-| Did I make the same editorial (audit) decisions? | `t3_audit_steps_sha256` |
+| Did I make the same editorial (audit) decisions? | `audit_steps_sha256` |
 | Did the data cleaning logic change? | Tier 1 key and Tier 2 key |
 | Did the software itself change between two runs? | `engine_fingerprint` / `git_commit` |
 
@@ -253,7 +253,7 @@ If you rerun an export and the fingerprints differ from a previous one, it means
 |---|---|
 | `data_analysis_recipe_sha256` | The data analysis recipe YAML file was edited |
 | `data_batch_hash` | A source data file was updated (pipeline rerun) |
-| `t3_audit_steps_sha256` | A filter, exclusion, column drop or its reason text was sent to audit, changed, or removed |
+| `audit_steps_sha256` | A filter, exclusion, column drop or its reason text was sent to audit, changed, or removed |
 | Tier 1 key / Tier 2 key | The processing changed: a wrangling step (Tier 1 changes both keys, a Tier 2 step only the Tier 2 key), the data, or the engine version |
 | `engine_fingerprint` / `git_commit`, everything else unchanged | The software itself was updated between the two runs — worth checking release notes or recent fixes before assuming your analysis logic changed |
 

@@ -127,7 +127,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 2. Choose a preset: **Web / Presentation** (SVG, smaller file) or **Publication** (PNG, ≥600 DPI).
 3. Click **📦 Export Bundle** and save the file.
 
-> **Only audited steps are exported:** the filters you apply while exploring (on Source, T1, T2 or T3) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
+> **Only audited steps are exported:** the filters you apply while exploring (on Source, T1, T2 or T3) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (the section Audit steps) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
 
 ### The Audit Stack (advanced app features files only)
 

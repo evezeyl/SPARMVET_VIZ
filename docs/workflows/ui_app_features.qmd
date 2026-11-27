@@ -154,7 +154,7 @@ The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It 
 ```
 interactivity_enabled: true
   └─ Right sidebar visible for ≥ pipeline-exploration-advanced
-       └─ btn_apply gate (requires at least one Yellow node with a comment)
+       └─ "Add to audit pipeline" gate (a step is never added without a reason)
        └─ a trash button on each step: remove that step (one undo control, no "remove all")
 ```
 

@@ -82,28 +82,27 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 | `data_analysis_recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
 | `README.txt` | Always | Timestamp, data analysis recipe, app features, preset, tiers, hash values (all 3 hashes) |
-| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`data_analysis_recipes/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
+| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`data_analysis_recipes/t3_steps.yaml`, the section Audit steps in `report.qmd`) is the trace |
 
 ---
 
 ## 3. T3 audit section in report.qmd
 
-The report includes a **"T3 Audit Trail"** section at the end **when**:
+The report includes an **"Audit steps"** section (FLOW-3, 2026-11-27: it was "T3 Audit Trail", one table per plot; now one table with a "Written at" column) **when**:
 - `t3_sandbox_enabled: true` for the active app features, **AND**
-- `t3_audit_steps_by_plot` contains at least one committed, active node
+- `audit_pipeline` contains at least one committed, active node (or a plot has a seed pin)
 
 When the condition is not met, the section is absent (no empty placeholder).
 
 ### 3.1 Section contents
 
 ```
-## T3 Audit Trail
+## Audit steps
 
-For each plot that has T3 modifications:
-  ### <plot_id>
-  | Step | Action | Columns | Justification |
-  |------|--------|---------|---------------|
-  | 1    | filter_range | [year] min=2023 | "Focus on recent samples only" |
+One table:
+  | Step | Written at | Action | Details | Justification | Plots built from it |
+  |------|------------|--------|---------|---------------|---------------------|
+  | 1    | Table ResFinder (tier 1) | filter_row | year>=2023 | "Focus on recent samples only" | amr_heatmap |
   ...
 ```
 
@@ -118,6 +117,8 @@ For each plot that has T3 modifications:
 ## 4. audit steps serialisation into step lists/
 
 `data_analysis_recipes/t3_steps.yaml` structure (one file, all plots):
+
+> **HISTORICAL (FLOW-3, 2026-11-27):** the per-plot list `t3_steps` below is gone; `t3_steps.yaml` lists the steps as `steps_by_place` (each with the place it is written at) and the seed pins as `plot_seeds`. The current form is in `.claude/rules/ui_implementation_contract.md` section 7.2.
 
 ```yaml
 # audit steps — user-committed modifications
