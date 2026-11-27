@@ -1,0 +1,71 @@
+# Current limits of the app
+
+**What this page is.** Every known limit of the app as it is built today: something the app cannot do, or does in a way a user would not expect. It is not a list of bugs and not a wish list. It is the source of truth: a user page in `docs/` can be made from it later (the owner's call).
+**Who keeps it.** Every agent that finds a limit adds a row in the same change. A limit that is lifted is removed the same day (git keeps the history). Rule: `.claude/workflows/agent_principles.md`, point 15.
+**Last check:** 2026-11-27, against `dev` 1136ab1a. Rows that FLOW-3 (branch `task/audit-old-way-out`, not merged) may change say so.
+**Evidence words:** READ (read at file:line), RAN (run in a scratch folder, `tmpAI/demo_upload_study/`), REASONED (an inference), "not verified".
+Studies: `WHAT_HAPPENS_TODAY.md` and `PAIR_TABLE_IDS_OPTIONS.md` in `tmpAI/demo_upload_study/` (main checkout, not in git).
+
+## Data and ids
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| The id rules read ONE id column per table (the first marked `is_entity_id`). A pair table (two isolate columns) is not handled. | With one column declared: a false line is added for an isolate found only in the other column; a mistyped id in the other column is not reported; "remove from all" removes half of the pair lines. | Declare no id on the pair table. Remove an isolate with two filters, or one audit step at the T2 place of the reshaped table. | A list of id columns for a relation table (option A of the study). To decide; three small points open. | READ `libs/utils/src/utils/id_completion.py:211` (`declared_id_columns(schema)[0]`; the code calls the choice provisional, line 24). RAN pair-table study, 6 and 12 isolates. |
+| Ids are checked and completed only BEFORE tier 1, on the files as read. A table whose id column appears in tier 2 (a reshape) gets no check and no completion. | Nothing is said; the table simply takes no part. | None in the app: the recipe maker checks. | To decide (an id declared at the tier where it comes into being; check and warn only). | READ `id_completion.py:8` (tables taken "AS READ ... no recipe step"); ledger D-0613 (no T0 place). |
+| Ids written two ways, or lines with no usable id, are listed in the id log and never repaired. | A red warning block in HOME with the log. | Clean in the recipe (`strip`, `null_values`, a visible step). | By design: the app does no data cleaning in HOME (D-0593 to D-0596). | READ `rules_data_analysis_recipe_structure.md` section 13. |
+| A plot of more than 1,000,000 rows only warns. A tile heatmap of a pair table is slow. | Warning text; nothing is refused. Measured with SYNTHETIC data: histogram of 2,000,000 pairs opens in about 10 s; a tile heatmap of 124,750 tiles took 16 s, of 499,500 tiles 25 s. Browser memory not measured. | Count or aggregate in the recipe first. | None decided (D-0363 keeps 1,000,000). | READ `app/modules/opening_build.py:44`. RAN `size_run.py`, busy machine. |
+
+## Recipes
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| A recipe whose data files are missing is rejected at app start and cannot be selected. It is not taken back when the data appears, only at a restart. | The recipe is listed under "rejected" with the reason "dataset cannot be loaded ... No such file". | Put the data in place, restart the app. | Split: structure check at start, data check at upload. Direction decided 2026-11-27 (channel block M717), not built, no ledger line yet: "decided, not yet in the ledger". | READ `app/src/bootloader.py:451-466` (`_gate_one`); `:523-560` (recheck). RAN `boot_run.py`, `recheck_run.py`. |
+| No recipe can be left unselected at app start; HOME opens the default or the first recipe. | Always a recipe open when one passes the check. | Name a default in the deployment. | Task HOME-NO-RECIPE-AT-START: owner said yes; not built; no ledger line yet. | READ `.claude/tasks/tasks.md:859`. |
+| A recipe with a metadata table and no data table is refused. | Plain refusal line (code S10, and J17 for a metadata that is listed in a join without a join step). | Declare a single table as an ordinary data table. | By design (D-0636, D-0637). | READ `libs/utils/src/utils/recipe_check.py:399-401`. |
+| The plot-id uniqueness check ACROSS recipes is not run by the app at start. Only one recipe's own duplicates are checked. | Two recipes with one plot id are not refused at start. | The recipe maker keeps ids unique. | Not decided. | READ: grep finds `check_recipe_set` called only by the Gallery manager (`libs/viz_gallery/.../gallery_manager.py:114`), none in `app/src`. Not run live. |
+| The expressions of a recipe step are run as code, after a check against a list of allowed names, with no Python builtins. | Nothing visible. | Use only recipes you trust. | Whether this is enough is not re-verified: study PROTOTYPE-SAFE-SHARING-STUDY (to be written into the task list). | READ `libs/utils/src/utils/formula_check.py:508-518` (`evaluate_formula`: check, then `eval` with `__builtins__` empty). The risk "AR1" itself: not verified here. |
+
+## Upload and sessions
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| An upload replaces the recipe's data file in place: no copy of the old file, the original file name is not recorded, the uploaded name is ignored. A session does not bring its data back. | The file lands at the path the recipe declares, whatever the upload is called. | Keep your own copies. To return to a session, upload the byte-identical file again (one added byte or Windows line endings gives another session). | Study running: options page "a session that brings its data". Task DATA-IMPORT-OVERWRITE waits for the owner. D-0434 says no copy, no kept folder (not built as a deployment spec). | READ `app/modules/orchestrator.py:182-215`; contract section 9. RAN `upload_sessions_run.py`. |
+| One session per data content. An upload of other data makes a new session by itself, without asking. | A second session card appears. | None. | To decide with the options page (the user's choice "update this session / start a new one"). | READ `app/handlers/home_theater.py:2013-2075` (`_sync_session_provenance`); `session_manager.py:345`. RAN two keys. |
+| GUARDRAIL GAP. Restoring a session saved on other data only shows a warning, then applies its steps to the data now loaded. New steps are saved under the key of the current data. Steps can mix across datasets. | Warning "Session was saved against a different data batch. Row filters and exclusions may match different or no rows." | Restore only when the data is the one the session was made on. | To decide (same options page). Not verified by running an audit step across datasets. | READ `app/handlers/session_handlers.py:626-632` (warning), `:684-707` (steps put in state); `app/handlers/audit_stack.py:1118-1141` (`_write_t3_ghost` writes under the current key). |
+| If a data file is missing at Restore the session key simply differs; there is no "source missing" message. | A new session instead of a message. | None. | Not decided. | READ `orchestrator.py:892-903` (`get_source_files` leaves out a table with no file). RAN "restore_t1t2 file absent: new_session". |
+| The upload field offers `.tsv` and `.csv` (and `.xlsx`, `.xls` when ingestion is on). A tab-separated table accepts only `.tsv`: a `.csv` or Excel file is refused with a plain line to convert it first. Converting for the user is not built. | Refusal text after "Validate & Apply". | Convert the file yourself. | Not decided. | READ `app/handlers/data_import_handlers.py:150`; `app/modules/data_import_check.py:63-64,117-125`. Not seen in a browser. |
+| Upload works only where the app features allow it (`testing_mode` true; `data_ingestion_enabled` for tables other than the metadata). The shipped local deployment's recipes point into `assets/test_data/`, so an upload there overwrites repository test data. A deployment that finds data by table name refuses uploads. | Panel read-only, or a refusal line. | Use a deployment of your own with a writable data folder. | Deployment study (D-0439, D-0440 decided, not built). | READ `data_import_handlers.py:1-20`; `config/deployment/local/local.yaml:18`; `data_import_check.py:52-55`. |
+| Stored tables are one file per table name, valid while the key matches. Switching between two datasets rebuilds the tables each time. | A wait on each switch (seconds on small data). | None. | Not decided. | READ `orchestrator.py:806`. RAN `anchor_swap_run.py`. |
+| A recipe imported from a bundle cannot have its data replaced by upload. | Refusal line (provisional). | Replace the data in the import folder by hand (changes what the bundle's hashes verified). | Owner's choice, three options listed in the contract. | READ `data_import_check.py:42-47`; contract section 9 point 5. |
+
+## Audit
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| No user identity. "Who" in "User verified" is not stored. | The mark says "user verified - marked" only. | None. | Initials typed once per session: decided (D-0677, D-0670), waits for the audit log build. Task AUDIT-WHO-IN-USER-VERIFIED. | READ `.claude/tasks/tasks.md:27`. Code absence: not verified beyond the task text. |
+| The audit log is not built. | No log file of added and removed steps. | The audit steps and reasons are in the session file and the export. | Design accepted (D-0679); the build waits (D-0682). | READ ledger D-0679, D-0682. |
+| Removing an applied step does not save the session. | After a reload the removed step can come back. | Apply again after removing. | To fix after the demo flow (D-0680), unless FLOW-3 does it. | READ ledger D-0680. Changes with FLOW-3. |
+| A column drop is offered only in Audit mode while a plot's Result data (T3) is viewed. | No drop control on Source, T1 or T2. | Drop in a recipe step. | The step bar at any table (decided direction, D-0663; ON HOLD). | READ `app/handlers/home_theater.py:2423-2427`. Changes with FLOW-3. |
+| A "disable a step" control (Power icon) is not built. | Steps can only be removed. | Remove and re-add. | Task STM-NODE; not decided to build. | READ `audit_stack.py:558` reads `active`; grep finds nothing that sets it to false. Contract section 1 (F-07). |
+| The Plot Style panel (colour, shape, alpha) is not mounted. | No way to change aesthetics in HOME. | Change them in the recipe. | Removal decided (D-0665, ON HOLD). | READ `audit_stack.py:862` defines it; `home_theater.py` only names the slot. |
+| The metadata table is not an audit place: no filter or drop on it. | A refusal line if a stored step names it. | Anonymise or tidy before the data enters the app, or in the recipe. | By design (D-0632). | READ `libs/utils/src/utils/recipe_tiers.py:37`. |
+| The filter form offers, for text, only the list operators (no "greater than"); true/false offers equal and not equal. The contract text that says date comparisons are not offered is out of date: the code offers them. | Fewer operators on text. | None needed. | Decided for text; the rest PROVISIONAL (FILTER-PICKERS-1). | READ `app/modules/t3_audit_engine.py:349-375`. |
+| Two browser tabs on one recipe and one set of data share one audit folder. | Not observed. | One tab per recipe. | Not decided. | READ `app/modules/audit_trial.py:8-12` (trial folders are per session; the audit folder `audit_anchors` is shared). That the tabs rebuild each other's tables: REASONED. |
+| Two app processes on one user folder empty each other's trial folders at start. | A try in progress can lose its files. | Separate user folders. | A decision for the owner (the code says so). | READ `audit_trial.py:147-160`. |
+
+## Export
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| The export is refused when an audit step cannot be written as a recipe step, or when the data or recipe changed since the view was built. | A notice and a file `EXPORT_NOT_CREATED.txt` or `audit_recipe/ERROR.txt`. | Reload (F5), check, export again. | The re-base before export is decided, not built (task list). | READ contract section 7.2 rules 1 and 10. Not run. |
+| The export bundle does not hold the audit log, the original recipe beside the audit recipe, or the hash of the audit recipe in the run file. | Fewer files than the design. | None. | Decided (D-0478, D-0324, D-0681), not built. | READ contract section 7.2 rule 10 "Not built". |
+
+## Deployment and security
+
+| Limit | What the user sees | Workaround today | What would lift it | Evidence |
+|---|---|---|---|---|
+| The app cannot know by itself that a deployment is shared by several users. The audit log and the id logs need a place named by the deployment (`locations.logs`), required for a shared deployment. | Nothing yet (not built). | Run one user per deployment. | How a deployment says "shared" is decided with the deployment study, after the demo (D-0678, D-0685, D-0686). | READ ledger D-0677, D-0678, D-0685, D-0686. |
+| The Gallery has no handoff into HOME or BLUEPRINT. | A user copies the YAML by hand. | Copy the YAML. | By design (ADR-093). | READ `rules_ui_dashboard.md` section 5. |
+| No upload size limit in the app. A proxy in front may have one. | Not known. | None. | Not decided. | Study READ `app/src/main.py:33` and Shiny `_fileupload.py`: no limit found. Not tested with a browser: not verified. |
+
+*Keeping rule for an agent: if you add a row, give its evidence; if a row is lifted by your change, delete it in the same commit.*
