@@ -1845,8 +1845,8 @@ def define_server(input, output, session, *,
         a moment after the mode changes and would push a switch below it down while the user is clicking it): only in Audit mode and with
         `comparison_mode_enabled`; absent otherwise, never greyed. It is not in the per-plot cell: each cell reads the compare value, and one input
         id would be mounted once per plot (R4). The value is read isolated, so the switch does not redraw itself."""
-        # slice 3b: Compare belongs to a plot. While a table is shown (no plot is open) the switch is absent, not greyed. The open plot is the shim `active_home_subtab`, which changes
-        # only when the plot changes, so showing another plot does not draw the switch again.
+        # slice 3b: Compare belongs to a plot. While a table is shown (no plot is open) the switch is absent, not greyed. The open plot is the shim `active_home_subtab`, which this render
+        # reads, so showing another plot DOES draw the switch again; its state is kept because `compare_on` is read isolated and is the value the new switch starts with.
         if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled") and active_home_subtab.get()):
             return ui.div()
         with reactive.isolate():
