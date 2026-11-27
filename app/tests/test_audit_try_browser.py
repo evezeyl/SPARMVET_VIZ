@@ -109,6 +109,12 @@ def user_data() -> Path:
     from app.src.bootloader import bootloader
     return bootloader.get_location("user_data")
 
+@pytest.fixture(scope="module", autouse=True)
+def _the_test_process_bootloader_is_started_before_any_trial():
+    """The first use of the Bootloader in THIS process removes every folder of `audit_trial` (its start-of-app clean-up, `audit_trial.clean_trials`), the live trial of the app under test included.
+    Starting it here, before the first trial, keeps a test that reads the trial folder honest when it is run alone (same fixture as `test_audit_add_browser.py`)."""
+    user_data()
+
 
 def trial_files() -> list:
     root = user_data() / "audit_trial"
