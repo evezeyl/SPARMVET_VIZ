@@ -1,4 +1,4 @@
-# Handoff: active state (last update 2026-11-26)
+# Handoff: active state (last update 2026-11-27)
 
 ## READ THIS FIRST: what is true now about HOME, the audit and the lineage (2026-11-26)
 
@@ -20,9 +20,9 @@ The full one-page version, trusted over any older text on the same subject: `.cl
 
 Branch `dev`, not pushed; the owner pushes. Start here: the section OPEN STATE 2026-11-26 below (the section of 2026-11-25 after it is kept as history); one-screen state in `tmpAI/coordinator/progress_2026-11-25.md`; older blocks in `.claude/logs/handoffs/archive/handoff_archive_2026-11-25.md` (a local file: that folder is git-ignored).
 
-## OPEN STATE 2026-11-26/27 (slice 3b; the newest block, read it before the one below)
+## OPEN STATE 2026-11-27 (FLOW-1; the newest block, read it before the one below)
 
-Merged on `dev` (not pushed; the owner pushes): slice 1 (f445cd30, the mode row and Compare), slice 3a "the shown item" (9e82a623), the trial engine, the `info.audit_of` checks. In work: slice 3b "one plot area, no plot tabs in Audit mode" on branch `task/audit-one-plot` (worktree `SPARMVET_VIZ_wt_lineage_look`; see `.claude/design/home_audit_what_is_true_now.md` "Built"). Next: FLOW-1, FLOW-2, FLOW-3, then the step bar. The one-screen state is `tmpAI/coordinator/STATE_NOW.md`, the owner's return list `tmpAI/status/FOR_HER_RETURN.md` (main tree, not in git).
+Merged on `dev` (not pushed; the owner pushes): slice 1 (f445cd30, the mode row and Compare), slice 3a "the shown item" (9e82a623), slice 3b "one plot area, no plot tabs in Audit mode" (577b5638), the trial engine, the `info.audit_of` checks. In work: FLOW-1 "Try an audit step before it is applied" on branch `task/audit-try` (worktree `SPARMVET_VIZ_wt_lineage_look`; see `.claude/design/home_audit_what_is_true_now.md` "Built" and `.claude/rules/ui_implementation_contract.md` section 2): the button Try in the Filters panel, the panel of the trial (rows removed at each place, what the places reach, Show, Discard), the item shown shows the trial in words, Compare beside a trial; also the fix HOME-SESSION-PANEL-REDRAWS-ON-ANY-STATE. Next: FLOW-2 (Add to audit pipeline with the reason, reuse of the trial's tables through `PlaceTrial.apply_trial`, the mark "User verified"), FLOW-3 (remove the pop-up, the staged cards, the separate Apply, the Plot Style code; rename the stored names with a new format number), then the step bar (one entry). The one-screen state is `tmpAI/coordinator/STATE_NOW.md`, the owner's return list `tmpAI/status/FOR_HER_RETURN.md` (main tree, not in git).
 
 ## OPEN STATE 2026-11-26 (coordinator session sparmvet-viz-44; records round of branch `task/records-2026-11-26`) — READ THIS FIRST
 

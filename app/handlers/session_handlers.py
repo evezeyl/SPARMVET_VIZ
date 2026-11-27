@@ -10,7 +10,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_session_server, output:session_management_ui, output:session_export_active, effect:_handle_delete_one_confirmed (D-0378)
+# provides: function:define_session_server, effect:_sync_panel_inputs (the panel reads only the session key and the apply count), output:session_management_ui, output:session_export_active, effect:_handle_delete_one_confirmed (D-0378)
 # consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, split_key_drops, key_drop_notice, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
