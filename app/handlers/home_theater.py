@@ -61,12 +61,15 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import InputsChanged, plot_read_error_text
-from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
+from app.modules.view_badge import PREVIEW_ROW_LIMIT, ViewBadge, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import PlanComposerBug, compose_plan_book, plan_book_for_the_gate
 from app.modules.audit_places import nodes_reaching_plot, nodes_signature, own_plot_place, place_nodes, plots_below
 from app.modules.audit_view import AUDIT_ERRORS, PlaceAudit
-from app.modules.audit_place_view import AUDIT, AUDITED, Readers, Viewed, columns_digest, table_for, view_identity, viewed as viewed_item
+from app.modules.audit_place_view import AUDIT, AUDITED, TRIAL, Readers, Viewed, columns_digest, table_for, view_identity, viewed as viewed_item
+from app.modules.audit_trial import TRIAL_FOLDER, PlaceTrial
+from app.modules import audit_try
+from dataclasses import replace as _dc_replace
 from app.modules.audit_shown import band_lines, open_subtab_of, others_chosen, plot_area_title, table_shown_lines
 from app.modules.lineage_view import line_text
 from app.handlers.id_warning_handlers import define_server as define_id_warning_server
@@ -89,6 +92,7 @@ from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.lineage_handlers import define_server as define_lineage_server
+from app.handlers.trial_handlers import define_trial_server
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-096: same check as main.py's docs_available — duplicated here, not imported, to
@@ -610,6 +614,29 @@ def define_server(input, output, session, *,
     # plot reads (her answer 1, a). Written only by effects (`_forget_shown_item`, `_tab_shows_its_plot`, `_open_audit_mode_after_restore`) and by the handler of the Show
     # button (`lineage_handlers`); never inside a render (R1). Not saved in the session (D-0302).
     shown_item = reactive.Value(None)
+    # The trial of a step (FLOW-1; `app/handlers/trial_handlers.py`, `app/modules/audit_try.py`): None, or the `TrialRecord` of the step being tried. The readers below depend on it, so what is
+    # shown follows it. It is held here and nowhere else: the session file, the export and the audit folder never read it (D-0302, D-0327). The trial's tables are in the trial's own folder.
+    trial_state = reactive.Value(None)
+    _trial_left_original = reactive.Value(False)      # Compare beside a trial shows the original on the left instead of "before this step" (D-0671)
+    _trial_holder: list = []
+
+    def _the_trial() -> PlaceTrial:
+        """The `PlaceTrial` of this browser session (made on first use): its folder is `<user data>/audit_trial/<token>`, a sibling of the audit folder and never inside it."""
+        if not _trial_holder:
+            _trial_holder.append(PlaceTrial(orchestrator, _the_place_audit(), bootloader.get_location("user_data") / TRIAL_FOLDER))
+        return _trial_holder[0]
+
+    def _trial_table_reader(table: str, tier: str):
+        """The lazy table with the step being tried, or None (no trial, or the tried step does not change this table). Depends on `trial_state`."""
+        return _the_trial().trial_table(table, tier) if trial_state.get() is not None else None
+
+    def _trial_plot_reader(plot_id: str):
+        """The Result data (T3) of a plot with the step being tried, or None. Depends on `trial_state`."""
+        return _the_trial().trial_plot(plot_id) if trial_state.get() is not None else None
+
+    def _trial_reaches(plot_id: str | None) -> bool:
+        """True when a trial exists and the step being tried changes the table this plot reads (what the plot shows is then the trial)."""
+        return bool(plot_id) and _trial_plot_reader(plot_id) is not None
     # The number of audit steps of a restored session, told by the band until the user shows something or leaves Audit mode (PROVISIONAL words).
     restored_steps = reactive.Value(0)
 
@@ -668,8 +695,10 @@ def define_server(input, output, session, *,
         except Exception:
             return None
 
-    def _audit_readers() -> Readers:
-        """The reads `audit_place_view.table_for` is handed: the orchestrator's original tables and the audit copy's tables (the same ones the export writes)."""
+    def _audit_readers(with_trial: bool = False) -> Readers:
+        """The reads `audit_place_view.table_for` is handed: the orchestrator's original tables and the audit copy's tables (the same ones the export writes). `with_trial=True`: and the trial's
+        tables where the step being tried changes them (the data preview, the band, the badge; never the filter form, the dialog or the column chooser: a condition is built on the table as it is
+        before the step)."""
         if data_refresh_trigger is not None:
             data_refresh_trigger.get()
         recipe_id = _open_recipe_id()
@@ -688,13 +717,15 @@ def define_server(input, output, session, *,
                                                           on_inputs_changed=_tell_inputs_changed),
             audited_table=lambda t, tier: audit.table_lazy(recipe_id, t, tier, nodes, plans, _tell_inputs_changed),
             audited_plot=lambda p: audit.plot_lazy(recipe_id, p, nodes, plans, _tell_inputs_changed),
-            committed_steps=len(nodes))
+            committed_steps=len(nodes),
+            trial_table=_trial_table_reader if with_trial else None, trial_plot=_trial_plot_reader if with_trial else None)
 
-    def _audit_shown_table():
+    def _audit_shown_table(with_trial: bool = False):
         """The ONE read of the table shown in Audit mode: (lazy table or None, its facts, the `Viewed`). The table is the audited one where a committed audit step changes it, the original
-        otherwise (D-0622); the facts say which. Raises what the readers raise (an audit step that cannot run, a table that cannot be built): the callers show it in the table's place."""
+        otherwise (D-0622); the facts say which. With `with_trial` and a trial that changes it, the trial's table (state "trial"). Raises what the readers raise (an audit step that cannot run,
+        a table that cannot be built): the callers show it in the table's place."""
         shown = _audit_viewed()
-        lf, facts = table_for(shown, _audit_readers())
+        lf, facts = table_for(shown, _audit_readers(with_trial))
         return lf, facts, shown
 
     def _effective_view() -> str:
@@ -725,6 +756,30 @@ def define_server(input, output, session, *,
             return line_text(lineage.node(shown.place))
         return shown.table or ""
 
+    def _place_name(node_id: str) -> str:
+        """The name of a place as the lineage panel writes it (`lineage_view.line_text`); the id itself when the lineage cannot be drawn or does not have it."""
+        lineage, _ = _lineage_calc()
+        if lineage is not None and any(n.id == node_id for n in lineage.nodes):
+            return line_text(lineage.node(node_id))
+        return node_id
+
+    def _columns_at_place(place: str):
+        """The names and types of the table present at `place` in the AUDITED state (the applied steps, no trial): what a condition must fit for a step to be written there. None when it cannot be
+        read (the lineage's plan then decides, `audit_place_view.condition_fits`)."""
+        try:
+            lineage, _ = _lineage_calc()
+            if lineage is None:
+                return None
+            lf, _facts = table_for(viewed_item(AUDIT, "T3", None, None, [place], _open_graph(), lineage), _audit_readers())
+            if lf is None:
+                return None
+            schema = lf.collect_schema()
+            return [(name, str(schema[name])) for name in schema.names()]
+        except SilentException:
+            raise
+        except Exception:
+            return None
+
     def _shown_columns(lf) -> list:
         """The names and types of the table shown, for the key of the view (a column drop changes them, so a condition built before it is cleared). A table that cannot be read gives a
         fixed pair so that the key keeps its shape."""
@@ -736,7 +791,7 @@ def define_server(input, output, session, *,
         except Exception:
             return [("?", "error")]
 
-    def _resolve_active_lf(spec: dict | None, tier: str | None = None, original: bool = False):
+    def _resolve_active_lf(spec: dict | None, tier: str | None = None, original: bool = False, with_trial: bool = False):
         """Return a LazyFrame for the table the data choice names, for the plot of `spec` (or tier1_anchor).
 
         In Audit mode the T3 table is the AUDITED one when an audit step is written at the plot's own tier 3 or at a place upstream of it (`_audited_t3_lf`: the table of the audit
@@ -754,7 +809,7 @@ def define_server(input, output, session, *,
         through `audit_place_view`, whatever `spec` the caller passes (the open plot's). The data choice is hidden in Audit mode.
         """
         if tier is None and not original and _in_audit():
-            lf, facts, _shown = _audit_shown_table()
+            lf, facts, _shown = _audit_shown_table(with_trial)
             if lf is None:
                 raise RuntimeError(facts.why_original)
             return lf
@@ -777,6 +832,10 @@ def define_server(input, output, session, *,
                 if plot_id is None:
                     raise RuntimeError(f"The plot of the dataset '{target_ds}' is not a plot of the open data analysis recipe, so the table it reads cannot be built.")
                 if not original and _in_audit():
+                    if with_trial:
+                        tried = _trial_plot_reader(plot_id)
+                        if tried is not None:
+                            return tried          # the step being tried changes this plot's table (FLOW-1): the figure shows the trial
                     audited = _audited_t3_lf(plot_id)
                     if audited is not None:
                         return audited
@@ -920,7 +979,7 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
 
             try:
-                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads (in Audit mode the audit copy's), in every data choice (D-0310)
+                lf = _resolve_active_lf(spec, tier="T3", with_trial=True)   # the table the plot reads (in Audit mode the audit copy's, or the trial's where the step being tried changes it), in every data choice (D-0310)
             except AUDIT_ERRORS as e:
                 # a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped (D-0102)
                 _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
@@ -1012,7 +1071,11 @@ def define_server(input, output, session, *,
             # the recipe the plot engine draws from: the same call as the opening's proof of drawing (`opening_build.plot_render_recipe`)
             synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
             try:
-                lf = _resolve_active_lf(spec, tier="T3", original=True)  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
+                if _in_audit() and _trial_reaches(p_id) and not _trial_left_original.get():
+                    # Compare beside a trial (D-0671): the left pane is "before this step", the audited state as it is now (the applied steps, no trial); the switch shows the original instead
+                    lf = _resolve_active_lf(spec, tier="T3")
+                else:
+                    lf = _resolve_active_lf(spec, tier="T3", original=True)  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's
@@ -1193,6 +1256,9 @@ def define_server(input, output, session, *,
             audit = _in_audit()
             if audit and _audit_compare.get() and bootloader.is_enabled("comparison_mode_enabled"):
                 return ui.div()
+            if audit and _trial_reaches(p_id):
+                # FLOW-1: the figure is drawn from the trial (the step being tried, not applied): the badge says so in words
+                return _badge_ui(ViewBadge("PLOT", "TRIAL, not applied", (audit_try.TRIAL_WORDS,), "trial"))
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
             return _badge_ui(plot_badge("audit" if audit else "exploration", has_plot_steps(active_cfg().raw_config, p_id), has_t2,
@@ -1200,11 +1266,24 @@ def define_server(input, output, session, *,
                                         upstream_steps=_upstream_step_count(f"subtab_{p_id}"),
                                         table_changed=_plot_table_changed(p_id) if audit and _audited_step_count(f"subtab_{p_id}") else None))
 
+        @output(id=f"plot_cmp_left_label_{p_id}")
+        @render.ui
+        def _plot_cmp_left_label_ui():
+            """The label of the left pane of Compare. PROVISIONAL (slice 1, 2026-11-26): "Original (before your audit steps)". Beside a trial (FLOW-1, D-0671) it says "before this step" (the applied steps) or,
+            when the switch says so, the original. Its own output, so that a trial relabels the pane and never redraws the plot cell."""
+            if _in_audit() and _trial_reaches(p_id):
+                text = audit_try.compare_left_label(_audited_step_count(f"subtab_{p_id}") > 0, _trial_left_original.get())
+            else:
+                text = "Original (before your audit steps)"
+            return ui.tags.div(text, class_="badge bg-secondary mb-1 spv-text-xs")
+
         @output(id=f"plot_cmp_label_{p_id}")
         @render.ui
         def _plot_cmp_label_ui():
             """The label of the audited pane of Compare: "Audited (after N steps)", N = the committed audit steps that reach this plot (at its own
-            tier 3 or at a table it is built from). Its own output, so that a new step relabels the pane and never redraws the plot."""
+            tier 3 or at a table it is built from). Beside a trial that reaches this plot it is the label of the trial (D-0671). Its own output, so that a new step relabels the pane and never redraws the plot."""
+            if _in_audit() and _trial_reaches(p_id):
+                return ui.tags.div(audit_try.compare_right_label(), class_="badge mb-1 spv-text-xs spv-view-badge-trial")
             n = _audited_step_count(f"subtab_{p_id}")
             words = "no steps yet" if n == 0 else ("after 1 step" if n == 1 else f"after {n} steps")
             return ui.tags.div(f"Audited ({words})", class_="badge mb-1 spv-text-xs", style="background:#ffc107; color:#212529;")
@@ -1229,11 +1308,7 @@ def define_server(input, output, session, *,
             if in_comparison:
                 content = ui.div(ui.output_ui(f"plot_seed_{p_id}"), ui.layout_columns(
                     ui.div(
-                        ui.tags.div(
-                            # PROVISIONAL (slice 1, 2026-11-26): the labels of the two panes of Compare
-                            "Original (before your audit steps)",
-                            class_="badge bg-secondary mb-1 spv-text-xs",
-                        ),
+                        ui.output_ui(f"plot_cmp_left_label_{p_id}"),
                         ui.output_plot(f"plot_group_{p_id}_cmp_base", height="440px"),
                     ),
                     ui.div(
@@ -1459,6 +1534,7 @@ def define_server(input, output, session, *,
             home_title_banner,
             theater_header,
             ui.output_ui("compare_switch_ui"),
+            ui.output_ui("trial_left_switch_ui"),
             ui.output_ui("lineage_panel_ui"),
             ui.output_ui("home_plots_area_ui"),
             data_preview_section,
@@ -1566,12 +1642,12 @@ def define_server(input, output, session, *,
             style="padding: 8px 10px 0 10px;",
         )
 
-    def _audit_area_frame(header: str, *body):
+    def _audit_area_frame(header: str, *body, extra=None):
         """The frame of the plot area of Audit mode: the same nesting and padding as the plot tabs of Exploration (a panel, a padded block, a card), so that a plot is drawn at the same width in
         both modes and the audited plot with no step is the picture of the Result (`test_shiny_plot_tier3.py`). The card header holds the line that tells what is shown, where Exploration has its tabs."""
         return ui.div(
             ui.div(
-                ui.div(ui.div(ui.tags.span(header, class_="spv-view-note"), class_="card-header"), ui.div(*body, class_="card-body"), class_="card"),
+                ui.div(ui.div(ui.tags.span(header, class_="spv-view-note"), extra if extra is not None else ui.span(), class_="card-header"), ui.div(*body, class_="card-body"), class_="card"),
                 class_="p-2"),
             class_="spv-panel spv-audit-plot-area",
             style="padding: 8px 10px 0 10px;",
@@ -1589,7 +1665,7 @@ def define_server(input, output, session, *,
         names = display_names.shown_names(cfg.raw_config)
         if shown.shown_plot:
             name = display_names.shown_name(names, display_names.PLOT, shown.shown_plot)
-            return _audit_area_frame(plot_area_title(name), ui.output_ui(f"plot_cell_{shown.shown_plot}"))
+            return _audit_area_frame(plot_area_title(name), ui.output_ui(f"plot_cell_{shown.shown_plot}"), extra=ui.output_ui("trial_plot_label_ui", inline=True))
         lineage, _ = _lineage_calc()
         plot_names = []
         if lineage is not None and shown.place:
@@ -1608,6 +1684,40 @@ def define_server(input, output, session, *,
         if _in_audit():
             return _audit_plot_area_ui(cfg)
         return _exploration_tabs_ui(cfg)
+
+    @output
+    @render.ui
+    def trial_plot_label_ui():
+        """Beside the title of the plot shown (Audit mode): "TRIAL" in words when the figure is drawn from the step being tried, a plain line when a trial exists and does not change this plot (FLOW-1,
+        PROVISIONAL words). Its own output (R4): it reads the trial and the open plot, mounts no input, and never draws the plot cell again."""
+        if not _in_audit() or trial_state.get() is None:
+            return ui.span()
+        plot = (active_home_subtab.get() or "").removeprefix("subtab_")
+        if not plot:
+            return ui.span()
+        if _trial_reaches(plot):
+            return ui.tags.span(audit_try.TRIAL_WORDS, class_="badge ms-2 spv-text-xs spv-view-badge-trial")
+        return ui.tags.span(audit_try.NOT_CHANGED, class_="spv-view-note ms-2")
+
+    @output
+    @render.ui
+    def trial_left_switch_ui():
+        """The switch beside Compare during a trial that changes the plot shown: show the original on the left instead of "before this step" (D-0671). Its own output; the value is read isolated (R4)."""
+        if not (_in_audit() and bootloader.is_enabled("comparison_mode_enabled") and trial_state.get() is not None and _audit_compare.get()):
+            return ui.div()
+        plot = (active_home_subtab.get() or "").removeprefix("subtab_")
+        if not _trial_reaches(plot):
+            return ui.div()
+        with reactive.isolate():
+            left = _trial_left_original.get()
+        return ui.div(ui.input_switch("trial_left_original", "Show the original on the left", value=left), class_="spv-compare-line")
+
+    @reactive.Effect
+    def _track_trial_left():
+        value = safe_input(input, "trial_left_original", None)
+        with reactive.isolate():
+            if value is not None and _trial_left_original.get() != bool(value):
+                _trial_left_original.set(bool(value))
 
     @output
     @render.ui
@@ -1790,7 +1900,7 @@ def define_server(input, output, session, *,
         chosen = safe_input(input, "lineage_chosen", [])
         chosen = [chosen] if isinstance(chosen, str) else [c for c in (chosen or []) if isinstance(c, str)]
         try:
-            lf, facts, shown = _audit_shown_table()
+            lf, facts, shown = _audit_shown_table(with_trial=True)
         except SilentException:
             raise
         except Exception as exc:
@@ -1801,7 +1911,11 @@ def define_server(input, output, session, *,
             return ui.div(ui.tags.span(f"Shown: {name}. This table cannot be built now (see the table below).", class_="spv-shown-band-line"), class_="spv-shown-band")
         others = others_chosen(chosen, shown.place)
         lines = band_lines(_shown_name(shown), facts, others, shown.from_open_plot, restored_steps.get())
-        return ui.div(*[ui.tags.span(line, class_="spv-shown-band-line") for line in lines], class_="spv-shown-band", role="status")
+        # FLOW-1: while a trial exists, the band says it in words and is unmistakable (the amber tokens, a dashed frame); an item the tried step does not change says so
+        extra = audit_try.band_trial_line(facts.state, trial_state.get() is not None)
+        if extra:
+            lines = lines + (extra,)
+        return ui.div(*[ui.tags.span(line, class_="spv-shown-band-line") for line in lines], class_="spv-shown-band" + (" spv-shown-band-trial" if facts.state == TRIAL else ""), role="status")
 
     @output
     @render.ui
@@ -2038,7 +2152,7 @@ def define_server(input, output, session, *,
         """The lazy table the data preview shows the head of: the view's table, then (Audit mode, T3) the audited steps, or (Exploration) the
         filters built on this view. The grid and the badge's row count both read it, so the count is the count of what the grid is cut from
         (D-0488). Raises what the table raises (an audit step that cannot run, a read error): each caller decides what to show."""
-        lf = _resolve_active_lf(spec)
+        lf = _resolve_active_lf(spec, with_trial=True)       # the preview shows the trial where the step being tried changes the table (FLOW-1)
         # ADR-098 (issue #56), D-0311: exploration filters change the table of the view shown (Source, T1, T2 or T3), never saved and
         # never a plot. They do not exist in Audit mode, where T3 is the audited table.
         # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the table of the audit copy (`_resolve_active_lf`): the plot's table after the audit steps of every tier,
@@ -2113,6 +2227,7 @@ def define_server(input, output, session, *,
         audit_state = None          # Audit mode: True when the table shown is the audited one, False when it is the original (T1 and T2 only)
         audit_steps = _audited_step_count(subtab)
         has_plot_own_steps = has_plot_steps(active_cfg().raw_config, p_id)
+        tried_here = False
         if _in_audit():
             # Audit mode (slice 3a): the badge describes the item SHOWN, not the open plot's table
             shown_item_view = _audit_viewed_safe()
@@ -2123,7 +2238,9 @@ def define_server(input, output, session, *,
             audit_steps = _audited_step_count(f"subtab_{shown_item_view.shown_plot}") if shown_item_view.shown_plot else 0
             view = shown_item_view.tier
             try:
-                audit_state = (_audit_shown_table()[1].state == AUDITED) if view in ("T1", "T2") else None
+                shown_state = _audit_shown_table(with_trial=True)[1].state
+                audit_state = (shown_state == AUDITED) if view in ("T1", "T2") else None
+                tried_here = shown_state == TRIAL
             except Exception:
                 audit_state = None
         else:
@@ -2153,10 +2270,14 @@ def define_server(input, output, session, *,
                 hidden = 0 if not kept else len(names) - len(kept)
         except Exception:
             total_rows, hidden = None, 0
-        return _badge_ui(view_badge(view, has_t2, has_plot_own_steps, len(_applied_for_view()),
-                                   mode="audit" if _in_audit() else "exploration", audited_steps=audit_steps,
-                                   source_table=table, total_rows=total_rows, all_rows=bool(safe_input(input, "preview_all_rows", False)),
-                                   hidden_columns=hidden, audit_view=audit_state if _in_audit() else _audit_view_state(spec, view)))
+        badge = view_badge(view, has_t2, has_plot_own_steps, len(_applied_for_view()),
+                           mode="audit" if _in_audit() else "exploration", audited_steps=audit_steps,
+                           source_table=table, total_rows=total_rows, all_rows=bool(safe_input(input, "preview_all_rows", False)),
+                           hidden_columns=hidden, audit_view=audit_state if _in_audit() else _audit_view_state(spec, view))
+        if tried_here:
+            # FLOW-1: the table shown is the TRIAL (the step being tried, not applied): the badge says so in its label, in the amber of the audited tables with a dashed frame (the label is the signal, not the colour)
+            badge = _dc_replace(badge, label="TRIAL, not applied", tone="trial")
+        return _badge_ui(badge)
 
     @output
     @render.text
@@ -2167,7 +2288,13 @@ def define_server(input, output, session, *,
             # Audit mode: the title names the item shown (slice 3a), in the words of the lineage panel
             shown = _audit_viewed_safe()
             if shown is not None and not shown.nothing_chosen and shown.table:
-                return f"Data Preview: {_shown_name(shown)}{caps}"
+                trial_word = ""
+                try:
+                    if trial_state.get() is not None and _audit_shown_table(with_trial=True)[1].state == TRIAL:
+                        trial_word = " (TRIAL, not applied)"
+                except Exception:
+                    trial_word = ""
+                return f"Data Preview: {_shown_name(shown)}{trial_word}{caps}"
         return "Data Preview" + caps
 
     # Phase 21-D/F: Data preview — scoped to the table the active plot reads, with filters + col selector.
@@ -3135,6 +3262,31 @@ def define_server(input, output, session, *,
         notification_log=notification_log,
         recipe_raw=_recipe_raw,
         recipe_plans=_recipe_plans,
+        trial_alive=lambda: trial_state.get() is not None,
+    )
+
+    # ── FLOW-1: Try an audit step before it is applied (the button is in the Filters panel; the answer, the discard and the ends of a trial are here) ──
+    define_trial_server(
+        input, output, session,
+        trial_state=trial_state,
+        trial_left_original=_trial_left_original,
+        in_audit=_in_audit,
+        home_state=home_state,
+        pending_filters=_pending_filters,
+        safe_input=safe_input,
+        recipe_id=_open_recipe_id,
+        recipe_keys=lambda: (lambda k: (k.data_analysis_recipe_sha256, k.data_batch_hash))(_data_analysis_recipe_keys()),
+        open_graph=_open_graph,
+        lineage_calc=_lineage_calc,
+        recipe_plans=_recipe_plans,
+        shown_place=_effective_shown_place,
+        committed_nodes=_committed_place_nodes,
+        columns_at=_columns_at_place,
+        place_name=_place_name,
+        get_trial=_the_trial,
+        shown_item=shown_item,
+        restored_steps=restored_steps,
+        notification_log=notification_log,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──
