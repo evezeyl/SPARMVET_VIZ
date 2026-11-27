@@ -161,8 +161,9 @@ def test_with_no_recipe_nothing_is_judged_and_the_drop_goes_to_the_dialog():
 
 
 def send_filters(session, rows):
-    pending = Val(rows)
-    closure("_send_staged_to_audit", **session.stand_ins(_pending_filters=pending))()
+    view = ("recipe", "audit", "T3", None, "table")          # the key of the table shown; the rows were built on it (a row built elsewhere is refused)
+    pending = Val([{**row, "view": view} for row in rows])
+    closure("_send_staged_to_audit", **session.stand_ins(_pending_filters=pending, current_view_key=lambda: view))()
 
 
 def test_a_filter_on_a_join_key_is_allowed_and_its_audit_step_carries_the_warning():
