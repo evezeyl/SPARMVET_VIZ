@@ -27,16 +27,21 @@ def set_mode(page: Page, mode: str) -> None:
     caption = page.locator("#mode_caption_ui")
     was = caption.inner_text() if caption.count() else ""
     last_error = None
-    for _attempt in range(2):
+    for attempt in range(4):
         try:
-            radio.check(force=True)
-        except Exception as exc:        # Playwright: "Clicking the checkbox did not change its state" (a redraw undid the click)
+            if attempt % 2 == 0:
+                radio.check(force=True)
+            else:
+                page.locator(f"#home_mode label:has(input[value={mode}])").first.click()       # the visible label: another way in when the input click was undone
+        except Exception as exc:        # Playwright: "Clicking the checkbox did not change its state" (the mode row was drawn again under the click)
             last_error = exc
         wait_shiny(page)
         if radio.is_checked():
             break
+        page.wait_for_timeout(1500 * (attempt + 1))        # the mode row is still being drawn again (entering or leaving Audit mode draws a lot): wait, then try again
+        wait_shiny(page)
     else:
-        raise AssertionError(f"The mode control did not change to {mode!r} after two clicks (last error: {last_error})")
+        raise AssertionError(f"The mode control did not change to {mode!r} after four clicks (last error: {last_error})")
     if was and caption.count():
         try:
             page.wait_for_function("(was) => { const c = document.querySelector('#mode_caption_ui'); return !c || c.innerText !== was; }", arg=was, timeout=20_000)
