@@ -302,6 +302,8 @@ Row filters live in the left sidebar (Home mode only). In Exploration they are b
 - `_pending_filters`: staging area (`reactive.Value[list]`) — rows added by user, not yet applied.
 - `applied_filters`: committed (`reactive.Value[list]`) — exploration only, never audited, never saved, never exported. Each row carries the key of the view it was built on; consumed only by `home_data_preview` (and its badge) for that view (`_applied_for_view`). Both lists are emptied, with a notice, when the viewed table changes (D-0311; `_clear_filters_on_view_change`).
 
+**The condition belongs to the table it was built on (FLOW-1 review, 2026-11-27; PROVISIONAL words).** A staged row carries the key of the table shown when it was built (`view`); while a trial exists the staged rows are kept when another item is shown, so "Try", "Send to Audit" and the lineage button refuse rows whose key is not the key of the table now shown, with one plain line ("This condition was built on another table than the one shown. Show that table, or build the condition again here. Nothing was sent."), and nothing is written or opened (`t3_audit_engine.rows_built_elsewhere`, the same rule as `rows_built_on`). A trial whose step cannot run says nothing about a trial on the items: the panel carries the error.
+
 **Two distinct actions on the staged rows (do not merge back into one button):**
 - **`filter_apply`** — Exploration only: commits `_pending_filters` → `applied_filters`.
 - **`filter_send_to_audit`** — rendered only in Audit mode while T3 is viewed (`t3_sandbox_enabled`).
