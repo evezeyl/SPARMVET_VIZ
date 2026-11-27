@@ -273,7 +273,7 @@ def test_a_selection_that_is_not_the_table_shown_is_refused_at_try(ready: Page, 
     _line(page, "T1:MLST").click()                         # chosen, not shown
     _wait_shiny(page)
     page.evaluate("() => document.querySelectorAll('#shiny-notification-panel .shiny-notification-close').forEach(b => b.click())")
-    page.locator("#filter_try").click()
+    page.locator("#step_try").click()
     _wait_shiny(page)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("Show your selection first", timeout=15_000)
     assert page.locator(".spv-trial-panel").count() == 0, "no trial is made"
@@ -288,7 +288,8 @@ def test_leaving_audit_mode_forgets_the_shown_item_and_entering_it_again_shows_t
     show_place(page, "T1:ResFinder")
     wait_preview_rows(page, tables["ResFinder"].height, timeout=60_000)
     set_mode(page, "exploration")
-    expect(page.locator("#shown_band_ui")).to_have_text("", timeout=15_000)
+    expect(page.locator("#step_bar_ui")).to_have_text("", timeout=15_000)          # the step bar (and its band) exists in Audit mode only
+    expect(page.locator("#shown_band_ui")).to_have_count(0)
     expect(page.locator("#acc_lineage")).to_have_count(0)
     set_mode(page, "audit")
     expect(page.locator("#shown_band_ui")).to_contain_text("Shown: AMR Heatmap: Result data, T3", timeout=30_000)
@@ -301,5 +302,5 @@ def test_without_the_audit_there_is_no_band_no_lineage_and_the_data_choice_is_th
     page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=90_000)
     _wait_shiny(page, 60_000)
     expect(page.locator("#data_view")).to_have_count(1, timeout=30_000)
-    assert page.locator("#shown_band_ui").inner_text().strip() == ""
+    assert page.locator("#shown_band_ui").count() == 0 and page.locator("#step_bar_ui").inner_text().strip() == ""
     assert page.locator("#lineage_root").count() == 0 and page.locator("#home_mode").count() == 0 and not in_audit_mode(page)

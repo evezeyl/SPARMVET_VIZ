@@ -151,8 +151,8 @@ def build_list_condition(page: Page, column: str, op: str, value: str) -> None:
 
 
 def press_try(page: Page) -> None:
-    expect(page.locator("#filter_try")).to_be_visible(timeout=15_000)
-    page.locator("#filter_try").click()
+    expect(page.locator("#step_try")).to_be_visible(timeout=15_000)
+    page.locator("#step_try").click()
     wait_shiny(page, 90_000)
 
 
@@ -235,7 +235,7 @@ def test_try_at_a_table_shown_and_the_trial_followed_to_the_plots_it_reaches_and
     removed = tables["resfinder"].height - tables["kept_resfinder"]
     expect(panel).to_contain_text(f"ResFinder: Table, T1: the step removes {removed} rows of {tables['resfinder'].height} here")
     expect(panel).to_contain_text("What these places reach:")
-    page.locator(f"{PANEL} summary").click()
+    page.locator(f"{PANEL} summary:has-text('Show what they reach')").click()
     expect(panel).to_contain_text("AMR Heatmap")
     wait_preview_rows(page, tables["kept_resfinder"], timeout=60_000)
     expect(page.locator("#shown_band_ui")).to_contain_text(TRIAL_WORDS)
@@ -439,7 +439,7 @@ def test_without_the_audit_there_is_no_try(page: Page, shiny_app: ShinyAppProc):
     _wait_shiny(page)
     _open_filters_panel(page)
     page.locator("#filter_add_row").wait_for(state="attached", timeout=30_000)
-    assert page.locator("#filter_try").count() == 0 and page.locator("#trial_discard").count() == 0
+    assert page.locator("#step_try").count() == 0 and page.locator("#trial_discard").count() == 0
     expect(page.locator(".spv-trial-panel")).to_have_count(0)
 
 
@@ -454,14 +454,14 @@ def test_a_condition_built_on_one_table_is_never_tried_at_another(ready: Page, t
     build_condition(page, "identity", "lt", tables["threshold"])
     press_try(page)
     expect(page.locator(PANEL)).to_be_visible(timeout=60_000)
-    page.locator(f"{PANEL} summary").click()
+    page.locator(f"{PANEL} summary:has-text('Show what they reach')").click()
     page.locator(f"{PANEL} li", has_text="AMR Heatmap").locator("button", has_text="Show").click()
     wait_shiny(page)
     expect(page.locator(AREA)).to_contain_text("Plot shown: AMR Heatmap", timeout=30_000)
     assert page.locator("#filter_remove_0").count() == 1, "the trial keeps the staged condition (the premise of the trace)"
     close_notices(page)
-    expect(page.locator("#filter_try")).to_be_visible(timeout=15_000)
-    page.locator("#filter_try").click()
+    expect(page.locator("#step_try")).to_be_visible(timeout=15_000)
+    page.locator("#step_try").click()
     wait_shiny(page)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("built on another table", timeout=15_000)
     assert "Nothing was tried" in notices(page)

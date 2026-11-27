@@ -186,14 +186,21 @@ def test_a_table_no_plot_reads_says_that_no_plot_is_built_from_it(ready: Page):
 
 
 @NEEDS_AUDIT
-def test_a_table_shown_offers_a_try_and_no_drop_and_the_plot_shown_offers_both(ready: Page):
+def test_a_table_shown_offers_a_condition_try_and_no_drop_and_the_plot_shown_offers_both(ready: Page):
+    """The one button Try of the step bar: with a table shown a column drop is refused in a plain line (it is tried at the Result data (T3) of a plot only); with the plot's Result data shown it is offered."""
+    from app.tests.browser_view import choose_kind
     page = ready
     _enter_audit(page)
     show_place(page, "T1:ResFinder", keep_chosen=False)
-    assert page.locator("#filter_send_to_audit").count() == 0 and page.locator("#col_drop_try").count() == 0, "a column drop is tried at the Result data (T3) of a plot only"
+    assert page.locator("#filter_send_to_audit").count() == 0
     expect(page.locator("#filter_controls_ui")).to_contain_text("press Try", timeout=15_000)
+    choose_kind(page, "drop")
+    expect(page.locator("#step_try")).to_be_disabled(timeout=15_000)
+    expect(page.locator(".spv-stepbar-why")).to_contain_text("Result data (T3) of a plot", timeout=15_000)
     show_place(page, "T3:mlst_bar", keep_chosen=False)
-    expect(page.locator("#col_drop_try")).to_have_count(1, timeout=15_000)
+    expect(page.locator(".spv-stepbar-why")).to_contain_text("Deselect the columns to drop", timeout=15_000)      # offered; nothing deselected yet
+    page.evaluate("() => { const s = document.getElementById('preview_col_selector').selectize; s.removeItem(Object.keys(s.options)[0]); }")
+    expect(page.locator("#step_try")).to_be_enabled(timeout=15_000)
 
 
 @NEEDS_AUDIT

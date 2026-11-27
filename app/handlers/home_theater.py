@@ -17,7 +17,7 @@ Slice 3b (one plot area): in Audit mode there are no plot tabs: `home_plots_area
 
 Concern: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui,
          right_sidebar_content_ui, home_data_preview/col_selector,
-         col_drop_audit_btn_ui. Slice B (D-0310, D-0311): the mode switch "Exploration | Audit" (only with the audit on) and the data
+         (the button of the drop is the step bar's Try). Slice B (D-0310, D-0311): the mode switch "Exploration | Audit" (only with the audit on) and the data
          choice "Source | T1 | T2 | T3" replace the two old choices of the header strip.
          The legacy plot_reference/table_reference/plot_leaf/table_leaf outputs and the T3 brush modal
          were never mounted after ADR-043 and were removed 2026-11-06 (ADR-045-SERVER-SIZE-1).
@@ -35,8 +35,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_plots_area_ui, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), output:data_strip_ui (Table to view, Exploration only, slice 3a), output:shown_band_ui (the band of the shown item, slice 3a), output:trial_plot_label_ui, output:trial_left_switch_ui, effect:_track_trial_left, output:plot_cmp_left_label_{p_id}, effect:_forget_shown_item, effect:_tab_shows_its_plot, effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/audit_session_save.py (save_audit_session: the session save after Add to audit pipeline), app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step, its panel and its ends; FLOW-2: the marks, the reason and Add), app/modules/audit_try.py (the words and rules of a trial), app/modules/audit_trial.py (PlaceTrial: the engine of a trial), app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, open_subtab_of, plot_area_title, table_shown_lines), app/modules/audit_places.py (plots_below: the plots built from a table shown), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_plots_area_ui, output:home_data_preview, output:home_col_selector_ui, output:step_bar_ui (mounted here, defined in step_bar_handlers), output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:mode_caption_ui, output:compare_switch_ui, output:plot_cmp_label_{p_id}, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), output:data_strip_ui (Table to view, Exploration only, slice 3a), output:shown_band_ui (the band of the shown item, slice 3a), output:trial_plot_label_ui, output:trial_left_switch_ui, effect:_track_trial_left, output:plot_cmp_left_label_{p_id}, effect:_forget_shown_item, effect:_tab_shows_its_plot, effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
+# consumes: app/handlers/step_bar_handlers.py (define_step_bar_server: the step bar, the one entry that creates an audit step, mounted as step_bar_ui), app/modules/audit_session_save.py (save_audit_session: the session save after Add to audit pipeline), app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step, its panel and its ends; FLOW-2: the marks, the reason and Add), app/modules/audit_try.py (the words and rules of a trial), app/modules/audit_trial.py (PlaceTrial: the engine of a trial), app/modules/audit_place_view.py (viewed, table_for, view_identity, Readers: the ONE reader of the table shown in Audit mode, slice 3a), app/modules/audit_shown.py (band_lines, others_chosen, open_subtab_of, plot_area_title, table_shown_lines), app/modules/audit_places.py (plots_below: the plots built from a table shown), app/modules/lineage_view.py (line_text: the name of a place), libs/utils/src/utils/lineage_data.py (lineage_of), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table), app/modules/audit_places.py (nodes_reaching_plot, own_plot_place, place_nodes: the audit steps of a plot at every tier), app/modules/audit_view.py (PlaceAudit, AUDIT_ERRORS: the audit copy that gives every audited table), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -92,6 +92,7 @@ from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.lineage_handlers import define_server as define_lineage_server
+from app.handlers.step_bar_handlers import define_step_bar_server
 from app.handlers.trial_handlers import define_trial_server
 from app.modules.audit_session_save import save_audit_session
 from app.handlers.data_import_handlers import define_data_import_server
@@ -1462,8 +1463,10 @@ def define_server(input, output, session, *,
 
         # Data preview slot — always rendered regardless of groups presence
         # so the Shiny output ID is always mounted.
+        # The step bar (D-0663): the region that holds the band (what is shown), the switch and the step being built, Try and its fold-out. It is one output, empty in Exploration.
+        # (An empty container must keep its box: Shiny does not run an output whose container is not visible, so the bar could never appear.)
         data_preview_section = ui.div(
-            ui.output_ui("shown_band_ui"),
+            ui.output_ui("step_bar_ui"),
             ui.accordion(
                 ui.accordion_panel(
                     ui.div(
@@ -1876,7 +1879,10 @@ def define_server(input, output, session, *,
         extra = audit_try.band_trial_line(facts.state, audit_try.trial_has_state(trial_state.get()))
         if extra:
             lines = lines + (extra,)
-        return ui.div(*[ui.tags.span(line, class_="spv-shown-band-line") for line in lines], class_="spv-shown-band" + (" spv-shown-band-trial" if facts.state == TRIAL else ""), role="status")
+        # the names of the other places chosen are the hover text of the line that counts them (information; the rule "Show your selection first" stays)
+        others_names = ", ".join(_place_name(c) for c in dict.fromkeys(chosen) if c != shown.place) if others else ""
+        spans = [ui.tags.span(line, class_="spv-shown-band-line", title=others_names) if (others_names and "chosen, not shown" in line) else ui.tags.span(line, class_="spv-shown-band-line") for line in lines]
+        return ui.div(*spans, class_="spv-shown-band" + (" spv-shown-band-trial" if facts.state == TRIAL else ""), role="status")
 
     @output
     @render.ui
@@ -2315,7 +2321,7 @@ def define_server(input, output, session, *,
             cols = list(lf.collect_schema().names())
             # Dropping via audit exists in Audit mode on T3 only.
             label_text = (
-                "Columns (deselect to drop via audit):"
+                "Columns (deselect to drop: use the bar above):"
                 if audit_t3
                 else "Table columns (view only — no effect on plot):"
             )
@@ -2325,7 +2331,6 @@ def define_server(input, output, session, *,
                 ui.div(
                     ui.tags.small(label_text,
                                   class_="text-muted fw-semibold"),
-                    ui.output_ui("col_drop_audit_btn_ui"),
                     class_="spv-row-between",
                 ),
                 ui.input_selectize(
@@ -2370,37 +2375,6 @@ def define_server(input, output, session, *,
                 for depth, label, value in lines
             ],
             class_="p-1",
-        )
-
-    @output
-    @render.ui
-    def col_drop_audit_btn_ui():
-        """Live count of deselected columns — re-renders on selection change. The button tries the drop (FLOW-3).
-
-        Kept SEPARATE from home_col_selector_ui so reading the selector input
-        here does not invalidate the selectize component itself.
-        """
-        # A column drop is an audit step, tried like a condition (FLOW-3: `trial_handlers`, the button "Try the drop"); it is offered in Audit mode while the Result data (T3) of a plot is
-        # shown (as the old drop was; PROVISIONAL). In Exploration there is nothing to send drops to - no button.
-        if not (_in_audit() and _audit_write_ok()):
-            return ui.span()
-        subtab = active_home_subtab.get()
-        p_id = subtab.removeprefix("subtab_") if subtab else None
-        spec = _resolve_active_spec(p_id)
-        try:
-            lf = _resolve_active_lf(spec, tier="T3")
-        except Exception:
-            return ui.span()
-        cols = list(lf.collect_schema().names())    # the audited table: a column an audit step dropped is not in it
-        visible = safe_input(input, "preview_col_selector", cols)
-        vis_set = set(visible) if isinstance(visible, (list, tuple)) else set(cols)
-        n_drop = len([c for c in cols if c not in vis_set])
-        return ui.input_action_button(
-            "col_drop_try", f"Try the drop ({n_drop})",
-            class_="btn-primary btn-sm spv-text-xxs",
-            style="white-space:nowrap;",
-            disabled=(n_drop == 0),
-            title="Computes what dropping the deselected columns would do at the place shown (and the other places you chose in Path of the data). Nothing is applied until you add the step to the audit pipeline.",
         )
 
     @render.ui
@@ -3245,6 +3219,16 @@ def define_server(input, output, session, *,
         current_view_key=_current_view_key,
         save_session=_save_session_after_step,
         recipe_raw=_recipe_raw,
+    )
+
+    # ── The step bar: the one entry that creates an audit step (D-0663, D-0672); its button Try is handled by `define_trial_server` above ──
+    define_step_bar_server(
+        input, output, session,
+        in_audit=_in_audit,
+        safe_input=safe_input,
+        pending_filters=_pending_filters,
+        shown_place=_effective_shown_place,
+        columns_at=_columns_at_place,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──

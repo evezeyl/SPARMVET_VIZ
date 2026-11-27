@@ -131,7 +131,10 @@ def test_audit_mode_has_compare_and_builds_a_condition_to_try_on_any_table_shown
         show_place(page, a_table)
         expect(page.locator("#filter_send_to_audit")).to_have_count(0, timeout=10_000)
         expect(page.locator("#filter_controls_ui")).to_contain_text("press Try")
-        expect(page.locator("#col_drop_try")).to_have_count(0)                      # a column drop is tried at the Result data (T3) of a plot only
+        from app.tests.browser_view import choose_kind
+        choose_kind(page, "drop")
+        expect(page.locator("#step_try")).to_be_disabled()                      # a column drop is tried at the Result data (T3) of a plot only
+        expect(page.locator(".spv-stepbar-why")).to_contain_text("Result data (T3) of a plot")
     finally:
         set_mode(page, "exploration")
         set_view(page, "T3")
