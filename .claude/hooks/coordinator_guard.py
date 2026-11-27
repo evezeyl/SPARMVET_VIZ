@@ -53,7 +53,7 @@ from pathlib import Path
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 WORKERS = {
     "scout", "scribe", "builder", "builder-opus", "reviewer",
-    "panel-scientist", "panel-architect", "panel-developer", "panel-user",
+    "panel-scientist", "panel-architect", "panel-developer", "panel-user", "panel-statistician",
 }
 CHEAP_MODELS = {"haiku", "sonnet"}
 # Panel viewpoints may run on opus when the call names it (Eve, 2026-11-25: sonnet is the default from the agent
@@ -62,7 +62,8 @@ OPUS_ALLOWED = {"panel-scientist", "panel-architect", "panel-developer", "panel-
 # Agents that need no Decisions block (D-0156): read-only search, the records, and the panel viewpoints (they only
 # recommend). Every other agent that may run, general ones included, must quote decisions. A panel name is listed one
 # by one: a name that only starts with "panel-" is not exempt.
-DECISION_EXEMPT = {"scout", "scribe", "panel-scientist", "panel-architect", "panel-developer", "panel-user"}
+DECISION_EXEMPT = {"scout", "scribe", "panel-scientist", "panel-architect", "panel-developer", "panel-user",
+                   "panel-statistician"}
 LEDGER_RELATIVE = Path(".claude/knowledge/decision_ledger.md")
 LEDGER_SCRIPT = Path(__file__).resolve().parents[2] / "assets" / "scripts" / "decision_ledger.py"
 DECISIONS_HEADING = re.compile(r"^\s*(?:#{1,6}\s*)?(?:\*\*)?decisions(?:\*\*)?\s*(?::.*|\(.*)?$", re.IGNORECASE)

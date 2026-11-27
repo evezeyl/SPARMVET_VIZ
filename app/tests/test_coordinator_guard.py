@@ -168,7 +168,8 @@ def test_scouts_and_scribes_need_no_block(project, kind):
     assert agent(project, kind, "find where X is used")[0] == 0
 
 
-@pytest.mark.parametrize("kind", ["panel-scientist", "panel-architect", "panel-developer", "panel-user"])
+@pytest.mark.parametrize("kind", ["panel-scientist", "panel-architect", "panel-developer", "panel-user",
+                                  "panel-statistician"])
 def test_panel_agents_are_not_gated_by_this_rule(project, kind):
     assert agent(project, kind, "a question for the panel")[0] == 0
 
@@ -221,7 +222,8 @@ def test_the_agent_with_no_type_is_the_general_agent_and_is_gated(project):
     assert run(project, "Task", {"subagent_type": "general-purpose", "model": "haiku", "prompt": "no block"})[0] == 2
 
 
-@pytest.mark.parametrize("kind", ["scout", "scribe", "panel-scientist", "panel-architect", "panel-developer", "panel-user"])
+@pytest.mark.parametrize("kind", ["scout", "scribe", "panel-scientist", "panel-architect", "panel-developer", "panel-user",
+                                  "panel-statistician"])
 def test_exempt_agents_pass_with_every_model_the_rule_allows(project, kind):
     assert agent(project, kind, "no block")[0] == 0
     assert agent(project, kind, "no block", model="haiku")[0] == 0
