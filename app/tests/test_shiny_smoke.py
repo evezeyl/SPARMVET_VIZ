@@ -709,7 +709,7 @@ class TestSessionListRefresh:
     def _home_loaded(self, page: Page) -> None:
         """Wait until HOME has drawn its plot area (the plot's accordion is on the page) and Shiny is idle. The Session Management panel is drawn again whenever `home_state` changes, and the
         plot accordion writes to it when it first appears (`_track_plot_collapse`): a test that opens a session group before that write finds the group closed again (found 2026-11-27 with
-        slice 3b of the Audit flow, which draws the plot area one step later than the page; the panel redrawing on an unrelated change is a defect of its own, task HOME-SESSION-PANEL-REDRAWS-ON-ANY-STATE)."""
+        slice 3b of the Audit flow, which draws the plot area one step later than the page; the panel used to redraw on any change of `home_state`; fixed in `session_handlers.py` (it reads only the session key and the apply count), the wait stays: it is also the end of the page's first draw)."""
         page.wait_for_selector(".spv-plot-accordion", timeout=90_000)
         _wait_shiny(page, 60_000)
 
