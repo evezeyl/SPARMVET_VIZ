@@ -7,6 +7,7 @@
 1. `CLAUDE.md` (project root, Eve's file) and `.claude/rules/workspace_standard.md`: the rules.
 2. `.claude/tasks/tasks.md`: the live task list, sorted 2026-11-13: only open and current tasks, in four groups (HOME audit build, recipe format, configuration stage, backlog).
 3. `.claude/design/home_audit_what_is_true_now.md`: **read first for HOME, the audit and the lineage** (2026-11-26): the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject.
+3b. `.claude/design/current_limits.md`: **every known limit of the app as built today** (what the user sees, the workaround, what would lift it, the evidence); kept current by every agent (2026-11-27).
 3a. `.claude/design/home_audit_reading_guide.md`: the HOME redesign: order of work, decision register, reading list (HISTORY where it differs from the page above).
 4. `.claude/design/spaces/HOME.md`: the whole of HOME in one place (built or target).
 5. `.claude/design/home_stage2_mechanism_spec.md`: the build plan P0-P12.
@@ -41,6 +42,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `adr076_mvp2_backend_options.md` | AS BUILT / reference | 2026-11-09 | ADR-076 MVP-2 Options — API Backend, Sandboxing, and Instructions Content |
 | `app_features_capability_matrix.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Matrix |
 | `app_features_scoping_guide.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Guide |
+| `current_limits.md` | IN FORCE (source of truth for the limits of the app as built) | 2026-11-27 | Current limits of the app |
 | `design_t3_export_threading.md` | AS BUILT (cleaned 2026-11-13: what the export does with T3 today); replaced when audit mode is built (ADR-099) | 2026-11-13 | T3 in the export bundle and the lineage trail: as built |
 | `developer_workflow.md` | AS BUILT / reference | 2026-11-08 | Developer Workflow — End-to-End Producer Journey |
 | `engine_boundary_map.md` | AS BUILT (stage 0 of the engine boundary) | 2026-11-21 | Engine boundary map: the marks, the list, the test, the seams, the ten hardest places |
