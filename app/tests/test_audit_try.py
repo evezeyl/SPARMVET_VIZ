@@ -15,7 +15,7 @@ import pytest
 from app.modules.audit_place_view import STATE_WORDS, TRIAL
 from app.modules.audit_places import nodes_signature
 from app.modules.audit_trial import PlaceTrial, TRIAL_FOLDER
-from app.modules.audit_try import (APPLY_NOTE, TrialRecord, trial_has_state, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, end_cause, fit_problem, panel_model,
+from app.modules.audit_try import (TrialRecord, trial_has_state, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, end_cause, fit_problem, panel_model,
                                    rows_signature, tried_nodes, trial_places, world_of)
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
@@ -142,7 +142,7 @@ def test_the_rows_each_place_loses_are_the_engines_count_and_equal_an_independen
     assert result.effects[0].rows_before == original.height and result.effects[0].rows_after == expected
     assert model.effects[0].startswith("ResFinder: Table, T1: the step removes ")
     assert str(original.height - expected) in model.effects[0] and f"of {original.height}" in model.effects[0]
-    assert model.heading == TRIAL_WORDS and model.apply_note == APPLY_NOTE and not model.error
+    assert model.heading == TRIAL_WORDS and not model.error
     assert "plots are built from them" in model.reach_summary or "plot are built from them" in model.reach_summary
     assert any(item.startswith("AMR Heatmap") for item in model.reach_items), model.reach_items
     trial.discard()

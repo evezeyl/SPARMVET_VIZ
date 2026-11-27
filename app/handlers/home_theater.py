@@ -93,6 +93,7 @@ from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.lineage_handlers import define_server as define_lineage_server
 from app.handlers.trial_handlers import define_trial_server
+from app.handlers.audit_stack import _write_t3_ghost
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-096: same check as main.py's docs_available — duplicated here, not imported, to
@@ -3265,7 +3266,14 @@ def define_server(input, output, session, *,
         trial_alive=lambda: trial_state.get() is not None,
     )
 
-    # ── FLOW-1: Try an audit step before it is applied (the button is in the Filters panel; the answer, the discard and the ends of a trial are here) ──
+    def _save_session_after_step(state: dict):
+        """Write the session file as the old Apply writes it (`audit_stack._write_t3_ghost`: the same file, the same checksum); a plain warning when it could not be written, None when it was
+        or when ghost save is off. Called by "Add to audit pipeline" (FLOW-2) after the step is in the state."""
+        if session_manager is None or not bootloader.get_automation_setting("ghost_save", "enabled"):
+            return None
+        return _write_t3_ghost(state, session_manager, notif_log=notification_log.get() if notification_log is not None else [])
+
+    # ── FLOW-1: Try an audit step before it is applied; FLOW-2: add it (the button is in the Filters panel; the answer, the marks, the reason, the Add, the discard and the ends of a trial are here) ──
     define_trial_server(
         input, output, session,
         trial_state=trial_state,
@@ -3288,6 +3296,7 @@ def define_server(input, output, session, *,
         restored_steps=restored_steps,
         notification_log=notification_log,
         current_view_key=_current_view_key,
+        save_session=_save_session_after_step,
     )
 
     # ── LINEAGE-VIEW-G: the lineage panel of Audit mode (list and map of dots to choose the place of an audit step, D-0629, D-0634) ──

@@ -6,8 +6,14 @@ the computation is the engine's (`app/modules/audit_trial.py`, `PlaceTrial`).
 WHAT THE USER SEES (Audit mode only). A staged condition in the Filters panel can be TRIED: the button "Try" (`filter_try`, drawn by `filter_and_audit_handlers.filter_controls_ui`). The step is written
 at the place shown, plus the other places chosen in "Path of the data" when the place shown is among them (all of them, D-0669), and never at a place where the condition does not fit (that is told and
 nothing is tried). While the engine counts, a line says so (`app/src/www/trial_counting.js` shows it at the click; the answer comes after). The answer is in a small panel below the buttons
-(`trial_panel_ui`; not a pop-up): the condition, the rows the step removes at each place, what the places reach (information, never ticks), a plain line that says how to apply, and the button "Discard".
-The item shown shows the trial (`home_theater`: the preview, the band, the badge, the figure and Compare read it through the one reader, `audit_place_view`). A trial is never applied here.
+(`trial_panel_ui`; not a pop-up): the condition, the rows the step removes at each place, each with the mark "User verified" (advice, D-0670), what the places reach (information, never ticks), the
+summary "N of M places user verified", the field "Reason" (required), the button "Add to audit pipeline" (FLOW-2, D-0672) and "Discard".
+The item shown shows the trial (`home_theater`: the preview, the band, the badge, the figure and Compare read it through the one reader, `audit_place_view`).
+
+ADD (FLOW-2). "Add to audit pipeline" applies the step through `PlaceTrial.apply_trial` (the tables the trial computed are moved into the audit folder when their keys are the keys now wanted: never a second
+computation path) and writes it at ALL the places of the trial, also those not marked (D-0669), as committed nodes (`t3_audit_steps_by_plot["__places__"]`), each with `user_verified` (and
+`verified_at`). Then the trial ends, the staged condition (through `t3_apply_count`, as the old Apply does) and the reason are cleared, the session is saved as the old Apply saves it, and one
+notice says what was added. Anything that goes wrong leaves NOTHING applied (`apply_trial` is all or nothing for a reader; the committed list and the session file are written only after it succeeded).
 
 WHEN A TRIAL ENDS (`audit_try.end_cause`): her own Discard (no notice); or one plain notice for the first thing that changed: the condition, the places chosen, the mode, the recipe or the data, the applied
 steps, a restored session. Using the old entries (Send to Audit, the lineage button, the column drop, the small form of a table no plot reads) discards the trial first, with a notice. The browser session's end
@@ -20,11 +26,14 @@ R1 to R4 (ui_implementation_contract.md section 14): the Try runs in an effect o
 own, so a trial never draws the Filters form again (the typed value would be lost).
 
 PROVISIONAL (the builder's words and choices; the owner reads them): the labels, the panel and its place, the notices; that the effect computes in the event loop (HOME does the same for a table); the order of
-the causes.
+the causes; that a new Try resets the marks even with the same condition and places; that the reason typed is kept as a draft (not lost when a trial ends or is tried again) and cleared only by an Add.
+
+Why the marks and the reason are inputs with the number of the Try in their id (`trial_verified_<serial>_<i>`, `trial_reason_<serial>`): Shiny keeps the last value of an input whose widget left the page; a
+new trial with the same ids could read a mark ticked in an OLDER trial before the new widget reports its own value. A new id has no value yet, so a mark is never inherited.
 
 # @deps
-# provides: function:define_trial_server, output:trial_panel_ui, effect:_try, effect:_discard, effect:_watch_the_world, effect:_old_entries_end_the_trial
-# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`), app/modules/audit_places.py (nodes_signature), app/modules/notification_utils.py
+# provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, effect:_try, effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world, effect:_old_entries_end_the_trial
+# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature, PLACES_BUCKET), app/modules/notification_utils.py
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
@@ -35,9 +44,11 @@ from typing import Callable, Optional
 
 from shiny import reactive, render, ui
 
-from app.modules.audit_places import nodes_signature
+from app.modules.audit_add import (ADD_LABEL, REASON_LABEL, REASON_PLACEHOLDER, VERIFIED_LABEL, VERIFIED_LEGEND, added_notice, can_add, marks_summary, stamp_marks)
+from app.modules.audit_places import PLACES_BUCKET, nodes_signature
 from app.modules.audit_shown import request_to_show
-from app.modules.audit_try import (DISCARD_LABEL, NO_CONDITION, TrialRecord, condition_lines, end_cause, fit_problem, panel_model, trial_places, tried_nodes, world_of)
+from app.modules.audit_trial import TrialRefused, now_iso
+from app.modules.audit_try import (DISCARD_LABEL, NO_CONDITION, TrialRecord, condition_lines, end_cause, fit_problem, panel_model, trial_has_state, trial_places, tried_nodes, world_of)
 from app.modules.notification_utils import make_notifier
 from app.modules.t3_audit_engine import BUILT_ELSEWHERE_LINE, rows_built_elsewhere
 
@@ -46,7 +57,7 @@ def define_trial_server(input, output, session, *,
                         trial_state, trial_left_original, in_audit, home_state, pending_filters, safe_input,
                         recipe_id: Callable[[], str], recipe_keys: Callable[[], tuple], open_graph, lineage_calc, recipe_plans,
                         shown_place: Callable[[], Optional[str]], committed_nodes: Callable[[], list], columns_at, place_name: Callable[[str], str],
-                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None):
+                        get_trial, shown_item=None, restored_steps=None, notification_log=None, current_view_key=None, save_session=None):
     """Register the Try button's effect, the panel and the ends of a trial.
 
     Parameters (kwargs):
@@ -66,8 +77,13 @@ def define_trial_server(input, output, session, *,
       shown_item            reactive.Value of the place shown (written by "Show" beside a place or a reached item of the panel)
       current_view_key()    the view key of the table shown (the rows a condition is stamped with): a condition built on another table is refused
       restored_steps        reactive.Value: the band's note of a restored session, cleared when the user shows something
+      save_session(state)   writes the session file as the old Apply writes it and returns a plain warning when it could not (None when saved or when ghost save is off); None: nothing is saved
     """
     _notify = make_notifier(notification_log)
+    _counter = [0]                                      # the number of the last Try: the ids of the marks and of the reason of a trial carry it
+    trial_marks = reactive.Value({})                    # {place: the time the mark "User verified" was set} of the trial that exists
+    reason_text = reactive.Value("")                    # the reason typed so far (a draft kept across trials; cleared by an Add)
+    reason_ok = reactive.Value(False)                   # whether the draft can be added (not empty): the button's state (an equality-guarded copy, R3)
 
     def _chosen() -> list:
         value = safe_input(input, "lineage_chosen", [])
@@ -99,6 +115,8 @@ def define_trial_server(input, output, session, *,
             finally:
                 trial_state.set(None)
                 trial_left_original.set(False)
+                if trial_marks.get():
+                    trial_marks.set({})
             if notice:
                 _notify(notice, type="warning", duration=10)
 
@@ -143,7 +161,10 @@ def define_trial_server(input, output, session, *,
             _notify(f"The trial could not be computed, so nothing was tried: {exc}", type="error", duration=12)
             return
         trial_left_original.set(False)
-        trial_state.set(TrialRecord(world, places, tuple(nodes), result, condition_lines(rows)))
+        _counter[0] += 1
+        if trial_marks.get():
+            trial_marks.set({})                                         # a new Try never inherits a mark
+        trial_state.set(TrialRecord(world, places, tuple(nodes), result, condition_lines(rows), _counter[0]))
 
     # ── Discard (her own: no notice) ────────────────────────────────────────────────────────────────────────
     @reactive.Effect
@@ -229,12 +250,97 @@ def define_trial_server(input, output, session, *,
         return ui.tags.button("Show", type="button", class_="spv-lin-show ms-2", title="Show this item with the step you are trying",
                               onclick=f"Shiny.setInputValue('trial_show', {{place: {node!r}, t: Date.now()}}, {{priority: 'event'}})")
 
+    # ── The marks "User verified" (advice, D-0670): one tick for each place of the trial ──────────────────────────────────────────────────────────────
+    def _places_of(record) -> list:
+        return [e.place for e in record.result.effects] if trial_has_state(record) else []
+
+    @reactive.Effect
+    def _track_marks():
+        """Copy the ticks of the panel into `trial_marks` ({place: the time it was ticked}). Reads the trial (so it runs again when a trial begins), and the inputs of THIS trial only: their ids carry its number,
+        so no tick of an older trial is read (a new widget has no value yet: not ticked). The time of a mark that stays ticked is kept."""
+        record = trial_state.get()
+        found: dict = {}
+        if record is not None:
+            with reactive.isolate():
+                before = dict(trial_marks.get())
+            for number, place in enumerate(_places_of(record)):
+                if safe_input(input, f"trial_verified_{record.serial}_{number}", False):
+                    found[place] = before.get(place) or now_iso()
+        with reactive.isolate():
+            if trial_marks.get() != found:
+                trial_marks.set(found)
+
+    @reactive.Effect
+    def _track_reason():
+        """Copy the reason typed into the draft and into `reason_ok` (equality-guarded, R3). The input of THIS trial only (its id carries the number of the Try); before its widget has reported a value the draft stands."""
+        record = trial_state.get()
+        if record is None:
+            return
+        typed = safe_input(input, f"trial_reason_{record.serial}", None)
+        with reactive.isolate():
+            text = reason_text.get() if typed is None else str(typed)
+            if text != reason_text.get():
+                reason_text.set(text)
+            ok = can_add(text)[0]
+            if ok != reason_ok.get():
+                reason_ok.set(ok)
+
+    # ── Add to audit pipeline (FLOW-2; D-0656, D-0669, D-0672) ────────────────────────────────────────────────────────────────────────────────────────
+    @reactive.Effect
+    @reactive.event(input.trial_add)
+    def _add():
+        """Apply the trial (the tables it computed are reused, `PlaceTrial.apply_trial`) and write the step at ALL the places of the trial as committed nodes, each with its mark. Everything is checked
+        BEFORE anything is written; a failure leaves the committed list, the session file and the audit folder as they were (the engine's apply is all or nothing for a reader)."""
+        if not in_audit():
+            return
+        record = trial_state.get()
+        if record is None or not trial_has_state(record):
+            return                                              # no trial (a second click after the first Add lands here: a step is added once)
+        reason = str(safe_input(input, f"trial_reason_{record.serial}", "") or "").strip()
+        ok, why = can_add(reason)
+        if not ok:
+            _notify(why, type="warning", duration=8)
+            return
+        cause = end_cause(record.world, _world_now())
+        if cause:
+            _end(cause)
+            return
+        applied = list(committed_nodes())
+        marks = dict(trial_marks.get())
+        try:
+            stored = get_trial().apply_trial(recipe_id(), applied, list(record.nodes), reason, recipe_plans())
+        except TrialRefused as exc:
+            _end(None)
+            _notify(f"{exc}", type="warning", duration=12)
+            return
+        except Exception as exc:
+            _end(None)
+            _notify(f"The step could not be added: {exc}. Nothing was applied. Try the step again.", type="error", duration=12)
+            return
+        added = stamp_marks(stored[len(applied):], marks)
+        _end(None)                                              # the trial's folder is empty already; the marks and the trial are forgotten
+        state = home_state.get()
+        by_plot = {k: [dict(n) for n in v] for k, v in ((state or {}).get("t3_audit_steps_by_plot") or {}).items()}
+        by_plot[PLACES_BUCKET] = by_plot.get(PLACES_BUCKET, []) + added
+        new_state = {**state, "t3_audit_steps_by_plot": by_plot, "t3_apply_count": int((state or {}).get("t3_apply_count", 0)) + 1}
+        home_state.set(new_state)                               # the count clears the staged condition, as the old Apply does (`filter_and_audit_handlers._clear_filters_on_t3_apply`)
+        reason_text.set("")
+        reason_ok.set(False)
+        if save_session is not None:
+            warning = save_session(new_state)
+            if warning:
+                _notify(warning, type="warning", duration=10)
+        places = len({n.get("place") for n in added})
+        verified = sum(1 for n in added if n.get("user_verified"))
+        _notify(added_notice(places, verified), type="message", duration=8)
+
     # ── The panel ───────────────────────────────────────────────────────────────────────────────────────────────
     @output
     @render.ui
     def trial_panel_ui():
-        """The answer of Try, in the Filters panel: the three-state words, the condition, the rows the step removes at each place, what the places reach (information), how to apply, and Discard.
-        Nothing is mounted that this output reads (R4), except the Discard button, which reads nothing."""
+        """The answer of Try, in the Filters panel: the three-state words, the condition, the rows the step removes at each place with its mark "User verified", what the places reach (information), the
+        summary of the marks, the reason, "Add to audit pipeline" and Discard. It reads the trial only (R4): the ticks and the reason are inputs it mounts and never reads; the summary and the button are outputs
+        of their own."""
         if not in_audit():
             return ui.div()
         record = trial_state.get()
@@ -247,10 +353,40 @@ def define_trial_server(input, output, session, *,
         if model.error:
             body.append(ui.div(model.error, class_="spv-trial-error"))
         else:
-            body.append(ui.tags.ul(*[ui.tags.li(line, _show_button(node)) for line, node in zip(model.effects, model.effect_nodes)], class_="spv-trial-effects"))
+            body.append(ui.tags.ul(*[ui.tags.li(line, _show_button(node), ui.div(ui.input_checkbox(f"trial_verified_{record.serial}_{number}", VERIFIED_LABEL, value=False), class_="spv-trial-mark"))
+                                     for number, (line, node) in enumerate(zip(model.effects, model.effect_nodes))], class_="spv-trial-effects"))
+            body.append(ui.div(VERIFIED_LEGEND, class_="spv-trial-note"))
+            body.append(ui.output_ui("trial_marks_summary_ui"))
             body.append(ui.div(model.reach_summary, class_="spv-trial-reach"))
             if model.reach_items:
                 body.append(ui.tags.details(ui.tags.summary("Show what they reach"), ui.tags.ul(*[ui.tags.li(item, _show_button(node)) for item, node in zip(model.reach_items, model.reach_nodes)], class_="spv-trial-items")))
-            body.append(ui.div(model.apply_note, class_="spv-trial-note"))
+            with reactive.isolate():
+                draft = reason_text.get()
+            body.append(ui.input_text(f"trial_reason_{record.serial}", REASON_LABEL, value=draft, placeholder=REASON_PLACEHOLDER, width="100%"))
+            body.append(ui.output_ui("trial_add_ui"))
         body.append(ui.input_action_button("trial_discard", DISCARD_LABEL, class_="btn-outline-secondary btn-sm"))
         return ui.div(*body, class_="spv-trial-panel")
+
+    @output
+    @render.ui
+    def trial_marks_summary_ui():
+        """"N of M places user verified" (D-0670). An output of its own: a tick redraws this line and never the panel (R4). Reads the marks and the trial."""
+        record = trial_state.get()
+        places = _places_of(record)
+        if not places:
+            return ui.div()
+        marks = trial_marks.get()
+        return ui.div(marks_summary(sum(1 for p in places if p in marks), len(places)), class_="spv-trial-summary", role="status")
+
+    @output
+    @render.ui
+    def trial_add_ui():
+        """The button "Add to audit pipeline": enabled only with a reason, and when it is not, one plain line says why (never a silent grey). An output of its own that reads `reason_ok` (an equality-guarded copy of
+        "the reason is not empty"), so typing redraws it only when the answer changes, and never the field the user types in (R4)."""
+        record = trial_state.get()
+        if not in_audit() or not trial_has_state(record):
+            return ui.div()
+        ok, why = can_add("x" if reason_ok.get() else "")
+        button = ui.input_action_button("trial_add", ADD_LABEL, class_="btn-primary btn-sm", disabled=not ok,
+                                        title="Applies the step you tried (the tables it computed are reused) and writes it at every place of the trial, with your reason.")
+        return ui.div(button, ui.div(why, class_="spv-trial-note", role="status") if why else ui.span(), class_="spv-trial-add")

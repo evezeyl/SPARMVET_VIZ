@@ -32,7 +32,7 @@
  *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
  *  30. HOME mode row (title and Exploration | Audit) and the Compare line
  *  31. HOME Audit mode: the chosen places with Show, the shown mark and the band above the preview (slice 3a)
- *  32. HOME Audit mode: trying an audit step (FLOW-1)
+ *  32. HOME Audit mode: trying an audit step (FLOW-1) and adding it (FLOW-2)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1387,3 +1387,11 @@ html.spv-try-counting-on .spv-try-counting { display: block; }
 .spv-trial-effects, .spv-trial-items { margin: 0 0 4px 0; padding-left: 16px; font-size: 0.8rem; }
 .spv-trial-reach, .spv-trial-note { font-size: 0.75rem; color: #6c757d; margin-bottom: 4px; }
 .spv-trial-error { font-size: 0.8rem; font-weight: 700; color: #d62828; background: #ffe0e0; border-radius: 4px; padding: 4px 8px; margin-bottom: 4px; }
+/* FLOW-2 (2026-11-27; PROVISIONAL): the mark "User verified" under each place line, the summary line, the reason and the button Add. Existing tokens and sizes only; the button is Type 1 (primary blue, section 4). */
+.spv-trial-mark { font-size: 0.75rem; margin-top: 2px; }
+.spv-trial-mark .form-check { min-height: 0; margin: 0; }
+.spv-trial-summary { font-size: 0.8rem; font-weight: 700; color: #1a1a1a; margin: 2px 0 4px 0; }
+.spv-trial-panel .shiny-input-container { margin-bottom: 4px; width: 100%; }
+.spv-trial-panel label { font-size: 0.75rem; font-weight: 600; }
+.spv-trial-add { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+.spv-audit-verified { font-size: 0.75rem; font-weight: 600; color: #6c757d; }
