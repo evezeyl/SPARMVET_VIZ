@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: app/modules/audit_shown.py (table_shown_in_panel, unlisted_pending_line: the right panel follows the item shown, slice 3b), app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it), libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: app/modules/audit_add.py (verified_card_line: the line "User verified" of a step added with Add to audit pipeline), app/modules/audit_shown.py (table_shown_in_panel, unlisted_pending_line: the right panel follows the item shown, slice 3b), app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it), libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -38,6 +38,7 @@ from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
+from app.modules.audit_add import verified_card_line
 from app.modules.audit_places import PLACES_BUCKET, nodes_reaching_node, place_line, place_words, plots_below
 from app.modules.audit_shown import table_shown_in_panel, unlisted_pending_line
 from app.modules.cache_keys import tier2_steps
@@ -583,6 +584,9 @@ def define_server(input, output, session, *,
 
             place = node.get("place") or ""
             place_banner = _place_banner(place, reach_of, active_cfg().raw_config)
+            # a step added with "Add to audit pipeline" says whether its place was user verified (PROVISIONAL words); a step of the old way says nothing about it
+            verified_text = verified_card_line(node)
+            verified_line = ui.div(verified_text, class_="spv-audit-verified") if verified_text else ui.span()
 
             id_suffix = _safe_input_suffix(nid)
 
@@ -617,6 +621,7 @@ def define_server(input, output, session, *,
                     ),
                     pk_banner,
                     place_banner,
+                    verified_line,
                     ui.div(
                         summary,
                         class_="spv-text-sm mt-1",
@@ -746,11 +751,20 @@ def define_server(input, output, session, *,
             for k, nodes in by_plot.items()
         }
         new_pending = [n for n in pending if n.get("id") not in ids_to_delete]
-        home_state.set({
+        removed_applied = any(len(nodes) != len(new_by_plot[k]) for k, nodes in by_plot.items())
+        new_state = {
             **state,
             "t3_audit_steps_by_plot": new_by_plot,
             "_pending_t3_nodes": new_pending,
-        })
+        }
+        home_state.set(new_state)
+        # REMOVED-APPLIED-STEP-NOT-SAVED: removing an APPLIED step is a change of what the session holds, so the session is saved as an Apply saves it (a Restore then no longer brings
+        # the step back). A removal needs no reason (D-0314). Removing only a pending step changes nothing that was saved (D-0302: pending steps are not saved).
+        if removed_applied and session_manager is not None and _ghost_save_enabled:
+            with reactive.isolate():
+                ghost_warning = _write_t3_ghost(new_state, session_manager, notif_log=notification_log.get() if notification_log is not None else [])
+                if ghost_warning:
+                    _notify(ghost_warning, type="warning", duration=8)
         # Count how many physical copies were removed (for the notification)
         removed_count = sum(
             len(nodes) - len(new_by_plot[k])

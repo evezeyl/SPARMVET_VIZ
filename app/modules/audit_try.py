@@ -20,7 +20,7 @@ among them (else the refusal "Show your selection first" of slice 3a); that with
 Consumed by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py. If deleted: HOME's Audit mode has no Try.
 
 # @deps
-# provides: class:TrialRecord, function:condition_lines, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL, constant:APPLY_NOTE
+# provides: class:TrialRecord, function:condition_lines, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL
 # consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/lineage_step.py (stage_nodes), app/modules/lineage_view.py (line_text), app/modules/t3_audit_engine.py (audit_params_from_row), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
 # consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
@@ -41,7 +41,6 @@ from utils.recipe_graph import RecipeGraph
 
 TRY_LABEL = "Try"                     # PROVISIONAL
 DISCARD_LABEL = "Discard"             # PROVISIONAL
-APPLY_NOTE = "To apply this step use Send to Audit (the new way to add it comes next)."   # PROVISIONAL
 NOT_CHANGED = "The step you are trying does not change this."                              # PROVISIONAL
 NO_CONDITION = "Build a condition first: add a row in the Filters panel, then press Try."  # PROVISIONAL
 NOTHING_SHOWN = "Show an item first: the step is tried at the place shown. Nothing was tried."   # PROVISIONAL
@@ -136,6 +135,7 @@ class TrialRecord:
     nodes: Tuple[dict, ...]
     result: Any
     condition: Tuple[str, ...]
+    serial: int = 0              # the number of this Try (the ids of the marks and of the reason of its panel carry it: a new trial never inherits a stale value of an older one)
 
 
 def condition_lines(rows: Iterable[dict]) -> Tuple[str, ...]:
@@ -180,7 +180,6 @@ class PanelModel:
     reach_summary: str
     reach_items: Tuple[str, ...]
     error: str = ""
-    apply_note: str = APPLY_NOTE
     effect_nodes: Tuple[str, ...] = ()      # the node of each line of `effects` (the panel offers "Show" beside it)
     reach_nodes: Tuple[str, ...] = ()       # the node of each item of `reach_items`
 

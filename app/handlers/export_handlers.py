@@ -13,7 +13,7 @@ from __future__ import annotations
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, function:tables_no_plot_reads, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
 # consumes: libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, app/modules/audit_places.py (bake_place_steps: the audit steps baked into the reproducibility recipe, place_step_records, place_words, plots_below), libs/utils/src/utils/recipe_tiers.py (plot_targets, schema_bodies: the tables no plot reads, D-0457), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
-# consumes: app/modules/id_check_run.py (run_id_checks, export_log_text: id_log.yaml of the bundle, D-0575, D-0582), libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
+# consumes: app/modules/audit_add.py (verification_sentences: README.txt and report.qmd say how many places of an added step were user verified, FLOW-2), app/modules/id_check_run.py (run_id_checks, export_log_text: id_log.yaml of the bundle, D-0575, D-0582), libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -44,6 +44,7 @@ from app.modules.t3_audit_engine import _op_label, between_prose
 from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from app.modules.audit_view import AUDIT_ERRORS
+from app.modules.audit_add import verification_sentences
 from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
@@ -1614,7 +1615,8 @@ def define_export_server(input, output, session, *,
                             t3_steps_data["steps_by_place"] = [
                                 {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
                                  "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
-                                 "plots_built_from_it": r["plots"]}
+                                 "plots_built_from_it": r["plots"],
+                                 **({"user_verified": r["user_verified"], **({"verified_at": r["verified_at"]} if r.get("verified_at") else {})} if "user_verified" in r else {})}
                                 for r in _place_records
                             ]
                         # Aesthetic overrides are stored separately from audit step (§12c)
@@ -2132,6 +2134,9 @@ def define_export_server(input, output, session, *,
                     _plots = _qp(", ".join(_r["plots"]) or "none")
                     qmd_lines.append(f"| {_i} | {_qp(_r['place_words'])} | {_qc(_r['action'], True)} | {_details} | {_qp(_r['reason'] or '—')} | {_plots} |")
                 qmd_lines.append("")
+                for _sentence in verification_sentences(_place_records):          # FLOW-2, D-0670: which places the user marked "User verified" when the step was added (advice, not a condition)
+                    qmd_lines.append(_qp(_sentence))
+                    qmd_lines.append("")
                 # which table file is which (PROVISIONAL words): in an export made in Audit mode the audited table is written beside its original
                 if _audited_written:
                     qmd_lines += ["This export was made in Audit mode, so the table files of every table that a step changes come twice, the original and the audited one:", ""]
@@ -2435,6 +2440,7 @@ def define_export_server(input, output, session, *,
                 *(["", "Audit steps, each at the place it is written (every table and plot built from that place is built again from it; always applied):",
                    *[f"  {_r['place_words']}: {_r['action']} {', '.join(f'{k}={v}' for k, v in _r['params'].items())} -- reason: {_r['reason']} -- plots built from it: "
                      f"{', '.join(_r['plots']) or 'none'}" for _r in _place_records],
+                   *[f"  {_v}" for _v in verification_sentences(_place_records)],
                    "  The T3 file of every plot built from a place holds the audited table, and the figures are drawn from it. (see t3_steps.yaml, steps_by_place, and the report)",
                    *(["  This export was made in Audit mode: the audited table of every table a step changes is written BESIDE its original (a table no step changes has only its original):",
                       *[f"    {_l}" for _l in _audited_file_sentences(_audited_written, exported_t2)]]

@@ -187,7 +187,7 @@ def test_try_at_the_plot_shown_counts_the_rows_shows_the_trial_in_words_and_disc
     expect(panel).to_contain_text(TRIAL_WORDS)
     removed = tables["plot"].height - tables["kept_plot"]
     expect(panel).to_contain_text(f"AMR Heatmap: Result data, T3: the step removes {removed} rows of {tables['plot'].height} here")
-    expect(panel).to_contain_text("To apply this step use Send to Audit")
+    expect(panel).to_contain_text("User verified")                                      # FLOW-2: each place has its mark, and the step is added here
     wait_preview_rows(page, tables["kept_plot"], timeout=60_000)                       # the preview shows the trial: the rows the independent count says
     expect(page.locator("#shown_band_ui")).to_contain_text(TRIAL_WORDS)
     expect(page.locator("#shown_band_ui .spv-shown-band-trial")).to_have_count(1)
