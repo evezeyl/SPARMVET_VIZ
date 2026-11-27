@@ -67,7 +67,7 @@ def test_two_places_on_one_path_the_metadata_and_nothing_shown_are_refused_in_pl
 
 # -- the condition must fit every place ----------------------------------------------------------------------------
 def test_a_condition_that_does_not_fit_a_place_chosen_is_named_and_nothing_is_tried(world):
-    # `identity` is in ResFinder and in the plot's table; it is not in MLST
+    # `identity` is in ResFinder and in the Result data (T3) of the plot; it is not in MLST
     problem = fit_problem([row()], ["T1:ResFinder", "T1:MLST"], world.lineage, lambda place: None, name_of(world))
     assert problem.startswith("The condition does not fit every place chosen.") and "MLST" in problem and "ResFinder: Table, T1" not in problem.split("MLST")[0].split("chosen.")[1]
     assert problem.endswith("Choose places where the column is, or build the condition on another table.")

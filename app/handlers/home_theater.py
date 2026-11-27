@@ -803,7 +803,7 @@ def define_server(input, output, session, *,
         table the plot shows. The audit steps of Audit mode (filters, drops, at any tier) are in the audit copy's table, not applied on top by the callers.
 
         `tier` defaults to the data choice (`data_view`). Plot handlers and the audit write pass "T3" explicitly: a plot is drawn from the
-        table it reads, in Exploration as in Audit mode (D-0310, D-0019), and audit steps are written at the plot's table.
+        table it reads, in Exploration as in Audit mode (D-0310, D-0019), and audit steps are written at the table the plot reads.
 
         In Audit mode, with no `tier` asked (the data preview, the column chooser, the filter form), the table is the one of the item SHOWN (slice 3a, D-0655): `_audit_shown_table`,
         through `audit_place_view`, whatever `spec` the caller passes (the open plot's). The data choice is hidden in Audit mode.
@@ -835,7 +835,7 @@ def define_server(input, output, session, *,
                     if with_trial:
                         tried = _trial_plot_reader(plot_id)
                         if tried is not None:
-                            return tried          # the step being tried changes this plot's table (FLOW-1): the figure shows the trial
+                            return tried          # the step being tried changes the table this plot reads (FLOW-1): the figure shows the trial
                     audited = _audited_t3_lf(plot_id)
                     if audited is not None:
                         return audited
