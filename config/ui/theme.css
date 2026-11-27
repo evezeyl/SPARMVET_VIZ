@@ -32,6 +32,7 @@
  *  29. HOME lineage panel in Audit mode: the list and the map of dots (D-0629, D-0634)
  *  30. HOME mode row (title and Exploration | Audit) and the Compare line
  *  31. HOME Audit mode: the chosen places with Show, the shown mark and the band above the preview (slice 3a)
+ *  32. HOME Audit mode: trying an audit step (FLOW-1)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1372,3 +1373,17 @@ body:has(#home_opening_cover) #id_warning_ui { visibility: hidden; }
 .spv-shown-band { display: flex; flex-direction: column; gap: 1px; margin: 0 0 6px 0; padding: 4px 10px; font-size: 0.8rem; font-weight: 700; color: #0b6358; background: #fff3cd; border: 0; border-left: 3px solid #0b6358; border-radius: 4px; }
 .spv-shown-band-line { overflow-wrap: anywhere; }
 .spv-shown-band-line + .spv-shown-band-line { font-weight: 400; }
+
+/* ── 32. HOME Audit mode: trying an audit step (FLOW-1, 2026-11-27; PROVISIONAL) ──── */
+/* Existing tokens only (rules_css_style_spec.md sections 1c, 1e, 4, 9): the trial is the amber of the audited tables (#ffc107, black text) with a DASHED frame, and its words say "TRIAL ... not applied",
+   so the state is told in words and in the shape of the frame, not by colour alone; the panel is a white card with the grey border of the other cards; the line of the count is the amber tint of the notices. */
+.spv-view-badge-trial { background-color: #ffc107; color: #000000; outline: 2px dashed #1a1a1a; outline-offset: 1px; }
+.spv-shown-band-trial { background: #fff3cd; color: #1a1a1a; border-left-color: #1a1a1a; outline: 2px dashed #1a1a1a; outline-offset: -2px; }
+.spv-try-counting { display: none; margin: 4px 0; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; color: #0b6358; background: #fff3cd; border-left: 3px solid #0b6358; border-radius: 4px; }
+html.spv-try-counting-on .spv-try-counting { display: block; }
+.spv-trial-panel { margin: 6px 4px 4px 4px; padding: 6px 8px; font-size: 0.8rem; background: #ffffff; border: 1px solid #e9ecef; border-left: 3px dashed #1a1a1a; border-radius: 6px; }
+.spv-trial-heading { font-size: 0.75rem; font-weight: 700; color: #1a1a1a; background: #ffc107; border-radius: 3px; padding: 2px 6px; margin-bottom: 4px; }
+.spv-trial-condition { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; overflow-wrap: anywhere; }
+.spv-trial-effects, .spv-trial-items { margin: 0 0 4px 0; padding-left: 16px; font-size: 0.8rem; }
+.spv-trial-reach, .spv-trial-note { font-size: 0.75rem; color: #6c757d; margin-bottom: 4px; }
+.spv-trial-error { font-size: 0.8rem; font-weight: 700; color: #d62828; background: #ffe0e0; border-radius: 4px; padding: 4px 8px; margin-bottom: 4px; }

@@ -13,7 +13,7 @@ themselves (a filter or a column drop written at a tier) are not applied here: t
 from __future__ import annotations
 
 # @deps
-# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:trim_typed, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:trim_typed, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:rows_built_elsewhere, constant:BUILT_ELSEWHERE_LINE, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/filter_words.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -682,6 +682,16 @@ def rows_built_on(rows: list, key: tuple | None) -> list:
     """The exploration filter rows built on the view `key` (D-0311, review F3): the only ones the data preview may apply. A filter built on another
     table (before the clearing effect has run, or kept by a bug) is not applied; a row with no view key is not applied either; no key, no row."""
     return [row for row in rows if key is not None and row.get("view") == key]
+
+
+# PROVISIONAL words (the builder's; the owner reads them): told when a staged condition is used (Try, Send to Audit, the lineage button) on a table other than the one it was built on.
+BUILT_ELSEWHERE_LINE = "This condition was built on another table than the one shown. Show that table, or build the condition again here. Nothing was {done}."
+
+
+def rows_built_elsewhere(rows: list, key: tuple | None) -> bool:
+    """True when a staged row was built on a view other than `key` (the view now shown): the condition belongs to the table it was built on, so it is never tried or sent at another one.
+    The same rule as `rows_built_on` (one definition of "built on this view"); no rows, nothing built elsewhere."""
+    return bool(rows) and len(rows_built_on(rows, key)) != len(rows)
 
 
 def audit_params_from_row(frow: dict) -> dict:

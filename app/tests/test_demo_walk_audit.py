@@ -14,6 +14,7 @@ The recipe is `1_test_data_ST22_dummy`, the one the lineage tests call the demo 
 The walk (each stage is a small function, so that a later slice changes one stage only):
   1 open          the recipe opens in Exploration, with the mode row and no Compare
   2 audit mode    switch to Audit: the Compare switch appears, the lineage panel can be opened; no group tabs and no plot tabs (slice 3b): one plot area, "Plot shown: AMR Heatmap"
+  2a try          (FLOW-1) a condition on the plot shown is tried: the rows the step removes, the trial shown in words, Discard (nothing is applied)
   3 lineage       open "Path of the data" (it is open on entering Audit mode); choose the place: the first table, tier 1 (ResFinder): nothing changes on screen; Show it and see its table (slice 3a);
                   (the plot area says "No figure: ResFinder ... is a table" and the Compare switch is absent while the table is shown);
                   show the Result data (T3) of the plot again, which the filter is built on, and choose ResFinder again, to write the step there
@@ -85,6 +86,32 @@ def stage_audit_mode(page: Page) -> None:
     expect(page.locator("[id^='subtabs_']")).to_have_count(0)
     expect(page.locator(".spv-audit-plot-area")).to_contain_text(f"Plot shown: AMR Heatmap", timeout=30_000)
     set_view(page, "T3")
+
+
+def stage_try(page: Page, expected: dict) -> None:
+    """FLOW-1: a condition built on the Result data (T3) of the plot shown is TRIED before anything is written: the panel says how many rows the step removes, the preview shows the trial and says so,
+    and Discard puts the audited-or-original table back. Nothing is applied: the next stages still start from an empty audit."""
+    _choose_column_firmly(page, "identity")
+    _choose_fb_op(page, "lt")
+    _wait_shiny(page)
+    page.locator("#fb_value").fill(repr(expected["threshold"]))
+    page.wait_for_timeout(200)
+    page.locator("#filter_add_row").click()
+    _wait_shiny(page)
+    expect(page.locator("#filter_try")).to_be_visible(timeout=10_000)
+    page.locator("#filter_try").click()
+    page.wait_for_function("() => !document.documentElement.classList.contains('shiny-busy')", timeout=90_000)
+    panel = page.locator(".spv-trial-panel")
+    expect(panel).to_contain_text("TRIAL: with the step you are trying", timeout=60_000)
+    expect(panel).to_contain_text(f"the step removes {expected['removed']} rows of {expected['before']} here")
+    wait_preview_rows(page, expected["after"], timeout=60_000)
+    expect(page.locator("#shown_band_ui")).to_contain_text("TRIAL: with the step you are trying")
+    page.locator("#trial_discard").click()
+    _wait_shiny(page)
+    expect(panel).to_have_count(0, timeout=15_000)
+    wait_preview_rows(page, expected["before"], timeout=60_000)
+    page.locator("#filter_reset").click()
+    _wait_shiny(page)
 
 
 def stage_lineage(page: Page, expected: dict) -> None:
@@ -186,6 +213,7 @@ def test_the_demo_recipe_in_audit_mode_from_opening_to_export(page: Page, shiny_
     try:
         stage_audit_mode(page)
         wait_preview_rows(page, expected["before"], timeout=60_000)
+        stage_try(page, expected)
         stage_lineage(page, expected)
         stage_filter(page, expected)
         stage_apply(page, expected)

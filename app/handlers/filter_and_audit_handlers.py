@@ -16,7 +16,7 @@ Why filter UI and T3 audit live in one file:
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
+# provides: function:define_filter_audit_server, button:filter_try (FLOW-1: the Try of a staged condition, handled by trial_handlers.py), output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
 # consumes: app/modules/audit_shown.py (selection_problem), app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
@@ -30,7 +30,7 @@ from shiny import reactive, render, ui
 from app.src.bootloader import bootloader
 from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import (
-    describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
+    BUILT_ELSEWHERE_LINE, rows_built_elsewhere, describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
@@ -131,7 +131,7 @@ def define_filter_audit_server(input, output, session, *,
                                 _spec_discrete_axes, audit_nodes_for,
                                 _all_plot_subtab_ids, _plot_label, _table_identity,
                                 notification_log=None, recipe_raw=None, recipe_plans=None,
-                                audit_write_ok=None, shown_place=None):
+                                audit_write_ok=None, shown_place=None, trial_alive=None):
     """Register filter UI + T3 audit propagation handlers.
 
     Reactive deps (kwargs) — all shared with home_theater.define_server:
@@ -159,6 +159,8 @@ def define_filter_audit_server(input, output, session, *,
       recipe_plans()             → PlanBook | None — the engine's plan book of the open recipe (`app/modules/plan_composer.py`), handed to the same rule
       audit_write_ok()           → bool — slice 3a: True when the item shown in Audit mode is the Result data (T3) of the plot OPEN (the dialog and the drops write at the open plot);
                                     without it only the data choice counts
+      trial_alive()              → bool — FLOW-1: True while a step is being tried (`trial_handlers`): the staged condition is then the trial's condition, so a change of the item shown does NOT clear it
+                                    (a trial may be looked at on every item it reaches); it is cleared, with the usual notice, when the trial ends and the table shown is another one
       shown_place()              → str | None — slice 3a: the place shown in Audit mode (the open plot's node when nothing was shown yet); with the places chosen in the lineage it decides
                                     the refusal "Show your selection first" (`audit_shown.selection_problem`)
     """
@@ -210,6 +212,11 @@ def define_filter_audit_server(input, output, session, *,
         if rid is None:
             return
         key = current_view_key()
+        # FLOW-1 (PROVISIONAL, the builder's choice; D-0654 and D-0311 name a condition being BUILT): while a trial exists the staged condition is the trial's, and showing another item to look at
+        # the trial must not clear it (that would end the trial the moment the user looks at what it changed). The effect reads the trial, so it runs again when the trial ends; `_seen_view` is
+        # left alone meanwhile, so the clearing then happens against the view the condition was built on, with the usual notice.
+        if trial_alive is not None and trial_alive():
+            return
         with reactive.isolate():
             previous = _seen_view["key"]
             _seen_view["key"] = key
@@ -264,6 +271,9 @@ def define_filter_audit_server(input, output, session, *,
                 ui.output_ui("filter_controls_ui"),
                 class_="mt-2 px-1"
             ),
+            # FLOW-1: the line of the count while Try computes (shown by `app/src/www/trial_counting.js` from the click until Shiny is idle), and the panel of the trial (`trial_handlers.trial_panel_ui`)
+            ui.div("Counting the rows each place loses...", class_="spv-try-counting px-1", role="status"),
+            ui.output_ui("trial_panel_ui"),
             class_="spv-text-sm"
         )
 
@@ -731,6 +741,16 @@ def define_filter_audit_server(input, output, session, *,
                           "and cannot be silently discarded once committed.",
                 )
             )
+        if audit and n_pending:
+            # FLOW-1: a staged condition can be TRIED on the item shown (a table too), before anything is applied; the answer is the panel below (`trial_handlers`)
+            buttons.append(
+                ui.input_action_button(
+                    "filter_try", "Try",
+                    class_="btn-primary btn-sm spv-text-xs",
+                    title="Computes what this step would do at the place shown (and the other places you chose in Path of the data): the rows it removes at each place, and "
+                          "what is built from them. Nothing is applied, saved or exported.",
+                )
+            )
         buttons.append(
             ui.input_action_button(
                 "filter_add_row", "+ Add",
@@ -746,7 +766,7 @@ def define_filter_audit_server(input, output, session, *,
         # Reminders (Eve, 2026-11-06; slice B): in Exploration a filter is a way to understand the data; only what is sent to audit (with a
         # reason) is exported. PROVISIONAL words (the coordinator's; the owner reads them).
         if audit and not can_send:
-            reminder = ui.tags.small("To create an audit step, show the Result data (T3) of a plot: press Show on its square in Path of the data.",
+            reminder = ui.tags.small("To create an audit step, show the Result data (T3) of a plot: press Show on its square in Path of the data. You can try a step on the table shown with Try.",
                                      class_="text-warning d-block mt-1 spv-text-xxs")
         elif audit:
             reminder = ui.tags.small("Audit: a step you send changes the plot and is exported.", class_="text-warning d-block mt-1 spv-text-xxs")
@@ -885,6 +905,9 @@ def define_filter_audit_server(input, output, session, *,
         if not _can_write_audit_step():
             return
         rows = list(_pending_filters.get())
+        if rows_built_elsewhere(rows, current_view_key()):
+            _notify(BUILT_ELSEWHERE_LINE.format(done="sent"), type="warning", duration=10)
+            return
         if not rows or home_state is None:
             _notify(
                 "No filter rows to send. Add rows below first (the '+ Add' button).",

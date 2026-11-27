@@ -165,15 +165,17 @@ def test_the_plots_named_in_the_note_of_a_table_are_the_plots_built_from_it(worl
 
 def test_the_right_panel_lists_the_steps_written_at_the_table_shown_or_above_it(world):
     here = {"id": "a", "place": "T1:ResFinder"}
-    above = None
-    for node in world.graph.lineage_back("T2:ResFinder") if world.graph.has_node("T2:ResFinder") else []:
-        if world.graph.node(node).kind == "T1":
-            above = {"id": "b", "place": node}
     below = {"id": "c", "place": "T3:amr_heatmap"}
     beside = {"id": "d", "place": "T1:MLST"}
     listed = nodes_reaching_node(world.graph, [here, below, beside], "T1:ResFinder")
     assert [n["id"] for n in listed] == ["a"], "a step at the table itself; a step below it (the plot) or beside it is not on its path"
     assert [n["id"] for n in nodes_reaching_node(world.graph, [here, below, beside], "T3:amr_heatmap")] == ["a", "c"], "the plot is built from the table"
+    # a step ABOVE the table shown: the tier 1 of ResFinder lies on the path of its tier 2, so the right panel lists it when the tier 2 is shown; the step at the tier 2 itself is listed too
+    assert world.graph.has_node("T2:ResFinder") and "T1:ResFinder" in world.graph.lineage_back("T2:ResFinder"), "the demo recipe has a ResFinder tier 2 with its tier 1 above it"
+    at_t2 = {"id": "e", "place": "T2:ResFinder"}
+    shown_t2 = nodes_reaching_node(world.graph, [here, at_t2, below, beside], "T2:ResFinder")
+    assert [n["id"] for n in shown_t2] == ["a", "e"], "a step above the table shown (its tier 1) and a step at the table itself, not the plot below it and not a table beside it"
+    assert [n["id"] for n in nodes_reaching_node(world.graph, [at_t2], "T1:ResFinder")] == [], "a step at the tier 2 is below the tier 1, not on the path to it"
 
 
 def test_table_shown_in_panel_reads_only_table_nodes():

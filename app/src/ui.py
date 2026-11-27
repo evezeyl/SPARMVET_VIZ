@@ -4,7 +4,7 @@
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
-# consumes: app/src/www/audit_places_path.js (the places of the audit dialog as a path), app/src/www/lineage_view.js (the lineage panel of HOME's Audit mode), app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)
+# consumes: app/src/www/audit_places_path.js (the places of the audit dialog as a path), app/src/www/lineage_view.js (the lineage panel of HOME's Audit mode), app/src/www/trial_counting.js (the line of the count at the click on Try), app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)
 # consumes: app/src/www/panel_widths.js (D-0381, D-0382, D-0384: the drag of the side panels), app/modules/frame_widths.py (the widths)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
@@ -126,6 +126,8 @@ app_ui = ui.page_fillable(
         ui.tags.script(src=_versioned("/audit_places_path.js")),
         # the lineage panel of HOME in Audit mode: the list and the map of dots to choose the place of an audit step (D-0629, D-0634)
         ui.tags.script(src=_versioned("/lineage_view.js")),
+        # the line "Counting the rows each place loses..." at the click on Try (FLOW-1): the server cannot show a line while it works
+        ui.tags.script(src=_versioned("/trial_counting.js")),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),

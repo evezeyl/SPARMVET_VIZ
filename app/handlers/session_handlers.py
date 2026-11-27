@@ -10,7 +10,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_session_server, output:session_management_ui, output:session_export_active, effect:_handle_delete_one_confirmed (D-0378)
+# provides: function:define_session_server, effect:_sync_panel_inputs (the panel reads only the session key and the apply count), output:session_management_ui, output:session_export_active, effect:_handle_delete_one_confirmed (D-0378)
 # consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, split_key_drops, key_drop_notice, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
@@ -101,6 +101,27 @@ def define_session_server(input, output, session, *,
     # delete and delete-all handlers below.
     _session_list_version = reactive.Value(0)
 
+    # HOME-SESSION-PANEL-REDRAWS-ON-ANY-STATE: the panel shows the session key of the open recipe and data and the saves counted per session; nothing else of `home_state`. Reading the whole
+    # state in the render drew the panel again on every write (a tab, a Show in Audit mode, a folded accordion) and closed the session group the person had opened. What the panel needs is
+    # copied into a value of its own by an effect with an equality guard (section 14, R3): the session key, and the apply count (an Apply writes a save, so the count of saves changes);
+    # the render reads only that value (R1).
+    _panel_inputs = reactive.Value(("", 0))
+
+    @reactive.Effect
+    def _sync_panel_inputs():
+        key, applies = "", 0
+        if home_state is not None:
+            state = home_state.get()
+            msig = state.get("data_analysis_recipe_sha256") or ""
+            dbh = state.get("data_batch_hash") or ""
+            if msig and dbh:
+                from app.modules.session_manager import SessionManager
+                key = SessionManager.compute_session_key(msig, dbh)
+            applies = int(state.get("t3_apply_count", 0) or 0)
+        with reactive.isolate():
+            if _panel_inputs.get() != (key, applies):
+                _panel_inputs.set((key, applies))
+
     # ── 22-D: Session Management Panel ────────────────────────────────────────
 
     @output
@@ -130,14 +151,7 @@ def define_session_server(input, output, session, *,
                 remedy = "restore the file from a copy, or delete the session folder by hand and record the steps again"
             _report_issue(*issue_entry("SessionManager", f"{item['session_key']}/{item['name']}", what, remedy, item["reason"]), "error")
 
-        active_key = ""
-        if home_state is not None:
-            state = home_state.get()
-            msig = state.get("data_analysis_recipe_sha256") or ""
-            dbh = state.get("data_batch_hash") or ""
-            if msig and dbh:
-                from app.modules.session_manager import SessionManager
-                active_key = SessionManager.compute_session_key(msig, dbh)
+        active_key, _applies = _panel_inputs.get()      # the apply count only draws the panel again: an Apply wrote a save, the list counts it
 
         export_active_btn = (
             ui.download_button(

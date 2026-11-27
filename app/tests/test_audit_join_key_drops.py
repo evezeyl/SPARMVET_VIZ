@@ -254,8 +254,8 @@ def test_a_filter_on_either_column_of_a_two_name_key_carries_the_warning():
         closure(
             "_send_staged_to_audit",
             bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _can_write_audit_step=lambda: True,
-            _pending_filters=Val([{"column": column, "op": "eq", "value": "x", "dtype": "String", "na": "remove"}]),
-            active_home_subtab=Val("subtab_p1"), _notify=lambda message, **kw: notes.append(message),
+            _pending_filters=Val([{"column": column, "op": "eq", "value": "x", "dtype": "String", "na": "remove", "view": ("r", "audit")}]),
+            current_view_key=lambda: ("r", "audit"), active_home_subtab=Val("subtab_p1"), _notify=lambda message, **kw: notes.append(message),
             _propagation_scratch=Val(), _open_propagation_modal=lambda nodes, subtab, kind: opened.append(nodes),
             _clear_exploration_filters=lambda: None, audit_params_from_row=lambda row: {"column": row["column"], "op": row["op"], "value": row["value"]},
         )()
