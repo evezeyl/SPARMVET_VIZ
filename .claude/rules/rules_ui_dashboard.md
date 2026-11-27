@@ -12,7 +12,7 @@ deps:
 - **Dynamic discovery:** Tabs and column filters MUST be derived from data analysis recipes and Polars schemas at runtime.
 - **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, aesthetic overrides, and BLUEPRINT's own YAML escape hatch (`developer_raw_yaml`, written only via `data_analysis_recipe_edit_enabled` — never from any other source, see ADR-093). It is NOT a wrangling sandbox — no action-picker UI, and no importing of recipe content from elsewhere (not even Gallery, ADR-093). Wrangling belongs in T1/T2 data analysis recipes.
 - **audit steps IS the Audit Trace:** There is no separate FILTERS.txt for T3. The T3 YAML audit trail (list of AuditStep dicts) is the complete audit trail. `aesthetic_override` nodes are stored separately as `t3_plot_overrides` but are included in the export report.
-- **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply`: only audited steps applied with a reason are saved, pending steps are not, and there is no save on a panel switch (D-0302).
+- **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written each time a step is added with "Add to audit pipeline" (FLOW-3; there is no Apply and no staged step): only steps added with a reason are saved, and there is no save on a panel switch (D-0302).
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
 
 ## 2. Left vs Right Panel Behaviors (ADR-073)
@@ -108,7 +108,7 @@ Phase 24 and all future Home Theater refactors.
 | `app/modules/t3_audit_engine.py` | Pure helpers (Two-Category Law): `_apply_filter_rows`, `_op_label`. No Shiny imports. | (functions) |
 | `app/handlers/session_handlers.py` | Session management panel: `session_management_ui`, `_handle_session_import`, `_handle_session_actions`, `_restore_session`. | `define_session_server(...)` |
 | `app/handlers/export_handlers.py` | Export pipeline: `system_tools_ui`, `export_bundle_download`, `export_audit_report_*`, filename helpers. | `define_export_server(...)` |
-| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects, propagation modal, `_make_remove_handler` factory. | `define_filter_audit_server(...)` |
+| `app/handlers/filter_and_audit_handlers.py` | Filter UI + T3 audit: `sidebar_filters` shell, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, all filter effects, Try (Audit mode), `_make_remove_handler` factory; the audit step itself is made in `trial_handlers.py` (FLOW-3). | `define_filter_audit_server(...)` |
 
 Shared `reactive.Value` instances (`applied_filters`, `_pending_filters`,
 `home_state`) are created in `home_theater.define_server()` and

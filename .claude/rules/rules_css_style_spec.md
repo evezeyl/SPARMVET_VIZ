@@ -43,7 +43,7 @@ deps:
 |---|---|---|---|---|
 | **SPARMVET Blue** | `#345beb` | `#2a4bc4` | Primary action | Buttons, active tabs, headings in cards, focus rings |
 | **SPARMVET Teal** | `#10a395` | `#0d8a7e` | Export / upload | Export bundle, upload, filter "+ Add row" |
-| **SPARMVET Amber** | `#ffc107` | `#e0a800` | Discard / pending | Reset, session delete, pending badge, "send to audit" |
+| **SPARMVET Amber** | `#ffc107` | `#e0a800` | Discard / pending | Reset, session delete |
 | **SPARMVET Error Red** | `#d62828` | `#b91c1c` | Error / destructive | Error banners, danger-delete modal, critical alerts |
 
 **FORBIDDEN Bootstrap defaults:** `#0d6efd` (Bootstrap primary), `#198754` (success), `#dc3545` (danger). If Bootstrap injects any of these, override with the palette above using `!important`.

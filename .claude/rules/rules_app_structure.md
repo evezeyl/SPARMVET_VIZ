@@ -67,7 +67,7 @@ app/
 │   ├── __init__.py
 │   ├── home_theater.py         # Home mode: tabs, sidebar, plots, tables, panel dispatch.
 │   ├── audit_stack.py          # Pipeline Audit: the recipe's tier 2 steps, the audit steps that were added (cards, the bin that removes one and saves the session).
-│   ├── filter_and_audit_handlers.py # Filter builder: the condition, Apply (Exploration), Try (Audit mode). FLOW-3: Send to Audit and its pop-up are removed (D-0662, D-0672).
+│   ├── filter_and_audit_handlers.py # Filter builder: the condition, Apply (Exploration), Try (Audit mode). (FLOW-3, D-0662, D-0672: the audit step is made in `trial_handlers.py`.)
 │   ├── trial_handlers.py       # The ONE way to create an audit step: Try (a condition, or a column drop), the marks, the reason, Add to audit pipeline.
 │   ├── session_handlers.py     # Session panel: import, restore, delete.
 │   ├── export_handlers.py      # Export panel and bundle; the key check (ADR-089).
@@ -90,7 +90,7 @@ app/
 
 1. **Imports** of modules, handlers, and libraries.
 2. **Module initialisation**: `WrangleStudio(session.id)`, `TestLabStudio()`, `DataOrchestrator(...)`, `VizFactory(...)`.
-3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `audit_pending`, `snapshot_steps`, `gallery_refresh_trigger`, `current_app_features`, and the HOME view state `home_mode` (Exploration or Audit), `data_view` (Source, T1, T2, T3) and `source_table` (D-0016, D-0310; built 2026-11-20, slice B).
+3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `snapshot_steps`, `gallery_refresh_trigger`, `current_app_features`, and the HOME view state `home_mode` (Exploration or Audit), `data_view` (Source, T1, T2, T3) and `source_table` (D-0016, D-0310; built 2026-11-20, slice B).
 4. **Shared reactive calcs** (`@reactive.Calc`): `active_collection_id`, `active_cfg`, `tier1_anchor`. These are shared because multiple handlers depend on them. (`tier_reference` and `tier3_leaf` were removed 2026-11-06: they fed outputs that no UI mounted; the tables of each view are resolved in `home_theater.py` and the orchestrator; there is no "My view" any more, D-0179.)
 5. **Shared utility functions**: `_safe_input`, `_apply_tier2_transforms`. These are pure helpers used by multiple handlers.
 6. **Five `define_server(...)` delegation calls** — one per handler module, in dependency order.
@@ -147,7 +147,7 @@ def define_server(input, output, session, *, <explicit_dependencies>):
 # app/handlers/home_theater.py
 def define_server(input, output, session, *,
                   active_cfg, tier1_anchor,
-                  current_app_features, anchor_path, audit_pending, snapshot_steps,
+                  current_app_features, anchor_path, snapshot_steps,
                   wrangle_studio, orchestrator, viz_factory, bootloader):
 ```
 
