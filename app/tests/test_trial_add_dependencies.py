@@ -233,3 +233,14 @@ def test_the_reason_typed_is_a_draft_kept_for_the_next_trial_and_cleared_by_an_a
     assert "draft text" in html, "a trial that ends or is tried again does not lose what was typed"
     w.live.set("trial_add", 1)
     _flush()
+
+
+def test_a_tick_and_the_click_on_add_in_one_flush_are_both_seen(monkeypatch):
+    """The tick and the click can reach the server together: the Add must count the tick (it reads the ticks itself, not the copy the tracker keeps, which may not have run yet)."""
+    w = _setup(monkeypatch)
+    w.live.set("trial_reason_1", "r")
+    _flush()
+    w.live.set("trial_verified_1_1", True)
+    w.live.set("trial_add", 1)
+    _flush()
+    assert [n["user_verified"] for n in _nodes(w)] == [False, True, False]

@@ -255,18 +255,22 @@ def define_trial_server(input, output, session, *,
     def _places_of(record) -> list:
         return [e.place for e in record.result.effects] if trial_has_state(record) else []
 
+    def _marks_now(record, before: dict) -> dict:
+        """{place: the time it was ticked} read from the ticks of THIS trial now (their ids carry its number, so no tick of an older trial is read: a new widget has no value yet, which is not ticked).
+        The time of a mark that stays ticked is kept (`before`). Reads the inputs, so the caller decides whether that is a reactive dependency."""
+        found: dict = {}
+        for number, place in enumerate(_places_of(record)):
+            if safe_input(input, f"trial_verified_{record.serial}_{number}", False):
+                found[place] = before.get(place) or now_iso()
+        return found
+
     @reactive.Effect
     def _track_marks():
-        """Copy the ticks of the panel into `trial_marks` ({place: the time it was ticked}). Reads the trial (so it runs again when a trial begins), and the inputs of THIS trial only: their ids carry its number,
-        so no tick of an older trial is read (a new widget has no value yet: not ticked). The time of a mark that stays ticked is kept."""
+        """Copy the ticks of the panel into `trial_marks` (the summary line reads it). Reads the trial (so it runs again when a trial begins) and the ticks of this trial."""
         record = trial_state.get()
-        found: dict = {}
-        if record is not None:
-            with reactive.isolate():
-                before = dict(trial_marks.get())
-            for number, place in enumerate(_places_of(record)):
-                if safe_input(input, f"trial_verified_{record.serial}_{number}", False):
-                    found[place] = before.get(place) or now_iso()
+        with reactive.isolate():
+            before = dict(trial_marks.get())
+        found = _marks_now(record, before) if record is not None else {}
         with reactive.isolate():
             if trial_marks.get() != found:
                 trial_marks.set(found)
@@ -287,7 +291,7 @@ def define_trial_server(input, output, session, *,
                 reason_ok.set(ok)
 
     # ── Add to audit pipeline (FLOW-2; D-0656, D-0669, D-0672) ────────────────────────────────────────────────────────────────────────────────────────
-    @reactive.Effect
+    @reactive.Effect(priority=1)       # before the trackers of the marks and the reason on purpose: Add reads the ticks and the reason itself, so it never depends on the order the effects run in
     @reactive.event(input.trial_add)
     def _add():
         """Apply the trial (the tables it computed are reused, `PlaceTrial.apply_trial`) and write the step at ALL the places of the trial as committed nodes, each with its mark. Everything is checked
@@ -307,7 +311,7 @@ def define_trial_server(input, output, session, *,
             _end(cause)
             return
         applied = list(committed_nodes())
-        marks = dict(trial_marks.get())
+        marks = _marks_now(record, dict(trial_marks.get()))      # the ticks as they are NOW (read here, not from `trial_marks`: a tick and the click on Add can arrive in one flush, before the tracker has run)
         try:
             stored = get_trial().apply_trial(recipe_id(), applied, list(record.nodes), reason, recipe_plans())
         except TrialRefused as exc:

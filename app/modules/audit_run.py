@@ -32,7 +32,7 @@ Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; t
 # @deps
 # provides: function:run_audit, function:row_count, function:same_table, function:compare_tables, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
 # consumes: app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
-# consumed_by: app/tests/test_audit_run.py, app/modules/audit_trial.py
+# consumed_by: app/tests/test_audit_run.py, app/tests/test_audit_shared_folder.py, app/modules/audit_trial.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
 # @end_deps
 """
