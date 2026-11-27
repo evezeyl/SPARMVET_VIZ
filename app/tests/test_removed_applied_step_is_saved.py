@@ -31,7 +31,7 @@ KEY = SessionManager.compute_session_key(RECIPE_HASH, DATA_HASH)
 
 
 def _node(node_id, place="T1:ResFinder"):
-    return make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": 90, "na": "remove"}, plot_scope="__places__", reason=f"reason {node_id}", place=place, node_id=node_id)
+    return make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": 90, "na": "remove"}, reason=f"reason {node_id}", place=place, node_id=node_id)
 
 
 async def _flush(times=4):
@@ -51,7 +51,7 @@ class Screen:
         self.input = LiveInput()
         self.steps = [_node("a"), _node("b", "T2:ResFinder")]
         self.state = reactive.Value({"data_analysis_recipe_sha256": RECIPE_HASH, "data_batch_hash": DATA_HASH, "data_analysis_recipe_id": "tiny",
-                                     "t3_audit_steps_by_plot": {"__places__": list(self.steps)}, "t3_apply_count": 0})
+                                     "audit_pipeline": list(self.steps), "audit_saves_count": 0})
         for node in self.steps:
             self.input.set(f"t3_delete_{node['id']}", 0)
         bootloader = SimpleNamespace(get_automation_setting=lambda *a: ghost_save)
@@ -66,11 +66,11 @@ class Screen:
     def latest_steps(self):
         import json
         files = self.files()
-        return [n["id"] for n in json.loads(files[-1].read_text())["t3_audit_steps_by_plot"].get("__places__", [])] if files else None
+        return [n["id"] for n in json.loads(files[-1].read_text())["audit_pipeline"]] if files else None
 
     def committed(self):
         with reactive.isolate():
-            return [n["id"] for n in self.state.get()["t3_audit_steps_by_plot"]["__places__"]]
+            return [n["id"] for n in self.state.get()["audit_pipeline"]]
 
 
 def test_removing_an_applied_step_writes_the_session_without_it_and_a_restore_does_not_bring_it_back(tmp_path, monkeypatch):
@@ -89,7 +89,7 @@ def test_removing_an_applied_step_writes_the_session_without_it_and_a_restore_do
 
 
 def test_a_removal_that_saves_moves_the_count_of_saves_and_touches_nothing_else_of_the_state(tmp_path, monkeypatch):
-    """AUDIT-REMOVAL-SESSION-COUNT-1: the session panel counts the saves of the session from `t3_apply_count`; a removal that writes a save moves it (and so the panel is current), and the rest of the state
+    """AUDIT-REMOVAL-SESSION-COUNT-1: the session panel counts the saves of the session from `audit_saves_count`; a removal that writes a save moves it (and so the panel is current), and the rest of the state
     (the shown place, the keys) is as it was. MUTATION R2: the removal does not move the count."""
     async def scenario():
         s = Screen(tmp_path, monkeypatch)
@@ -100,11 +100,11 @@ def test_a_removal_that_saves_moves_the_count_of_saves_and_touches_nothing_else_
         await _flush()
         with reactive.isolate():
             state = s.state.get()
-        assert state["t3_apply_count"] == 1 and state["audit_shown_place"] == "T1:ResFinder" and state["data_batch_hash"] == DATA_HASH
+        assert state["audit_saves_count"] == 1 and state["audit_shown_place"] == "T1:ResFinder" and state["data_batch_hash"] == DATA_HASH
         s.input.set("t3_delete_b", 1)
         await _flush()
         with reactive.isolate():
-            assert s.state.get()["t3_apply_count"] == 2
+            assert s.state.get()["audit_saves_count"] == 2
     asyncio.run(scenario())
 
 
@@ -115,13 +115,13 @@ def test_a_step_added_with_marks_is_removed_the_same_way_and_the_rest_keeps_its_
         for n in added:
             n["id"] = "m1"
         with reactive.isolate():
-            s.state.set({**s.state.get(), "t3_audit_steps_by_plot": {"__places__": s.steps + added}})
+            s.state.set({**s.state.get(), "audit_pipeline": s.steps + added})
         s.input.set("t3_delete_m1", 0)
         await _flush()
         s.input.set("t3_delete_a", 1)
         await _flush()
         import json
-        saved = json.loads(s.files()[-1].read_text())["t3_audit_steps_by_plot"]["__places__"]
+        saved = json.loads(s.files()[-1].read_text())["audit_pipeline"]
         assert [n["id"] for n in saved] == ["b", "m1", "m1"] and [n.get("user_verified") for n in saved] == [None, True, False]
         s.input.set("t3_delete_m1", 1)
         await _flush()
@@ -136,7 +136,7 @@ def test_with_ghost_save_off_nothing_is_written_and_the_removal_stands(tmp_path,
         await _flush()
         assert s.committed() == ["b"] and s.files() == []
         with reactive.isolate():
-            assert s.state.get()["t3_apply_count"] == 0, "nothing was saved, so the count of saves did not move"
+            assert s.state.get()["audit_saves_count"] == 0, "nothing was saved, so the count of saves did not move"
     asyncio.run(scenario())
 
 

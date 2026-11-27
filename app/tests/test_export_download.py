@@ -69,7 +69,7 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     run = _yaml.safe_load(z.read(run_entry).decode())
     assert len(run["data_analysis_recipe_sha256"]) == 64
     assert len(run["data_batch_hash"]) == 64
-    assert len(run["t3_audit_steps_sha256"]) == 64
+    assert len(run["audit_steps_sha256"]) == 64
     assert run["git_commit"]
     assert "contact" in run and "contact_source" in run
     assert len([ln for ln in readme.splitlines() if ln.startswith("Contact")]) == 1
@@ -247,7 +247,7 @@ def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
     run = _yaml.safe_load(after.read(run_entries[0]).decode())
     assert len(run["data_analysis_recipe_sha256"]) == 64
     assert len(run["data_batch_hash"]) == 64
-    assert len(run["t3_audit_steps_sha256"]) == 64
+    assert len(run["audit_steps_sha256"]) == 64
     assert run["engine_fingerprint"]
     assert isinstance(run["containerized"], bool)
     assert isinstance(run["data_source_paths"], dict) and run["data_source_paths"]

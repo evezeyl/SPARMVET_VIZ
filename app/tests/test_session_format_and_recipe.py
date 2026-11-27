@@ -39,8 +39,8 @@ def _assembly(key=KEY, version=SESSION_FORMAT_VERSION, recipe="tiny", sha="a" * 
 
 
 def _t3(key=KEY, version=SESSION_FORMAT_VERSION):
-    data = {"session_key": key, "saved_at": "2026-11-02T10:00:00", "label": "", "t3_audit_steps": [],
-            "t3_audit_steps_by_plot": {}, "t3_plot_overrides": {}}
+    data = {"session_key": key, "saved_at": "2026-11-02T10:00:00", "label": "",
+            "audit_pipeline": [], "t3_plot_overrides": {}}
     if version is not None:
         data["schema_version"] = version
     return data
@@ -70,7 +70,7 @@ def sm(tmp_path):
 def test_both_writers_write_the_number_and_no_view_value(sm):
     """MUTATION F4 fails here."""
     a = sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
-    t = sm.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": []})
+    t = sm.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, audit_steps=[])
     assert json.loads(a.read_text())["schema_version"] == SESSION_FORMAT_VERSION
     raw = json.loads(t.read_text())
     assert raw["schema_version"] == SESSION_FORMAT_VERSION
@@ -79,10 +79,10 @@ def test_both_writers_write_the_number_and_no_view_value(sm):
 
 def test_a_current_file_round_trips(sm):
     sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {}, label="run")
-    step = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1}, plot_scope="__places__", reason="r", place="T3:p")
-    sm.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [step]})
+    step = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1}, reason="r", place="T3:p")
+    sm.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, audit_steps=[step])
     assert sm.read_assembly_ghost(KEY)["label"] == "run"
-    assert len(sm.list_t3_ghosts(KEY)[0]["t3_audit_steps_by_plot"]["__places__"]) == 1
+    assert len(sm.list_t3_ghosts(KEY)[0]["audit_pipeline"]) == 1
     assert [s["session_key"] for s in sm.list_all_sessions()] == [KEY]
 
 
@@ -210,8 +210,8 @@ def _state(screen):
 
 
 def _save_step(manager, key=KEY):
-    step = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1}, plot_scope="__places__", reason="r", place="T3:p")
-    manager.write_t3_ghost(key, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [step]})
+    step = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1}, reason="r", place="T3:p")
+    manager.write_t3_ghost(key, "tiny", "a" * 64, "b" * 64, audit_steps=[step])
 
 
 @pytest.mark.parametrize("name, version, text", VARIANTS)
@@ -234,7 +234,7 @@ def test_a_session_of_another_recipe_is_refused_and_nothing_is_applied(tmp_path,
     screen.run("_handle_session_actions")
     assert screen.texts("error") == [f"❌ Session {KEY} belongs to another recipe (tiny). Open that recipe first, then restore the session."]
     assert screen.texts("warning") == [] and screen.texts("message") == []
-    assert _state(screen) == before and "t3_audit_steps_by_plot" not in before
+    assert _state(screen) == before and "audit_pipeline" not in before
 
 
 def test_the_refusal_names_the_label_when_there_is_one(tmp_path, monkeypatch):
@@ -262,7 +262,7 @@ def test_the_same_recipe_with_another_content_hash_keeps_the_warning_and_restore
     screen.run("_handle_session_actions")
     assert any("different data analysis recipe version" in w for w in screen.texts("warning")), screen.notes
     assert screen.texts("error") == []
-    assert _state(screen)["t3_audit_steps_by_plot"]["__places__"]
+    assert _state(screen)["audit_pipeline"]
 
 
 # D-0317 (c): the same recipe, another data batch: the warning stays, non-blocking
@@ -274,7 +274,7 @@ def test_the_same_recipe_with_another_data_batch_keeps_the_warning_and_restores(
     screen.run("_handle_session_actions")
     assert any("different data batch" in w for w in screen.texts("warning")), screen.notes
     assert screen.texts("error") == []
-    assert _state(screen)["t3_audit_steps_by_plot"]["__places__"]
+    assert _state(screen)["audit_pipeline"]
 
 
 def test_the_session_list_still_lists_a_session_of_another_recipe(sm):

@@ -350,16 +350,16 @@ def test_a_different_order_gives_a_different_key_even_when_the_data_is_equal(run
 
 def exclusion(node_id: str, sample_ids: list, plot: str = ZPLOT) -> dict:
     return {"id": node_id, "node_type": "exclusion_row", "params": {"column": "sample_id", "op": "not_in", "value": list(sample_ids)},
-            "reason": "test", "place": f"T3:{plot}", "plot_scope": "__places__"}
+            "reason": "test", "place": f"T3:{plot}"}
 
 
 def filter_row(node_id: str, column: str, op: str, value, plot: str = ZPLOT) -> dict:
     return {"id": node_id, "node_type": "filter_row", "params": {"column": column, "op": op, "value": value}, "reason": "test",
-            "place": f"T3:{plot}", "plot_scope": "__places__"}
+            "place": f"T3:{plot}"}
 
 
 def drop_column(node_id: str, column: str, plot: str = ZPLOT) -> dict:
-    return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "test", "place": f"T3:{plot}", "plot_scope": "__places__"}
+    return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "test", "place": f"T3:{plot}"}
 
 
 def test_home_audit_step_runs_after_the_recipe_tier2(world, removed, oracle_after):
@@ -580,9 +580,9 @@ def test_a_drop_of_a_column_that_an_earlier_step_dropped_is_an_error_too(world):
 
 def test_a_step_that_is_not_active_is_not_run_and_the_steps_that_are_keep_their_numbers_in_the_order_written(world, threshold):
     """An inactive step is not a step of the audit (`place_nodes` leaves it out); the others are numbered in the order they were written."""
-    from app.modules.audit_places import PLACES_BUCKET, place_nodes
+    from app.modules.audit_places import place_nodes
     nodes = [{**drop_column("x", "country"), "active": False}, drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
-    active = place_nodes({PLACES_BUCKET: nodes})
+    active = place_nodes(nodes)
     assert [n["id"] for n in active] == ["d", "f"]
     with pytest.raises(AuditRunError) as caught:
         world.table(active)

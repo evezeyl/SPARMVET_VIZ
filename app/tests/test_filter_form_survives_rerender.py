@@ -74,7 +74,7 @@ class TestSchemaSignature:
 
 def _step(column, op, value, dtype="String", **extra):
     """An audit step as the app records it (`make_audit_step`)."""
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, **extra}, plot_scope="subtab_p", reason="r")
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, **extra}, reason="r")
 
 
 def _old_plan_signature(lf, table_key):
@@ -141,7 +141,7 @@ class TestRowsSignatureOfTheAuditedSteps:
     def test_the_same_steps_in_another_order_are_not_equal(self, table):
         """Order can change the result (a drop before a filter of the same column fails, the other order works): unequal is the safe answer."""
         f = _step("sample_id", "not_in", ["s0"])
-        d = make_audit_step("drop_column", {"column": "sample_id"}, plot_scope="subtab_p", reason="r")
+        d = make_audit_step("drop_column", {"column": "sample_id"}, reason="r")
         assert self._sig(table, [f, d]) != self._sig(table, [d, f])
 
     def test_a_step_added_or_removed_is_not_equal(self, table):
@@ -254,7 +254,7 @@ def _define_handler(interactivity: bool, tier: str, nodes: list, mode: str = "au
             h.define_filter_audit_server(
                 _AnyInput(), lambda fn: fn, None,
                 applied_filters=reactive.Value([]), _pending_filters=reactive.Value([]),
-                home_state=reactive.Value({"t3_audit_steps_by_plot": {"__places__": nodes}}), in_audit=lambda: mode == "audit",
+                home_state=reactive.Value({"audit_pipeline": nodes}), in_audit=lambda: mode == "audit",
                 data_view=reactive.Value(tier), view_source_table=lambda: None, current_view_key=lambda: None,
                 active_home_subtab=reactive.Value("subtab_p"), safe_input=lambda inp, key, default=None: default,
                 _resolve_active_spec=lambda p: {"target_dataset": "t", "plot": p}, _resolve_active_lf=make_lf,

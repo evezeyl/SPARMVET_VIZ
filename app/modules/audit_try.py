@@ -23,7 +23,7 @@ Consumed by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/t
 
 # @deps
 # provides: class:TrialRecord, function:condition_lines, function:stage_sentence, function:tried_drop_nodes, function:drop_fit_problem, function:drop_condition_lines, function:drops_from_selection, constant:KIND_FILTER, constant:KIND_DROP, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL
-# consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/session_manager.py (make_audit_step), app/modules/audit_places.py (PLACES_BUCKET), app/modules/t3_audit_engine.py (audit_params_from_row, describe_filter), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
+# consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (audit_params_from_row, describe_filter), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
 # consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
@@ -36,7 +36,6 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from app.modules.audit_place_view import STATE_WORDS, TRIAL, condition_fits
 from app.modules.audit_shown import request_to_show, selection_problem
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.t3_audit_engine import audit_params_from_row, describe_filter
 from utils.lineage_data import Lineage
 from utils.recipe_graph import RecipeGraph
@@ -101,7 +100,7 @@ def _decisions(scratch_nodes: Sequence[dict], places: Sequence[str], started_fro
     out: List[dict] = []
     for scratch in scratch_nodes:
         for place in places:
-            out.append(make_audit_step(scratch["node_type"], dict(scratch.get("params", {})), plot_scope=PLACES_BUCKET, reason="",
+            out.append(make_audit_step(scratch["node_type"], dict(scratch.get("params", {})), reason="",
                                        primary_key_warning=bool(scratch.get("primary_key_warning")), node_id=scratch["id"], place=place, started_from=started_from))
     return out
 
@@ -113,14 +112,14 @@ def tried_nodes(rows: Sequence[dict], places: Sequence[str], primary_keys: Itera
     the state."""
     from app.modules.session_manager import make_audit_step
     keys = set(primary_keys)
-    scratch = [make_audit_step("filter_row", audit_params_from_row(row), plot_scope=PLACES_BUCKET, reason="", primary_key_warning=row.get("column", "") in keys) for row in rows]
+    scratch = [make_audit_step("filter_row", audit_params_from_row(row), reason="", primary_key_warning=row.get("column", "") in keys) for row in rows]
     return _decisions(scratch, places, started_from)
 
 
 def tried_drop_nodes(columns: Sequence[str], places: Sequence[str], started_from: str = "") -> List[dict]:
     """The nodes of a column drop: one decision (one id) for each column, written at each place, the first column at every place, then the second, and so on (the same order as `tried_nodes`)."""
     from app.modules.session_manager import make_audit_step
-    scratch = [make_audit_step("drop_column", {"column": c}, plot_scope=PLACES_BUCKET, reason="") for c in dict.fromkeys(columns)]
+    scratch = [make_audit_step("drop_column", {"column": c}, reason="") for c in dict.fromkeys(columns)]
     return _decisions(scratch, places, started_from)
 
 

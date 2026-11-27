@@ -11,7 +11,7 @@ summary "N of M places user verified", the field "Reason" (required), the button
 The item shown shows the trial (`home_theater`: the preview, the band, the badge, the figure and Compare read it through the one reader, `audit_place_view`).
 
 ADD (FLOW-2). "Add to audit pipeline" applies the step through `PlaceTrial.apply_trial` (the tables the trial computed are moved into the audit folder when their keys are the keys now wanted: never a second
-computation path) and writes it at ALL the places of the trial, also those not marked (D-0669), as committed nodes (`t3_audit_steps_by_plot["__places__"]`), each with `user_verified` (and
+computation path) and writes it at ALL the places of the trial, also those not marked (D-0669), as committed nodes (the list `audit_pipeline`), each with `user_verified` (and
 `verified_at`). Then the trial ends, the staged condition (a condition trial) and the reason are cleared, the session is saved, and one notice says what was added. Anything that goes wrong leaves
 NOTHING applied (`apply_trial` is all or nothing for a reader; the committed list and the session file are written only after it succeeded).
 
@@ -38,7 +38,7 @@ new trial with the same ids could read a mark ticked in an OLDER trial before th
 
 # @deps
 # provides: function:define_trial_server, output:trial_panel_ui, output:trial_marks_summary_ui, output:trial_add_ui, button:col_drop_try (drawn by home_theater), effect:_try, effect:_try_drop, effect:_discard, effect:_add, effect:_track_marks, effect:_track_reason, effect:_watch_the_world
-# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature, PLACES_BUCKET), app/modules/notification_utils.py, libs/utils/src/utils/key_drop.py (DropGate: the refusal of a key drop by place at Try)
+# consumes: app/modules/t3_audit_engine.py (rows_built_elsewhere), app/modules/audit_try.py, app/modules/audit_add.py, app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial`, TrialRefused, now_iso), app/modules/audit_places.py (nodes_signature), app/modules/notification_utils.py, libs/utils/src/utils/key_drop.py (DropGate: the refusal of a key drop by place at Try)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
@@ -52,7 +52,7 @@ from shiny import reactive, render, ui
 
 from app.modules.frame_widths import HOME as HOME_SPACE
 from app.modules.audit_add import (ADD_LABEL, REASON_LABEL, REASON_PLACEHOLDER, VERIFIED_LABEL, VERIFIED_LEGEND, added_notice, can_add, marks_summary, stamp_marks)
-from app.modules.audit_places import PLACES_BUCKET, nodes_signature
+from app.modules.audit_places import nodes_signature
 from app.modules.audit_shown import request_to_show
 from app.modules.audit_trial import TrialRefused, now_iso
 from app.modules.audit_try import (DISCARD_LABEL, KIND_DROP, KIND_FILTER, NO_CONDITION, TrialRecord, condition_lines, drop_condition_lines, drop_fit_problem, drops_from_selection, end_cause, fit_problem, panel_model,
@@ -378,9 +378,8 @@ def define_trial_server(input, output, session, *,
         added = stamp_marks(stored[len(applied):], marks)
         _end(None)                                              # the trial's folder is empty already; the marks and the trial are forgotten
         state = home_state.get()
-        by_plot = {k: [dict(n) for n in v] for k, v in ((state or {}).get("t3_audit_steps_by_plot") or {}).items()}
-        by_plot[PLACES_BUCKET] = by_plot.get(PLACES_BUCKET, []) + added
-        new_state = {**state, "t3_audit_steps_by_plot": by_plot, "t3_apply_count": int((state or {}).get("t3_apply_count", 0)) + 1}
+        steps = [dict(n) for n in ((state or {}).get("audit_pipeline") or [])] + added
+        new_state = {**state, "audit_pipeline": steps, "audit_saves_count": int((state or {}).get("audit_saves_count", 0)) + 1}
         home_state.set(new_state)                               # the count is the saves of the session (the session panel reads it)
         if record.kind == KIND_FILTER:
             pending_filters.set([])                             # the condition was added: the staged rows go (a drop leaves them: they are another step)

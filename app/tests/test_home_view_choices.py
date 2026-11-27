@@ -259,9 +259,9 @@ def test_the_mode_switch_exists_only_with_the_audit_flag(world, monkeypatch):
 
 def _decisions(*nodes: tuple) -> dict:
     """HOME's state with committed audit steps: each item is `(decision id, place)`; two items with one id are ONE decision written at two places."""
-    return {"t3_audit_steps_by_plot": {"__places__": [
+    return {"audit_pipeline": [
         {"id": ident, "node_type": "filter_row", "params": {"column": "score", "op": "le", "value": 3, "dtype": "Int64", "na": "remove"}, "reason": "test",
-         "place": place, "plot_scope": "__places__", "created_at": f"2026-11-26T10:00:0{i}"} for i, (ident, place) in enumerate(nodes)]}}
+         "place": place, "created_at": f"2026-11-26T10:00:0{i}"} for i, (ident, place) in enumerate(nodes)]}
 
 
 def _pane_label(world, monkeypatch, plot: str, *nodes: tuple) -> str:

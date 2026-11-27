@@ -48,8 +48,8 @@ def _seed(sm, label: str, with_step: bool, recipe_id: str = OPEN_RECIPE):
     sm.write_assembly_ghost(key, recipe_id, msig, dbh, {}, {}, label=label)
     if with_step:
         step = make_audit_step("filter_row", {"column": "year", "op": "gt", "value": 1900, "dtype": "Int64"},
-                               "__places__", SAVED_REASON, place="T3:mlst_bar")
-        sm.write_t3_ghost(key, recipe_id, msig, dbh, t3_audit_steps_by_plot={"__places__": [step]})
+                               SAVED_REASON, place="T3:mlst_bar")
+        sm.write_t3_ghost(key, recipe_id, msig, dbh, audit_steps=[step])
     return key
 
 

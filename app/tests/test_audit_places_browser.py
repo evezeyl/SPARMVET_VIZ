@@ -44,10 +44,9 @@ def expected(tmp_path_factory):
     qa = orch.materialize_tier3("1_test_data_ST22_dummy", "qa_amr_genes_per_sample", folder).collect()
     marker = "ResFinder_not_in_original_data"
     # the plot of the QA group does not carry the marker column: its rows after a filter on the marker at tier 1 of ResFinder come from the engine's audit copy
-    from app.modules.audit_places import PLACES_BUCKET
     from app.modules.audit_view import PlaceAudit
     from app.modules.session_manager import make_audit_step
-    node = make_audit_step("filter_row", {"column": marker, "op": "eq", "value": False, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="r",
+    node = make_audit_step("filter_row", {"column": marker, "op": "eq", "value": False, "na": "remove"}, reason="r",
                            place="T1:ResFinder", started_from="subtab_amr_heatmap")
     audit = PlaceAudit(orch, folder / "anchors_for_audit", folder / "audit_for_audit")
     qa_after = audit.plot_lazy("1_test_data_ST22_dummy", "qa_amr_genes_per_sample", [node]).collect().height
@@ -182,7 +181,7 @@ def test_the_export_holds_the_audited_table_the_step_with_its_place_and_a_recipe
         last = recipe["data_schemas"]["ResFinder"]["tier1"]["steps"][-1]
         assert last["action"] == "modif_filter" and last["column"] == "identity" and last["op"] == "lt"
         run = yaml.safe_load(next(z.read(n).decode() for n in names if n.endswith("effective_run.yaml")))
-        assert len(run["t3_audit_steps_sha256"]) == 64
+        assert len(run["audit_steps_sha256"]) == 64
     finally:
         _amr_plot(page)
         if page.locator("[id^='t3_delete_']").count():

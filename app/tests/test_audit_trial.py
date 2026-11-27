@@ -28,7 +28,7 @@ import pytest
 import yaml
 
 from app.modules.audit_place_view import AUDIT, Readers, table_for, viewed
-from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of, bake_place_steps, place_step_records
+from app.modules.audit_places import audit_recipe_of, bake_place_steps, place_step_records
 from app.modules import audit_trial as audit_trial_module
 from app.modules.audit_run import compare_tables, same_table
 from app.modules.audit_trial import (NO_ROW_CHANGED, TABLE_CHANGED, TRIAL_FOLDER, TRIAL_REASON, PlaceTrial, TrialRefused, clean_trials, with_applied_at)
@@ -53,7 +53,7 @@ def world(tmp_path_factory):
 def step(place, column="sample_id", value="no_such_sample", op="ne", na="keep", node_type="filter_row", params=None, node_id=None, reason="", created_at=None):
     """A node as HOME stages it (no reason yet unless given)."""
     params = params if params is not None else {"column": column, "op": op, "value": value, "na": na}
-    node = make_audit_step(node_type, params, plot_scope=PLACES_BUCKET, reason=reason, place=place, started_from="subtab_amr_heatmap", node_id=node_id)
+    node = make_audit_step(node_type, params, reason=reason, place=place, started_from="subtab_amr_heatmap", node_id=node_id)
     if created_at:
         node["created_at"] = created_at
     return node

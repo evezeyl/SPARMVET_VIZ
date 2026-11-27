@@ -185,7 +185,7 @@ def _verify(
 
     legs["t3_steps"] = LegResult(
         status="not_checked",
-        recorded=effective_run.get("t3_audit_steps_sha256"),
+        recorded=effective_run.get("audit_steps_sha256"),
         detail=(
             "Not independently re-checked on import: T3 audit steps exist only in the "
             "exporting session. Compare this value against another effective_run.yaml of "
@@ -212,7 +212,7 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         from app.modules.renamed_keys import refused_audit_step_problem
         for steps_name in (n for n in names if n.endswith("/t3_steps.yaml") or n == "t3_steps.yaml"):
             record = yaml.safe_load(zf.read(steps_name).decode()) or {}
-            problem = refused_audit_step_problem(record.get("t3_steps") or {}, f"The bundle's {steps_name}", type_key="action", flat=True)
+            problem = refused_audit_step_problem(record.get("steps_by_place") or [], f"The bundle's {steps_name}", type_key="action", flat=True, list_name="steps_by_place")
             if problem:
                 raise BundleImportError(problem)
 

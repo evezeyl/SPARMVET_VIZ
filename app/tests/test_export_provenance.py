@@ -27,13 +27,13 @@ def prov(stage_keys, all_plots):
     )
 
 
-def prov_t3(t3_by_plot=None, t3_aesthetic_overrides=None):
+def prov_t3(audit_steps=None, plot_seeds=None, t3_aesthetic_overrides=None):
     return build_export_provenance(
         now=datetime.datetime(2026, 11, 6, 12, 0, 0), data_analysis_recipe_id="tiny", safe_name="eve", app_features="qa",
         preset="web", dpi=300, screen_view="Exploration mode, data view T3", all_plots=[],
         tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_data_analysis_recipes={}), stage_keys=None,
-        t3_by_plot=t3_by_plot, t3_aesthetic_overrides=t3_aesthetic_overrides,
+        audit_steps=audit_steps, plot_seeds=plot_seeds, t3_aesthetic_overrides=t3_aesthetic_overrides,
     )
 
 
@@ -89,33 +89,42 @@ def test_svg_carries_both_keys():
     assert f"sparmvet:tier1_key={T1}" in svg and f"sparmvet:tier2_key={k2}" in svg
 
 
-class TestT3AuditStepsSha256:
+class TestAuditStepsSha256:
     """issue #39/ADR-097 decision 3 — the fourth verification leg, confirmed missing
     before this (the original §12f spec named it, it was never computed anywhere)."""
 
     def test_present_and_stable_for_identical_content(self):
-        by_plot = {"subtab_p1": [{"node_type": "filter_row", "params": {"column": "year"}}]}
-        p1 = prov_t3(t3_by_plot=by_plot)
-        p2 = prov_t3(t3_by_plot=dict(by_plot))
-        assert p1["t3_audit_steps_sha256"] == p2["t3_audit_steps_sha256"]
-        assert len(p1["t3_audit_steps_sha256"]) == 64   # sha256 hex digest
+        steps = [{"node_type": "filter_row", "params": {"column": "year"}, "place": "T3:p1"}]
+        p1 = prov_t3(audit_steps=steps)
+        p2 = prov_t3(audit_steps=list(steps))
+        assert p1["audit_steps_sha256"] == p2["audit_steps_sha256"]
+        assert len(p1["audit_steps_sha256"]) == 64   # sha256 hex digest
 
     def test_different_content_gives_a_different_hash(self):
-        p1 = prov_t3(t3_by_plot={"subtab_p1": [{"node_type": "filter_row"}]})
-        p2 = prov_t3(t3_by_plot={"subtab_p1": [{"node_type": "exclusion_row"}]})
-        assert p1["t3_audit_steps_sha256"] != p2["t3_audit_steps_sha256"]
+        p1 = prov_t3(audit_steps=[{"node_type": "filter_row", "place": "T3:p1"}])
+        p2 = prov_t3(audit_steps=[{"node_type": "exclusion_row", "place": "T3:p1"}])
+        assert p1["audit_steps_sha256"] != p2["audit_steps_sha256"]
+
+    def test_the_place_of_a_step_and_the_seed_pins_are_part_of_the_hash(self):
+        """FLOW-3: the same step at another place is another audit; a pinned seed is listed apart (`plot_seeds`) and counts."""
+        a = prov_t3(audit_steps=[{"node_type": "filter_row", "place": "T3:p1"}])
+        b = prov_t3(audit_steps=[{"node_type": "filter_row", "place": "T1:Tab"}])
+        assert a["audit_steps_sha256"] != b["audit_steps_sha256"]
+        s1 = prov_t3(plot_seeds={"p1": [{"node_type": "random_seed", "params": {"seed": 1}}]})
+        s2 = prov_t3(plot_seeds={"p1": [{"node_type": "random_seed", "params": {"seed": 2}}]})
+        assert s1["audit_steps_sha256"] != s2["audit_steps_sha256"] != prov_t3()["audit_steps_sha256"]
 
     def test_aesthetic_overrides_are_part_of_the_hash(self):
         """A seed pin (aesthetic_override.random_state, REPRO-SEED-1) is reproducibility-
         critical content, not cosmetic-only — it must change the hash."""
         p1 = prov_t3(t3_aesthetic_overrides={"subtab_p1": {"random_state": 1}})
         p2 = prov_t3(t3_aesthetic_overrides={"subtab_p1": {"random_state": 2}})
-        assert p1["t3_audit_steps_sha256"] != p2["t3_audit_steps_sha256"]
+        assert p1["audit_steps_sha256"] != p2["audit_steps_sha256"]
 
     def test_empty_t3_still_has_a_stable_hash(self):
         p1 = prov_t3()
         p2 = prov_t3()
-        assert p1["t3_audit_steps_sha256"] == p2["t3_audit_steps_sha256"]
+        assert p1["audit_steps_sha256"] == p2["audit_steps_sha256"]
 
 
 class TestEngineAndEnvironmentFields:

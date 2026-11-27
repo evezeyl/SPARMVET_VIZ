@@ -224,7 +224,7 @@ def define_server(input, output, session, *,
         The source table the Source choice shows (one of the tables that feed the open plot); None until the user picks one.
     home_state : reactive.Value[dict] | None
         §13 Home Module State Object — survives all panel switches.
-        Contains t3_audit_steps, applied_filters and navigation state. The mode and the data choice are not in it (D-0312).
+        Contains audit_steps, applied_filters and navigation state. The mode and the data choice are not in it (D-0312).
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
@@ -306,10 +306,6 @@ def define_server(input, output, session, *,
     # Separate from the sidebar_filters render so tier toggle / tab switches don't reset it.
     applied_filters = reactive.Value([])   # committed on Apply
     _pending_filters = reactive.Value([])  # staging area while user builds rows
-
-    # Phase 22-J: scratch state holding nodes built during T3 promotion that
-    # are awaiting the user's propagation choice (this/all/all-except).
-    # The modal reads from this and writes plot_scopes_intent on confirm.
 
     def _resolve_active_spec(p_id: str | None) -> dict | None:
         """Return the plot spec dict for the active plot_id, searching groups then top-level."""
@@ -446,7 +442,7 @@ def define_server(input, output, session, *,
         decision once. THE one list every reader of the audited plot asks (HOME's plot and tables, the badge, the dialog); the table itself is the audit copy's (`_audited_t3_lf`)."""
         if home_state is None or not subtab_id:
             return []
-        nodes = place_nodes(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
+        nodes = place_nodes(home_state.get().get("audit_pipeline", []) or [])
         if not nodes:
             return []
         try:
@@ -558,7 +554,7 @@ def define_server(input, output, session, *,
         return _place_audit[0]
 
     def _committed_place_nodes() -> list[dict]:
-        return place_nodes((home_state.get().get("t3_audit_steps_by_plot", {}) or {}) if home_state is not None else {})
+        return place_nodes((home_state.get().get("audit_pipeline", []) or []) if home_state is not None else [])
 
     def _audited_t3_lf(plot_id: str, told=None):
         """The table `plot_id` reads in the audit copy made from the audit steps written at a place upstream (`audit_view.PlaceAudit`), lazy; None when no such step
@@ -1793,7 +1789,7 @@ def define_server(input, output, session, *,
             previous, _seen_ghost_file["file"] = _seen_ghost_file["file"], ghost_file
             if not ghost_file or ghost_file == previous or not _audit_available():
                 return
-            restored = place_nodes(home_state.get().get("t3_audit_steps_by_plot", {}) or {})
+            restored = place_nodes(home_state.get().get("audit_pipeline", []) or [])
             if restored and home_mode.get() != "audit":
                 home_mode.set("audit")
                 ui.update_radio_buttons("home_mode", selected="audit")
@@ -1832,7 +1828,7 @@ def define_server(input, output, session, *,
     # `test_filters_cleared_on_recipe_change.py` has always expected: "the audited step of recipe A is back after returning"; the browser run found that this test and an emptying of the
     # state disagree, and nothing is lost this way). They are also in the session of their own recipe (a step is saved when it is applied, D-0302; D-0317). The words are PROVISIONAL.
     _steps_recipe = {"id": None}
-    _steps_set_aside: dict = {}      # recipe id -> the applied steps (the stored form of `t3_audit_steps_by_plot`)
+    _steps_set_aside: dict = {}      # recipe id -> the applied steps (the list `audit_pipeline`)
 
     @reactive.Effect
     def _set_audit_steps_aside_on_recipe_change():
@@ -1844,13 +1840,13 @@ def define_server(input, output, session, *,
             if previous is None or previous == recipe:
                 return
             cur = home_state.get()
-            leaving = cur.get("t3_audit_steps_by_plot", {}) or {}
-            coming = _steps_set_aside.pop(recipe, {})
+            leaving = list(cur.get("audit_pipeline", []) or [])
+            coming = _steps_set_aside.pop(recipe, [])
             n = len({n.get("id") for n in place_nodes(leaving)})
             if n:
                 _steps_set_aside[previous] = leaving
             if n or coming:
-                home_state.set({**cur, "t3_audit_steps_by_plot": coming})
+                home_state.set({**cur, "audit_pipeline": coming})
             if n:
                 _notify(f"The audit steps of the recipe '{previous}' ({n}) are not applied to '{recipe}': a step is written at a table or a plot by name, and another recipe can hold one of the "
                         f"same name. They are kept for '{previous}' and are back when you return to it.", type="warning", duration=15)

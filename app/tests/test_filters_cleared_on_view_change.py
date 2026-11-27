@@ -144,12 +144,12 @@ def test_an_unchanged_view_clears_nothing_even_with_filters(run):
 
 def test_audited_steps_are_not_touched_by_a_view_change(tmp_path, monkeypatch):
     nodes = [{"id": "a", "node_type": "filter_row", "params": dict(ROW), "reason": "r"}]
-    run = Run(tmp_path, monkeypatch, home_state={"t3_audit_steps_by_plot": {"subtab_p_join": nodes}})
+    run = Run(tmp_path, monkeypatch, home_state={"audit_pipeline": nodes})
     run.stage()
     run.home.set(view="T1")
     run.step()
     with reactive.isolate():
-        assert run.home.home_state.get()["t3_audit_steps_by_plot"]["subtab_p_join"] == nodes
+        assert run.home.home_state.get()["audit_pipeline"] == nodes
 
 
 def test_the_first_view_is_not_a_change(tmp_path, monkeypatch):

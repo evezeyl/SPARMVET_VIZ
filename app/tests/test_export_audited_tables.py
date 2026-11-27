@@ -25,7 +25,6 @@ import zipfile
 import polars as pl
 import pytest
 
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.session_manager import make_audit_step
@@ -42,7 +41,7 @@ def _fresh_cache():
 
 
 def step(place, column="group", op="eq", value="A", reason="keep group A"):
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": "Categorical", "na": "remove"}, plot_scope=PLACES_BUCKET, reason=reason,
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": "Categorical", "na": "remove"}, reason=reason,
                            place=place, started_from="subtab_p")
 
 

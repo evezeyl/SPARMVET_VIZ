@@ -133,7 +133,8 @@ def test_recipe_conversion_changes_keys_only():
 def test_session_conversion_renames_keys_not_values():
     new = migrate.convert_session_json(OLD_SESSION)
     assert new["data_analysis_recipe_sha256"] == "x" * 64 and "manifest_sha256" not in new
-    assert new["t3_audit_steps_by_plot"]["plot"][0]["recipe"] == "keep me"
+    # the old `t3_recipe*` keys are not converted (FLOW-3): such a session is older than session format 6 and is refused as a whole, never converted (D-0312)
+    assert new["t3_recipe_by_plot"]["plot"][0]["recipe"] == "keep me" and "t3_audit_steps_by_plot" not in new
 
 
 def test_dry_run_writes_nothing_and_apply_converts(tmp_path):

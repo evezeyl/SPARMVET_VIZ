@@ -13,7 +13,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, button:filter_try (the Try of a staged condition, handled by trial_handlers.py), output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply
-# consumes: app/modules/audit_places.py (PLACES_BUCKET), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_schema_signature, dialog_rows_signature, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -29,7 +29,6 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import AUDIT_ERRORS
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -599,16 +598,16 @@ def define_filter_audit_server(input, output, session, *,
     _dialog_audit_steps_changed = reactive.Value([])
 
     def _place_nodes_now() -> list:
-        """The committed audit steps, at every tier (the bucket `__places__`): the engine runs them in the audit copy. Only a SIGNAL of the form reads them (a change builds the dialog again)."""
+        """The committed audit steps, at every tier (the list `audit_pipeline`): the engine runs them in the audit copy. Only a SIGNAL of the form reads them (a change builds the dialog again)."""
         with reactive.isolate():
-            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
-        return list(by_plot.get(PLACES_BUCKET, []))
+            steps = (home_state.get().get("audit_pipeline") or []) if home_state is not None else []
+        return list(steps)
 
     @reactive.Effect
     def _signal_dialog_audit_steps():
         active_home_subtab.get()   # the plot open now: the table the form reads is its own
-        by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}   # the dependency
-        nodes = list(by_plot.get(PLACES_BUCKET, []))   # a step at any tier can change the table the form reads
+        steps = (home_state.get().get("audit_pipeline") or []) if home_state is not None else []   # the dependency
+        nodes = list(steps)   # a step at any tier can change the table the form reads
         with reactive.isolate():
             if _dialog_audit_steps_changed.get() != nodes:
                 _dialog_audit_steps_changed.set(nodes)

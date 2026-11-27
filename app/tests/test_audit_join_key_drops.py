@@ -46,7 +46,7 @@ from shiny.types import SilentException
 import app.handlers.session_handlers as session_handlers
 import app.handlers.trial_handlers as trial_handlers
 from app.modules.session_manager import SessionManager, extract_primary_keys, make_audit_step, split_key_drops
-from app.modules.audit_places import PLACES_BUCKET, audit_copy_for
+from app.modules.audit_places import audit_copy_for
 from utils.audit_copy import all_audit_steps
 from utils import key_drop
 
@@ -75,21 +75,21 @@ def plotted(*join_steps):
 
 def drop_step(column, plot="subtab_p1", reason="", step_id=None):
     """A drop written at the tier 3 of a plot (the place `T3:<plot>`, in the one bucket)."""
-    return make_audit_step("drop_column", {"column": column}, plot_scope=PLACES_BUCKET, reason=reason, node_id=step_id, place=f"T3:{plot.removeprefix('subtab_')}")
+    return make_audit_step("drop_column", {"column": column}, reason=reason, node_id=step_id, place=f"T3:{plot.removeprefix('subtab_')}")
 
 
 def filter_step(column, plot="subtab_p1"):
-    return make_audit_step("filter_row", {"column": column, "op": "eq", "value": 1, "dtype": "Int64"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot.removeprefix('subtab_')}")
+    return make_audit_step("filter_row", {"column": column, "op": "eq", "value": 1, "dtype": "Int64"}, reason="r", place=f"T3:{plot.removeprefix('subtab_')}")
 
 
 def bucket(**by_plot):
-    """The stored form: every step in the one bucket, in the order given (plot after plot)."""
-    return {PLACES_BUCKET: [n for nodes in by_plot.values() for n in nodes]}
+    """The stored form: the one flat list `audit_pipeline`, in the order given (plot after plot)."""
+    return [n for nodes in by_plot.values() for n in nodes]
 
 
 def at(by_bucket, plot):
-    """The steps of a bucket written at the tier 3 of `plot`."""
-    return [n for n in by_bucket[PLACES_BUCKET] if n["place"] == f"T3:{plot}"]
+    """The steps of the list written at the tier 3 of `plot`."""
+    return [n for n in by_bucket if n["place"] == f"T3:{plot}"]
 
 
 # ---------------------------------------------------------------------------------------------------- which columns are keys
@@ -321,9 +321,9 @@ def test_split_refuses_a_stored_drop_the_app_cannot_follow_with_the_real_sentenc
 def test_split_does_not_change_its_argument_and_a_drop_the_rule_allows_stays(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
     by_plot = bucket(p1=[drop_step("sample_id"), drop_step("year")])
-    before = [dict(n) for n in by_plot[PLACES_BUCKET]]
+    before = [dict(n) for n in by_plot]
     kept, refused = split_key_drops(by_plot, REAL)
-    assert by_plot[PLACES_BUCKET] == before
+    assert by_plot == before
     assert [n["params"]["column"] for n in at(kept, "p1")] == ["year"] and len(refused) == 1
 
 
@@ -331,14 +331,14 @@ def test_split_with_no_recipe_or_no_steps_refuses_nothing(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
     by_plot = bucket(p1=[drop_step("sample_id")], p2=[])
     assert split_key_drops(by_plot, None) == (by_plot, [])
-    assert split_key_drops({}, REAL) == ({}, [])
-    assert split_key_drops(None, REAL) == ({}, [])
+    assert split_key_drops([], REAL) == ([], [])
+    assert split_key_drops(None, REAL) == ([], [])
     assert len(split_key_drops(by_plot, REAL)[1]) == 1, "with a recipe the stand-in refusal does apply: the first assertion is about the absence of a recipe"
 
 
 def test_split_lists_every_copy_of_a_decision_written_at_several_places_and_keeps_a_style_step(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
-    style = make_audit_step("aesthetic_override", {"alpha": 0.5}, plot_scope=PLACES_BUCKET, place="T3:p1")
+    style = make_audit_step("aesthetic_override", {"alpha": 0.5}, place="T3:p1")
     by_plot = bucket(p1=[style, drop_step("sample_id", step_id="same")], p2=[drop_step("sample_id", plot="subtab_p2", step_id="same")])
     kept, refused = split_key_drops(by_plot, REAL)
     assert at(kept, "p1") == [style]
@@ -355,8 +355,8 @@ def test_a_step_with_no_place_is_not_judged_and_not_refused_by_the_key_rule(monk
     """The refusal of a step with no place is the file's (`refused_audit_step_problem(place_required=True)`): the key rule has no place to ask about."""
     refuse_keys(monkeypatch, "sample_id")
     nowhere = {k: v for k, v in drop_step("sample_id").items() if k != "place"}
-    kept, refused = split_key_drops({PLACES_BUCKET: [nowhere]}, REAL)
-    assert refused == [] and kept == {PLACES_BUCKET: [nowhere]}
+    kept, refused = split_key_drops([nowhere], REAL)
+    assert refused == [] and kept == [nowhere]
 
 
 # ------------------------------------------------------------------------ places 4 and 5: the real session screen, real files
@@ -428,7 +428,7 @@ class Screen:
 
     def write(self, by_plot):
         self.manager.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
-        self.manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot=by_plot)
+        self.manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, audit_steps=by_plot)
 
     def texts(self, word):
         return [m for _, m in self.notes if word in m]
@@ -454,7 +454,7 @@ SAVED = bucket(
 def steps_of(state):
     """{place: [(type, column)]} of the steps in the state, in the order they are stored; a place with no step is not a key."""
     found: dict = {}
-    for n in state["t3_audit_steps_by_plot"][PLACES_BUCKET]:
+    for n in state["audit_pipeline"]:
         found.setdefault(n["place"], []).append((n["node_type"], n["params"].get("column")))
     return found
 
@@ -545,7 +545,7 @@ def test_an_imported_session_zip_with_a_refused_drop_is_restored_the_same_way(tm
         target = Screen(tmp_path, monkeypatch, raw=REAL, name="this_machine")
         assert target.manager.import_session_zip(zip_bytes) == KEY
         assert any(n["node_type"] == "drop_column" and n["params"]["column"] == "sample_id"
-                   for n in target.manager.list_t3_ghosts(KEY)[0]["t3_audit_steps_by_plot"][PLACES_BUCKET]), "the import itself keeps the file as it is"
+                   for n in target.manager.list_t3_ghosts(KEY)[0]["audit_pipeline"]), "the import itself keeps the file as it is"
         await target.restore()
         assert steps_of(target.state()) == {"T3:p1": [("filter_row", "year"), ("drop_column", "source")]}
         assert len(target.texts("STAND-IN")) == 1

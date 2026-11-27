@@ -34,7 +34,6 @@ from app.modules.cache_keys import (
     clear_data_analysis_recipe_cache, data_analysis_recipe_keys, load_data_analysis_recipe, plot_tier3_key, tier3_steps)
 from app.modules.engine_registry import PlotEngines
 from app.modules.orchestrator import DataOrchestrator
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_run import AuditRunError
 from app.modules.audit_view import PlaceAudit
 from app.tests.audit_export_harness import FLAGS, audit_kwargs
@@ -349,7 +348,7 @@ def test_every_plot_of_every_shipped_recipe_has_the_key_of_its_table_unless_it_h
 def _audited(world, plot, nodes):
     """The table `plot` reads in the audit copy made from `nodes` (steps written at the plot's own tier 3), lazy; its original table when the copy leaves it as it is."""
     audit = PlaceAudit(world.orch, world.anchors, world.root / "audit_anchors")
-    placed = [{**n, "place": f"T3:{plot}", "plot_scope": PLACES_BUCKET} for n in nodes]
+    placed = [{**n, "place": f"T3:{plot}"} for n in nodes]
     lazy = audit.plot_lazy("tiny", plot, placed)
     return lazy if lazy is not None else world.orch.materialize_tier3("tiny", plot, world.anchors, keys=world.keys())
 
@@ -441,7 +440,7 @@ def test_the_export_applies_the_audited_steps_on_top_of_the_recipes_tier3(tmp_pa
     """A plot with recipe steps AND an audited step (written at its own tier 3): the table, the picture and the T3 file hold both, the recipe's first."""
     world = Tier3World(tmp_path)
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
-    nodes = [{**n, "place": "T3:p_steps", "plot_scope": PLACES_BUCKET, "created_at": "t"} for n in filter_nodes(
+    nodes = [{**n, "place": "T3:p_steps", "created_at": "t"} for n in filter_nodes(
         [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])]
     drawn: dict = {}
     real_render = PlotEngines.render

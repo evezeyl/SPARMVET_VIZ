@@ -54,7 +54,7 @@ def newest_session_steps() -> list:
     """The audit steps of the newest session file written in the user's folder (ghost save on), [] when there is none."""
     root = user_data() / "_sessions"
     files = sorted(root.glob("*/t3_*.json"), key=lambda p: p.stat().st_mtime_ns) if root.is_dir() else []
-    return json.loads(files[-1].read_text())["t3_audit_steps_by_plot"].get("__places__", []) if files else []
+    return json.loads(files[-1].read_text())["audit_pipeline"] if files else []
 
 
 def session_file_count() -> int:

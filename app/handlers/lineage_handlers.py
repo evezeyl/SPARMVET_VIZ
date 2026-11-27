@@ -17,7 +17,7 @@ PROVISIONAL (the builder's choices, not decided by the owner): the title and the
 
 # @deps
 # provides: function:define_server (lineage_handlers), output:lineage_panel_ui, effect:_send_marks, effect:_send_shown, effect:_show_place
-# consumes: app/modules/audit_shown.py (request_to_show), app/modules/lineage_view.py (view_data), libs/utils/src/utils/lineage_data.py (lineage_of), app/modules/audit_places.py (PLACES_BUCKET, place_words), app/src/www/lineage_view.js
+# consumes: app/modules/audit_shown.py (request_to_show), app/modules/lineage_view.py (view_data), libs/utils/src/utils/lineage_data.py (lineage_of), app/modules/audit_places.py (place_words), app/src/www/lineage_view.js
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/rules/ui_implementation_contract.md#14, .claude/knowledge/decision_ledger.md (D-0627, D-0629, D-0634)
 # @end_deps
@@ -29,7 +29,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from shiny import reactive, render, ui
 
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_shown import request_to_show
 from app.modules.lineage_view import view_data
 from app.modules.notification_utils import make_notifier
@@ -155,7 +154,7 @@ def define_server(input, output, session, *,
             return
         state = home_state.get()
         seen: Dict[str, set] = {}
-        for node in list((state.get("t3_audit_steps_by_plot", {}) or {}).get(PLACES_BUCKET, [])):
+        for node in list(state.get("audit_pipeline", []) or []):
             place = node.get("place") or ""
             if place:
                 seen.setdefault(place, set()).add(node.get("id"))

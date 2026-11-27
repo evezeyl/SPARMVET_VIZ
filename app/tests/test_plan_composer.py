@@ -435,7 +435,7 @@ def test_the_session_restore_and_HOMEs_column_box_hand_the_rule_the_plan(monkeyp
         real(self, raw, plans)
     monkeypatch.setattr(key_drop.DropGate, "__init__", init)
     orch, loaded, graph, book = shipped("3_test_no_joins")
-    split_key_drops({"__places__": [{"node_type": "drop_column", "params": {"column": "sample_id"}, "id": "n1", "place": "T3:x"}]}, loaded.raw, book)
+    split_key_drops([{"node_type": "drop_column", "params": {"column": "sample_id"}, "id": "n1", "place": "T3:x"}], loaded.raw, book)
     assert given == [book]
 
 

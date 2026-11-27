@@ -16,7 +16,7 @@ from shiny import reactive, render, ui
 import app.handlers.session_handlers as session_handlers
 from app.tests.test_session_clicks_once import LiveInput
 
-BASE = {"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64, "t3_apply_count": 0, "active_plot_subtab": "subtab_x", "audit_shown_place": None}
+BASE = {"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64, "audit_saves_count": 0, "active_plot_subtab": "subtab_x", "audit_shown_place": None}
 
 
 class _Manager:
@@ -81,7 +81,7 @@ def test_a_change_of_the_session_key_or_of_the_saves_counted_draws_the_panel(mon
     home_state, renders = _world(monkeypatch)
     _flush()
     before = renders["n"]
-    _write(home_state, t3_apply_count=1)
+    _write(home_state, audit_saves_count=1)
     assert renders["n"] > before, "an Apply writes a save: the count of saves of the panel must follow"
     before = renders["n"]
     _write(home_state, data_batch_hash="c" * 64)

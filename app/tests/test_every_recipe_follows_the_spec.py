@@ -288,13 +288,13 @@ def test_an_audit_recipe_beside_its_original_passes_the_check_and_is_a_copy_for_
     """The audit recipe as `audit_recipe_of` writes it (with a step at tier 1 of ResFinder) passes the recipe check with `info.audit_of`; the set check counts the plot ids it shares with its
     original as a clash by default (D-0534 stands), gives none with the exemption switched on explicitly, and with the key removed it clashes again (D-0354, D-0690)."""
     import yaml
-    from app.modules.audit_places import PLACES_BUCKET, audit_recipe_of
+    from app.modules.audit_places import audit_recipe_of
     from app.modules.cache_keys import load_data_analysis_recipe
     from app.modules.session_manager import make_audit_step
     work = _copy_pipelines(tmp_path)
     original = work / "1_test_data_ST22_dummy.yaml"
     raw = load_data_analysis_recipe(original).raw
-    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, plot_scope=PLACES_BUCKET, reason="a test reason", place="T1:ResFinder",
+    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, reason="a test reason", place="T1:ResFinder",
                            started_from="subtab_amr_heatmap")
     recipe = audit_recipe_of(raw, [node], "1_test_data_ST22_dummy", "2026-11-26")
     assert recipe["info"]["audit_of"] == "1_test_data_ST22_dummy"

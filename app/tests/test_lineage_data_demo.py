@@ -133,8 +133,8 @@ def test_the_metadata_is_never_offered_as_a_place(world):
 
 def test_a_stored_step_at_the_metadata_is_refused_by_the_audit_copy_with_the_plain_line(world):
     raw = world[1].raw
-    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, plot_scope="__places__", reason="why", place=f"T1:{META}")
+    node = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, reason="why", place=f"T1:{META}")
     with pytest.raises(AuditCopyError, match="metadata table is not a place"):
         audit_copy_for(raw, [node])
-    ok = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, plot_scope="__places__", reason="why", place="T1:ResFinder")
+    ok = make_audit_step("filter_row", {"column": "sample_id", "op": "ne", "value": "x", "na": "keep"}, reason="why", place="T1:ResFinder")
     assert audit_copy_for(raw, [ok]).created == 1

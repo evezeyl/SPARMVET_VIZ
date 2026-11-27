@@ -259,8 +259,8 @@ def test_the_staged_line_says_the_ends_unless_both(closed, suffix):
 
 def _methods(params):
     from app.handlers.export_handlers import _build_methods_section
-    node = {"node_type": "filter_row", "params": params, "reason": "poor quality"}
-    return "\n".join(_build_methods_section([("p", {"title": "P"})], {"p": [node]}, {}, ["T1"]))
+    node = {"node_type": "filter_row", "params": params, "reason": "poor quality", "place": "T3:p"}
+    return "\n".join(_build_methods_section([("p", {"title": "P"})], [node], {}, ["T1"]))
 
 
 @pytest.mark.parametrize("closed, phrase", [

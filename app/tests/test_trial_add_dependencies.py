@@ -22,7 +22,7 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_trial_add_dependen
 import pytest
 from shiny import reactive
 
-from app.modules.audit_places import PLACES_BUCKET, nodes_signature
+from app.modules.audit_places import nodes_signature
 from app.modules.audit_trial import PlaceEffect, TrialRefused, TrialResult
 from app.modules.audit_try import TrialRecord, condition_lines, world_of
 from app.modules.session_manager import make_audit_step
@@ -32,7 +32,7 @@ PLACES = ("T1:ResFinder", "T2:ResFinder", "T3:amr_heatmap")
 
 
 def _tried():
-    return tuple(make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": 99.0, "na": "remove", "dtype": "Float64"}, plot_scope=PLACES_BUCKET, reason="", place=p, node_id="dec1") for p in PLACES)
+    return tuple(make_audit_step("filter_row", {"column": "identity", "op": "lt", "value": 99.0, "na": "remove", "dtype": "Float64"}, reason="", place=p, node_id="dec1") for p in PLACES)
 
 
 class FakeTrial:
@@ -66,7 +66,7 @@ def _setup(monkeypatch, raises=None, committed=(), steps=None):
     w.saved, w.fake = saved, trial
     w.home_state_set = lambda **kw: w.home_state.set({**_peek(w.home_state), **kw})
     with reactive.isolate():
-        w.home_state.set({"t3_audit_steps_by_plot": steps or {}, "t3_apply_count": 0, "t3_ghost_file": ""})
+        w.home_state.set({"audit_pipeline": steps or [], "audit_saves_count": 0, "t3_ghost_file": ""})
     _flush()
     _set(w, _record(w, committed=committed))
     _flush()
@@ -79,7 +79,7 @@ def _out(w, name):
 
 
 def _nodes(w):
-    return _peek(w.home_state)["t3_audit_steps_by_plot"].get(PLACES_BUCKET, [])
+    return _peek(w.home_state)["audit_pipeline"]
 
 
 def test_the_summary_counts_the_marks_and_a_new_trial_never_inherits_one(monkeypatch):
@@ -163,9 +163,9 @@ def test_add_writes_the_step_at_all_the_places_with_the_marks_and_ends_the_trial
     assert "verified_at" in nodes[0] and "verified_at" not in nodes[1]
     assert _peek(w.trial_state) is None and w.fake.discards >= 1, "the trial ended and its folder was emptied"
     state = _peek(w.home_state)
-    assert state["t3_apply_count"] == 1, "the count of saves moves (the session panel counts the saves of the session)"
+    assert state["audit_saves_count"] == 1, "the count of saves moves (the session panel counts the saves of the session)"
     assert _peek(w.pending) == [], "the condition was added: the staged rows go (the form is not drawn again by this, only emptied)"
-    assert len(w.saved) == 1 and w.saved[0]["t3_audit_steps_by_plot"][PLACES_BUCKET] == nodes, "the session is saved once, with the step"
+    assert len(w.saved) == 1 and w.saved[0]["audit_pipeline"] == nodes, "the session is saved once, with the step"
     assert w.notes == ["Step added to the audit pipeline at 3 places (2 of 3 places user verified)."]
     applied_arg, tried_arg, reason_arg = w.fake.calls[0]
     assert applied_arg == [] and len(tried_arg) == 3 and reason_arg == "poor sequencing quality", "the engine's apply_trial got the trial's own nodes"
@@ -183,9 +183,9 @@ def test_a_second_click_adds_nothing(monkeypatch):
 
 
 def test_the_added_step_is_appended_to_the_steps_already_applied_and_none_is_lost(monkeypatch):
-    earlier = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1, "na": "keep"}, plot_scope=PLACES_BUCKET, reason="first", place="T1:ResFinder", node_id="old")
-    inactive = {**make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 2, "na": "keep"}, plot_scope=PLACES_BUCKET, reason="gone", place="T1:ResFinder", node_id="off"), "active": False}
-    w = _setup(monkeypatch, committed=[earlier], steps={PLACES_BUCKET: [earlier, inactive]})
+    earlier = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 1, "na": "keep"}, reason="first", place="T1:ResFinder", node_id="old")
+    inactive = {**make_audit_step("filter_row", {"column": "x", "op": "eq", "value": 2, "na": "keep"}, reason="gone", place="T1:ResFinder", node_id="off"), "active": False}
+    w = _setup(monkeypatch, committed=[earlier], steps=[earlier, inactive])
     w.live.set("trial_reason_1", "second")
     _flush()
     w.live.set("trial_add", 1)
@@ -249,7 +249,7 @@ def test_adding_a_drop_leaves_the_staged_rows_of_the_filters_panel_alone(monkeyp
     """FLOW-3: a drop and a condition are two steps; the Add of the drop must not clear the condition the user is building."""
     from app.modules.audit_try import KIND_DROP, drop_condition_lines
     w = _setup(monkeypatch)
-    drop_nodes = tuple(make_audit_step("drop_column", {"column": "identity"}, plot_scope=PLACES_BUCKET, reason="", place=p, node_id="drop1") for p in PLACES)
+    drop_nodes = tuple(make_audit_step("drop_column", {"column": "identity"}, reason="", place=p, node_id="drop1") for p in PLACES)
     rows = _peek(w.pending)
     record = TrialRecord(world_of("audit", "r", ("a", "b"), [], [], ()), PLACES, drop_nodes, TrialResult(("sig",), tuple(PlaceEffect(p, p, 10, 10, "table changed", 8, 7) for p in PLACES)),
                          drop_condition_lines(["identity"]), 1, KIND_DROP)

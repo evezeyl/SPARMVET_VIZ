@@ -7,7 +7,7 @@ FLOW-3 (2026-11-27): the dialog that offered the places of a step as tick lines 
 together) is `RecipeGraph.chosen_places_problem`, written once in `utils.recipe_graph`.
 
 THE NODES THAT ARE WRITTEN AT A PLACE (`place_nodes`, `audit_copy_for`, `nodes_signature`): the audit node of HOME (`session_manager.make_audit_step`) with a `place` (`T1:<table>`,
-`T2:<table>` or `T3:<plot>`: the three tiers are ONE mechanism) and the plot it was started from (`started_from`), kept in the bucket `PLACES_BUCKET`. A decision written for several plots or
+`T2:<table>` or `T3:<plot>`: the three tiers are ONE mechanism) and the plot it was started from (`started_from`), kept in ONE flat list (`home_state["audit_pipeline"]`, FLOW-3 stage B; PROVISIONAL name). A decision written for several plots or
 tables is one node per place, all with the id of the decision (removal by that id removes them all). The audit copy of the recipe (`utils.audit_copy`) is made from them, in the
 order they were committed, by the translation of the node into the registered action (`blueprint_arch.t3_translator`, the one translation of the export too); the reason of the
 node is the `audit_comment` of the step (D-0329). The copy is the original plus audit steps and nothing else (`add_step` refuses an action that is not a filter or a column drop,
@@ -16,7 +16,7 @@ a key dropped where a later join reads it, a place that does not exist).
 Consumed by: app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/audit_view.py (the run of the copy), app/tests/test_audit_places.py. If deleted: no audit step can be written at a place.
 
 # @deps
-# provides: function:place_line, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, constant:PLACES_BUCKET, class:PlaceLine, class:PlaceLines
+# provides: function:place_line, function:plots_below, function:nodes_reaching_plot, function:steps_changing_table, function:own_plot_place, function:place_nodes, function:audit_copy_for, function:nodes_signature, function:place_words, function:place_step_records, function:bake_place_steps, function:audit_recipe_of, function:audit_recipe_sentence, function:t3_file_sentence, function:nodes_reaching_node, class:PlaceLine, class:PlaceLines
 # consumes: libs/utils/src/utils/display_names.py (place_line), libs/utils/src/utils/recipe_graph.py (RecipeGraph: places, below, chosen_places_problem, lineage_back), libs/utils/src/utils/plan_book.py (PlanBook, Plan), libs/utils/src/utils/audit_copy.py (start_audit, add_step), libs/utils/src/utils/recipe_tiers.py (collection_body, plot_entry), libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node), app/modules/renamed_keys.py (audit_step_defect, FIX_IN_APP)
 # consumed_by: app/handlers/audit_stack.py, app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/session_manager.py, app/modules/audit_view.py, app/tests/test_audit_places.py
 # doc: .claude/rules/ui_implementation_contract.md#12g, .claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md
@@ -35,11 +35,6 @@ from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
 from utils.audit_copy import AuditCopy, AuditCopyError, add_step, start_audit
 from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph
-
-# The bucket of `home_state["t3_audit_steps_by_plot"]` that holds the audit steps written at a place upstream of a plot (a node with a `place`): one step at one
-# place is ONE node here, not one copy per plot. Every plot-level reader asks the bucket of its own plot, so none of them sees these nodes by mistake.
-PLACES_BUCKET = "__places__"
-
 
 def plots_below(graph: RecipeGraph, places: Iterable[str]) -> List[str]:
     """The plots that are built from any of the places, each once, in the order of the recipe: the plots below a table's place, and the plot of a `T3:<plot>` place itself
@@ -98,9 +93,9 @@ def nodes_reaching_node(graph: RecipeGraph, nodes: Iterable[dict], node_id: str)
 # ---------------------------------------------------------------------------------------------------------------------
 
 
-def place_nodes(by_plot: Dict[str, List[dict]]) -> List[dict]:
-    """The committed audit nodes written at a place (the bucket `PLACES_BUCKET` of the per-plot stacks), the ones that are still active, in the order they were committed."""
-    return [n for n in (by_plot or {}).get(PLACES_BUCKET, []) if n.get("place") and n.get("active", True)]
+def place_nodes(steps: Iterable[dict]) -> List[dict]:
+    """The committed audit nodes written at a place (the flat list of the audit steps), the ones that are still active, in the order they were committed."""
+    return [n for n in (steps or []) if n.get("place") and n.get("active", True)]
 
 
 def nodes_signature(nodes: Iterable[dict]) -> Tuple[Any, ...]:

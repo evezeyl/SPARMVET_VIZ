@@ -207,7 +207,7 @@ def test_one_decision_for_each_column_written_at_each_place_with_no_reason():
     nodes = tried_drop_nodes(["identity", "sample_id", "identity"], ["T3:amr_heatmap", "T1:ResFinder"])
     assert [(n["place"], n["params"]["column"]) for n in nodes] == [("T3:amr_heatmap", "identity"), ("T1:ResFinder", "identity"), ("T3:amr_heatmap", "sample_id"), ("T1:ResFinder", "sample_id")], "a column named twice is one decision"
     assert nodes[0]["id"] == nodes[1]["id"] and nodes[2]["id"] == nodes[3]["id"] and nodes[0]["id"] != nodes[2]["id"]
-    assert all(n["node_type"] == "drop_column" and n["reason"] == "" and n["plot_scope"] == "__places__" for n in nodes)
+    assert all(n["node_type"] == "drop_column" and n["reason"] == "" and "plot_scope" not in n for n in nodes)
 
 
 def test_a_drop_that_does_not_fit_a_place_names_the_place_and_the_columns_and_a_type_difference_is_no_problem(world):

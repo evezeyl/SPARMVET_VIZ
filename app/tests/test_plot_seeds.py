@@ -368,11 +368,11 @@ def test_the_seed_step_is_added_after_the_audited_steps_and_the_input_is_not_cha
 def test_the_methods_text_names_the_pinned_seed():
     from app.handlers.export_handlers import _build_methods_section
     plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT)
-    lines = _build_methods_section(all_plots=[("p", {"ui_label": "My plot"})], t3_by_plot=with_seed_steps({}, plan),
+    lines = _build_methods_section(all_plots=[("p", {"ui_label": "My plot"})], audit_steps=[], plot_seeds=with_seed_steps({}, plan),
                                    ds_to_plots={}, tiers_exported=["T1"])
     text = "\n".join(lines)
     assert "777" in text and "My plot" in text and "random" in text.lower()
-    assert _build_methods_section(all_plots=[("p", {})], t3_by_plot={}, ds_to_plots={}, tiers_exported=["T1"]) == []
+    assert _build_methods_section(all_plots=[("p", {})], audit_steps=[], ds_to_plots={}, tiers_exported=["T1"]) == []
 
 
 # ---------------------------------------------------------------------------

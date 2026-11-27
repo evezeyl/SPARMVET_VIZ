@@ -38,17 +38,17 @@ def test_a_title_written_in_the_plot_content_is_not_a_report_name():
 def test_the_methods_text_and_the_t3_prose_use_the_report_name():
     methods = _build_methods_section(
         all_plots=[("p", {"ui_label": "Short name"})],
-        t3_by_plot={"p": [{"node_type": "drop_column", "params": {"column": "c"}, "reason": "r"}]},
+        audit_steps=[{"node_type": "drop_column", "params": {"column": "c"}, "reason": "r", "place": "T3:p"}],
         ds_to_plots={}, tiers_exported=["T1"], t3_aesthetic_overrides={"p": {"alpha": 0.5}})
     joined = "\n".join(methods)
-    assert "plot: *Short name*" in joined and "plot *Short name*" in joined
+    assert "written at Plot Short name (tier 3)" in joined and "plot *Short name*" in joined
 
 
 def test_the_methods_text_names_a_plot_the_recipe_no_longer_has_by_its_id():
     methods = _build_methods_section(
-        all_plots=[], t3_by_plot={"gone_plot": [{"node_type": "drop_column", "params": {"column": "c"}, "reason": "r"}]},
+        all_plots=[], audit_steps=[{"node_type": "drop_column", "params": {"column": "c"}, "reason": "r", "place": "T3:gone_plot"}],
         ds_to_plots={}, tiers_exported=["T1"], t3_aesthetic_overrides=None)
-    assert "plot: *gone_plot*" in "\n".join(methods) and "Gone Plot" not in "\n".join(methods)
+    assert "written at Plot gone_plot (tier 3)" in "\n".join(methods) and "Gone Plot" not in "\n".join(methods)
 
 
 def _plots_of(recipe_rel: str):

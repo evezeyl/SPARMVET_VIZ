@@ -26,7 +26,7 @@ from unittest import mock
 import polars as pl
 import pytest
 
-from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.modules.audit_places import audit_copy_for, place_nodes
 from app.modules.audit_run import AuditRunError, run_audit
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
@@ -63,7 +63,7 @@ class World:
 
     def node(self, place="T1:ResFinder", value=None, column="sample_id", reason="the sample was resequenced", node_type="filter_row", params=None):
         params = params if params is not None else {"column": column, "op": "ne", "value": value or self.victim, "na": "keep"}
-        return make_audit_step(node_type, params, plot_scope=PLACES_BUCKET, reason=reason, place=place, started_from="subtab_amr_heatmap")
+        return make_audit_step(node_type, params, reason=reason, place=place, started_from="subtab_amr_heatmap")
 
     def original_table(self, plot_id):
         return self.orch.materialize_tier3(RECIPE_ID, plot_id, self.anchors).collect()
@@ -170,11 +170,11 @@ def test_a_node_with_no_registered_action_is_refused_in_plain_words(world):
         audit_copy_for(world.loaded.raw, [world.node(node_type="aesthetic_override", params={"fill": "red"})], world.plans)
 
 
-def test_place_nodes_are_the_active_nodes_of_the_bucket_in_commit_order():
+def test_place_nodes_are_the_active_nodes_of_the_list_in_commit_order():
     a, b = {"id": "a", "place": "T1:X"}, {"id": "b", "place": "T1:Y", "active": False}
     plain = {"id": "c"}
-    assert place_nodes({PLACES_BUCKET: [a, b, plain], "subtab_p": [{"id": "z", "place": "T1:X"}]}) == [a]
-    assert place_nodes({}) == [] and place_nodes(None) == []
+    assert place_nodes([a, b, plain]) == [a]
+    assert place_nodes([]) == [] and place_nodes(None) == []
 
 
 def test_a_step_that_removes_nothing_moves_the_keys_and_no_row_so_no_plot_is_affected_and_the_badge_says_so(world):
@@ -232,8 +232,7 @@ def test_all_plots_is_one_node_per_plot_with_one_id_and_removing_by_that_id_remo
     assert set(audit.affected_plots(RECIPE_ID, both, world.plans)) == {"mlst_bar", "year_distribution"}
     for plot in ("mlst_bar", "year_distribution"):
         assert victim not in audit.plot_lazy(RECIPE_ID, plot, both, world.plans).collect()["sample_id"].to_list()
-    by_plot = {PLACES_BUCKET: both}
-    removed = [n for n in by_plot[PLACES_BUCKET] if n["id"] != one["id"]]              # what the panel's Remove step does: every node of the id
+    removed = [n for n in both if n["id"] != one["id"]]              # what the panel's Remove step does: every node of the id
     assert removed == [] and audit.affected_plots(RECIPE_ID, removed, world.plans) == []
     assert audit.plot_lazy(RECIPE_ID, "mlst_bar", removed, world.plans) is None and not world.audit_dir.exists()
 

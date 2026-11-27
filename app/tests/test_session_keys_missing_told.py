@@ -177,7 +177,7 @@ def test_a_restore_with_no_keys_to_compare_says_so_and_still_restores(tmp_path, 
     warnings = screen.texts("warning")
     assert len(warnings) == 1 and "compare" in warnings[0] and ". Suggestion:" in warnings[0], screen.notes
     with reactive.isolate():
-        assert screen.home_state.get()["t3_audit_steps_by_plot"]["__places__"], "the restore still happens"
+        assert screen.home_state.get()["audit_pipeline"], "the restore still happens"
 
 
 def test_a_restore_with_both_keys_present_and_equal_says_nothing_extra(tmp_path, monkeypatch):

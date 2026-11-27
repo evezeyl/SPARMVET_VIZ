@@ -26,7 +26,7 @@ import yaml
 
 from app.modules.bundle_importer import BundleImportError, import_bundle
 from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
-from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.modules.audit_places import audit_copy_for, place_nodes
 from app.tests.test_audit_places import small
 from blueprint_arch.t3_translator import UntranslatableNode
 from utils.audit_copy import AuditCopyError, all_audit_steps
@@ -85,7 +85,7 @@ def test_known_steps_pass_and_a_style_step_is_not_a_data_step_and_is_never_skipp
 
 def test_a_switched_off_step_is_not_one_of_the_steps_the_audit_runs_and_a_bad_one_is_refused_where_files_are_read():
     off = {**BAD_STEPS["an unknown type"], "active": False}
-    assert place_nodes({PLACES_BUCKET: [off, GOOD_FILTER]}) == [GOOD_FILTER], "nothing runs a step that is off"
+    assert place_nodes([off, GOOD_FILTER]) == [GOOD_FILTER], "nothing runs a step that is off"
     # the entry points that READ a file refuse it (below): an inactive bad step is refused like any other
 
 
@@ -97,7 +97,7 @@ def _session(tmp_path, steps):
     folder = sm.session_dir(key)
     (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": SESSION_FORMAT_VERSION}))
     ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": SESSION_FORMAT_VERSION,
-             "t3_audit_steps_by_plot": {PLACES_BUCKET: steps}, "t3_audit_steps": []}
+             "audit_pipeline": steps}
     (folder / "t3_20261115_100000.json").write_text(json.dumps(ghost))
     return sm, key
 
@@ -108,8 +108,8 @@ def test_a_session_file_refuses_a_step_the_app_cannot_apply(tmp_path, name):
     with pytest.raises(LegacySessionError) as caught:
         sm.list_t3_ghosts(key)
     text = str(caught.value)
-    assert "audit step 2 of the audit list" in text, text
-    assert text.index("new session") < text.index("t3_audit_steps_by_plot"), "the app action comes first, the maintainer's pointer after"
+    assert "audit step 2 (" in text, text
+    assert text.index("new session") < text.index("`audit_pipeline`"), "the app action comes first, the maintainer's pointer after"
 
 
 def test_a_session_file_with_good_steps_is_read(tmp_path):
@@ -137,8 +137,8 @@ def test_an_imported_session_zip_refuses_it_and_extracts_nothing(tmp_path, name)
 def _bundle(steps: list) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
-        zf.writestr("b/effective_run.yaml", yaml.safe_dump({"t3_audit_steps_sha256": "x"}))
-        zf.writestr("b/t3_steps.yaml", yaml.safe_dump({"t3_steps": {"p": steps}}))
+        zf.writestr("b/effective_run.yaml", yaml.safe_dump({"audit_steps_sha256": "x"}))
+        zf.writestr("b/t3_steps.yaml", yaml.safe_dump({"steps_by_place": steps}))
     return buf.getvalue()
 
 
@@ -153,7 +153,7 @@ BUNDLE_BAD = {
 @pytest.mark.parametrize("name", sorted(BUNDLE_BAD))
 def test_an_imported_bundle_refuses_a_step_the_app_cannot_apply(name):
     good = {"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}
-    with pytest.raises(BundleImportError, match=r"audit step 2 of the plot 'p'") as caught:
+    with pytest.raises(BundleImportError, match=r"audit step 2 \(") as caught:
         import_bundle(_bundle([good, BUNDLE_BAD[name]]), bootloader=None)
     assert "new session" in str(caught.value)
 

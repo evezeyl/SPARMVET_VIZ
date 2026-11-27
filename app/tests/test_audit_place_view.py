@@ -31,7 +31,6 @@ import polars as pl
 import pytest
 
 from app.modules.audit_place_view import (AUDIT, columns_digest, EXPLORATION, STATE_WORDS, NothingToShow, Readers, condition_fits, table_for, view_identity, viewed)
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.modules.plan_composer import compose_plan_book
@@ -249,7 +248,7 @@ def test_a_table_with_no_tier2_steps_asked_at_t2_in_exploration_is_its_tier1(wor
 
 # ------------------------------------------------------------------------------------------------ the same on a real export
 def step(place, column="group", op="eq", value="A", dtype="String", reason="keep group A"):
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, "na": "remove"}, plot_scope=PLACES_BUCKET, reason=reason, place=place, started_from="subtab_p")
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, "na": "remove"}, reason=reason, place=place, started_from="subtab_p")
 
 
 def as_text(frame):

@@ -128,13 +128,12 @@ def test_the_rule_has_no_way_to_let_exploration_in(world):
     """Production code, not a test helper: an exploration filter (the shape `applied_filters` holds: column, op, value, dtype, no node type and no place) cannot reach the
     audited table or the export. The only list the export and HOME read is `place_nodes` of the committed audit steps; a row of that shape is not in it, and the audit copy
     refuses it in plain words instead of running it (so a filter tried in Exploration can never change a plot or an exported table)."""
-    from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+    from app.modules.audit_places import audit_copy_for, place_nodes
     from app.modules.cache_keys import load_data_analysis_recipe
     from utils.audit_copy import AuditCopyError
 
     exploration_row = {"column": "sample_id", "op": "ne", "value": "s1", "dtype": "Utf8", "na": "remove"}
-    by_plot = {PLACES_BUCKET: [exploration_row], "subtab_p": [exploration_row]}
-    assert place_nodes(by_plot) == [], "an exploration row is not an audit step: it has no place"
+    assert place_nodes([exploration_row, exploration_row]) == [], "an exploration row is not an audit step: it has no place"
     raw = load_data_analysis_recipe(world.orch.data_analysis_recipes_dir / "tiny.yaml").raw
     with pytest.raises(AuditCopyError, match="refused"):
         audit_copy_for(raw, [exploration_row])

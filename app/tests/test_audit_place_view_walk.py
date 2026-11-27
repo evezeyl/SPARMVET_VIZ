@@ -24,7 +24,6 @@ import polars as pl
 import pytest
 
 from app.modules.audit_place_view import AUDIT, EXPLORATION, NO_SOURCE_NOTE, Readers, table_for, view_identity, viewed
-from app.modules.audit_places import PLACES_BUCKET
 from app.modules.audit_view import PlaceAudit
 from app.modules.session_manager import make_audit_step
 from app.tests.test_export_unread_tables import Wide, _source
@@ -189,7 +188,7 @@ class NoPlot(Wide):
 
 
 def audit_step(place, column="group", op="eq", value="A", dtype="String"):
-    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, "na": "remove"}, plot_scope=PLACES_BUCKET, reason="keep it", place=place, started_from="none")
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, "na": "remove"}, reason="keep it", place=place, started_from="none")
 
 
 @pytest.mark.parametrize("label", ["no step", "a step at T", "a step at the join D nothing reads", "a step at U", "steps at T and U"])

@@ -292,7 +292,7 @@ def test_audit_steps_of_the_plot_never_change_these_files(tmp_path, monkeypatch)
     """HOME writes an audit step only at a plot's table (T3 of the plot): the files of the tables no plot reads are the same."""
     plain = _members(_zip(_export(Wide(tmp_path / "a"), monkeypatch)[0]))
     world = Wide(tmp_path / "b")
-    nodes = [{**n, "place": "T3:p", "plot_scope": "__places__", "created_at": "t"} for n in filter_nodes(
+    nodes = [{**n, "place": "T3:p", "created_at": "t"} for n in filter_nodes(
         [{"column": "group", "op": "eq", "value": "A", "dtype": "Categorical", "na": "remove"}])]
     audited = _members(_zip(_export(world, monkeypatch, flags=FLAGS, **audit_kwargs(world, nodes))[0]))
     assert "C/T3_data_p.tsv" in audited, "the audit step is applied to the plot's table"

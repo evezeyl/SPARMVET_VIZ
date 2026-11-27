@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, effect:_handle_delete
-# consumes: app/modules/audit_add.py (verified_card_line: the line "User verified" of a step added with Add to audit pipeline), app/modules/audit_shown.py (table_shown_in_panel: the right panel follows the item shown, slice 3b), app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it), app/modules/audit_session_save.py (save_audit_session: the session is saved after a removal), libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_line, plots_below: the audit steps of every tier), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/utils/src/utils/pipeline_error.py (PipelineError), home_mode (the reactive value of app/src/server.py)
+# consumes: app/modules/audit_add.py (verified_card_line: the line "User verified" of a step added with Add to audit pipeline), app/modules/audit_shown.py (table_shown_in_panel: the right panel follows the item shown, slice 3b), app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it), app/modules/audit_session_save.py (save_audit_session: the session is saved after a removal), libs/utils/src/utils/display_names.py (the names of the places, shared with the lineage panel), libs/utils/src/utils/filter_words.py (value_text, no_value_words: the words of a filter step, one function), app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (place_line, plots_below: the audit steps of every tier), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/utils/src/utils/pipeline_error.py (PipelineError), home_mode (the reactive value of app/src/server.py)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
@@ -32,7 +32,7 @@ from utils import display_names
 from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from app.modules.audit_add import verified_card_line
-from app.modules.audit_places import PLACES_BUCKET, nodes_reaching_node, place_line, plots_below
+from app.modules.audit_places import nodes_reaching_node, place_line, plots_below
 from app.modules.audit_session_save import save_audit_session
 from app.modules.audit_shown import table_shown_in_panel
 from app.modules.cache_keys import tier2_steps
@@ -263,13 +263,13 @@ def define_server(input, output, session, *,
         # The steps this plot is built from, at any tier: written at its own tier 3 or at a table it is built from (the audit copy runs them all in one order).
         # One step is one card here; a decision written at several places has one node per place and the card of this item is its node (the place line says which).
         active_subtab = state.get("active_plot_subtab") or ""
-        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
+        steps = state.get("audit_pipeline", []) or []
         open_plot = active_subtab.removeprefix("subtab_")
         table_place = table_shown_in_panel(state.get("audit_shown_place"))
         reach_of: dict[str, list[str]] = {}
         graph = _graph_of_open_recipe()
         if graph is not None:
-            for node in list(by_plot.get(PLACES_BUCKET, [])):
+            for node in list(steps):
                 place = node.get("place") or ""
                 if place and place not in reach_of and graph.has_node(place):
                     reach_of[place] = plots_below(graph, [place])
@@ -277,9 +277,9 @@ def define_server(input, output, session, *,
             # figure changes, so that the step can be removed (PROVISIONAL: listed on every plot)
             if table_place and graph.has_node(table_place):
                 # a TABLE is shown (slice 3b, D-0657; PROVISIONAL): the steps written at that table or above it on its path (`nodes_reaching_node`)
-                committed_here = nodes_reaching_node(graph, by_plot.get(PLACES_BUCKET, []), table_place)
+                committed_here = nodes_reaching_node(graph, steps, table_place)
             else:
-                committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
+                committed_here = [n for n in steps if open_plot in reach_of.get(n.get("place") or "", []) or _reaches_no_plot(n, reach_of)]
         else:
             committed_here = []
 
@@ -385,13 +385,8 @@ def define_server(input, output, session, *,
         if home_state is None:
             return
         state = home_state.get()
-        by_plot: dict[str, list[dict]] = {
-            k: list(v) for k, v in state.get("t3_audit_steps_by_plot", {}).items()
-        }
-
-        all_known_ids: set[str] = set()
-        for nodes in by_plot.values():
-            all_known_ids.update(n.get("id", "") for n in nodes if n.get("id"))
+        steps: list[dict] = list(state.get("audit_pipeline", []) or [])
+        all_known_ids: set[str] = {n.get("id", "") for n in steps if n.get("id")}
 
         ids_to_delete: set[str] = set()
         for nid in all_known_ids:
@@ -408,19 +403,16 @@ def define_server(input, output, session, *,
         if not ids_to_delete:
             return
 
-        new_by_plot = {
-            k: [n for n in nodes if n.get("id") not in ids_to_delete]
-            for k, nodes in by_plot.items()
-        }
-        removed_count = sum(len(nodes) - len(new_by_plot[k]) for k, nodes in by_plot.items())
+        new_steps = [n for n in steps if n.get("id") not in ids_to_delete]
+        removed_count = len(steps) - len(new_steps)
         # REMOVED-APPLIED-STEP-NOT-SAVED (D-0680): removing an applied step is a change of what the session holds, so the session is saved as an Add saves it (a Restore then no longer brings
         # the step back). A removal needs no reason (D-0314). The count of saves moves too (AUDIT-REMOVAL-SESSION-COUNT-1): the session panel counts the saves of the session, and nothing
         # else is touched (the staged condition of the Filters panel is not cleared by a removal).
-        saves = int(state.get("t3_apply_count", 0))
+        saves = int(state.get("audit_saves_count", 0))
         will_save = session_manager is not None and _ghost_save_enabled and bool(removed_count)
         if will_save:
             saves += 1
-        new_state = {**state, "t3_audit_steps_by_plot": new_by_plot, "t3_apply_count": saves}
+        new_state = {**state, "audit_pipeline": new_steps, "audit_saves_count": saves}
         home_state.set(new_state)
         if will_save:
             with reactive.isolate():
