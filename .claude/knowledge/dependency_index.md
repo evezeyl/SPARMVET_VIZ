@@ -97,10 +97,10 @@
 
 ## `app/handlers/audit_stack.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
-- **consumes:** `app/modules/audit_add.py (verified_card_line: the line "User verified" of a step added with Add to audit pipeline)`, `app/modules/audit_shown.py (table_shown_in_panel`, `unlisted_pending_line: the right panel follows the item shown`, `slice 3b)`, `app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it)`, `libs/utils/src/utils/display_names.py (the names of the places`, `shared with the lineage panel)`, `libs/utils/src/utils/filter_words.py (value_text`, `no_value_words: the words of a filter step`, `one function)`, `app/modules/frame_widths.py (HOME: the user space of the audit panel)`, `app/modules/audit_places.py (PLACES_BUCKET`, `place_words`, `plots_below: the audit steps of every tier)`, `app/modules/wrangle_studio.py`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `effect:_handle_delete`
+- **consumes:** `app/modules/audit_add.py (verified_card_line: the line "User verified" of a step added with Add to audit pipeline)`, `app/modules/audit_shown.py (table_shown_in_panel: the right panel follows the item shown`, `slice 3b)`, `app/modules/audit_places.py (nodes_reaching_node: the steps at a table shown or above it)`, `app/modules/audit_session_save.py (save_audit_session: the session is saved after a removal)`, `libs/utils/src/utils/display_names.py (the names of the places`, `shared with the lineage panel)`, `libs/utils/src/utils/filter_words.py (value_text`, `no_value_words: the words of a filter step`, `one function)`, `app/modules/frame_widths.py (HOME: the user space of the audit panel)`, `app/modules/audit_places.py (place_line`, `plots_below: the audit steps of every tier)`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/utils/src/utils/pipeline_error.py (PipelineError)`, `home_mode (the reactive value of app/src/server.py)`
 - **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `processing_issues_ui shows fix/who)`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
@@ -125,8 +125,8 @@
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_filter_audit_server`, `button:filter_try (FLOW-1: the Try of a staged condition`, `handled by trial_handlers.py)`, `output:filter_whole_number_ui (D-0376)`, `effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change`, `slice B)`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_type_ui`, `output:filter_op_ui`, `output:filter_value_ui`, `output:filter_closed_text_ui`, `output:filter_na_ui`, `output:filter_na_text_ui`, `output:filter_controls_ui`, `input:fb_na`, `input:filter_apply`, `input:filter_send_to_audit`
-- **consumes:** `app/modules/audit_shown.py (selection_problem)`, `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (view_change_notice`, `column_is_in_frame`, `staged_filter_row (view=)`, `describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `value_box_kind`, `between_ends`, `BetweenIncomplete`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_schema_signature`, `dialog_rows_signature`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place`, `D-0358)`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **provides:** `function:define_filter_audit_server`, `button:filter_try (the Try of a staged condition`, `handled by trial_handlers.py)`, `output:filter_whole_number_ui (D-0376)`, `effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change`, `slice B)`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_type_ui`, `output:filter_op_ui`, `output:filter_value_ui`, `output:filter_closed_text_ui`, `output:filter_na_ui`, `output:filter_na_text_ui`, `output:filter_controls_ui`, `input:fb_na`, `input:filter_apply`
+- **consumes:** `app/modules/t3_audit_engine.py (view_change_notice`, `column_is_in_frame`, `staged_filter_row (view=)`, `describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `value_box_kind`, `between_ends`, `BetweenIncomplete`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_schema_signature`, `dialog_rows_signature`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
 
@@ -140,7 +140,7 @@
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_plots_area_ui`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`, `output:source_table_ui`, `output:mode_caption_ui`, `output:compare_switch_ui`, `output:plot_cmp_label_{p_id}`, `output:plot_badge_{p_id}`, `output:plot_reshuffle_{p_id} (Audit mode only`, `D-0341)`, `output:data_strip_ui (Table to view`, `Exploration only`, `slice 3a)`, `output:shown_band_ui (the band of the shown item`, `slice 3a)`, `output:trial_plot_label_ui`, `output:trial_left_switch_ui`, `effect:_track_trial_left`, `output:plot_cmp_left_label_{p_id}`, `effect:_forget_shown_item`, `effect:_tab_shows_its_plot`, `effect:_track_view_inputs`, `effect:_drive_right_panel`, `effect:_open_audit_mode_after_restore`, `effect:_sync_active_space (the open user space as a value of its own`, `D-0502)`, `constant:LEGACY_RECORD_NOTICE`
-- **consumes:** `app/handlers/audit_stack.py (_write_t3_ghost: the session save after Add to audit pipeline`, `FLOW-2)`, `app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step`, `its panel and its ends; FLOW-2: the marks`, `the reason and Add)`, `app/modules/audit_try.py (the words and rules of a trial)`, `app/modules/audit_trial.py (PlaceTrial: the engine of a trial)`, `app/modules/audit_place_view.py (viewed`, `table_for`, `view_identity`, `Readers: the ONE reader of the table shown in Audit mode`, `slice 3a)`, `app/modules/audit_shown.py (band_lines`, `others_chosen`, `open_subtab_of`, `plot_area_title`, `table_shown_lines)`, `app/modules/audit_places.py (plots_below: the plots built from a table shown)`, `app/modules/lineage_view.py (line_text: the name of a place)`, `libs/utils/src/utils/lineage_data.py (lineage_of)`, `libs/utils/src/utils/filter_words.py (value_text`, `no_value_words: the words of a filter step`, `one function)`, `app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui)`, `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe`, `for the rule of a key drop)`, `app/modules/orchestrator.py (plot_read_error_text`, `read_source: the Source view`, `D-0310)`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `stored_table_identity`, `source_table_identity`, `rows_built_on`, `view_key`, `viewed_table)`, `app/modules/audit_places.py (nodes_reaching_plot`, `own_plot_place`, `place_nodes: the audit steps of a plot at every tier)`, `app/modules/audit_view.py (PlaceAudit`, `AUDIT_ERRORS: the audit copy that gives every audited table)`, `app/modules/view_badge.py (view_badge`, `plot_badge`, `has_plot_steps`, `has_tier2_steps`, `PREVIEW_ROW_LIMIT)`, `libs/utils/src/utils/recipe_graph.py (build_graph`, `source_tables_of_plot)`, `app/modules/session_manager.py (LegacySessionError)`, `app/modules/plot_seeds.py`, `app/modules/sidebar_registry.py`, `app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open`, `D-0502)`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)`, `app/modules/frame_widths.py (right_panel_open: the right panel follows the mode`, `D-0375`, `D-0385; HOME`, `BLUEPRINT: the nav values)`, `app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits)`, `app/handlers/id_warning_handlers.py (define_server: the red warning of the ids)`, `app/modules/opening_build.py (opening_signature`, `plot_render_recipe: the recipe handed to the plot engine`, `D-0237`, `D-0239)`, `libs/utils/src/utils/engines.py (plot_engine_slot`, `through it)`
+- **consumes:** `app/modules/audit_session_save.py (save_audit_session: the session save after Add to audit pipeline)`, `app/handlers/trial_handlers.py (FLOW-1: the Try of an audit step`, `its panel and its ends; FLOW-2: the marks`, `the reason and Add)`, `app/modules/audit_try.py (the words and rules of a trial)`, `app/modules/audit_trial.py (PlaceTrial: the engine of a trial)`, `app/modules/audit_place_view.py (viewed`, `table_for`, `view_identity`, `Readers: the ONE reader of the table shown in Audit mode`, `slice 3a)`, `app/modules/audit_shown.py (band_lines`, `others_chosen`, `open_subtab_of`, `plot_area_title`, `table_shown_lines)`, `app/modules/audit_places.py (plots_below: the plots built from a table shown)`, `app/modules/lineage_view.py (line_text: the name of a place)`, `libs/utils/src/utils/lineage_data.py (lineage_of)`, `libs/utils/src/utils/filter_words.py (value_text`, `no_value_words: the words of a filter step`, `one function)`, `app/handlers/lineage_handlers.py (the lineage panel it mounts: output lineage_panel_ui)`, `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe`, `for the rule of a key drop)`, `app/modules/orchestrator.py (plot_read_error_text`, `read_source: the Source view`, `D-0310)`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `stored_table_identity`, `source_table_identity`, `rows_built_on`, `view_key`, `viewed_table)`, `app/modules/audit_places.py (nodes_reaching_plot`, `own_plot_place`, `place_nodes: the audit steps of a plot at every tier)`, `app/modules/audit_view.py (PlaceAudit`, `AUDIT_ERRORS: the audit copy that gives every audited table)`, `app/modules/view_badge.py (view_badge`, `plot_badge`, `has_plot_steps`, `has_tier2_steps`, `PREVIEW_ROW_LIMIT)`, `libs/utils/src/utils/recipe_graph.py (build_graph`, `source_tables_of_plot)`, `app/modules/session_manager.py (LegacySessionError)`, `app/modules/plot_seeds.py`, `app/modules/sidebar_registry.py`, `app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open`, `D-0502)`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)`, `app/modules/frame_widths.py (right_panel_open: the right panel follows the mode`, `D-0375`, `D-0385; HOME`, `BLUEPRINT: the nav values)`, `app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits)`, `app/handlers/id_warning_handlers.py (define_server: the red warning of the ids)`, `app/modules/opening_build.py (opening_signature`, `plot_render_recipe: the recipe handed to the plot engine`, `D-0237`, `D-0239)`, `libs/utils/src/utils/engines.py (plot_engine_slot`, `through it)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/knowledge/architecture_decisions.md#ADR-099`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
 
@@ -159,8 +159,8 @@
 
 ## `app/handlers/lineage_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (lineage_handlers)`, `output:lineage_panel_ui`, `output:lineage_step_form_ui`, `output:lineage_step_op_ui`, `output:lineage_step_hint_ui`, `effect:_send_marks`, `effect:_send_shown`, `effect:_show_place`, `effect:_add_step_at_leaf`
-- **consumes:** `app/modules/audit_shown.py (request_to_show)`, `app/modules/lineage_view.py (view_data)`, `app/modules/lineage_step.py (form_columns`, `form_ops`, `step_params`, `stage_nodes`, `stage_sentence`, `PENDING_NOTE)`, `libs/utils/src/utils/lineage_data.py (lineage_of)`, `app/modules/audit_places.py (PLACES_BUCKET`, `place_words)`, `app/src/www/lineage_view.js`, `libs/utils/src/utils/filter_words.py (no_value_words)`
+- **provides:** `function:define_server (lineage_handlers)`, `output:lineage_panel_ui`, `effect:_send_marks`, `effect:_send_shown`, `effect:_show_place`
+- **consumes:** `app/modules/audit_shown.py (request_to_show)`, `app/modules/lineage_view.py (view_data)`, `libs/utils/src/utils/lineage_data.py (lineage_of)`, `app/modules/audit_places.py (place_words)`, `app/src/www/lineage_view.js`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/rules/ui_implementation_contract.md#14`, `.claude/knowledge/decision_ledger.md (D-0627`, `D-0629`, `D-0634)`
 
@@ -194,8 +194,8 @@
 
 ## `app/handlers/trial_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_trial_server`, `output:trial_panel_ui`, `output:trial_marks_summary_ui`, `output:trial_add_ui`, `effect:_try`, `effect:_discard`, `effect:_add`, `effect:_track_marks`, `effect:_track_reason`, `effect:_watch_the_world`, `effect:_old_entries_end_the_trial`
-- **consumes:** `app/modules/t3_audit_engine.py (rows_built_elsewhere)`, `app/modules/audit_try.py`, `app/modules/audit_add.py`, `app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial``, `TrialRefused`, `now_iso)`, `app/modules/audit_places.py (nodes_signature`, `PLACES_BUCKET)`, `app/modules/notification_utils.py`
+- **provides:** `function:define_trial_server`, `output:trial_panel_ui`, `output:trial_marks_summary_ui`, `output:trial_add_ui`, `button:col_drop_try (drawn by home_theater)`, `effect:_try`, `effect:_try_drop`, `effect:_discard`, `effect:_add`, `effect:_track_marks`, `effect:_track_reason`, `effect:_watch_the_world`
+- **consumes:** `app/modules/t3_audit_engine.py (rows_built_elsewhere)`, `app/modules/audit_try.py`, `app/modules/audit_add.py`, `app/modules/audit_trial.py (PlaceTrial through the callers' `get_trial``, `TrialRefused`, `now_iso)`, `app/modules/audit_places.py (nodes_signature)`, `app/modules/notification_utils.py`, `libs/utils/src/utils/key_drop.py (DropGate: the refusal of a key drop by place at Try)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/rules/ui_implementation_contract.md#14`, `.claude/knowledge/decision_ledger.md (D-0650`, `D-0656`, `D-0662`, `D-0669`, `D-0671)`
 
@@ -215,21 +215,28 @@
 
 ## `app/modules/audit_places.py`
 - **Role:** `ref`
-- **provides:** `function:place_line`, `function:place_lines`, `function:own_place_line`, `function:path_rows`, `class:PathRow`, `function:reach_sentence`, `function:line_label`, `function:choice_problem`, `function:plots_below`, `function:nodes_reaching_plot`, `function:steps_changing_table`, `function:own_plot_place`, `function:place_nodes`, `function:audit_copy_for`, `function:nodes_signature`, `function:place_words`, `function:place_step_records`, `function:bake_place_steps`, `function:audit_recipe_of`, `function:audit_recipe_sentence`, `function:t3_file_sentence`, `function:nodes_reaching_node`, `constant:PLACES_BUCKET`, `class:PlaceLine`, `class:PlaceLines`
+- **provides:** `function:place_line`, `function:plots_below`, `function:nodes_reaching_plot`, `function:steps_changing_table`, `function:own_plot_place`, `function:place_nodes`, `function:audit_copy_for`, `function:nodes_signature`, `function:place_words`, `function:place_step_records`, `function:bake_place_steps`, `function:audit_recipe_of`, `function:audit_recipe_sentence`, `function:t3_file_sentence`, `function:nodes_reaching_node`, `class:PlaceLine`, `class:PlaceLines`
 - **consumes:** `libs/utils/src/utils/display_names.py (place_line)`, `libs/utils/src/utils/recipe_graph.py (RecipeGraph: places`, `below`, `chosen_places_problem`, `lineage_back)`, `libs/utils/src/utils/plan_book.py (PlanBook`, `Plan)`, `libs/utils/src/utils/audit_copy.py (start_audit`, `add_step)`, `libs/utils/src/utils/recipe_tiers.py (collection_body`, `plot_entry)`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (translate_t3_node)`, `app/modules/renamed_keys.py (audit_step_defect`, `FIX_IN_APP)`
-- **consumed_by:** `app/handlers/filter_and_audit_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/session_manager.py`, `app/modules/audit_view.py`, `app/tests/test_audit_places.py`
+- **consumed_by:** `app/handlers/audit_stack.py`, `app/handlers/trial_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/session_manager.py`, `app/modules/audit_view.py`, `app/tests/test_audit_places.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12g`, `.claude/design/studies/whole_picture_2026-11/PATHS_AND_DERIVED_AGREED.md`
 
 ## `app/modules/audit_run.py`
 - **Role:** `ref`
-- **provides:** `function:run_audit`, `function:row_count`, `function:same_table`, `function:compare_tables`, `class:AuditRun`, `class:TableRun`, `class:PlotRun`, `class:AuditRunError`
+- **provides:** `function:run_audit`, `function:row_count`, `function:same_table`, `function:compare_tables`, `function:compare_shapes`, `class:AuditRun`, `class:TableRun`, `class:PlotRun`, `class:AuditRunError`
 - **consumes:** `app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine)`, `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original`, `handed to the check of every copy)`, `app/modules/orchestrator.py (materialize_tier1`, `materialize_tier2`, `materialize_tier3 with a handed recipe)`, `app/modules/cache_keys.py (loaded_from_resolved`, `load_data_analysis_recipe)`, `libs/utils/src/utils/audit_copy.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/transformer/src/transformer/anchor.py (read_anchor_if_key)`
 - **consumed_by:** `app/tests/test_audit_run.py`, `app/tests/test_audit_shared_folder.py`, `app/modules/audit_trial.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-101`, `.claude/knowledge/architecture_decisions.md#adr-105`, `.claude/design/home_audit_steps.md (section 7.1)`
 
+## `app/modules/audit_session_save.py`
+- **Role:** `ref`
+- **provides:** `function:save_audit_session`
+- **consumes:** `app/modules/session_manager.py (SessionManager.write_t3_ghost`, `compute_session_key)`, `app/modules/error_notice.py (notice)`, `libs/utils/src/utils/pipeline_error.py (PipelineError)`
+- **consumed_by:** `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/tests/test_write_t3_ghost_warning.py`, `app/tests/test_session_keys_missing_told.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/decision_ledger.md (D-0302`, `D-0314`, `D-0680)`
+
 ## `app/modules/audit_shown.py`
 - **Role:** `ref`
-- **provides:** `function:request_to_show`, `function:others_chosen`, `function:band_lines`, `function:selection_problem`, `function:open_subtab_of`, `function:table_shown_in_panel`, `function:unlisted_pending_line`, `function:plot_area_title`, `function:table_shown_lines`, `class:ShowOutcome`, `constant:CHOOSE_FIRST`, `constant:SHOW_SELECTION_FIRST`
+- **provides:** `function:request_to_show`, `function:others_chosen`, `function:band_lines`, `function:selection_problem`, `function:open_subtab_of`, `function:table_shown_in_panel`, `function:plot_area_title`, `function:table_shown_lines`, `class:ShowOutcome`, `constant:CHOOSE_FIRST`, `constant:SHOW_SELECTION_FIRST`
 - **consumes:** `app/modules/audit_place_view.py (viewed`, `TableFacts)`, `libs/utils/src/utils/lineage_data.py (Lineage)`, `libs/utils/src/utils/recipe_graph.py (RecipeGraph)`
 - **consumed_by:** `app/handlers/lineage_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/audit_stack.py`, `app/tests/test_audit_shown.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/knowledge/decision_ledger.md (D-0653`, `D-0654`, `D-0655`, `D-0657)`
@@ -243,8 +250,8 @@
 
 ## `app/modules/audit_try.py`
 - **Role:** `ref`
-- **provides:** `class:TrialRecord`, `function:condition_lines`, `function:trial_places`, `function:fit_problem`, `function:tried_nodes`, `function:world_of`, `function:end_cause`, `function:panel_model`, `function:rows_signature`, `function:compare_left_label`, `function:compare_right_label`, `function:band_trial_line`, `function:trial_has_state`, `class:TrialWorld`, `class:PanelModel`, `constant:TRY_LABEL`, `constant:DISCARD_LABEL`
-- **consumes:** `app/modules/audit_shown.py (selection_problem`, `request_to_show)`, `app/modules/audit_place_view.py (condition_fits`, `STATE_WORDS`, `TRIAL)`, `app/modules/audit_trial.py (TrialResult: duck-typed`, `not imported)`, `app/modules/lineage_step.py (stage_nodes)`, `app/modules/lineage_view.py (line_text)`, `app/modules/t3_audit_engine.py (audit_params_from_row)`, `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/lineage_data.py`
+- **provides:** `class:TrialRecord`, `function:condition_lines`, `function:stage_sentence`, `function:tried_drop_nodes`, `function:drop_fit_problem`, `function:drop_condition_lines`, `function:drops_from_selection`, `constant:KIND_FILTER`, `constant:KIND_DROP`, `function:trial_places`, `function:fit_problem`, `function:tried_nodes`, `function:world_of`, `function:end_cause`, `function:panel_model`, `function:rows_signature`, `function:compare_left_label`, `function:compare_right_label`, `function:band_trial_line`, `function:trial_has_state`, `class:TrialWorld`, `class:PanelModel`, `constant:TRY_LABEL`, `constant:DISCARD_LABEL`
+- **consumes:** `app/modules/audit_shown.py (selection_problem`, `request_to_show)`, `app/modules/audit_place_view.py (condition_fits`, `STATE_WORDS`, `TRIAL)`, `app/modules/audit_trial.py (TrialResult: duck-typed`, `not imported)`, `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (audit_params_from_row`, `describe_filter)`, `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/lineage_data.py`
 - **consumed_by:** `app/handlers/trial_handlers.py`, `app/handlers/home_theater.py`, `app/tests/test_audit_try.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/knowledge/decision_ledger.md (D-0650`, `D-0656`, `D-0662`, `D-0669`, `D-0671)`
 
@@ -400,13 +407,6 @@
 - **consumes:** `app/modules/id_check_run.py (IdCheckRun)`, `libs/utils/src/utils/id_completion.py (added_line_words)`, `libs/utils/src/utils/id_log.py (read_log`, `record_read`, `log_path)`
 - **consumed_by:** `app/handlers/id_warning_handlers.py`, `app/handlers/export_handlers.py`, `app/tests/test_id_warning.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0582`, `D-0585`, `D-0613)`, `.claude/rules/ui_implementation_contract.md#7.2`
-
-## `app/modules/lineage_step.py`
-- **Role:** `ref`
-- **provides:** `function:form_columns`, `function:form_ops`, `function:parse_value`, `function:step_params`, `function:stage_nodes`, `function:stage_sentence`, `constant:FORM_KINDS`, `constant:PENDING_NOTE`
-- **consumes:** `app/modules/t3_audit_engine.py (ops_for_column`, `value_widget_for`, `typed_operand`, `trim_typed`, `staged_filter_row`, `audit_params_from_row`, `describe_filter)`, `libs/utils/src/utils/filter_values.py (kind_of`, `filter_condition`, `FilterValueError)`, `app/modules/session_manager.py (make_audit_step)`
-- **consumed_by:** `app/handlers/lineage_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/tests/test_lineage_step.py`
-- **doc:** `.claude/rules/ui_implementation_contract.md#2`, `.claude/knowledge/decision_ledger.md (D-0627`, `D-0630)`
 
 ## `app/modules/lineage_view.py`
 - **Role:** `ref`
@@ -576,13 +576,13 @@
 ## `app/src/ui.py`
 - **Role:** `ref`
 - **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
-- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`, `app/src/www/gallery_select_all.js (GALLERY-CHECK-1`, `included via ui.tags.script`, `only with gallery_enabled)`, `app/src/www/audit_places_path.js (the places of the audit dialog as a path)`, `app/src/www/lineage_view.js (the lineage panel of HOME's Audit mode)`, `app/src/www/trial_counting.js (the line of the count at the click on Try)`, `app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)`, `app/src/www/panel_widths.js (D-0381`, `D-0382`, `D-0384: the drag of the side panels)`, `app/modules/frame_widths.py (the widths)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`, `app/src/www/gallery_select_all.js (GALLERY-CHECK-1`, `included via ui.tags.script`, `only with gallery_enabled)`, `app/src/www/lineage_view.js (the lineage panel of HOME's Audit mode)`, `app/src/www/trial_counting.js (the line of the count at the click on Try)`, `app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)`, `app/src/www/panel_widths.js (D-0381`, `D-0382`, `D-0384: the drag of the side panels)`, `app/modules/frame_widths.py (the widths)`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
 ## `app/tests/audit_export_harness.py`
 - **Role:** `info`
-- **consumes:** `app/modules/audit_view.py (PlaceAudit)`, `app/modules/audit_places.py (PLACES_BUCKET)`
+- **consumes:** `app/modules/audit_view.py (PlaceAudit)`
 - **consumed_by:** `app/tests/test_tier3_reader.py`, `app/tests/test_export_audited_tables.py`
 
 ## `app/tests/audit_nodes.py`
@@ -593,7 +593,7 @@
 ## `app/tests/browser_view.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py (the inputs home_mode`, `data_view`, `source_table`, `audit_compare)`, `app/src/www/lineage_view.js (the chosen places and their Show buttons)`
-- **consumed_by:** `app/tests/test_audit_one_plot_browser.py`, `app/tests/test_shiny_na_tick.py`, `app/tests/test_shiny_step_order.py`, `app/tests/test_tier_decides_filter_form.py`, `app/tests/test_filter_form_survives_rerender.py`, `app/tests/test_shiny_plot_tier3.py`, `app/tests/test_shiny_seed_places.py`, `app/tests/test_shiny_plot_errors.py`, `app/tests/test_filters_cleared_on_recipe_change.py`, `app/tests/test_shiny_session_restore.py`, `app/tests/test_shiny_apply_blocked.py`, `app/tests/test_export_download.py`, `app/tests/test_shiny_smoke.py`
+- **consumed_by:** `app/tests/test_audit_add_browser.py`, `app/tests/test_audit_one_plot_browser.py`, `app/tests/test_shiny_na_tick.py`, `app/tests/test_shiny_step_order.py`, `app/tests/test_tier_decides_filter_form.py`, `app/tests/test_filter_form_survives_rerender.py`, `app/tests/test_shiny_plot_tier3.py`, `app/tests/test_shiny_seed_places.py`, `app/tests/test_shiny_plot_errors.py`, `app/tests/test_filters_cleared_on_recipe_change.py`, `app/tests/test_shiny_session_restore.py`, `app/tests/test_shiny_apply_blocked.py`, `app/tests/test_export_download.py`, `app/tests/test_shiny_smoke.py`
 
 ## `app/tests/debug_pipeline_connector.py`
 - **Role:** `info`
@@ -644,7 +644,7 @@
 
 ## `app/tests/test_audit_steps_survive_recipe_change.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/home_theater.py (the audit steps in the state of HOME`, `the recipe selector)`, `app/handlers/filter_and_audit_handlers.py (the dialog)`, `app/handlers/audit_stack.py (Apply)`, `app/tests/browser_view.py`
+- **consumes:** `app/handlers/home_theater.py (the audit steps in the state of HOME`, `the recipe selector)`, `app/handlers/trial_handlers.py (Try and Add to audit pipeline)`, `app/handlers/audit_stack.py (the cards)`, `app/tests/browser_view.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12g`, `.claude/knowledge/decision_ledger.md (D-0317`, `D-0302)`
 
 ## `app/tests/test_audit_try_browser.py`
@@ -663,7 +663,7 @@
 
 ## `app/tests/test_demo_walk_audit.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/home_theater.py (the mode row`, `Compare`, `the data preview)`, `app/handlers/lineage_handlers.py (the panel "Path of the data")`, `app/handlers/filter_and_audit_handlers.py (the dialog)`, `app/handlers/audit_stack.py (the step card`, `Apply)`, `app/handlers/export_handlers.py (the bundle)`, `app/tests/browser_view.py`
+- **consumes:** `app/handlers/home_theater.py (the mode row`, `Compare`, `the data preview)`, `app/handlers/lineage_handlers.py (the panel "Path of the data")`, `app/handlers/trial_handlers.py (Try`, `the marks`, `the reason`, `Add to audit pipeline)`, `app/handlers/audit_stack.py (the step card`, `the bin)`, `app/handlers/export_handlers.py (the bundle)`, `app/tests/browser_view.py`
 - **doc:** `.claude/workflows/ (the demo build plan`, `tmpAI/status/DEMO_BUILD_PLAN_2026-11-26.md: the walk is run at every fall-back point)`
 
 ## `app/tests/test_dry_run_big_move.py`
@@ -866,7 +866,7 @@
 
 ## `app/tests/test_shiny_audit_controls_by_mode.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/audit_stack.py (audit_pending_badge_ui`, `audit_stack_tools_ui)`, `app/src/server.py (home_mode)`
+- **consumes:** `app/handlers/audit_stack.py (the cards of the right panel)`, `app/handlers/trial_handlers.py (the trial panel`, `the reason draft)`, `app/handlers/filter_and_audit_handlers.py (the button Try)`, `app/src/server.py (home_mode)`
 
 ## `app/tests/test_shiny_data_import.py`
 - **Role:** `info`
@@ -901,7 +901,7 @@
 
 ## `app/tests/test_shiny_step_order.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/t3_audit_engine.py`, `app/modules/plot_issue_reporter.py`
+- **consumes:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/handlers/trial_handlers.py (Try and Add)`, `app/modules/t3_audit_engine.py`, `app/modules/plot_issue_reporter.py`
 
 ## `app/tests/test_trial_add_dependencies.py`
 - **Role:** `info`
