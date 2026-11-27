@@ -105,7 +105,7 @@ def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     # All rows: the sentence is the size
     _switch_all_rows(page, True)
     expect(page.locator(BADGE)).to_contain_text(f"{n} rows")
-    assert "Showing" not in page.locator(BADGE).inner_text()
+    expect(page.locator(BADGE)).not_to_contain_text("Showing")   # waits for the badge to update: "N rows" is also in the old "Showing 100 of N rows"
     _switch_all_rows(page, False)
     expect(page.locator(BADGE)).to_contain_text(f"Showing 100 of {n} rows")
     # no hidden column at the start; take one out: the count appears and the chooser keeps the user's choice
