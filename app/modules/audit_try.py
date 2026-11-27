@@ -7,7 +7,9 @@ presses Try. The step is written at the place shown, plus the other places chose
 - `trial_places(shown, chosen, graph, lineage)`: where the tried step is written, or why it cannot be tried (the rule of places, the metadata, "Show your selection first").
 - `fit_problem(rows, places, lineage, columns_at)`: the condition must fit EVERY place (the column is there with the same type); a place where it does not is named and nothing is tried (never dropped
   silently).
-- `tried_nodes(rows, places, primary_keys)`: the nodes handed to the engine: one decision for each staged row, written at each place with the id of the decision (the nodes of the dialog "Send to Audit").
+- `tried_nodes(rows, places, primary_keys)`: the nodes handed to the engine: one decision for each staged row, written at each place with the id of the decision.
+- `tried_drop_nodes(columns, places)`, `drop_fit_problem(...)`, `drop_condition_lines(columns)`: a column drop is tried like a condition (FLOW-3: the one way to create a step; the drop of the column
+  chooser has no pop-up and no staging any more). `TrialRecord.kind` says which: "filter" or "drop".
 - `world_of(...)` and `end_cause(then, now)`: what a trial was made for, and the first thing that changed since (the condition, the places chosen, the mode, the recipe or data, the applied steps, a restored
   session): the trial then ends with ONE plain notice.
 - `panel_model(...)`: the lines of the trial panel (rows removed at each place; what the places reach, as information, never ticks).
@@ -20,8 +22,8 @@ among them (else the refusal "Show your selection first" of slice 3a); that with
 Consumed by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py. If deleted: HOME's Audit mode has no Try.
 
 # @deps
-# provides: class:TrialRecord, function:condition_lines, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL
-# consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/lineage_step.py (stage_nodes), app/modules/lineage_view.py (line_text), app/modules/t3_audit_engine.py (audit_params_from_row), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
+# provides: class:TrialRecord, function:condition_lines, function:stage_sentence, function:tried_drop_nodes, function:drop_fit_problem, function:drop_condition_lines, function:drops_from_selection, constant:KIND_FILTER, constant:KIND_DROP, function:trial_places, function:fit_problem, function:tried_nodes, function:world_of, function:end_cause, function:panel_model, function:rows_signature, function:compare_left_label, function:compare_right_label, function:band_trial_line, function:trial_has_state, class:TrialWorld, class:PanelModel, constant:TRY_LABEL, constant:DISCARD_LABEL
+# consumes: app/modules/audit_shown.py (selection_problem, request_to_show), app/modules/audit_place_view.py (condition_fits, STATE_WORDS, TRIAL), app/modules/audit_trial.py (TrialResult: duck-typed, not imported), app/modules/session_manager.py (make_audit_step), app/modules/audit_places.py (PLACES_BUCKET), app/modules/t3_audit_engine.py (audit_params_from_row, describe_filter), libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/lineage_data.py
 # consumed_by: app/handlers/trial_handlers.py, app/handlers/home_theater.py, app/tests/test_audit_try.py
 # doc: .claude/rules/ui_implementation_contract.md#2, .claude/knowledge/decision_ledger.md (D-0650, D-0656, D-0662, D-0669, D-0671)
 # @end_deps
@@ -34,11 +36,13 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from app.modules.audit_place_view import STATE_WORDS, TRIAL, condition_fits
 from app.modules.audit_shown import request_to_show, selection_problem
-from app.modules.lineage_step import stage_nodes, stage_sentence
-from app.modules.t3_audit_engine import audit_params_from_row
+from app.modules.audit_places import PLACES_BUCKET
+from app.modules.t3_audit_engine import audit_params_from_row, describe_filter
 from utils.lineage_data import Lineage
 from utils.recipe_graph import RecipeGraph
 
+KIND_FILTER = "filter"
+KIND_DROP = "drop"
 TRY_LABEL = "Try"                     # PROVISIONAL
 DISCARD_LABEL = "Discard"             # PROVISIONAL
 NOT_CHANGED = "The step you are trying does not change this."                              # PROVISIONAL
@@ -59,7 +63,7 @@ def trial_places(shown_place: Optional[str], chosen: Sequence[str], graph: Recip
         return (), NOTHING_SHOWN
     problem = selection_problem(picks, shown_place)
     if problem:
-        return (), problem.replace("Nothing was sent.", "Nothing was tried.")
+        return (), problem
     places = picks or (shown_place,)
     for place in places:
         outcome = request_to_show(place, [], graph, lineage)
@@ -90,19 +94,74 @@ def fit_problem(rows: Sequence[dict], places: Sequence[str], lineage: Lineage, c
     return "The condition does not fit every place chosen. " + " ".join(bad) + " Nothing was tried. Choose places where the column is, or build the condition on another table."
 
 
+def _decisions(scratch_nodes: Sequence[dict], places: Sequence[str], started_from: str) -> List[dict]:
+    """One node for each (decision, place), in the order: the first decision at every place, then the second, and so on; the nodes of one decision share its id; no reason (the engine gives a
+    placeholder inside the trial only)."""
+    from app.modules.session_manager import make_audit_step
+    out: List[dict] = []
+    for scratch in scratch_nodes:
+        for place in places:
+            out.append(make_audit_step(scratch["node_type"], dict(scratch.get("params", {})), plot_scope=PLACES_BUCKET, reason="",
+                                       primary_key_warning=bool(scratch.get("primary_key_warning")), node_id=scratch["id"], place=place, started_from=started_from))
+    return out
+
+
 def tried_nodes(rows: Sequence[dict], places: Sequence[str], primary_keys: Iterable[str] = (), started_from: str = "") -> List[dict]:
     """The nodes handed to the engine: one decision (one id) for each staged row, written at each place, in the order: the first row at every place, then the second row, and so on.
 
-    The same nodes `Send to Audit` would stage (`lineage_step.stage_nodes`, `audit_params_from_row`): a trial and the step it stands for are the same step. No reason (the engine gives a
-    placeholder inside the trial only); nothing is written to the state."""
+    A trial and the step it stands for are the same step: these are the nodes "Add to audit pipeline" writes. No reason (the engine gives a placeholder inside the trial only); nothing is written to
+    the state."""
     from app.modules.session_manager import make_audit_step
     keys = set(primary_keys)
-    from app.modules.audit_places import PLACES_BUCKET
-    placed: List[Tuple[dict, str]] = []
-    for row in rows:
-        scratch = make_audit_step("filter_row", audit_params_from_row(row), plot_scope=PLACES_BUCKET, reason="", primary_key_warning=row.get("column", "") in keys)
-        placed.extend((scratch, place) for place in places)
-    return list(stage_nodes({}, placed, started_from)["_pending_t3_nodes"])
+    scratch = [make_audit_step("filter_row", audit_params_from_row(row), plot_scope=PLACES_BUCKET, reason="", primary_key_warning=row.get("column", "") in keys) for row in rows]
+    return _decisions(scratch, places, started_from)
+
+
+def tried_drop_nodes(columns: Sequence[str], places: Sequence[str], started_from: str = "") -> List[dict]:
+    """The nodes of a column drop: one decision (one id) for each column, written at each place, the first column at every place, then the second, and so on (the same order as `tried_nodes`)."""
+    from app.modules.session_manager import make_audit_step
+    scratch = [make_audit_step("drop_column", {"column": c}, plot_scope=PLACES_BUCKET, reason="") for c in dict.fromkeys(columns)]
+    return _decisions(scratch, places, started_from)
+
+
+def drops_from_selection(columns: Sequence[str], selected: Any) -> List[str]:
+    """The columns of the table shown that the column chooser has NOT selected, in the table's order: the columns to drop. `selected` is what the chooser reports; anything but a list or a tuple
+    means no chooser is on the page (nothing is deselected)."""
+    if not isinstance(selected, (list, tuple)):
+        return []
+    keep = set(selected)
+    return [c for c in columns if c not in keep]
+
+
+def drop_condition_lines(columns: Sequence[str]) -> Tuple[str, ...]:
+    """The drop in words, one line (the rows are not changed by a drop; said, never silent). PROVISIONAL words."""
+    names = ", ".join(columns)
+    return (f"Drop {'the column' if len(columns) == 1 else 'the columns'}: {names}. No row is removed.",)
+
+
+def drop_fit_problem(columns: Sequence[str], places: Sequence[str], lineage: Lineage, columns_at: Callable[[str], Optional[Sequence[Tuple[str, Any]]]],
+                     name_of: Callable[[str], str]) -> str:
+    """"" when every column to drop is in the table at every place, else ONE plain sentence that names each place and the columns that are not there. A drop does not need the same type at a
+    place (a column is dropped whatever it holds); it needs the column. `columns_at(place)` is the names and types of the table present at that place in the audited state (None: the lineage's
+    plan decides). A place is never dropped silently."""
+    bad: List[str] = []
+    for place in places:
+        found = columns_at(place)
+        if found is None:
+            try:
+                found = lineage.node(place).columns
+            except KeyError:
+                found = None
+        if found is None:
+            bad.append(f"{name_of(place)}: its columns are not known, so the drop cannot be checked there.")
+            continue
+        names = {str(name) for name, _ in found}
+        missing = [c for c in columns if c not in names]
+        if missing:
+            bad.append(f"{name_of(place)}: {', '.join(missing)} {'is' if len(missing) == 1 else 'are'} not in the table there.")
+    if not bad:
+        return ""
+    return "The drop does not fit every place. " + " ".join(bad) + " Nothing was tried. Choose places where the columns are, or deselect other columns."
 
 
 def rows_signature(rows: Iterable[dict]) -> Tuple[str, ...]:
@@ -136,10 +195,16 @@ class TrialRecord:
     result: Any
     condition: Tuple[str, ...]
     serial: int = 0              # the number of this Try (the ids of the marks and of the reason of its panel carry it: a new trial never inherits a stale value of an older one)
+    kind: str = "filter"         # "filter" (a condition of the Filters panel) or "drop" (the columns the chooser did not select): the panel's words and the end causes differ
+
+
+def stage_sentence(params: Dict[str, Any]) -> str:
+    """The one line of a condition, with what happens to the rows with no value (never silent)."""
+    return describe_filter(params["column"], params["op"], params["value"], params.get("na"))
 
 
 def condition_lines(rows: Iterable[dict]) -> Tuple[str, ...]:
-    """The staged conditions in words, one line each (`lineage_step.stage_sentence`: with what happens to the rows that have no value)."""
+    """The staged conditions in words, one line each (`stage_sentence`: with what happens to the rows that have no value)."""
     return tuple(stage_sentence(audit_params_from_row(r)) for r in rows)
 
 
@@ -190,7 +255,13 @@ def _rows_words(removed: int, before: int) -> str:
     return f"removes {_count(removed, 'row', 'rows')} of {before}"
 
 
-def panel_model(result: Any, condition_lines: Sequence[str], name_of: Callable[[str], str]) -> PanelModel:
+def _columns_words(removed: int, before: int) -> str:
+    if removed == 0:
+        return f"drops no column (of {before})"
+    return f"drops {_count(removed, 'column', 'columns')} of {before}"
+
+
+def panel_model(result: Any, condition_lines: Sequence[str], name_of: Callable[[str], str], kind: str = KIND_FILTER) -> PanelModel:
     """The panel of a trial from the engine's `TrialResult` (duck-typed: `effects`, `reaches`, `error`). `condition_lines`: the staged conditions in words (`utils.filter_words`); `name_of(node id)`: the
     name of a place as the lineage panel writes it.
 
@@ -198,7 +269,10 @@ def panel_model(result: Any, condition_lines: Sequence[str], name_of: Callable[[
     of each (`table changed`, `no row changed`): information, never ticks (D-0662)."""
     if result.error:
         return PanelModel(TRIAL_WORDS, tuple(condition_lines), (), "", (), error=f"This step cannot be tried: {result.error}")
-    effects = tuple(f"{name_of(e.place)}: the step {_rows_words(e.rows_removed, e.rows_before)} here ({e.state})." for e in result.effects)
+    if kind == KIND_DROP:
+        effects = tuple(f"{name_of(e.place)}: the step {_columns_words(e.columns_removed, e.columns_before)} here ({e.state})." for e in result.effects)
+    else:
+        effects = tuple(f"{name_of(e.place)}: the step {_rows_words(e.rows_removed, e.rows_before)} here ({e.state})." for e in result.effects)
     reaches = list(result.reaches)
     tables = [r for r in reaches if r.kind == "table"]
     plots = [r for r in reaches if r.kind == "plot"]

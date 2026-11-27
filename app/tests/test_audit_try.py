@@ -1,12 +1,13 @@
 """The pure rules of TRYING an audit step on screen (FLOW-1; `app/modules/audit_try.py`).
 
 What the design expects (ledger D-0650, D-0656, D-0662, D-0669, D-0671; `.claude/design/home_audit_what_is_true_now.md`): a step is tried at the place shown plus the other places chosen (when the place
-shown is among them), never at a place where the condition does not fit (named, not dropped), never at the metadata or two places on one path; the trial is written the way "Send to Audit" writes a
-step; the rows each place loses are the engine's own count; a trial ends, with one plain sentence, when the condition, the places, the mode, the recipe or data, the applied steps or the session change.
+shown is among them), never at a place where the condition does not fit (named, not dropped), never at the metadata or two places on one path; the trial is the step "Add to audit pipeline" writes; the rows each place loses are the engine's own count; a trial ends, with one plain sentence, when the condition, the places, the mode, the recipe or data, the applied steps or the session change.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_try.py -q
 
-Mutation index (each seen failing): MUTATION Y1 `trial_places` ignores the selection rule; MUTATION Y2 `fit_problem` drops a place that does not fit instead of refusing; MUTATION Y3 `end_cause`
+FLOW-3: a column DROP is tried like a condition (`tried_drop_nodes`, `drop_fit_problem`, `drops_from_selection`, `panel_model(kind="drop")`): it changes columns and no row, and the panel says so.
+
+Mutation index (each seen failing): MUTATION Y5 `drops_from_selection` returns every column; MUTATION Y6 the panel of a drop counts rows; MUTATION Y1 `trial_places` ignores the selection rule; MUTATION Y2 `fit_problem` drops a place that does not fit instead of refusing; MUTATION Y3 `end_cause`
 never reports a change of the condition; MUTATION Y4 `tried_nodes` gives each place its own id.
 """
 import polars as pl
@@ -15,8 +16,8 @@ import pytest
 from app.modules.audit_place_view import STATE_WORDS, TRIAL
 from app.modules.audit_places import nodes_signature
 from app.modules.audit_trial import PlaceTrial, TRIAL_FOLDER
-from app.modules.audit_try import (TrialRecord, trial_has_state, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, end_cause, fit_problem, panel_model,
-                                   rows_signature, tried_nodes, trial_places, world_of)
+from app.modules.audit_try import (KIND_DROP, TrialRecord, trial_has_state, NOT_CHANGED, NOTHING_SHOWN, TRIAL_WORDS, band_trial_line, compare_left_label, compare_right_label, drop_condition_lines,
+                                   drop_fit_problem, drops_from_selection, end_cause, fit_problem, panel_model, rows_signature, tried_drop_nodes, tried_nodes, trial_places, world_of)
 from app.modules.audit_view import PlaceAudit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.lineage_view import line_text
@@ -191,3 +192,58 @@ def test_a_condition_is_never_used_on_a_table_other_than_the_one_it_was_built_on
     assert rows_built_elsewhere([staged_filter_row("x", "eq", 1, "Int64", None)], key_a), "a row with no view key was built nowhere known"
     assert not rows_built_elsewhere([], key_a), "nothing staged: nothing built elsewhere (the other guard says so)"
     assert "built on another table" in BUILT_ELSEWHERE_LINE and "Nothing was" in BUILT_ELSEWHERE_LINE
+
+
+# -- FLOW-3: a column drop is tried like a condition ---------------------------------------------------------------------
+def test_the_columns_to_drop_are_the_ones_the_chooser_does_not_select_in_the_order_of_the_table():
+    names = ["a", "b", "c", "d"]
+    assert drops_from_selection(names, ["b", "d"]) == ["a", "c"]
+    assert drops_from_selection(names, ("a", "b", "c", "d")) == [], "everything selected: nothing to drop"
+    assert drops_from_selection(names, []) == names, "an empty selection drops every column (the engine and the panel then say what that does)"
+    assert drops_from_selection(names, None) == [] and drops_from_selection(names, "a") == [], "no chooser on the page: nothing is deselected, never a guess"
+
+
+def test_one_decision_for_each_column_written_at_each_place_with_no_reason():
+    nodes = tried_drop_nodes(["identity", "sample_id", "identity"], ["T3:amr_heatmap", "T1:ResFinder"])
+    assert [(n["place"], n["params"]["column"]) for n in nodes] == [("T3:amr_heatmap", "identity"), ("T1:ResFinder", "identity"), ("T3:amr_heatmap", "sample_id"), ("T1:ResFinder", "sample_id")], "a column named twice is one decision"
+    assert nodes[0]["id"] == nodes[1]["id"] and nodes[2]["id"] == nodes[3]["id"] and nodes[0]["id"] != nodes[2]["id"]
+    assert all(n["node_type"] == "drop_column" and n["reason"] == "" and n["plot_scope"] == "__places__" for n in nodes)
+
+
+def test_a_drop_that_does_not_fit_a_place_names_the_place_and_the_columns_and_a_type_difference_is_no_problem(world):
+    present = lambda place: [("identity", "Float64"), ("sample_id", "String")]
+    assert drop_fit_problem(["identity"], ["T3:amr_heatmap"], world.lineage, present, name_of(world)) == ""
+    assert drop_fit_problem(["identity"], ["T1:ResFinder"], world.lineage, lambda place: [("identity", "String")], name_of(world)) == "", "a column is dropped whatever it holds"
+    text = drop_fit_problem(["identity", "gone"], ["T1:ResFinder", "T3:amr_heatmap"], world.lineage, present, name_of(world))
+    assert "does not fit every place" in text and "gone is not in the table there" in text and "Nothing was tried" in text and "identity is not" not in text
+    unknown = drop_fit_problem(["identity"], ["T3:amr_heatmap"], world.lineage, lambda place: None, name_of(world))
+    assert unknown == "" or "not known" in unknown, "without the audited columns the lineage's plan decides"
+
+
+def test_the_drop_is_told_in_words_and_says_that_no_row_is_removed():
+    one, many = drop_condition_lines(["identity"])[0], drop_condition_lines(["identity", "sample_id"])[0]
+    assert one == "Drop the column: identity. No row is removed." and many == "Drop the columns: identity, sample_id. No row is removed."
+
+
+def test_the_columns_a_drop_removes_are_the_engines_count_rows_are_unchanged_and_the_panel_says_columns_not_rows(world, tmp_path):
+    trial = PlaceTrial(world.orch, PlaceAudit(world.orch, world.anchors, tmp_path / "audit_anchors"), tmp_path / TRIAL_FOLDER)
+    result = trial.try_step(RECIPE_ID, [], tried_drop_nodes(["identity"], ["T1:ResFinder"]), world.plans)
+    assert result.error is None
+    original = world.orch.materialize_tier1(RECIPE_ID, "ResFinder", world.anchors / "ResFinder.parquet").collect()
+    effect = result.effects[0]
+    assert effect.rows_before == effect.rows_after == original.height, "a drop removes no row"
+    assert effect.columns_before == original.width and effect.columns_after == original.width - 1 and effect.columns_removed == 1
+    assert effect.state == "table changed", "the columns differ, so the table is not the same one although the rows are"
+    model = panel_model(result, drop_condition_lines(["identity"]), name_of(world), KIND_DROP)
+    assert model.effects[0] == f"ResFinder: Table, T1: the step drops 1 column of {original.width} here (table changed)."
+    assert "removes" not in model.effects[0] and "row" not in model.effects[0], "MUTATION Y6: the words of a drop never speak of rows"
+    assert trial.trial_table("ResFinder", "T1").collect_schema().names() == [c for c in original.columns if c != "identity"], "the table shown with the trial lacks the column"
+    trial.discard()
+
+
+def test_a_drop_of_a_column_that_is_not_there_is_the_engines_plain_error(world, tmp_path):
+    trial = PlaceTrial(world.orch, PlaceAudit(world.orch, world.anchors, tmp_path / "audit_anchors"), tmp_path / TRIAL_FOLDER)
+    result = trial.try_step(RECIPE_ID, [], tried_drop_nodes(["no_such_column"], ["T1:ResFinder"]), world.plans)
+    model = panel_model(result, [], name_of(world), KIND_DROP)
+    assert model.error.startswith("This step cannot be tried:") and "no_such_column" in model.error and not model.effects
+    trial.discard()
