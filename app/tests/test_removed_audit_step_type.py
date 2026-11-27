@@ -149,3 +149,38 @@ def test_no_code_path_knows_the_removed_type_but_the_refusal_table():
 def test_the_screens_do_not_offer_or_label_the_removed_type():
     from app.handlers import audit_stack
     assert REMOVED not in audit_stack._NODE_META     # FLOW-3: `_REASON_REQUIRED` is gone with the reason boxes (a reason is asked at Add for every step)
+
+
+# -- the round trip: what the export writes is what the importer's check reads (B1 of the FLOW-3 review) ------------------
+
+def _real_export_record(steps: list[dict]) -> dict:
+    """The `t3_steps.yaml` content as the export builds it: place_step_records -> steps_by_place_yaml, through yaml like a real file."""
+    from app.modules.audit_places import place_step_records, steps_by_place_yaml
+
+    class _G:
+        def has_node(self, _n):
+            return False
+    records = place_step_records(_G(), steps)
+    return yaml.safe_load(yaml.safe_dump({"steps_by_place": steps_by_place_yaml(records)}))
+
+
+def _node(kind, params, place="T3:p"):
+    return {"id": f"i_{kind}", "node_type": kind, "params": params, "place": place, "reason": "r", "created_at": "2026-11-27", "started_from": "subtab_p"}
+
+
+def test_the_record_the_export_writes_is_accepted_by_the_importer_check():
+    record = _real_export_record([_node("filter_row", {"column": "identity", "op": "ge", "value": 90, "na": "remove"}), _node("drop_column", {"column": "x"}, "T1:t")])
+    with pytest.raises(BundleImportError, match="no reproducibility recipe"):     # past the audit check, on to the next one
+        import_bundle(_bundle(record), bootloader=None)
+
+
+def test_an_unknown_step_type_in_the_real_shape_is_still_refused_in_plain_words():
+    record = _real_export_record([_node("filter_row", {"column": "a", "op": "ge", "value": 1}), _node("mystery", {"column": "a"})])
+    with pytest.raises(BundleImportError, match=r"audit step 2 .*does not know"):
+        import_bundle(_bundle(record), bootloader=None)
+
+
+def test_a_filter_step_without_its_column_in_the_real_shape_is_refused():
+    record = _real_export_record([_node("filter_row", {"op": "ge", "value": 1})])
+    with pytest.raises(BundleImportError, match="needs the column"):
+        import_bundle(_bundle(record), bootloader=None)

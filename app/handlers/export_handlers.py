@@ -45,7 +45,7 @@ from utils.filter_words import no_value_words, value_text
 from utils.na_choice import na_of
 from app.modules.audit_view import AUDIT_ERRORS
 from app.modules.audit_add import verification_sentences
-from app.modules.audit_places import audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
+from app.modules.audit_places import steps_by_place_yaml, audit_recipe_of, audit_recipe_sentence, bake_place_steps, t3_file_sentence, place_step_records, place_words, plots_below, steps_changing_table, place_nodes as _committed_place_nodes_of
 from utils.recipe_graph import build_graph
 from utils.engines import plot_engine_slot
 from app.modules.engine_record import engine_record, failed_plot_record
@@ -976,22 +976,12 @@ def define_export_server(input, output, session, *,
             )
             for leg_name, leg in result.legs.items()
         ]
-        skipped_note = (
-            ui.tags.small(
-                f"{len(result.skipped_t3_plots)} plot(s)' T3 steps were not translated into "
-                "replayable actions when this bundle was exported (see the plot names in "
-                "effective_run.yaml's t3_translation_skipped).",
-                class_="text-muted d-block mt-1",
-            )
-            if result.skipped_t3_plots else ui.div()
-        )
         return ui.div(
             ui.tags.small(
                 f"Imported as '{result.recipe_id}' — reload (F5) to see it in the selector.",
                 class_="d-block mb-1", style="font-weight:600;",
             ),
             *rows,
-            skipped_note,
             class_="mt-1",
         )
 
@@ -1614,13 +1604,7 @@ def define_export_server(input, output, session, *,
                             }
                         # the audit steps, at every tier: where each is written (a table's tier 1 or tier 2, a plot's tier 3), its reason and the plots built from there
                         if _place_records:
-                            t3_steps_data["steps_by_place"] = [
-                                {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
-                                 "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
-                                 "plots_built_from_it": r["plots"],
-                                 **({"user_verified": r["user_verified"], **({"verified_at": r["verified_at"]} if r.get("verified_at") else {})} if "user_verified" in r else {})}
-                                for r in _place_records
-                            ]
+                            t3_steps_data["steps_by_place"] = steps_by_place_yaml(_place_records)
                         # Aesthetic overrides are stored separately from audit step (§12c)
                         # the seed is listed as a step above, not a second time here
                         _overrides_listed = {

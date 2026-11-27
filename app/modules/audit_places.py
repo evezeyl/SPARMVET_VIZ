@@ -177,6 +177,17 @@ def place_step_records(graph: RecipeGraph, nodes: Iterable[dict]) -> List[Dict[s
     return records
 
 
+def steps_by_place_yaml(records: Iterable[dict]) -> List[Dict[str, Any]]:
+    """The `steps_by_place` list of `t3_steps.yaml` from the records of `place_step_records`: the parameters of a step sit in the step itself (flat), next to the action. The importer's check reads this shape (`renamed_keys.refused_audit_step_problem(..., type_key="action", flat=True)`): one function writes it, so the two cannot differ."""
+    return [
+        {"id": r["id"], "written_at": r["place"], "written_at_words": r["place_words"], "started_from_plot": r["started_from"],
+         "action": r["action"], **r["params"], "reason": r["reason"], "committed_at": r["committed_at"],
+         "plots_built_from_it": r["plots"],
+         **({"user_verified": r["user_verified"], **({"verified_at": r["verified_at"]} if r.get("verified_at") else {})} if "user_verified" in r else {})}
+        for r in records
+    ]
+
+
 def bake_place_steps(raw: dict, nodes: Iterable[dict]) -> dict:
     """A deep copy of the recipe in which each node written at a place is a plain step at the END of that tier (`tier1.steps` or `tier2.steps` of its table, `tier3.steps` of its plot), so
     that the recipe alone, run by the engine with no audit machinery, builds the audited tables and plots (the reproducibility part of the export). The table or plot says so in its `comment`, with

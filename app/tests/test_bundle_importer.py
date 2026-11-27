@@ -83,7 +83,7 @@ class _FakeBootloader:
 
 
 def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
-                   t3_translation_skipped=None) -> tuple[bytes, dict, Path]:
+                   ) -> tuple[bytes, dict, Path]:
     """Build a real Mode 2 bundle zip in memory. Returns (zip_bytes, effective_run, original_recipe_path)."""
     src_dir = tmp_path / "source"
     data_path = src_dir / "T.tsv"
@@ -93,9 +93,7 @@ def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
     original_recipe_path = _make_recipe(src_dir, recipe_id, data_path)
     loaded = load_data_analysis_recipe(original_recipe_path)
 
-    mode2_cfg, skipped = bake_place_steps(loaded.raw, []), {}     # `skipped` is the record of a bundle exported before the fork of a join went (the importer still reads it)
-    if t3_translation_skipped is not None:
-        skipped = t3_translation_skipped
+    mode2_cfg = bake_place_steps(loaded.raw, [])
 
     data_bytes = data_path.read_bytes()
     if tamper_data:
@@ -118,7 +116,6 @@ def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
         "software_versions": {"python": "3.14"},
         "data_source_paths": {"T": str(data_path)},
         "seeds_per_plot": {},
-        "t3_translation_skipped": skipped,
     }
 
     buf = io.BytesIO()
@@ -131,6 +128,18 @@ def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
         )
         zf.writestr(f"{bundle_dir}/data_reproducibility/T.tsv", data_bytes)
     return buf.getvalue(), effective_run, original_recipe_path
+
+
+def _rewrite_effective_run(zip_bytes: bytes, run: dict) -> bytes:
+    """The same bundle with another effective_run.yaml."""
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zin, zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.endswith("effective_run.yaml"):
+                data = yaml.safe_dump(run, sort_keys=False).encode()
+            zout.writestr(item.filename, data)
+    return out.getvalue()
 
 
 def _fresh_bootloader(tmp_path: Path, **kw) -> _FakeBootloader:
@@ -395,12 +404,15 @@ def test_t3_steps_leg_is_always_not_checked(tmp_path):
     assert result.legs["t3_steps"].recorded == "0" * 64
 
 
-def test_skipped_t3_plots_pass_through(tmp_path):
-    zb, _run, _orig = _build_bundle(
-        tmp_path, t3_translation_skipped={"p": "untranslatable op"}
-    )
+def test_a_bundle_with_the_old_steps_hash_name_says_so_and_does_not_read_it_as_the_new_one(tmp_path):
+    zb, run, _orig = _build_bundle(tmp_path)
+    old = dict(run)
+    old["t3_audit_steps_sha256"] = old.pop("audit_steps_sha256")
+    zb = _rewrite_effective_run(zb, old)
     result = import_bundle(zb, bootloader=_fresh_bootloader(tmp_path))
-    assert result.skipped_t3_plots == {"p": "untranslatable op"}
+    leg = result.legs["t3_steps"]
+    assert leg.recorded is None
+    assert "older version" in leg.detail and "not compared" in leg.detail
 
 
 def test_a_broken_frozen_recipe_raises_loudly_not_silently(tmp_path):
