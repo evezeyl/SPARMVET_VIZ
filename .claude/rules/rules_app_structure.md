@@ -67,8 +67,9 @@ app/
 │   ├── __init__.py
 │   ├── home_theater.py         # Home mode: tabs, sidebar, plots, tables, panel dispatch.
 │   ├── audit_stack.py          # Pipeline Audit: the recipe's tier 2 steps, the audit steps that were added (cards, the bin that removes one and saves the session).
-│   ├── filter_and_audit_handlers.py # Filter builder: the condition, Apply (Exploration), Try (Audit mode). (FLOW-3, D-0662, D-0672: the audit step is made in `trial_handlers.py`.)
-│   ├── trial_handlers.py       # The ONE way to create an audit step: Try (a condition, or a column drop), the marks, the reason, Add to audit pipeline.
+│   ├── filter_and_audit_handlers.py # Filter builder: the condition (the form, mounted once in the Filters panel in both modes) and Apply (Exploration). (FLOW-3, D-0662, D-0672: the audit step is made in the step bar and `trial_handlers.py`.)
+│   ├── step_bar_handlers.py    # The step bar (Audit mode): the band, the switch Condition | Drop columns, the step in words, the ONE button Try; mounts the fold-out. Words: app/modules/step_bar.py.
+│   ├── trial_handlers.py       # The effects of the ONE way to create an audit step: Try (a condition, or a column drop), the marks, the reason, Add to audit pipeline; the fold-out of the step bar.
 │   ├── session_handlers.py     # Session panel: import, restore, delete.
 │   ├── export_handlers.py      # Export panel and bundle; the key check (ADR-089).
 │   ├── data_import_handlers.py # Data Import panel: upload, assign, replace metadata.
@@ -160,7 +161,8 @@ def define_server(input, output, session, *,
 | How the Home tabs are built / dynamic tabs / plots / data preview | `app/handlers/home_theater.py` |
 | Left sidebar panel dispatch (which panel renders for which workspace) | `app/handlers/home_theater.py` (`sidebar_tools_ui`, `_build_left_sidebar`) |
 | Filter builder (add row / apply / reset) | `app/handlers/filter_and_audit_handlers.py` |
-| Try, the marks, the reason and Add to audit pipeline (a condition or a column drop) | `app/handlers/trial_handlers.py` (rules: `app/modules/audit_try.py`, `audit_add.py`; engine: `audit_trial.py`) |
+| The step bar (the entry that creates an audit step: what it acts on, the kind switch, the step in words, the button Try) | `app/handlers/step_bar_handlers.py` (words: `app/modules/step_bar.py`) |
+| What Try, the marks, the reason and Add to audit pipeline do (a condition or a column drop), the fold-out | `app/handlers/trial_handlers.py` (rules: `app/modules/audit_try.py`, `audit_add.py`; engine: `audit_trial.py`) |
 | Data preview column selector | `app/handlers/home_theater.py` |
 | Export results bundle (zip / plots / data / Quarto) | `app/handlers/export_handlers.py` |
 | Import a reproducibility bundle + per-leg hash verification (ADR-097, #48) | `app/modules/bundle_importer.py` (pure logic) / `app/handlers/export_handlers.py` (Import control in the Export panel) |

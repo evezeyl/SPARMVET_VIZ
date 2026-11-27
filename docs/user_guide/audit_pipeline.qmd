@@ -49,7 +49,7 @@ There is **one way** to create an audit step, one step at a time (no staged list
 2. **Stage the step.**
    - A **condition**: in the **Filters** panel build a row (column, operator, value) and press "+ Add".
    - A **column drop**: with the Result data (T3) of a plot shown, deselect the columns to drop in the column chooser above the data preview.
-3. **Try it.** "Try" (for a condition) or "Try the drop" (for columns). Nothing is applied, saved or exported yet.
+3. **Try it.** In the bar above the table, choose the kind of step ("Condition on rows" or "Drop columns") and press **Try**. Nothing is applied, saved or exported yet.
 4. **Mark, reason, add.** Tick **User verified** on each place you have looked at (advice only), write the **reason** (required) and press **Add to audit pipeline**.
 
 The right sidebar is the **audit panel**: it lists the steps you have **added** for the item shown (the plot shown, or the table shown and the tables above it), each with the place it was written at, whether the place was marked "User verified", its reason and a 🗑 bin. A step is never added without a reason: the button stays disabled and says why.
@@ -62,7 +62,7 @@ The scope of a step is the **place** (a table at its tier 1 or tier 2, or the Re
 
 ### Trying a step before you add it
 
-In Audit mode, once you have added a condition in the **Filters** panel (the "+ Add" button), a button **Try** appears. It works on the item shown, also when a **table** is shown, and not only on the Result data (T3) of a plot. A column drop is tried the same way with the button **Try the drop** (see below). Try tells you what the step would do and changes nothing: it is **not applied, not saved and not exported**.
+In Audit mode a bar called **Create an audit step** sits above the data preview. Its first line says which item is shown (and, when you chose other places, how many, with their names when you hover). Under it a switch says which kind of step you are making, one at a time: **Condition on rows** (the condition you built in the **Filters** panel on the left with "+ Add", written out in words in the bar) or **Drop columns** (the columns you deselected in the column chooser, named in the bar). The one button **Try** is off, with a short sentence that says why, until the step can be tried. It works on the item shown, also when a **table** is shown, and not only on the Result data (T3) of a plot (a drop only on the Result data of a plot). The answer opens under the button (you can fold it to see the table). Try tells you what the step would do and changes nothing: it is **not applied, not saved and not exported**.
 
 - **Where it is tried.** At the place shown. If you chose other places in **Path of the data**, the place shown must be one of them (otherwise the app says "Show your selection first"), and the step is then tried at **all** the places you chose. If the condition does not fit one of them (the column is not there, or has another type), the app names that place and tries nothing.
 - **What you see.** A small panel under the Filters buttons says, for each place, how many rows the step removes **there** ("removes no row" is said plainly: it may mean you chose the wrong place), and what is built from those places (a count and a list, each marked "table changed" or "no row changed"; this is information, not something to tick). Press **Show** beside a place or a reached item to look at it with the step tried. While the app counts, a line says so.
@@ -82,7 +82,7 @@ Under the lines of the trial panel you find, for each place, a tick **User verif
 
 ### Dropping columns
 
-With the Result data (T3) of a plot shown, deselect the columns to drop in the column chooser; the button **Try the drop (N)** appears. The panel of the trial says, for each place, "the step drops N columns of M here" (a drop changes the columns, not the rows, and the panel says so), then the marks, the reason and **Add to audit pipeline** work as for a condition. A column that a later join of your recipe still reads as a key is refused at its place with the join named; nothing is tried.
+With the Result data (T3) of a plot shown, deselect the columns to drop in the column chooser, then in the bar above the table choose **Drop columns** (the bar names the columns) and press **Try**. The panel of the trial says, for each place, "the step drops N columns of M here" (a drop changes the columns, not the rows, and the panel says so), then the marks, the reason and **Add to audit pipeline** work as for a condition. A column that a later join of your recipe still reads as a key is refused at its place with the join named; nothing is tried.
 
 ### Choosing the place on the "Path of the data"
 

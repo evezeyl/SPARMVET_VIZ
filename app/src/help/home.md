@@ -24,8 +24,8 @@ The badge next to the table says which table it is and when two tables are the s
 
 - In **Exploration**, a filter changes the **table only**. Use it to check "what is this data?". It does not change any plot, and it is never saved or exported. A badge says "N preview filter(s) on, not saved".
 - When you change what you view (the table to view, the source table, the plot tab, the mode or the recipe), the staged and applied filters are removed and a notice says so. Nothing is carried over silently.
-- In **Audit** mode the form builds the condition of an audit step, not a preview: there is no Apply. **Try** computes the step at the table you are viewing and at the places you chose in "Path of the data": for each place how many rows it removes, and what is built from it. Nothing is applied, saved or exported yet. You may tick **User verified** on a place (advice only), write the **reason** (required) and press **Add to audit pipeline**: the step is written at every place of the trial, it is applied to the audited plots and to the exported plots and data, and it is recorded in the audit trail. One step at a time.
-- To drop columns in Audit mode, view the Result data (T3) of a plot, deselect the columns in the column chooser and press **Try the drop**; it is tried and added the same way.
+- In **Audit** mode the form builds the condition of an audit step, not a preview: there is no Apply. In the bar above the table (**Create an audit step**) the button **Try** computes the step at the table you are viewing and at the places you chose in "Path of the data": for each place how many rows it removes, and what is built from it. Nothing is applied, saved or exported yet. You may tick **User verified** on a place (advice only), write the **reason** (required) and press **Add to audit pipeline**: the step is written at every place of the trial, it is applied to the audited plots and to the exported plots and data, and it is recorded in the audit trail. One step at a time.
+- To drop columns in Audit mode, view the Result data (T3) of a plot, deselect the columns in the column chooser and choose **Drop columns** in the bar above the table and press **Try**; it is tried and added the same way.
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
@@ -42,7 +42,7 @@ A plot with a random layer (for example jitter) shows a line with its plot: the 
 **Info** shows what the recipe says about itself. **Alerts** lists the notices of this session (for example that a recipe was loaded or that filters were removed).
 
 ### Data Preview
-Shows up to the first 100 rows of the table you chose to view for the active plot. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only; in Audit mode on T3, deselecting a column is the start of a drop (**Try the drop**, then add it to the audit pipeline).
+Shows up to the first 100 rows of the table you chose to view for the active plot. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only; in Audit mode on T3, deselecting a column is the start of a drop (choose **Drop columns** in the bar and press **Try**, then add it to the audit pipeline).
 
 ### Export
 Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a **Plot format** (PNG / SVG / PDF), a **Report format** (HTML / PDF / DOCX), and the plot size in inches, then click **Export Bundle**. Every export holds all plots of the loaded recipe. The bundle contains the plots, the underlying data, the data analysis recipe YAML, and a report with your audit trail. Only filters sent to audit are exported — exploration-only filters never are.
