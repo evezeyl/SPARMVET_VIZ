@@ -152,6 +152,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `home_audit_what_is_true_now.md` | READ FIRST for HOME, the audit and the lineage: the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject |
 | `current_limits.md` | Every known limit of the app as built today (what the user sees, workaround, what lifts it, evidence); read before telling a user what the app can do; agents update it in the same change |
 | `home_guardrails.md` | Every guardrail of HOME and the audit: what it protects from, what the user sees, where in the code, the test, the decision, the state, and the known gaps; read before changing anything that guards a result |
+| `session_register.md` | A session is a register (decision of 2026-11-28, channel blocks M721 to M732, being built): the register file, the index, the audit link and the rules as a state table, where the data bytes live, the build slices S1 to S8, the open points; read before touching sessions, Restore, Data Import or the metadata update |
 
 ---
 
