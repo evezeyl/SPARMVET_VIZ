@@ -17,6 +17,7 @@
 | G5 One id column per table (pair tables) | yes (three wrong effects) | now: no id on the pair table (recipe choice); app: A (ids are the values of both columns) | 4 to 6 files, 2 sessions | yes (3 small points) |
 | G6 Ids are checked only before tier 1 | partly (a check is missing, not a wrong value) | B: check and warn at the tier where the id appears (task ID-AT-THE-TIER-IT-COMES-INTO-BEING) | 3 to 5 files, 2 sessions | no (decided D-0702, later) |
 | G7 Plot ids unique over recipes: not checked at start | no (probably harmless today; not run in the app) | A: run the set check at start and reject the later recipe with the reason | 1 to 2 files, 1 session | yes (it rejects recipes that open today) |
+| G8 Two processes or tabs on one user place | no (visible, or the trial is simply lost) | A: tell the deployment page that one user place belongs to one process; B: a process mark in the folder name | docs now; B 1 session | yes (a deployment rule) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -154,3 +155,19 @@
 
 **4. Recommendation.** A as a warning first (a line in the alerts, the recipe stays selectable), to see how often it happens; make it a refusal only if she wants it. **A refusal changes what opens today: flag.**
 **5. What was not checked.** The behaviour of the app with two recipes sharing a plot id was read, not run; the export folders and the audit places were not run with a shared id.
+
+## G8. Two app processes (or tabs) on one user place
+
+**1. The problem, exactly.** Every try of an audit step is computed into a folder of its own under the user place (`audit_trial/<token>`, one token per browser session). At the start of an app process every folder under `audit_trial` is removed, because a killed process leaves its files (READ `bootloader.py:221-222`, `audit_trial.py:147-160`). RAN (`tmpAI/gaps/g8.py`): process A has a trial folder with a stored table; process B starts on the same user place; B's start removes A's folder (`removed: ['tokenA12345678']`). The code says so itself ("a decision for the owner: separate user places, or a process mark in the folder name").
+What A then sees (READ, `audit_trial.py:220-232`): a trial whose files are gone is "no trial", never a failing table; the user tries the step again. Two TABS of one process each have their own token, so they do not clean each other. Two tabs on the same recipe and data share the audit folder (`audit_anchors`); a table another tab rewrote is refused with "was changed by another session on the same recipe and data and could not be built again here. Reload ..." (READ `audit_run.py:154`).
+**2. The consequence.** Visible or harmless: a lost try, a message with a way out. No wrong result was found. The risk is bounded by the deployment: a server with several workers on one user place would hit it often.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. State it as a deployment rule: one user place per process (docs, `deployment` page, a check at start that writes a lock file and warns when another process holds it) | A warning at start of the second process | Honest, small | A lock file can go stale after a crash | 1 session | D-0439, D-0440 (deployment decides) |
+| B. A process mark in the folder name; the start removes only folders of a dead process | Nothing | The cleanup is safe | A way to know a process is dead (a pid file) | 1 session | none |
+| C. Leave it and keep it on the limits page | Lost tries when a second process starts | Nothing to build | A multi-worker server loses tries | 0 | none |
+
+**4. Recommendation.** B if a multi-worker deployment is planned (it makes the cleanup safe without any rule for the administrator); otherwise A as one sentence in the deployment page. Neither changes a result.
+**5. What was not checked.** Two real processes were not started; the cleanup was run as a function on a scratch folder. The audit folder across two processes was not run.
