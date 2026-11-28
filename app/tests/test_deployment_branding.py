@@ -14,7 +14,10 @@ from app.src.bootloader import Bootloader
 from app.tests.deployment_branding_keys import banner_line, banner_logo, banner_title
 
 REPO = Path(__file__).resolve().parents[2]
-SHIPPED = sorted(p for p in (REPO / "config" / "deployment").glob("*/*.yaml") if not p.name.endswith("_template.yaml"))
+# The demo file starts only where its user directory exists (not in a fresh clone): test_demo_deployment_file.py starts a copy of it.
+TESTED_ELSEWHERE = {"202612_demo_deployment.yaml"}
+SHIPPED = sorted(p for p in (REPO / "config" / "deployment").glob("*/*.yaml")
+                 if not p.name.endswith("_template.yaml") and p.name not in TESTED_ELSEWHERE)
 CUSTOMIZED = {"demo/demo-vetinst.yaml", "demo/web-demo.yaml"}
 DEFAULT_CSS = "config/ui/theme.css"
 

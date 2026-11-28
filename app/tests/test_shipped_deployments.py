@@ -12,7 +12,10 @@ import yaml
 from app.src.bootloader import Bootloader
 
 REPO = Path(__file__).resolve().parents[2]
-SHIPPED = sorted(p for p in (REPO / "config" / "deployment").glob("*/*.yaml") if not p.name.endswith("_template.yaml"))
+# Tested by its own file: it names no default recipe and its user directory is not in a fresh clone (test_demo_deployment_file.py).
+TESTED_ELSEWHERE = {"202612_demo_deployment.yaml"}
+SHIPPED = sorted(p for p in (REPO / "config" / "deployment").glob("*/*.yaml")
+                 if not p.name.endswith("_template.yaml") and p.name not in TESTED_ELSEWHERE)
 
 
 @pytest.fixture(autouse=True)
