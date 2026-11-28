@@ -84,7 +84,6 @@
   },
   "extensions": {
     "recommendations": [
-      "wattenberger.footsteps",
       "alefragnani.bookmarks"
     ]
   }
