@@ -12,6 +12,7 @@
 | G1 Restore on other data | yes (it was) | the refusal is built; the live case below needs a decision | refusal done; live case 1 to 2 sessions | yes, for the live case |
 | G2 Upload replaces the file, no copy; new session by itself | yes (the old data is gone; a session appears without asking) | E now (guard built), then the sessions options page (A: a store by hash) | small now; the real fix 3 to 5 sessions | yes (reopens D-0434) |
 | G3 CR-only file reads as zero rows | yes (a console line only) | A: refuse a file that reads as zero data rows, with a plain hint | 1 session (2 files) | yes (a refusal at upload) |
+| G4 No-break space inside an id | no (a warning shows, but says the same id twice) | A: the id warning names ids that differ only by an invisible character | 1 session (1 file + test) | no (it only informs) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -68,3 +69,19 @@
 
 **4. Recommendation.** A. **It refuses files that open today (silently empty), so tell her first.** Open point for her: is a recipe whose table is empty on purpose ever valid (a table that has no rows yet)? If yes, refuse at upload only and warn in the data check.
 **5. What was not checked.** The app path (HOME opening an empty table) was not run; the rule "empty table at the id check" is READ in `rules_data_analysis_recipe_structure.md` section 13, not run. Her lab script that writes the files (task D6) is not found yet.
+
+## G4. An id with an invisible character inside (a no-break space)
+
+**1. The problem, exactly.** The metadata lists the isolate `Sample 1` (a normal space). The results table, written by another tool, has `Sample\u00a01` (a no-break space, invisible, copied from a web page or a spreadsheet). The reader removes spaces at the two ends of a text (`strip`), never inside it. RAN (`tmpAI/gaps/g3_g4.py`, with the app's own id check `build_report`): the two ids are different texts. The warning says, in two lines for the same table: "1 id(s) are not in the metadata: Sample 1" and "2 id(s) of the metadata are not in this table: Sample 1, Sample 3". The same words "Sample 1" appear on both sides, and a line is added to each table for it ("missing in original table"). Nothing says why. (The earlier case of an id with a no-break space at the END was removed by the reader: RAN, `A2\u00a0` read as `A2`.)
+**2. The consequence.** Visible, not silent: the id warning shows. But it cannot be understood: the user sees one id twice and cannot find the difference. A join on the id would not match the sample, so its measurements are not on its metadata row (it appears as two rows, one with empty measurements); a figure by group would drop the sample from its group without a word beyond the warning.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. The id warning says when two ids differ only by invisible or look-alike characters ("'Sample 1' and 'Sample\u00a01' differ by a no-break space") | A line that names the cause | Informs; changes no data; the recipe maker fixes it with a visible step | Needs a list of characters to look for | 1 file (`id_completion.py`) + a test; 1 session | D-0593 to D-0596 (no cleaning) kept; D-0050 |
+| B. The app removes them at read | Ids just work | Convenient | The app cleans data in HOME: reopens D-0593 to D-0596; changes ids silently | 1 session | REOPENS D-0593 to D-0596 |
+| C. Document the recipe-maker answer (a visible `polars_str_replace_all` step) in the help of the id warning | A help sentence | No code | The user must read it | docs only | none |
+| D. Leave it, keep it on the limits page | The confusing warning | none | confusion stays | 0 | none |
+
+**4. Recommendation.** A, with C in the same message (the way out is the step). It informs and changes no result, so it needs no decision of hers beyond "yes, add the hint".
+**5. What was not checked.** Which invisible characters a real lab export writes (her files hold none that I could find: the real demo tables were not scanned for odd characters); the full app path (the warning in HOME) was not opened in a browser.
