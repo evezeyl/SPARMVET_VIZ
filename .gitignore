@@ -37,6 +37,9 @@ tmp/
 tmpAI/
 .playwright-mcp/
 
+# --- The simulated user directory (Eve's data and what the app writes there while testing; never committed) ---
+USER_DIRECTORY/
+
 # --- Data files (large/binary — tracked selectively in assets/) ---
 *.parquet
 *.tar.gz

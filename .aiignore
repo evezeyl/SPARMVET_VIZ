@@ -37,6 +37,7 @@ site_libs/
 # --- Temporary workspaces (agent scratch, not source) ---
 tmp/
 tmpAI/
+USER_DIRECTORY/
 
 # --- IDE user-specific state ---
 .vscode/bookmarks.json
