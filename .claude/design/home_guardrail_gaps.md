@@ -16,6 +16,7 @@
 | G9 Join through a constant or repeated key doubles or empties rows | yes | B (a declared row-count rule) after the demo; A (ask for `validate`) is cheaper | 1 to 3 sessions | yes (changes the recipe spec) |
 | G5 One id column per table (pair tables) | yes (three wrong effects) | now: no id on the pair table (recipe choice); app: A (ids are the values of both columns) | 4 to 6 files, 2 sessions | yes (3 small points) |
 | G6 Ids are checked only before tier 1 | partly (a check is missing, not a wrong value) | B: check and warn at the tier where the id appears (task ID-AT-THE-TIER-IT-COMES-INTO-BEING) | 3 to 5 files, 2 sessions | no (decided D-0702, later) |
+| G7 Plot ids unique over recipes: not checked at start | no (probably harmless today; not run in the app) | A: run the set check at start and reject the later recipe with the reason | 1 to 2 files, 1 session | yes (it rejects recipes that open today) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -137,3 +138,19 @@
 
 **4. Recommendation.** A (check and warn only), later, as decided in D-0702. It changes no data and tells the user more. B is not recommended: it adds data at a second place.
 **5. What was not checked.** The orchestrator was read, not run on a recipe with a tier-2 reshape; the way the id would be declared is not designed (the task says check and warn only).
+
+## G7. The plot id must be unique over all recipes, but the app does not check it at start
+
+**1. The problem, exactly.** The rule (rules file, section 8; check X5, `check_recipe_set`): a plot id is unique over all the recipes of a folder. The check is run by the tests on the shipped folders (`test_every_recipe_follows_the_spec.py:211,217`) and by the Gallery manager (`gallery_manager.py:114`); the app does not run it over the recipes it discovers (READ: `grep check_recipe_set` finds no call in `app/` or in the bootloader). RAN (`tmpAI/gaps/g7.py`): two recipes that both have a plot `hist` give "[X5] the plot id 'hist' is also used in recipe_a". A user recipe copied into the recipe folder with a plot id of another recipe is not reported.
+**What would happen** (READ, not run in the app): HOME makes ONE output slot per plot id (`home_theater.py:155-163`, a `seen` set) and each slot reads the plot of the recipe now open when it draws (`:898-912`), so a shared id probably draws the right plot. What is not known: whether anything else is keyed by plot id across recipes (the folder names of the export, the audit places `T3:<plot>`; steps are set aside when the recipe changes, so they do not cross).
+**2. The consequence.** Probably none visible today; the rule exists because the two names collide in the page, and a later change could break it silently. The harm is a rule that the tests keep for shipped recipes and nobody keeps for the user's.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. Run `check_recipe_set` at start over the discovered recipes; the later recipe goes to the rejected list with the X5 line | A recipe refused with the reason ("the plot id 'hist' is also used in recipe_a") | Keeps the decided rule; the reason is plain | Refuses recipes that open today; whose copy is "later" depends on order | 1 to 2 files (`bootloader.py`) + test, 1 session | X5, D-0534 (stands) |
+| B. Relax the rule to "unique within a recipe" and check that nothing else is keyed by plot id | Nothing refused | Fewer refusals | Reopens the rule and D-0534; needs the checks that are not run | 2 sessions | REOPENS X5 / D-0534 |
+| C. Leave it; the tests keep the shipped folders | Nothing | Nothing to build | User recipes unchecked | 0 | none |
+
+**4. Recommendation.** A as a warning first (a line in the alerts, the recipe stays selectable), to see how often it happens; make it a refusal only if she wants it. **A refusal changes what opens today: flag.**
+**5. What was not checked.** The behaviour of the app with two recipes sharing a plot id was read, not run; the export folders and the audit places were not run with a shared id.
