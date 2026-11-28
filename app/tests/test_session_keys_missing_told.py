@@ -166,13 +166,26 @@ def test_apply_with_keys_still_saves_and_says_nothing(tmp_path):
     assert manager.root.glob("*/t3_*.json")
 
 
-@pytest.mark.parametrize("current", [{}, {"data_analysis_recipe_sha256": "a" * 64}, {"data_batch_hash": "b" * 64}])
-def test_a_restore_with_no_keys_to_compare_says_so_and_still_restores(tmp_path, monkeypatch, current):
-    """MUTATION K4 fails here. The Restore never compared when a key was missing, and warned of nothing."""
+@pytest.mark.parametrize("current", [{}, {"data_analysis_recipe_sha256": "a" * 64}])
+def test_a_restore_with_no_data_key_to_compare_is_refused_and_says_so(tmp_path, monkeypatch, current):
+    """MUTATION K4 fails here. G1 (Eve 2026-11-28): with no data key in the open view the data cannot be compared, so nothing is restored."""
     screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
     _save(screen.manager, "the steps")
     with reactive.isolate():
         screen.home_state.set(dict(current))
+    screen.run("_handle_session_actions")
+    errors = screen.texts("error")
+    assert len(errors) == 1 and "could not be compared" in errors[0] and ". Suggestion:" in errors[0], screen.notes
+    with reactive.isolate():
+        assert not screen.home_state.get().get("audit_pipeline"), "nothing is restored"
+
+
+def test_a_restore_with_no_recipe_key_still_says_so_and_restores(tmp_path, monkeypatch):
+    """MUTATION K4 fails here: the data key is there and equal, the recipe key is missing: the old warning stays (the recipe part is not G1)."""
+    screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
+    _save(screen.manager, "the steps")
+    with reactive.isolate():
+        screen.home_state.set({"data_batch_hash": "b" * 64})
     screen.run("_handle_session_actions")
     warnings = screen.texts("warning")
     assert len(warnings) == 1 and "compare" in warnings[0] and ". Suggestion:" in warnings[0], screen.notes

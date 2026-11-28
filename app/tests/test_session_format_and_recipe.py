@@ -265,16 +265,15 @@ def test_the_same_recipe_with_another_content_hash_keeps_the_warning_and_restore
     assert _state(screen)["audit_pipeline"]
 
 
-# D-0317 (c): the same recipe, another data batch: the warning stays, non-blocking
-def test_the_same_recipe_with_another_data_batch_keeps_the_warning_and_restores(tmp_path, monkeypatch):
+# G1 (Eve 2026-11-28): the same recipe, another data batch: refused, nothing applied (it was a warning and a restore before)
+def test_the_same_recipe_with_another_data_batch_is_refused_and_nothing_is_applied(tmp_path, monkeypatch):
     screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
     _save_step(screen.manager)
     with reactive.isolate():
         screen.home_state.set({**screen.home_state.get(), "data_batch_hash": "f" * 64})
     screen.run("_handle_session_actions")
-    assert any("different data batch" in w for w in screen.texts("warning")), screen.notes
-    assert screen.texts("error") == []
-    assert _state(screen)["audit_pipeline"]
+    assert any("other data" in e for e in screen.texts("error")), screen.notes
+    assert not _state(screen).get("audit_pipeline")
 
 
 def test_the_session_list_still_lists_a_session_of_another_recipe(sm):

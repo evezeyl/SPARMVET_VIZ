@@ -184,3 +184,29 @@ def test_a_filter_step_without_its_column_in_the_real_shape_is_refused():
     record = _real_export_record([_node("filter_row", {"op": "ge", "value": 1})])
     with pytest.raises(BundleImportError, match="needs the column"):
         import_bundle(_bundle(record), bootloader=None)
+
+
+# -- a complete bundle with an unknown step: nothing is written anywhere (guardrail row "unknown step type", D-0665) -------------
+
+def _full_bundle(record: dict) -> bytes:
+    """A bundle that would import if its audit record were fine: effective_run, the reproducibility recipe and a data file."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("b/effective_run.yaml", yaml.safe_dump({"audit_steps_sha256": "x"}))
+        zf.writestr("b/t3_steps.yaml", yaml.safe_dump(record))
+        zf.writestr("b/data_analysis_recipes_reproducibility/tiny.yaml", yaml.safe_dump({"id": "tiny"}))
+        zf.writestr("b/data_reproducibility/t.tsv", "a\tb\n1\t2\n")
+    return buf.getvalue()
+
+
+def test_a_complete_bundle_with_an_unknown_step_type_writes_nothing_to_the_recipes_or_the_import_folders(tmp_path):
+    """The whole `import_bundle` path with a real (not unreachable) bootloader: after the refusal both folders are empty.
+    MUTATION B1: move the audit-record check in `import_bundle` below the writes and this fails (a file is found)."""
+    from types import SimpleNamespace
+    recipes, imports = tmp_path / "recipes", tmp_path / "imports"
+    recipes.mkdir(); imports.mkdir()
+    bootloader = SimpleNamespace(data_analysis_recipes_dir=recipes, get_imports_dir=lambda: imports)
+    record = _real_export_record([_node("filter_row", {"column": "a", "op": "ge", "value": 1}), _node("mystery", {"column": "a"})])
+    with pytest.raises(BundleImportError, match=r"audit step 2 .*does not know"):
+        import_bundle(_full_bundle(record), bootloader=bootloader)
+    assert list(recipes.rglob("*")) == [] and list(imports.rglob("*")) == [], "a refused bundle leaves nothing behind"

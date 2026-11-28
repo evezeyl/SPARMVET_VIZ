@@ -140,7 +140,7 @@ def test_the_notices_of_a_restore_are_told_once_per_click(tmp_path, monkeypatch)
     newest = _save(screen.manager, "newest")
     newest.write_text("{ not json")
     with reactive.isolate():
-        screen.home_state.set({})        # no keys: "could not be compared" too
+        screen.home_state.set({"data_batch_hash": "b" * 64})        # no recipe key: "could not be compared" too (a missing DATA key is refused before, G1)
     screen.run("_handle_session_actions")
     screen.run("_handle_session_actions")
     warnings = screen.texts("warning")

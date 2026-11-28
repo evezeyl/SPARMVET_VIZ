@@ -24,7 +24,7 @@ Both carry `schema_version` = SESSION_FORMAT_VERSION; every reader refuses a fil
 from __future__ import annotations
 
 # @deps
-# provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
+# provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), function:session_data_refusal (G1), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
 # consumes: libs/utils/src/utils/join_keys.py (recipe_join_keys: extract_primary_keys returns it; the join keys of joins.*.tier1 and tier2, read as the engine runs them, D-0250: the warning of a filter on a key), libs/utils/src/utils/key_drop.py (DropGate: split_key_drops asks the rule of a key drop by place, D-0358, D-0297)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step), app/modules/bundle_importer.py (LegacySessionError)
@@ -45,6 +45,7 @@ from typing import Any, TypedDict
 from app.modules.audit_places import place_words
 from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
 from utils import join_keys, key_drop
+from utils.id_completion import METADATA_ID
 from utils.na_choice import with_na
 
 # The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
@@ -249,6 +250,67 @@ def session_recipe_refusal(ghost: dict, open_recipe_id: str, session_key: str) -
         return (f"Session {name} belongs to another recipe ({saved_id}). "
                 "Open that recipe first, then restore the session.")
     return None
+
+
+def session_data_refusal(ghost: dict, current_batch_hash: str, current_files: dict | None) -> str | None:
+    """The plain line that refuses a Restore of a session made on other data (G1; Eve 2026-11-28: audit steps never mix across data), or None.
+
+    `ghost` is the session's record (`assembly.json`): `data_batch_hash`, `assembled_at` and, per table, `source_files[table] = {path, sha256}`.
+    `current_batch_hash` and `current_files` ({table: {path, sha256}}) describe the data files now on disk, as HOME keeps them in its state.
+    Same batch hash: None. Another batch hash: the refusal, naming each table whose file differs, with the original file name and the short
+    hash on both sides. A hash that is missing on either side cannot be compared, so nothing is applied then either (the careful answer:
+    steps are never put on data nobody checked); the remedy says to load the recipe and its data first. A record without per-file hashes is
+    refused on the batch hash alone. THE METADATA IS DIFFERENT (Eve 2026-11-28): the table `metadata_schema` is updatable, every other file is data; when only the
+    metadata file differs (per-file hashes on both sides) nothing is refused, and `session_metadata_change` tells what changed. PROVISIONAL wording. Carrying the steps over explicitly is not built and is not promised here.
+    """
+    from app.modules.error_notice import notice
+    saved_batch = ghost.get("data_batch_hash") or ""
+    name = ghost.get("label") or ghost.get("session_key") or "this session"
+    if not saved_batch or not current_batch_hash:
+        missing = "the saved session" if not saved_batch else "the open view"
+        return notice(f"Session {name} was not restored: its data could not be compared with the data now loaded (the data key of {missing} is missing), "
+                      "so nobody checked that its audit steps were made on these data",
+                      "load the recipe and its data in this view first, then restore again")
+
+    if saved_batch == current_batch_hash:
+        return None
+
+    def _line(files: dict | None) -> str:
+        entries = []
+        for table in sorted(files or {}):
+            info = files[table] or {}
+            entries.append(f"{table} ({Path(str(info.get('path') or '?')).name}, {str(info.get('sha256') or '?')[:8]})")
+        return "; ".join(entries) or "no per-file record"
+
+    saved_files = ghost.get("source_files") or {}
+    differing = [t for t in sorted(set(saved_files) | set(current_files or {}))
+                 if (saved_files.get(t) or {}).get("sha256") != ((current_files or {}).get(t) or {}).get("sha256")]
+    data_differing = [t for t in differing if t != METADATA_ID]
+    if saved_files and current_files and not data_differing:
+        return None      # only the metadata file differs: the metadata is updatable (Eve 2026-11-28); the caller says so (`session_metadata_change`)
+    differing = data_differing or differing
+    only = lambda files: {t: files[t] for t in differing if t in (files or {})}      # noqa: E731
+    when = str(ghost.get("assembled_at") or "")[:10] or "an earlier day"
+    return notice(
+        f"Session {name} was made on other data, so it was not restored: no audit step and nothing else of it was put into this view. "
+        f"Data this session needs (made {when}, data key {saved_batch[:8]}): {_line(only(saved_files)) if differing else 'no per-file record'}. "
+        f"Data now loaded (data key {current_batch_hash[:8]}): {_line(only(current_files)) if differing else 'no per-file record'}",
+        ["upload the same data files again (the files must be identical to the ones of the session), then restore the session",
+         "or start a new session on the data now loaded"])
+
+
+def session_metadata_change(ghost: dict, current_files: dict | None) -> tuple[str, str] | None:
+    """`(old, new)` short hashes of the metadata file when it differs between the session's record and the files now loaded, else None.
+
+    `new` is "no metadata file" when the metadata is missing now; `old` likewise when the record has none. Used with `session_data_refusal`: when only the
+    metadata differs the Restore goes on and the user is told (the recipe is run again, the audit steps are applied again; a step that cannot run on the new
+    metadata is shown by the audit's own error, never dropped).
+    """
+    def short(files: dict | None) -> str:
+        sha = ((files or {}).get(METADATA_ID) or {}).get("sha256") or ""
+        return sha[:8] or "no metadata file"
+    old, new = short(ghost.get("source_files")), short(current_files)
+    return (old, new) if old != new else None
 
 
 def _not_a_mapping_line(where: str, data) -> str:

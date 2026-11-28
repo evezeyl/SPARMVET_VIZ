@@ -43,9 +43,17 @@ def _seed(sm, label: str, with_step: bool, recipe_id: str = OPEN_RECIPE):
         msig = SessionManager.compute_data_analysis_recipe_sha256(Path(bootloader.discovered_data_analysis_recipes[OPEN_RECIPE]))
     else:
         msig = hashlib.sha256(recipe_id.encode()).hexdigest()
-    dbh = hashlib.sha256(f"seed batch {label}".encode()).hexdigest()
+    if recipe_id == OPEN_RECIPE:
+        # G1 guard (2026-11-28): the Restore needs the data the session was made on, so the session carries the REAL data of the open recipe. Two seeded sessions
+        # of one recipe and one data would share a key, and the app's own record of the open view is that key too, so the recipe hash is made up per label:
+        # the key is its own (the Restore then also shows the recipe-version warning, which these tests do not count).
+        from app.tests.real_data_identity import data_identity
+        dbh, real_files = data_identity(OPEN_RECIPE)
+        msig = hashlib.sha256(f"seed recipe {label}".encode()).hexdigest()
+    else:
+        dbh, real_files = hashlib.sha256(f"seed batch {label}".encode()).hexdigest(), {}
     key = SessionManager.compute_session_key(msig, dbh)
-    sm.write_assembly_ghost(key, recipe_id, msig, dbh, {}, {}, label=label)
+    sm.write_assembly_ghost(key, recipe_id, msig, dbh, real_files, {}, label=label)
     if with_step:
         step = make_audit_step("filter_row", {"column": "year", "op": "gt", "value": 1900, "dtype": "Int64"},
                                SAVED_REASON, place="T3:mlst_bar")
@@ -249,3 +257,49 @@ def test_restore_of_a_session_of_another_recipe_is_refused_once_and_applies_noth
             page.evaluate("() => window.__seenNotices"))
     finally:
         sm.delete_session(key_other)
+
+
+@pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
+                    reason="Session Management panel only present for interactive app features files")
+def test_restore_of_a_session_made_on_other_data_is_refused_and_applies_nothing(page: Page, shiny_app: ShinyAppProc, tmp_path):
+    """G1 guard (Eve 2026-11-28): a session of the open recipe whose data differ from the data on disk: Restore is refused once, the message names both sets of data,
+    no step reaches the view, and the table shown is the table that was shown."""
+    import hashlib
+    from app.modules.session_manager import SessionManager, make_audit_step
+    from app.src.bootloader import bootloader
+    from app.tests.real_data_identity import data_identity
+    sm = SessionManager(bootloader.get_location("user_data"))
+    now_hash, now_files = data_identity(OPEN_RECIPE)
+    other = tmp_path / "other_summary.tsv"
+    other.write_text("a\tb\n1\t2\n")
+    table = next(iter(now_files))
+    msig = hashlib.sha256(b"seed recipe restore_other_data").hexdigest()
+    old_hash = hashlib.sha256(b"seed batch restore_other_data").hexdigest()
+    key = SessionManager.compute_session_key(msig, old_hash)
+    sm.write_assembly_ghost(key, OPEN_RECIPE, msig, old_hash, {table: other}, {}, label="restore_other_data")
+    sm.write_t3_ghost(key, OPEN_RECIPE, msig, old_hash, audit_steps=[make_audit_step(
+        "filter_row", {"column": "year", "op": "gt", "value": 1900, "dtype": "Int64"}, SAVED_REASON, place="T3:mlst_bar")])
+    button = f"#session_restore_{key.replace(':', '_')}"
+    try:
+        if page.url.startswith("http"):
+            page.reload()
+        _load_data_analysis_recipe(page, shiny_app.url)
+        page.evaluate(_RECORD_NOTICES)
+        _open_filters_panel(page)
+        _navigate_to_mlst_plot(page)
+        set_view(page, "T3")
+        page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+        _wait_shiny(page)
+        page.wait_for_selector("#session_groups_accordion", timeout=10_000)
+        badge_before = page.locator("#home_data_preview_badge").inner_text()
+        _show_card(page, "restore_other_data", button)
+        page.locator(button).click()
+        _notices(page, "refused restore on other data", "was made on other data", 1)
+        _free(page, "refused restore on other data")
+        text = " ".join(t for t in page.evaluate("() => window.__seenNotices") if "other data" in t)
+        assert old_hash[:8] in text and now_hash[:8] in text and "other_summary.tsv" in text, text
+        assert _seen(page, "Session restored") == 0, "a refused session was reported as restored"
+        assert _reasons(page) == [] and SAVED_REASON not in _reasons(page), "a step of the other data reached the view"
+        assert page.locator("#home_data_preview_badge").inner_text() == badge_before, "the table shown changed"
+    finally:
+        sm.delete_session(key)

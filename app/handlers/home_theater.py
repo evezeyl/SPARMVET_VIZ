@@ -1985,7 +1985,11 @@ def define_server(input, output, session, *,
             from app.modules.session_manager import SessionManager as _SM
             from app.modules.session_manager import LegacySessionError, extract_primary_keys
             source_files = orchestrator.get_source_files(data_analysis_recipe_id)
-            new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
+            # One read of the data files gives both the batch hash and the per-file hashes the Restore compares (G1: a session is restored only on its own data).
+            from app.modules.cache_keys import batch_hash_of as _batch_hash_of, dataset_file_hashes as _file_hashes
+            _hashes = _file_hashes(source_files) if source_files else {}
+            new_dbh = _batch_hash_of(_hashes) if source_files else ""
+            new_data_files = {k: {"path": str(v), "sha256": _hashes[k]} for k, v in (source_files or {}).items()}
             data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
             new_msig = _SM.compute_data_analysis_recipe_sha256(data_analysis_recipe_path) if data_analysis_recipe_path.exists() else ""
             new_pks = extract_primary_keys(active_cfg().raw_config)
@@ -2010,6 +2014,7 @@ def define_server(input, output, session, *,
             needs_update = (
                 cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
+                or cur.get("data_files") != new_data_files
                 or list(cur.get("primary_keys") or []) != list(new_pks)
             )
             if needs_update:
@@ -2017,6 +2022,7 @@ def define_server(input, output, session, *,
                     **cur,
                     "data_analysis_recipe_sha256": new_msig,
                     "data_batch_hash": new_dbh,
+                    "data_files": new_data_files,
                     "primary_keys": new_pks,
                 })
 
