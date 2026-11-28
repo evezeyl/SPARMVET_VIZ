@@ -19,7 +19,9 @@
 | G7 Plot ids unique over recipes: not checked at start | no (probably harmless today; not run in the app) | A: run the set check at start and reject the later recipe with the reason | 1 to 2 files, 1 session | yes (it rejects recipes that open today) |
 | G8 Two processes or tabs on one user place | no (visible, or the trial is simply lost) | A: tell the deployment page that one user place belongs to one process; B: a process mark in the folder name | docs now; B 1 session | yes (a deployment rule) |
 | G10 Recipe formulas run through `eval` | no (12 tries refused) | A: keep, add the 12 tries as a test; B: a study before recipes of others are shared | 1 session (test) | no for A |
-| (more rows are added as each section is written) | | | | |
+| G11 Who verified is not recorded | n/a (a record is missing) | as decided: initials typed once per session, with the audit log | with the log build | no (decided) |
+| G12 The audit log is not built | n/a | as decided (D-0679), build waits (D-0682) | 3 to 5 sessions (REASONED) | no (decided; the size limits are open) |
+| G13 Split of the checks, no recipe at start, record of uploads, the choice at upload | partly | as decided (D-0698 to D-0701), with the correction below | 4 slices D1 to D4 | one point open (the session container) |
 
 
 ## G1. Steps of one dataset applied to another (Restore on other data)
@@ -187,3 +189,15 @@ What A then sees (READ, `audit_trial.py:220-232`): a trial whose files are gone 
 
 **4. Recommendation.** A now (small, pins the result), B before any deployment in which users load recipes written by others.
 **5. What was not checked.** Only the formulas of `evaluate_formula`; the function string of a plot (`function_string_problems`) and the smoother formula were not tried; cost or memory of an allowed formula; a Polars method added after the list was built. The test of A is not written (it belongs to a later unit).
+
+## G11. Who marked "User verified" is not recorded
+
+**Decided, not built.** D-0670: the mark is called "User verified" and is written in the log (who, when). D-0677: "who" is the initials of the person, typed once per session, accepted for now; she notes it may be limited when several people work on one project (unusual; a solution comes later). Where: the mark is made in `app/modules/audit_add.py` (READ the guardrails row); the log does not exist yet (G12), so nothing is stored. **Missing:** the field for the initials, the place it is stored, and the log itself. Task AUDIT-WHO-IN-USER-VERIFIED waits for the log build. **Until then:** the export cannot say who verified a place; the user must not take the mark as a signature. Nothing was run; nothing needs her decision.
+
+## G12. The audit log is not built
+
+**Decided, not built.** D-0478: the audit log, with the warnings shown at each choice, is always exported with the audit recipe (no tick). D-0679: the design is accepted: one history file per session, a human-readable view made at each export, both at the top level of every export, with a closed list of events (design page `tmpAI/panel/audit_log/DESIGN_FOR_THE_OWNER.md`, main checkout, not in git). D-0689: the ids of removed rows are stored inside the step's record, one list per place, with a warning system for size. D-0682: the BUILD waits until she is sure the quotas allow it. **Missing:** everything: the file, the events, the export part, the size limits (not decided: D-0689 names none). **Until then:** the export holds the audit recipe and the steps with their reasons, not the history of what was added, removed or tried. The data changes of G2 would be events of this log. Size: not estimated here (REASONED: 3 to 5 sessions).
+
+## G13. The demo-case slices D1 to D4 (decided direction, not built)
+
+**Decided, not built.** D-0698: the structure check at app start and the data check at upload; a recipe without data is selectable with an empty state; a rejected recipe is taken back when its data appears, with no restart (D1; the study RAN that today such a recipe is refused at start and does not come back without a restart). D2: no recipe selected at start (HOME-NO-RECIPE-AT-START). D-0699: the file name, date and hash of each upload recorded with the session (D3). D-0700: the choice at an upload is the user's, not automatic (D4). **Corrected by her on 2026-11-28 (relayed):** an audit is linked to its dataset, an upload of other data starts a NEW audit on the original recipe, and steps are never carried to other data; what remains of the old "Update this session / Start a new session" is open (the session container; see the options page). The tasks line of D4 was corrected. D-0701: going back means choosing the previous session of the same recipe, and the session brings its data (how: the options page). **Missing:** all four slices. The guard of G1 (built) is the interim floor. **Until then:** a recipe with no data is refused at start; an upload makes a new session by itself (G2).
