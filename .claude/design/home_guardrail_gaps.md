@@ -11,6 +11,7 @@
 |---|---|---|---|---|
 | G1 Restore on other data | yes (it was) | the refusal is built; the live case below needs a decision | refusal done; live case 1 to 2 sessions | yes, for the live case |
 | G2 Upload replaces the file, no copy; new session by itself | yes (the old data is gone; a session appears without asking) | E now (guard built), then the sessions options page (A: a store by hash) | small now; the real fix 3 to 5 sessions | yes (reopens D-0434) |
+| G3 CR-only file reads as zero rows | yes (a console line only) | A: refuse a file that reads as zero data rows, with a plain hint | 1 session (2 files) | yes (a refusal at upload) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -51,3 +52,19 @@
 
 **4. Recommendation.** E stays as the floor (it is built). **It reopens a decision (D-0434) as soon as the app keeps data: that is hers to decide.** If she wants the way back from the app, A (a store by hash, reading from the store by hash rather than re-placing files, because re-placing changes what every other session reads). The choice at upload ("Update this session / Start a new session") is the same slice as option B of G1 and should be built with it.
 **5. What was not checked.** Nothing run in a browser; the real files were not uploaded (read only); the size numbers of a store are on the options page.
+
+## G3. A file with old Mac line endings (CR only) reads as zero rows
+
+**1. The problem, exactly.** A pair table with three pairs, saved with CR-only line endings (the old Mac form; some lab scripts and spreadsheet exports still write it). RAN (`tmpAI/gaps/g3_g4.py`, the ingestion's own read `ingest_file`, the one Data Import and the load use): the same file with LF endings gives 3 rows; with CR endings it gives **0 rows and no error**. The reader sees one long header line. When every column the recipe declares is among the first columns of the file (here `isolate1`, `isolate2`, `hamming`), the declared columns are found and the table is empty; the only trace is a console line listing garbled "not imported" names such as `note\rA1`. When a declared column lies beyond the first CR (my first test, `dist`), the read is refused, with a misleading message ("column not found").
+**2. The consequence.** Silent: an empty table opens, every plot is empty, the id check may add every id from the metadata as "missing in original table". Whoever opens it sees empty figures, not the cause. No result is wrong, but a figure can be empty without a word of why.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. Refuse a file that reads as zero data rows (at upload and in the data check), saying "no data rows were read; the file may use CR line endings: save it with LF" | A plain refusal at upload; a rejected recipe with the reason at start | Fixes the silent case for every cause of an empty read; informs, does not change the data | An empty table that is wanted is refused (the recipe maker can declare none; to decide) | 2 files (`data_import_check.py`, the data check) and a test; 1 session | D-0050 (no silent error); D-0593 to D-0596 kept (no cleaning) |
+| B. Only warn (a yellow notice) | A notice | Nothing refused | A warning is easy to miss and the empty figures follow | same | same |
+| C. Read CR as a line end | Works | Convenient | The app starts to repair files: against D-0593 to D-0596; reopens them | 1 session | REOPENS D-0593 to D-0596 |
+| D. Leave it and keep it on the limits page | silent empty table | none | silent | 0 | none |
+
+**4. Recommendation.** A. **It refuses files that open today (silently empty), so tell her first.** Open point for her: is a recipe whose table is empty on purpose ever valid (a table that has no rows yet)? If yes, refuse at upload only and warn in the data check.
+**5. What was not checked.** The app path (HOME opening an empty table) was not run; the rule "empty table at the id check" is READ in `rules_data_analysis_recipe_structure.md` section 13, not run. Her lab script that writes the files (task D6) is not found yet.
