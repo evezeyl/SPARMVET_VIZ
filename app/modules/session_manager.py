@@ -45,6 +45,7 @@ from typing import Any, TypedDict
 from app.modules.audit_places import place_words
 from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
 from utils import join_keys, key_drop
+from utils.id_completion import METADATA_ID
 from utils.na_choice import with_na
 
 # The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
@@ -259,7 +260,8 @@ def session_data_refusal(ghost: dict, current_batch_hash: str, current_files: di
     Same batch hash: None. Another batch hash: the refusal, naming each table whose file differs, with the original file name and the short
     hash on both sides. A hash that is missing on either side cannot be compared, so nothing is applied then either (the careful answer:
     steps are never put on data nobody checked); the remedy says to load the recipe and its data first. A record without per-file hashes is
-    refused on the batch hash alone. PROVISIONAL wording. Carrying the steps over explicitly is not built and is not promised here.
+    refused on the batch hash alone. THE METADATA IS DIFFERENT (Eve 2026-11-28): the table `metadata_schema` is updatable, every other file is data; when only the
+    metadata file differs (per-file hashes on both sides) nothing is refused, and `session_metadata_change` tells what changed. PROVISIONAL wording. Carrying the steps over explicitly is not built and is not promised here.
     """
     from app.modules.error_notice import notice
     saved_batch = ghost.get("data_batch_hash") or ""
@@ -283,6 +285,10 @@ def session_data_refusal(ghost: dict, current_batch_hash: str, current_files: di
     saved_files = ghost.get("source_files") or {}
     differing = [t for t in sorted(set(saved_files) | set(current_files or {}))
                  if (saved_files.get(t) or {}).get("sha256") != ((current_files or {}).get(t) or {}).get("sha256")]
+    data_differing = [t for t in differing if t != METADATA_ID]
+    if saved_files and current_files and not data_differing:
+        return None      # only the metadata file differs: the metadata is updatable (Eve 2026-11-28); the caller says so (`session_metadata_change`)
+    differing = data_differing or differing
     only = lambda files: {t: files[t] for t in differing if t in (files or {})}      # noqa: E731
     when = str(ghost.get("assembled_at") or "")[:10] or "an earlier day"
     return notice(
@@ -291,6 +297,20 @@ def session_data_refusal(ghost: dict, current_batch_hash: str, current_files: di
         f"Data now loaded (data key {current_batch_hash[:8]}): {_line(only(current_files)) if differing else 'no per-file record'}",
         ["upload the same data files again (the files must be identical to the ones of the session), then restore the session",
          "or start a new session on the data now loaded"])
+
+
+def session_metadata_change(ghost: dict, current_files: dict | None) -> tuple[str, str] | None:
+    """`(old, new)` short hashes of the metadata file when it differs between the session's record and the files now loaded, else None.
+
+    `new` is "no metadata file" when the metadata is missing now; `old` likewise when the record has none. Used with `session_data_refusal`: when only the
+    metadata differs the Restore goes on and the user is told (the recipe is run again, the audit steps are applied again; a step that cannot run on the new
+    metadata is shown by the audit's own error, never dropped).
+    """
+    def short(files: dict | None) -> str:
+        sha = ((files or {}).get(METADATA_ID) or {}).get("sha256") or ""
+        return sha[:8] or "no metadata file"
+    old, new = short(ghost.get("source_files")), short(current_files)
+    return (old, new) if old != new else None
 
 
 def _not_a_mapping_line(where: str, data) -> str:

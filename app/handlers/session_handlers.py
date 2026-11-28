@@ -26,6 +26,7 @@ from app.modules.session_manager import (
     SessionDeleteError,
     key_drop_notice,
     session_data_refusal,
+    session_metadata_change,
     session_recipe_refusal,
     normalise_audit_steps,
     session_id_collisions,
@@ -615,6 +616,15 @@ def define_session_server(input, output, session, *,
         if data_refusal:
             _notify("❌ " + data_refusal, type="error", duration=20)
             return
+
+        # The metadata is updatable (Eve 2026-11-28): when only it differs the session is restored and the user is told; the recipe is run again with the new
+        # metadata and the audit steps are applied again (a step that cannot run is shown by the audit's own error, never dropped).
+        metadata_change = session_metadata_change(ghost, state.get("data_files"))
+        if metadata_change:
+            _notify("⚠️ " + notice(
+                f"This session was saved with other metadata (file {metadata_change[0]}, now {metadata_change[1]}). Its audit steps were restored and are applied again on "
+                "the data with the new metadata",
+                "check the audited tables; a step that cannot run on the new metadata shows its error where it is used"), type="warning", duration=15)
 
         # Check data analysis recipe SHA256 vs current
         current_msig = state.get("data_analysis_recipe_sha256") or ""
