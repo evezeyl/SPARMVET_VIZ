@@ -18,6 +18,7 @@
 | G6 Ids are checked only before tier 1 | partly (a check is missing, not a wrong value) | B: check and warn at the tier where the id appears (task ID-AT-THE-TIER-IT-COMES-INTO-BEING) | 3 to 5 files, 2 sessions | no (decided D-0702, later) |
 | G7 Plot ids unique over recipes: not checked at start | no (probably harmless today; not run in the app) | A: run the set check at start and reject the later recipe with the reason | 1 to 2 files, 1 session | yes (it rejects recipes that open today) |
 | G8 Two processes or tabs on one user place | no (visible, or the trial is simply lost) | A: tell the deployment page that one user place belongs to one process; B: a process mark in the folder name | docs now; B 1 session | yes (a deployment rule) |
+| G10 Recipe formulas run through `eval` | no (12 tries refused) | A: keep, add the 12 tries as a test; B: a study before recipes of others are shared | 1 session (test) | no for A |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -171,3 +172,18 @@ What A then sees (READ, `audit_trial.py:220-232`): a trial whose files are gone 
 
 **4. Recommendation.** B if a multi-worker deployment is planned (it makes the cleanup safe without any rule for the administrator); otherwise A as one sentence in the deployment page. Neither changes a result.
 **5. What was not checked.** Two real processes were not started; the cleanup was run as a function on a scratch folder. The audit folder across two processes was not run.
+
+## G10. A recipe step runs a formula through `eval`
+
+**1. The problem, exactly.** A recipe step such as `polars_with_columns` holds a formula as text (`pl.col('a').cast(pl.Int8)`). The app checks the text against a list of allowed names and methods, then runs it with Python's `eval` with no builtins and only `pl` in scope (READ `formula_check.py:508-520`, `EVAL_GLOBALS`). A recipe written by someone else is therefore code that the check must hold back. RAN (`tmpAI/gaps/g10.py`, `evaluate_formula`): 12 attempts to leave the list were all refused with a plain line: `__import__` (a write to a canary file: **not written**), `getattr`, `__class__.__mro__...__subclasses__()`, `__init__.__globals__`, `__reduce__`, a lambda, a list comprehension, `map_elements` and `map_batches` with a Python function, `pipe(print)`, `pl.read_csv('/etc/passwd')`, `.eval(...)`. A plain `pl.col('a').cast(pl.Int8)` is allowed (the control).
+**2. The consequence.** None found. A refused formula stops the recipe with a plain reason. The risk that remains is of other kinds that the check does not look at: a formula that is allowed but costs a lot of time or memory, and a mistake in the allow-list when Polars adds a method (the list is built from Polars itself: `_allowed`, `denied_methods`, so a new Polars method is allowed or denied by a rule, not by hand; not re-read).
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. Keep, and keep the 12 tries as a test that fails when one is allowed (mutation: allow `__import__`) | Nothing | Pins what was RAN today | Does not cover a new Polars method | 1 session | none |
+| B. The sharing study (PROTOTYPE-SAFE-SHARING-STUDY): what a recipe from another person may do, a size/time limit, a review step | A plan | Needed before recipes are shared between users | Study, no code | 1 study | open |
+| C. Leave it | Nothing | none | an unpinned guard | 0 | none |
+
+**4. Recommendation.** A now (small, pins the result), B before any deployment in which users load recipes written by others.
+**5. What was not checked.** Only the formulas of `evaluate_formula`; the function string of a plot (`function_string_problems`) and the smoother formula were not tried; cost or memory of an allowed formula; a Polars method added after the list was built. The test of A is not written (it belongs to a later unit).
