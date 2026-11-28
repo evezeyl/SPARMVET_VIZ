@@ -84,7 +84,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `rules_data_engine.md` | 3-Tier lifecycle, Anchor/Branch/Leaf, decorator law |
 | `rules_data_analysis_recipe_structure.md` | YAML standards, `!include` structure, basename mirroring |
 | `rules_verification_testing.md` | `@verify` protocol, `tmpAI/` vs `tmp/` governance |
-| `rules_ui_dashboard.md` | UI contract: app features masking, sidebar, `btn_apply` gatekeeper |
+| `rules_ui_dashboard.md` | UI contract: app features masking, sidebar, the reason gatekeeper of "Add to audit pipeline" |
 | `rules_documentation_aesthetics.md` | Quarto DRY rules, naming standards for human-facing docs |
 | `rules_asset_scripts.md` | Bootstrappers and synthetic data generators in `assets/` |
 | `rules_app_features_flags.md` | Flag matrix, cascade rules, anti-patterns (Phase 25+) |
@@ -151,6 +151,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `uml_model_plan.md` | UML model of the app: diagram catalogue, conventions, discrepancy checks |
 | `home_audit_what_is_true_now.md` | READ FIRST for HOME, the audit and the lineage: the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject |
 | `current_limits.md` | Every known limit of the app as built today (what the user sees, workaround, what lifts it, evidence); read before telling a user what the app can do; agents update it in the same change |
+| `home_guardrails.md` | Every guardrail of HOME and the audit: what it protects from, what the user sees, where in the code, the test, the decision, the state, and the known gaps; read before changing anything that guards a result |
 
 ---
 
