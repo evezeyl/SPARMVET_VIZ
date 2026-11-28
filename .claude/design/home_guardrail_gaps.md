@@ -15,6 +15,7 @@
 | G4 No-break space inside an id | no (a warning shows, but says the same id twice) | A: the id warning names ids that differ only by an invisible character | 1 session (1 file + test) | no (it only informs) |
 | G9 Join through a constant or repeated key doubles or empties rows | yes | B (a declared row-count rule) after the demo; A (ask for `validate`) is cheaper | 1 to 3 sessions | yes (changes the recipe spec) |
 | G5 One id column per table (pair tables) | yes (three wrong effects) | now: no id on the pair table (recipe choice); app: A (ids are the values of both columns) | 4 to 6 files, 2 sessions | yes (3 small points) |
+| G6 Ids are checked only before tier 1 | partly (a check is missing, not a wrong value) | B: check and warn at the tier where the id appears (task ID-AT-THE-TIER-IT-COMES-INTO-BEING) | 3 to 5 files, 2 sessions | no (decided D-0702, later) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -121,3 +122,18 @@
 
 **4. Recommendation.** For the demo recipe: C. For the app: A. **It needs her decision on three small points** (the column an added line is written in; what "remove from all" does for two columns; the wording of the log). **B and D are not recommended: B reopens decisions, D changes counts silently.**
 **5. What was not checked.** Her real information table has no id, so the false line was run with a synthetic metadata table, not her files together. A and B were simulated in the earlier study, not built. Nothing in a browser.
+
+## G6. The ids are checked and completed only before tier 1
+
+**1. The problem, exactly.** The app makes the ids equal and checks them when it reads a file, before any recipe step (READ `orchestrator.py` `_read_source`; `id_completion.py:8`; D-0613: there is no earlier or later place). A table whose isolate column comes into being at a later tier gets no check. RAN (`tmpAI/gaps/g6.py`, her real small pair table): at tier 2 the recipe unpivots the two isolate columns into one `isolate` column. The table after tier 2 holds test1, test2 and test3; the app, before tier 1, looked at `isolate1` only: test1 and test2. With a metadata that also lists `test4` (an isolate with no pair): a check at tier 2 would say "test4 is missing"; the check before tier 1 says "test3 and test4 are missing" (test3 wrongly).
+**2. The consequence.** Not a wrong value but a missing or wrong warning: an id that is lost or wrong after a reshape is never reported; the ids after the reshape are never compared with the metadata. Nothing is added to the table at tier 2 (the completion is before tier 1 only), so a left join at tier 2 can leave an isolate out without a word.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. Declare the id at the tier where it comes into being; check and warn there (the decided task, D-0702) | The same id warning for that table | Matches D-0702; no change to the data | A new recipe key (where the id is declared); the check must run on tier tables | 3 to 5 files, 2 sessions | D-0613 ("everything before tier 1") partly extended; D-0702 |
+| B. Also add the lines at that tier (complete the reshaped table) | Lines added after the reshape | The "left joins always work" aim holds | More changes to data; reopens D-0613 | 4 sessions | REOPENS D-0613 |
+| C. Leave it; the recipe maker checks the reshaped table (a visible step) | Nothing | Nothing to build | The check is missing for reshaped tables | 0 | none |
+
+**4. Recommendation.** A (check and warn only), later, as decided in D-0702. It changes no data and tells the user more. B is not recommended: it adds data at a second place.
+**5. What was not checked.** The orchestrator was read, not run on a recipe with a tier-2 reshape; the way the id would be declared is not designed (the task says check and warn only).
