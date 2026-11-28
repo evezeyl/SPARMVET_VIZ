@@ -14,6 +14,7 @@
 | G3 CR-only file reads as zero rows | yes (a console line only) | A: refuse a file that reads as zero data rows, with a plain hint | 1 session (2 files) | yes (a refusal at upload) |
 | G4 No-break space inside an id | no (a warning shows, but says the same id twice) | A: the id warning names ids that differ only by an invisible character | 1 session (1 file + test) | no (it only informs) |
 | G9 Join through a constant or repeated key doubles or empties rows | yes | B (a declared row-count rule) after the demo; A (ask for `validate`) is cheaper | 1 to 3 sessions | yes (changes the recipe spec) |
+| G5 One id column per table (pair tables) | yes (three wrong effects) | now: no id on the pair table (recipe choice); app: A (ids are the values of both columns) | 4 to 6 files, 2 sessions | yes (3 small points) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -103,3 +104,20 @@
 
 **4. Recommendation.** A and C together are small, change no spec and tell the user; B is the real guard and is hers to decide (it adds a key). **B changes the recipe format: flag first.** Before the demo: the preparation script check and the sentence `validate: m:1` in the recipe help.
 **5. What was not checked.** The app path (a recipe with the join opened in HOME): not run. Whether the recipe check refuses `how: cross` at check time (it did not name it; the engine refuses at run time with the quoted words). The `modif_join_where` join with an always-true predicate was not run.
+
+## G5. The id rules read ONE id column per table; a pair table has two
+
+**1. The problem, exactly.** Her cgMLST table has one line per pair of isolates, with two isolate columns. Her real small file (read only, `real_case/small`): 3 lines, `isolate1` holds test1, test2 and `isolate2` holds test1, test3. The isolate `test3` appears only in `isolate2`. RAN (`tmpAI/gaps/g5.py`, the app's own id reading and report): her real files alone give nothing to complete against (her information table is one row of constants with no isolate id column, so it takes no part in the ids), so nothing happens. With a metadata table that lists test1, test2 and test3 (synthetic), the id rules read only `isolate1` (the first id column declared; READ `id_completion.py:211`, marked PROVISIONAL at `:41`): they say "1 id of the metadata is not in this table: test3" and **add a line for test3 to the pair table**, empty distances, marked "missing in original table". The pair table goes from 3 to 4 lines, although test3 is there. The earlier study (RAN, 6 to 15 isolates) found two more effects: an isolate present only in `isolate2` and missing from the metadata (a typo, `ISO99`) is never reported; and "remove isolate X from all the data" removes only the lines where X is `isolate1`, X stays in the lines where it is `isolate2` (a half removal).
+**2. The consequence.** Three silent effects: a false added line (distance counts change by one empty line), an invisible typo, a half removal that looks complete. Her recipe today avoids all three by declaring no id on the pair table.
+**3. Options** (from the study `PAIR_TABLE_IDS_OPTIONS.md`, main checkout, not in git).
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| C. No id on the pair table (a recipe choice, works today) | Nothing added; no id check for the pair table; "remove from all" does not offer it | No code; the table stays exactly the file | The typo is not checked; the removal is written by hand on both columns | 0 | D-0589 not met for this table (an exception for her to confirm) |
+| A. Ids are the values of BOTH columns; a line is added only for an isolate in neither | The warnings work; no false line; the typo is found | Meets every decided line; no rows doubled | "Remove from all" must write two steps for a table with two id columns (not decided) | 4 to 6 files + tests, 2 sessions | none reopened; the "first column" choice was PROVISIONAL |
+| B / E. A "relation table" mark: checked, never completed | As A, no added lines | The table is exactly the file | A new recipe key; reopens D-0574, D-0586 and a sentence of D-0590 | 3 sessions | REOPENS D-0574, D-0586, D-0590 |
+| D. Each pair written twice | Works with today's code | No change in the app | Plots count each pair twice; 176 MB at 2,000 isolates (RAN) | 0 | none |
+| Leave it | The three effects | none | silent | 0 | none |
+
+**4. Recommendation.** For the demo recipe: C. For the app: A. **It needs her decision on three small points** (the column an added line is written in; what "remove from all" does for two columns; the wording of the log). **B and D are not recommended: B reopens decisions, D changes counts silently.**
+**5. What was not checked.** Her real information table has no id, so the false line was run with a synthetic metadata table, not her files together. A and B were simulated in the earlier study, not built. Nothing in a browser.
