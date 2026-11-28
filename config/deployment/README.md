@@ -10,6 +10,8 @@ One Docker image + one deployment = one running SPARMVET instance.
 config/deployment/
 ├── local/
 │   └── local.yaml               ← Dev fallback (resolution level 4)
+├── demo/
+│   └── 202612_demo_deployment.yaml  ← the owner's demo of December 2026 (no default recipe, no default data)
 ├── connect/
 │   └── connect_template.yaml    ← Posit Connect template (DEPLOY-CONNECT-1)
 ├── pipeline_test/
@@ -45,6 +47,16 @@ locations:
 ```
 
 All location paths are relative to `project_root` (if set), otherwise relative to CWD.
+
+## The demo deployment of December 2026
+
+`demo/202612_demo_deployment.yaml` is for the owner's demo: app features `developer`, no default recipe (the first recipe that passes the load gate opens; the selector is visible), the shipped recipes folder, `raw_data` as in `local.yaml`, and `user_data: USER_DIRECTORY/` (the simulated user directory at the repository root, git-ignored, created on demand). PROVISIONAL. Start it with:
+
+```bash
+PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/202612_demo_deployment.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
+```
+
+Not built yet: the key for the place that receives the browser upload and the upload off unless declared (D-0439, D-0440), the write test at start, `locations.logs`, the app-owned subfolder `SPARMVET-VIZ_APP`, the store of uploads by hash. Until the store is built an upload overwrites the data file at the recipe's own `source.path`: a recipe of the owner should declare its data path under `USER_DIRECTORY/`, not under `assets/test_data/`. A recipe whose data is missing is rejected at start. Its test: `app/tests/test_demo_deployment_file.py`.
 
 ## Branding and the name of a deployment
 

@@ -1,0 +1,53 @@
+# SPARMVET demo of December 2026 (202612_demo_deployment)
+# Description of this deployment: the deployment of the owner's demo. The recipe is selected and
+# the data is uploaded during the demo, so the file names NO default recipe and NO default data.
+# The app does not read this comment block (D-0479: a deployment has no name key).
+# Default app features: developer (decided by the owner)
+# Default recipe: none (the app opens the first recipe that passes the load gate; the selector is visible)
+#
+# Start with:
+#   PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/202612_demo_deployment.yaml \
+#     ./.venv/bin/shiny run app/src/main.py --port 8000
+#
+# The common recipes are the shipped ones (config/data_analysis_recipes/pipelines/, as local.yaml
+# has it); the owner moves her finished recipe (cgMLST) there herself.
+#
+# PROVISIONAL choices (an agent's, not decided by the owner):
+#   - raw_data: assets/test_data/, the same as local.yaml, so that the shipped recipes keep loading.
+#     HAZARD until the store by hash is built: Data Import overwrites the data file at the recipe's
+#     own source.path, so an upload onto a shipped recipe overwrites repository test data. The
+#     owner's own recipe can declare its data path under USER_DIRECTORY/... (its source.path) so
+#     that its uploads land in the user directory.
+#
+# NOT BUILT yet (decided, but the key does not exist and the loader would not read it):
+#   - the place that receives the browser upload, declared by the deployment, and the browser
+#     upload being OFF unless the deployment declares it (D-0439, D-0440). Today the upload is
+#     governed by the app features flags (import_helper_enabled, data_ingestion_enabled).
+#   - the write test at start and its switch (D-0440).
+#   - locations.logs, the place of the audit log.
+#   - the app-owned subfolder SPARMVET-VIZ_APP inside the user directory (created at start, only
+#     what is missing): today the app writes at the ROOT of user_data (anchors/, _sessions/, ...).
+#   - the store of uploaded files by hash.
+#   - a recipe without its data is REJECTED at start by the data check, until the split of the
+#     checks is built.
+#   - which data is analysed is the user's (D-0434): the app does not decide it.
+deployment_type: filesystem
+default_app_features: "developer"
+# no default_data_analysis_recipe
+
+locations:
+  raw_data: "assets/test_data/"
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
+
+  # Still required by the loader today; decided to be removed (D-0731).
+  cache: "tmp/DEMO_202612/cache/"
+
+  # The simulated user directory (git-ignored, at the repository root), relative path as the
+  # spec requires. Created on demand by the app; sessions, exports and stored tables are written
+  # at its root today.
+  user_data: "USER_DIRECTORY/"
+
+  gallery: "assets/gallery_data/"
+
+runtime:
+  python_interpreter: "./.venv/bin/python"
