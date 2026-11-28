@@ -182,6 +182,7 @@ Activate when: data analysis recipe design, scientist-first interview, data grai
 | `-coordinate` | Coordinator mode (section 2.1): run `mkdir -p tmpAI/coordinator && touch tmpAI/coordinator/<this session's id>` (the id is the UUID folder name in the scratchpad path), then work only as the coordinator. The hook now refuses this session's Edit and Write outside `tmpAI/`. |
 | `-researcher <persona>` | Research session, no coordinator: this session works as the persona `<persona>` (`scientist`, `architect`, `developer`, `user`: read `.claude/agents/panel-<persona>.md` and `.claude/workflows/agent_principles.md`), uses web search and the repository, one round, at most 250 words per answer plus a source list, writes the result to `tmpAI/panel/<topic>/<persona>.md`, never edits repository files. The model is the one Eve chose in the drop-down. |
 | `-solo` | Leave coordinator mode: remove `tmpAI/coordinator/<this session's id>` and work as a normal session. |
+| `-review` | Review session (Eve's interactive partner: relays her decisions, asks one question at a time): read `.claude/workflows/review_session.md`, then `tmpAI/start/REVIEW_START.md`, and work as they say. It never edits `CLAUDE.md`, the guard hook or the agent lists without Eve's yes. |
 
 ---
 

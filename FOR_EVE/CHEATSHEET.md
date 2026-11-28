@@ -10,7 +10,7 @@ Pin this file. Written 2026-11-28 from `CLAUDE.md` section 4.3 and `my-mentoring
 | `-researcher <persona>` | A research session as one persona: `scientist`, `architect`, `developer`, `user` or `statistician`. One round, at most 250 words plus sources, written to `tmpAI/panel/<topic>/<persona>.md`. It edits no repository file. |
 | `-handoff` | The session writes its state (done, open, next) to `.claude/logs/handoffs/handoff_active.md`. Use it before you close a session. |
 | `-update-all` | Updates rules, workflows, knowledge, tasks, plan, ADRs, README and docs, and records the decisions. |
-| `-review` (NOT BUILT YET, proposed) | A review session like the one we have worked in: relays your decisions, asks you one question at a time. Instructions: `.claude/workflows/review_session.md`. |
+| `-review` | A review session like the one we have worked in: relays your decisions, asks you one question at a time. Instructions: `.claude/workflows/review_session.md`. |
 
 ## From your mentoring rules (any repository)
 | You type | What happens |
@@ -34,4 +34,5 @@ Pin this file. Written 2026-11-28 from `CLAUDE.md` section 4.3 and `my-mentoring
 - Start the demo deployment: `PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/202612_demo_deployment.yaml ./.venv/bin/shiny run app/src/main.py --port 8000`
 - Fast check of the code (seconds, no quota): `./.venv/bin/ruff check libs app --select E9,F821,F402,B017,B023`
 - Headless tests: `PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests --ignore=app/tests/test_shiny_smoke.py --ignore=app/tests/test_shiny_smoke_blueprint.py --ignore=app/tests/test_export_download.py --ignore=app/tests/test_every_app_features_starts.py -q`
-- Your demo notes: `USER_DIRECTORY/cheatsheet_demo.md`
+- Who is alive (session names, to message them): `~/Documents/Insync/gdrive/OBSWORK/20_GITS/my-mentoring/bin/sessions.py` (or type `-sessionname`)
+- Your demo notes: `USER_DIRECTORY/cheatsheet_demo.md` and `202611_demo_requirement.md` in this folder

@@ -32,7 +32,8 @@ All links are relative: click them in VS Code. Last updated 2026-11-28. When a s
 - [The agent channel](../tmpAI/agent_channel.md)
 
 ## 6. Your demo
-- [Your demo requirements](../docs/demo/202611_demo_requirements,txt)
+- [Your demo requirements (the copy you moved here)](202611_demo_requirement.md)
+- [The older copy in docs/demo](../docs/demo/202611_demo_requirements,txt)
 - [The demo deployment file](../config/deployment/demo/202612_demo_deployment.yaml)
 - [Your simulated user directory](../USER_DIRECTORY/README.md)
 - [The Gallery verification table (the 18 examples)](../tmpAI/panel/gallery_verify/TABLE_FOR_THE_OWNER.md)
