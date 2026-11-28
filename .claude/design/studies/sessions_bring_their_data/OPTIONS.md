@@ -23,7 +23,7 @@ Real numbers: her real files are tiny (`real_case/`: small set 322 + 96 bytes; l
 
 | | A. Store by content hash (user's place) | B. A copy per session | C. Named datasets per recipe with a selector | D. A snapshot of the recipe in the session too | E. Today plus the guard (built) |
 |---|---|---|---|---|---|
-| User does and sees | Upload keeps the file once under its hash; "Update this session / Start a new session" is asked; Restore uses the session's data without any upload | Same buttons; the session folder holds its files; Restore uses them | She names a dataset ("small", "large") at upload and picks it from a list; sessions point to a name | As A or B, and the session also holds the recipe as it was; Restore reads recipe and data from the session | Upload the same files again, then restore; or start anew; no question at upload |
+| User does and sees | Upload keeps the file once under its hash and starts a new audit on the original recipe; Restore of an earlier audit brings its data back without any upload | Same behaviour; the session folder holds its files; Restore uses them | She names a dataset ("small", "large") at upload and picks it from a list; sessions point to a name | As A or B, and the session also holds the recipe as it was; Restore reads recipe and data from the session | Upload the same files again, then restore; or start anew; no question at upload |
 | Pro | Each content kept once; two tabs can read different data; delete rule simple (no session points to it) | Easy to understand; delete a session, its data go | Matches how she thinks (a dataset has a name); a selector is visible | Everything of a session lives inside it; the audit recipe and bundle can be made from it alone | Nothing to build |
 | Con | A rule to delete unused data is needed; disk grows with every upload | Same file stored again in each session (10 sessions = 880 MB against 88 MB in A) | A name can point to different content over time unless it is locked; needs a new screen | An old session keeps an old recipe: how a recipe FIX reaches it is a new decision; larger session format change | The replaced file is lost unless she kept it; still no choice at upload |
 | Disk | Her real files: 137 KB per dataset; 2,000 isolates: 88 MB per distinct file | 137 KB or 88 MB per session | As A, per name | A plus the recipe file set (kilobytes) | none |
@@ -38,10 +38,25 @@ Real numbers: her real files are tiny (`real_case/`: small set 322 + 96 bytes; l
 
 **Re-place or read from the store (option A).** Re-placing the files at the recipe's declared paths changes what EVERY other session of that recipe reads (a global change, the problem of today). Reading from the store by hash (the orchestrator is told the hashes of the open session) changes nothing for other sessions and needs `locate_dataset_file` to take a "data of this session" argument; this is the sounder one, and it is the shape the bundle import already has. The cost: every reader of a data path (`get_source_files`, hashes, the data check) must take it.
 
+## What an upload does to the session (added after her decision of 2026-11-28)
+
+**Decided (relayed, not edited in the ledger).** An audit is linked to its dataset. Uploading other data creates a NEW audit that starts from the ORIGINAL recipe, never from an audit recipe. Steps are never carried to other data (the idea "carry them, marked made on other data, re-measured" is refused and is not offered below). Restoring an audit session needs ITS data: the refusal built today (G1) is the interim fix; its message names, per recorded file, the table, the original name or path, the date and the short hash.
+**Not decided.** What is left of the old choice "Update this session / Start a new session" now that every audit is tied to its data. The proposal under her consideration (the review session's, not hers): at an upload of other data the audit is closed and kept, linked to the old data, and a new empty audit starts. The open point is only whether the session CONTAINER (its label, its settings) continues.
+
+| | One container, several audits, each tied to a data batch | A new session per data batch (today's key already gives this) |
+|---|---|---|
+| What the panel lists | One card per recipe or per user project, with its audits inside, each with its data names, dates and short hashes; choosing an audit brings its data | One card per recipe and data batch, as today (label, batch hash, saves) |
+| Pro | The label and settings survive an upload; the history of one analysis reads as one story; matches "choosing an earlier audit also brings its dataset" | Nothing to build for the container; the key already separates the batches; a card is one audit and one dataset |
+| Con | A new level in the panel and in the session format (a format number change, D-0312: older sessions are refused, not converted); more to explain | The label and settings are typed again at each upload; two cards of one analysis look unrelated unless she names them |
+| Build | 2 more sessions than the other | 0 for the container |
+| Decided lines | contract 12d key rule (the key would no longer be the session) | none |
+
+Either way no step reaches other data, and a Restore of an old audit uses its own data (option A or B above).
+
 ## Recommendation
 
 1. **Floor now (built):** E, with the live-view rule of G1 option A (a changed data file with steps in the view: no more Add until a new session, said plainly). It closes the silent mixing and costs about one session.
-2. **Then A, reading from the store by hash**, built in slices so that each leaves the app working: (a) record per file name, date and hash in the session (a new field, no format change if it is only added; a session without it is refused on the batch hash alone as today); (b) the two-button choice at upload and the data-change event recorded in the session; (c) the store and the orchestrator reading by hash; (d) the delete rule; (e) the audit log entry (D-0478, later). B is the same with a worse disk rule; C is a naming layer that can be added over A later; D is a separate decision about recipe fixes and should not block A.
+2. **Then A, reading from the store by hash**, built in slices so that each leaves the app working: (a) record per file name, date and hash in the session (a new field, no format change if it is only added; a session without it is refused on the batch hash alone as today); (b) at upload a new audit starts on the original recipe and the data-change event is recorded (the old audit is kept with its data); (c) the store and the orchestrator reading by hash; (d) the delete rule; (e) the audit log entry (D-0478, later). B is the same with a worse disk rule; C is a naming layer that can be added over A later; D is a separate decision about recipe fixes and should not block A.
 3. **Flag first: A reopens D-0434; none of it should start until she says yes to keeping data.** What could change a result silently: re-placing files (not recommended); a name that points to other content (C); a session that keeps an old recipe (D).
 
 ## What was not checked

@@ -287,7 +287,7 @@ def session_data_refusal(ghost: dict, current_batch_hash: str, current_files: di
     when = str(ghost.get("assembled_at") or "")[:10] or "an earlier day"
     return notice(
         f"Session {name} was made on other data, so it was not restored: no audit step and nothing else of it was put into this view. "
-        f"Data of the session (made {when}, data key {saved_batch[:8]}): {_line(only(saved_files)) if differing else 'no per-file record'}. "
+        f"Data this session needs (made {when}, data key {saved_batch[:8]}): {_line(only(saved_files)) if differing else 'no per-file record'}. "
         f"Data now loaded (data key {current_batch_hash[:8]}): {_line(only(current_files)) if differing else 'no per-file record'}",
         ["upload the same data files again (the files must be identical to the ones of the session), then restore the session",
          "or start a new session on the data now loaded"])
