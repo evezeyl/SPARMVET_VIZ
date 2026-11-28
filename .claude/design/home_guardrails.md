@@ -92,6 +92,7 @@
 
 | Id | The gap | Where it is | Test | Decision / task | State |
 |---|---|---|---|---|---|
+| G1b | The running session: when a DATA file changes on disk while audit steps are in the view, the steps stay and are applied to the new data; the next save writes them under the new data key. The set-aside of steps is per recipe only (`home_theater.py:1834-1850`); `_sync_session_provenance` keeps the steps. Proven headless 2026-11-28 | `home_theater.py` (`_sync_session_provenance`, `_set_audit_steps_aside_on_recipe_change`) | `test_steps_stay_when_data_changes_known_gap.py` (pins today's behaviour; invert when fixed) | Eve 2026-11-28 (steps never mix; a data change in a running session sets the steps aside for their own data, the audit starts empty; a metadata-only change keeps them) | a known gap, own slice |
 | G2 | An upload replaces the recipe's data file with no copy and no record of the name; it makes a new session by itself without asking | `data_import_check.py`; `home_theater.py:_sync_session_provenance` | none | D1 to D4 of HOME-DEMO-UPLOAD; SESSIONS-OPTIONS-PAGE | a known gap |
 | G3 | A file with CR-only line endings reads as zero rows, no message (RAN in scratch, 2026-11-27) | the ingestion reader | none | D6; SESSIONS-OPTIONS-PAGE (refuse or warn) | a known gap |
 | G4 | A non-breaking space inside an id is not removed by `strip`: the id is reported missing, with no hint | the ingestion reader | none | D6 | a known gap |
