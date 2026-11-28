@@ -88,7 +88,7 @@
 | A Reshuffle that changes the picture without a record | Offered only in Audit mode; hidden when the recipe fixes the seed; the pin is recorded | `app/modules/plot_seeds.py` (`reshuffle_offered`); `plot_config_resolver.py:226` (`fixed_seed_of`) | `test_reshuffle_audit_only.py::test_with_a_pin_stored_the_exploration_plot_is_drawn_without_it_and_the_audited_plot_with_it` | D-0341, D-0052 | built |
 | Rows in another order after a group-by, a join or a sort | A rule per action (`maintain_order`, `keep="first"`) | `libs/transformer` actions | `libs/transformer/tests/test_deterministic_order.py` | ADR-090 | built |
 
-## 10. Known gaps (each also on `current_limits.md`; a row there says what the user sees)
+## 10. Known gaps (each also on `current_limits.md`; a row there says what the user sees; the problem, the options and a recommendation for each are on `home_guardrail_gaps.md`)
 
 | Id | The gap | Where it is | Test | Decision / task | State |
 |---|---|---|---|---|---|
