@@ -9,6 +9,7 @@
 3. `.claude/design/home_audit_what_is_true_now.md`: **read first for HOME, the audit and the lineage** (2026-11-26): the model in six sentences, the words, what is built, what is still built the old way, what is decided and not built, what is open. It wins over any older text on the same subject.
 3b. `.claude/design/current_limits.md`: **every known limit of the app as built today** (what the user sees, the workaround, what would lift it, the evidence); kept current by every agent (2026-11-27).
 3c. `.claude/design/home_guardrails.md`: **every guardrail of HOME and the audit** (what it protects from, what the user sees, where, the test, the decision, the state; known gaps as rows); kept current by every agent (2026-11-27).
+3d. `.claude/design/session_register.md`: **a session is a register** (design, NOT built; the owner's decision of 2026-11-28): stable id, data and metadata versions, audits linked to one data version, events, the index, where the data bytes live, the build slices S1 to S8 and the open points for her (2026-11-28)
 3a. `.claude/design/home_audit_reading_guide.md`: the HOME redesign: order of work, decision register, reading list (HISTORY where it differs from the page above).
 4. `.claude/design/spaces/HOME.md`: the whole of HOME in one place (built or target).
 5. `.claude/design/home_stage2_mechanism_spec.md`: the build plan P0-P12.
@@ -45,6 +46,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `app_features_scoping_guide.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Guide |
 | `current_limits.md` | IN FORCE (source of truth for the limits of the app as built) | 2026-11-27 | Current limits of the app |
 | `home_guardrails.md` | IN FORCE (source of truth for the guardrails of HOME and the audit) | 2026-11-27 | Guardrails of HOME and the audit |
+| `session_register.md` | DESIGN, not built (the owner's decision of 2026-11-28, channel blocks M721 to M726) | 2026-11-28 | A session is a register: format 7, build slices, open points |
 | `design_t3_export_threading.md` | AS BUILT (cleaned 2026-11-13: what the export does with T3 today); replaced when audit mode is built (ADR-099) | 2026-11-13 | T3 in the export bundle and the lineage trail: as built |
 | `developer_workflow.md` | AS BUILT / reference | 2026-11-08 | Developer Workflow — End-to-End Producer Journey |
 | `engine_boundary_map.md` | AS BUILT (stage 0 of the engine boundary) | 2026-11-21 | Engine boundary map: the marks, the list, the test, the seams, the ten hardest places |
