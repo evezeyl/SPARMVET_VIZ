@@ -10,6 +10,7 @@
 | Gap | Silent? | Recommended option | Size | Needs her decision? |
 |---|---|---|---|---|
 | G1 Restore on other data | yes (it was) | the refusal is built; the live case below needs a decision | refusal done; live case 1 to 2 sessions | yes, for the live case |
+| G2 Upload replaces the file, no copy; new session by itself | yes (the old data is gone; a session appears without asking) | E now (guard built), then the sessions options page (A: a store by hash) | small now; the real fix 3 to 5 sessions | yes (reopens D-0434) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -30,3 +31,23 @@
 
 **4. Recommendation.** A now (it is the same rule as the Restore, small), B later with the sessions options page. **Flag first: A changes what a user can do after an upload (she cannot add steps until she starts a new session), but it removes a silent wrong result.**
 **5. What was not checked.** The live case was run at the level of the save function with the key changed by hand, the way the sync effect changes it (READ), not in a browser. The recipe-version warning ("saved against a different recipe version") is unchanged and still lets the steps through: it is a question for her (an edited recipe with the same name is not "another recipe" in D-0317). The Restore paths: the Restore button and the save picker are the same function (`_restore_session`; it restores the newest save only; READ `session_handlers.py`); the automatic restore at start ("Prepped Chef", `restore_t1t2`) is not called by the app (READ: `grep` finds only its definition and a comment) and restores no steps; the import of a session zip only registers the session in the panel (no steps applied); a bundle import writes its own recipe and data and never touches the view (READ `bundle_importer.py`, "Never touches live app state"). A browser test seeds sessions with invented data hashes (`test_shiny_session_restore.py` and two more): they will fail on Restore and must be reseeded (not run, no browser in this task).
+
+## G2. An upload replaces the data file with no copy; a new session appears by itself
+
+**1. The problem, exactly.** Eve's demo: a recipe built on the small data, then the large data uploaded for the same recipe. What happens (RAN by the earlier study, `tmpAI/demo_upload_study/upload_sessions_run.py`, on a scratch recipe, 12 and 40 isolates; I did not run it again; the facts below are also READ in the code):
+- The file name she gives (for example `2026-11-27_Streptococcus_dysgalactiae_hamming_distance.tsv`) is ignored. The file is written at the path the recipe declares (`source.path`), over the old file (READ `orchestrator.py:182-215`, `data_import_check.py` `store_all`: copy next to it, then replace). The old file is gone: no copy, no record of the old name (D-0434, as built).
+- The data key changes, so a second session appears by itself (small key `ed455052e7ba:775f2013ce39`, large key `ed455052e7ba:6102f4cd7...`). She is not asked "update this session" or "start a new one" (READ `home_theater.py` `_sync_session_provenance`).
+- Her real files (read only, `tmpAI/demo_upload_study/real_case/`): small hamming table 322 bytes (3 lines), large one 136,677 bytes (2,212 lines); her two tables for the large set total about 137 KB. To go back to the small data she must upload the byte-identical small files: one added byte or Windows line endings give another key (RAN).
+- Other tabs or sessions of the same recipe read the same replaced file: the replacement changes what every session of that recipe reads.
+**2. The consequence.** Silent loss of the earlier data (no way back except her own copy); a session made by the app without a choice. The Restore half is now guarded (G1). A figure made on the small data cannot be remade from the app once the file is replaced.
+**3. Options** (the full set is on the sessions options page, `studies/sessions_bring_their_data/OPTIONS.md`; here only the shape).
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. A store by content hash: each upload kept once; the session records name, date and hash per file; at upload "Update this session / Start a new session" | Two buttons at upload; Restore finds its data | The way back is the app's job; no duplicate files | Disk grows; a rule for deleting; deployments with pipeline data (`by_dataset_id`) refuse uploads | 3 to 5 sessions | REOPENS D-0434 (no copy); touches D-0439, D-0440, contract 12d |
+| B. A copy per session in the session folder | Same buttons | Simple to delete with the session | Copies of the same file per session (her real files are small, 88 MB for 2,000 isolates) | 3 sessions | REOPENS D-0434 |
+| E. Today plus the guard (built): she keeps her own copies and uploads them again | An error at Restore that names the files | Nothing more to build | The replaced file is lost unless she kept it; a session still appears by itself | 0 more | D-0434 kept |
+| Leave it, keep it on `current_limits.md` | As today | none | silent loss stays | 0 | none |
+
+**4. Recommendation.** E stays as the floor (it is built). **It reopens a decision (D-0434) as soon as the app keeps data: that is hers to decide.** If she wants the way back from the app, A (a store by hash, reading from the store by hash rather than re-placing files, because re-placing changes what every other session reads). The choice at upload ("Update this session / Start a new session") is the same slice as option B of G1 and should be built with it.
+**5. What was not checked.** Nothing run in a browser; the real files were not uploaded (read only); the size numbers of a store are on the options page.
