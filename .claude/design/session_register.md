@@ -19,7 +19,7 @@
 
 ## 2. The register file
 
-One file per session, `<user_data>/_sessions/<session id>/session.json` (JSON, as today's files). The audit saves are files beside it, `audits/<audit id>/<time>.json` (today's `t3_<time>.json`, one per applied step list; the snapshots stay, Restore reads the newest, `session_manager.py:565-606`). Realistic example, her demo (cgMLST recipe, a small data version, then a large one, a metadata update, two audits; hashes shortened):
+One file per session, `<user_data>/_sessions/<session id>/session.json` (JSON, as today's files). The audit saves are files beside it, `audits/<audit id>/<time>.json` (today's `t3_<time>.json`, one per applied step list; the snapshots stay, Restore reads the newest, `session_manager.py:565-606`). Realistic example, her demo (cgMLST recipe, a small data version, then a large one, a metadata update, two audits; hashes shortened): the text after `//` is a note for the reader and is not in the file.
 
 ```json
 {
@@ -93,7 +93,7 @@ One file per session, `<user_data>/_sessions/<session id>/session.json` (JSON, a
 | Open a recipe again, same data | Nothing (no event for a plain open); `current_audit` unchanged | The card continues; the last audit is NOT restored by itself (as today) | - | PROVISIONAL |
 | Upload other MAIN data (Data Import, Apply) | New data version `d2` with the original names, dates, hashes; the replaced files are kept first (section 5); `a1` closed, new empty `a2` on the original recipe; event `data_change` | Before Apply: a line says "this replaces the data of recipe X. Your audit 'Audit 1' (N steps) stays, linked to the earlier data, and can be restored. A new empty audit starts on the new data" ; after: one notice | A file that fails the check writes nothing, as today (`data_import_check.py`) | DECIDED (M722, M723); wording PROVISIONAL |
 | The data file changes on disk outside the app, or in another tab | The same as the upload, after the fact (`found-on-disk` or `upload`); event says which | One notice: the data changed, the steps stay in audit A, a new audit started; Add was refused until it did | Add to audit pipeline on the closed audit | DECIDED (M721 point 1) |
-| Upload a metadata update | Section 7 of the slices; new `m` version; event `metadata_update`; the SAME session and audit | The result of the update in plain words: ids refused (named), entities not complete (count, named), steps applied again with rows removed before and after, steps in red | A new id not in the session's total set: update refused, the ids named, nothing written | DECIDED (M723 to M725) |
+| Upload a metadata update | Slice S6; new `m` version; event `metadata_update`; the SAME session and audit | The result of the update in plain words: ids refused (named), entities not complete (count, named), steps applied again with rows removed before and after, steps in red | A new id not in the session's total set: update refused, the ids named, nothing written | DECIDED (M723 to M725) |
 | Switch to Audit mode | If there is no open audit on the current data version, `audit_started` (event) when the first step is added, not at the switch | As today | - | PROVISIONAL |
 | Add or remove a step | A new save in the open audit; `revision` +1 | As today | Add refused when the data on disk differ from the audit's data version (check 3) | DECIDED (M721 point 1) |
 | Restore audit whose data version IS the current one | Event `restore` ok | Steps in the view, as today | - | DECIDED |
