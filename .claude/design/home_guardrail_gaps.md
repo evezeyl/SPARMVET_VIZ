@@ -13,6 +13,7 @@
 | G2 Upload replaces the file, no copy; new session by itself | yes (the old data is gone; a session appears without asking) | E now (guard built), then the sessions options page (A: a store by hash) | small now; the real fix 3 to 5 sessions | yes (reopens D-0434) |
 | G3 CR-only file reads as zero rows | yes (a console line only) | A: refuse a file that reads as zero data rows, with a plain hint | 1 session (2 files) | yes (a refusal at upload) |
 | G4 No-break space inside an id | no (a warning shows, but says the same id twice) | A: the id warning names ids that differ only by an invisible character | 1 session (1 file + test) | no (it only informs) |
+| G9 Join through a constant or repeated key doubles or empties rows | yes | B (a declared row-count rule) after the demo; A (ask for `validate`) is cheaper | 1 to 3 sessions | yes (changes the recipe spec) |
 | (more rows are added as each section is written) | | | | |
 
 
@@ -85,3 +86,20 @@
 
 **4. Recommendation.** A, with C in the same message (the way out is the step). It informs and changes no result, so it needs no decision of hers beyond "yes, add the hint".
 **5. What was not checked.** Which invisible characters a real lab export writes (RAN: her four real demo files hold no byte outside plain ASCII and no CR, so they are not affected); the full app path (the warning in HOME) was not opened in a browser.
+
+## G9. A join through a key that does not identify one row doubles or empties the table
+
+**Correction first.** The first words of this gap said "a cross join". RAN (`tmpAI/gaps/g9.py`, through the registered action `polars_join`, the one a recipe step runs): a cross join written as such is **refused** ("exactly one of on, left_on is wanted"; with a key: "cross join should not pass join keys"). So the problem is not the cross join but the same effect through an ordinary join. I corrected the rows of the guardrails and limits pages.
+**1. The problem, exactly.** Her "information" table has exactly one row (a table of constants). The recipe maker joins it to the main table (3 rows) through a key that is the same on every line (a constant `k = 1` added to both tables), or, more commonly, the other table has the same id twice. RAN: inner join with an other table of 0, 1, 2 rows gives 0, 3, 6 rows; left join gives 3, 3, 6. With `validate: m:1` written on the join, the 2-row case is refused ("join keys did not fulfill m:1 validation") (RAN). The app does not ask for `validate` and does not check the row count after a join (READ: `recipe_check.py` has no rule on `validate`; the plain-words diagnosis `join_diagnosis.py` runs only for joins that write it).
+**2. The consequence.** Silent and wrong: every table below the join is doubled or empty; figures count twice. Only a person who knows the expected row count notices.
+**3. Options.**
+
+| Option | What the user sees | Pro | Con | Size | Decided lines |
+|---|---|---|---|---|---|
+| A. The recipe check advises (not refuses) a join with no `validate` ("write validate: m:1 or 1:1 so that a repeated key is refused") | An advice line at recipe check | Uses what exists; no new key | An advice can be ignored | 1 file (`recipe_check.py`), 1 session | D-0033 (no new keys) not touched |
+| B. A declared rule on a table or join: "exactly N rows" / "no more rows than the left table", checked at load with a plain refusal (task RECIPE-ROW-COUNT-ASSERT) | A refusal that names the table, the expected and the real count | Catches every cause (repeated key, constant key, empty file) | A new recipe key: changes the spec (D-0033: unknown keys are refused) | 3 files + docs, 2 to 3 sessions | REOPENS the recipe spec; D-0033 |
+| C. After each join the app shows the row count change in the data preview ("this join took 3 rows to 6") | A note next to the table | Shows the effect to every user, no spec change | Informs only; may not be seen | 2 files, 1 to 2 sessions | none |
+| D. Leave it; the preparation script checks the one-row table; keep on the limits page | Nothing | Nothing to build | Silent wrong size stays | 0 | none |
+
+**4. Recommendation.** A and C together are small, change no spec and tell the user; B is the real guard and is hers to decide (it adds a key). **B changes the recipe format: flag first.** Before the demo: the preparation script check and the sentence `validate: m:1` in the recipe help.
+**5. What was not checked.** The app path (a recipe with the join opened in HOME): not run. Whether the recipe check refuses `how: cross` at check time (it did not name it; the engine refuses at run time with the quoted words). The `modif_join_where` join with an always-true predicate was not run.
