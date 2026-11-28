@@ -25,6 +25,7 @@ from app.modules.plot_issue_reporter import make_issue_reporter
 from app.modules.session_manager import (
     SessionDeleteError,
     key_drop_notice,
+    session_data_refusal,
     session_recipe_refusal,
     normalise_audit_steps,
     session_id_collisions,
@@ -607,8 +608,15 @@ def define_session_server(input, output, session, *,
             _notify("❌ " + refusal, type="error", duration=12)
             return
 
-        # Check data analysis recipe SHA256 vs current
+        # G1 (Eve 2026-11-28): audit steps never mix across data. A session made on other data is refused: nothing of it is put into the state.
+        # Compared: the data key of the record with the data key HOME keeps for the files now on disk (`_sync_session_provenance`).
         state = home_state.get()
+        data_refusal = session_data_refusal(ghost, state.get("data_batch_hash") or "", state.get("data_files"))
+        if data_refusal:
+            _notify("❌ " + data_refusal, type="error", duration=20)
+            return
+
+        # Check data analysis recipe SHA256 vs current
         current_msig = state.get("data_analysis_recipe_sha256") or ""
         saved_msig = ghost.get("data_analysis_recipe_sha256", "")
         if current_msig and saved_msig and current_msig != saved_msig:
@@ -618,22 +626,10 @@ def define_session_server(input, output, session, *,
                 type="warning", duration=8,
             )
 
-        # Data batch mismatch (ui_implementation_contract.md §12d — specified, found missing
-        # here; the recipe check above existed, this one never did). Same ghost-vs-current
-        # comparison, same non-blocking severity.
-        current_dbh = state.get("data_batch_hash") or ""
-        saved_dbh = ghost.get("data_batch_hash", "")
-        if current_dbh and saved_dbh and current_dbh != saved_dbh:
-            _notify(
-                "⚠️ Session was saved against a different data batch. Row filters and "
-                "exclusions may match different or no rows.",
-                type="warning", duration=8,
-            )
-
         # A comparison needs both keys. When one is missing it did not happen, and that is said (D-0050): without it the
-        # restored steps look checked when they were not.
+        # restored steps look checked when they were not. The DATA keys are not here: a missing data key is refused above.
         _not_compared = [f"the {name} key of {where}"
-                         for name, current, saved in (("recipe", current_msig, saved_msig), ("data", current_dbh, saved_dbh))
+                         for name, current, saved in (("recipe", current_msig, saved_msig),)
                          for where, value in (("the open view", current), ("the saved session", saved)) if not value]
         if _not_compared:
             _notify("⚠️ " + notice(
