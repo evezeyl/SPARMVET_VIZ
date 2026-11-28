@@ -188,7 +188,7 @@ What A then sees (READ, `audit_trial.py:220-232`): a trial whose files are gone 
 | C. Leave it | Nothing | none | an unpinned guard | 0 | none |
 
 **4. Recommendation.** A now (small, pins the result), B before any deployment in which users load recipes written by others.
-**5. What was not checked.** Only the formulas of `evaluate_formula`; the function string of a plot (`function_string_problems`) and the smoother formula were not tried; cost or memory of an allowed formula; a Polars method added after the list was built. The test of A is not written (it belongs to a later unit).
+**5. What was not checked.** Only the formulas of `evaluate_formula`; the function string of a plot (`function_string_problems`) and the smoother formula were not tried; cost or memory of an allowed formula; a Polars method added after the list was built. The test of A is written (`libs/utils/tests/test_formula_escape_tries.py`, 13 tests; with the check skipped 12 of them fail).
 
 ## G11. Who marked "User verified" is not recorded
 
