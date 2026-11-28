@@ -84,4 +84,4 @@
 | D. Leave it, keep it on the limits page | The confusing warning | none | confusion stays | 0 | none |
 
 **4. Recommendation.** A, with C in the same message (the way out is the step). It informs and changes no result, so it needs no decision of hers beyond "yes, add the hint".
-**5. What was not checked.** Which invisible characters a real lab export writes (her files hold none that I could find: the real demo tables were not scanned for odd characters); the full app path (the warning in HOME) was not opened in a browser.
+**5. What was not checked.** Which invisible characters a real lab export writes (RAN: her four real demo files hold no byte outside plain ASCII and no CR, so they are not affected); the full app path (the warning in HOME) was not opened in a browser.
